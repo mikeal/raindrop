@@ -1,0 +1,3 @@
+message {
+  binding: url("messages.xml#message");
+}

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbl:xbl
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:xbl="http://www.w3.org/ns/xbl">
+
+  <xbl:binding id="message">
+    <xbl:implementation><![CDATA[
+      ({
+        foo: 1,
+        bar: 2
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+      <xbl:handler event="click"><![CDATA[
+      
+      ]]></xbl:handler>
+    </xbl:handlers>
+  </xbl:binding>
+</xbl:xbl>
