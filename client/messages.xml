@@ -4,10 +4,26 @@
   xmlns:xbl="http://www.w3.org/ns/xbl">
 
   <xbl:binding id="message">
+    <xbl:template>
+      <div>
+        <span id="subject"></span><br/>
+        <pre id="body"></pre>
+      </div>
+    </xbl:template>
     <xbl:implementation><![CDATA[
       ({
-        foo: 1,
-        bar: 2
+        setMessage: function(aMessage) {
+          this._message = aMessage;
+          this.getElementById("subject").textContent = this._message.headers.Subject;
+          this.getElementById("body").textContent = this._message.bodyPart.data;
+        },
+        xblBindingAttached: function() {
+          console.log("Message XBL binding attached!");
+          if (this._message) {
+            console.log("message exists, doing stuff!");
+            this.message = this._message;
+          }
+        }
       })
     ]]></xbl:implementation>
     <xbl:handlers>

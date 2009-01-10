@@ -6,8 +6,32 @@
   <script src="/_utils/script/json2.js"></script>
   <script src="/_utils/script/jquery.js?1.2.6"></script>
   <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+  <script src="xbl-src.js"></script>
+  <link rel="stylesheet" href="messages.css" type="text/css"></link>
+  <script type="text/javascript" charset="utf-8"><![CDATA[
+    $(function() {
+      //DocumentXBL.prototype.loadBindingDocument.call(document, "messages.xml");
+      var dbMessages = $.couch.db("messages");
+      dbMessages.view("by_timestamp/by_timestamp", {
+        include_docs: true,
+        success: function(json) {
+          var parent = $("#messages");
+          json.rows.forEach(function(row) {
+            var node = document.createElement("div");
+            node.setAttribute("class", "message");
+            parent.append(node);
+            ElementXBL.prototype.addBinding.call(node, "messages.xml#message");
+            node.setMessage(row.doc);
+            //fDocumentXBL_addBindings(node);
+            return node;
+          });
+        }
+      })
+    });
+  ]]></script>
 </head>
 <body>
-  
+  <div id="messages">
+  </div>
 </body>
 </html>

@@ -12,19 +12,47 @@ Fetch new mail.
 '''
 
 class JuniusAccount(object):
-    def __init__(self, dbs, *args):
+    def __init__(self, dbs, account_def):
         self.dbs = dbs
-        self.acct = Account(*args)
-        self.account_id = 'only'
+        self.account_def = account_def
+        self.imap_account = Account(account_def.host, account_def.port,
+                                    account_def.username, account_def.password)
     
     def sync(self):
-        inbox = self.acct.folders['INBOX']
-        print 'Folder', inbox
+        self.considerFolders(self.imap_account.folders)
+    
+    def considerFolders(self, folders):
+        for folder in folders.values():
+            self.syncFolder(folder)
+            self.considerFolders(folder.folders)
+    
+    def syncFolder(self, folder):
+        print '***** Sync-ing', folder.path
         
-        for m in inbox.messages.values():
-            print m
-            self.grok_message(m)
-            
+        folderStatus = self.account_def.folderStatuses.get(folder.path, {})
+        #curValidity = folder._validity()
+        #if curValidity != folderStatus['validity']:
+        #    pass
+        
+        # -- find out about what message id's we already know about
+        # this is really just the most primitive synchronization logic
+        #  available!  but that's okay.
+        known_uids = set()
+        startkey=[self.account_def.id, folder.path, 0]
+        endkey=[self.account_def.id, folder.path, 4000000000]
+        for row in model.Message.by_storage(self.dbs.messages, startkey=startkey, endkey=endkey).rows:
+            known_uids.add(row.key[2])
+        
+        processed = 0
+        skipped = 0
+        for message in folder.messages.values():
+            uid = int(message.UID)
+            if uid not in known_uids:
+                self.grok_message(message)
+                processed += 1
+            else:
+                skipped += 1
+        print '  processed', processed, 'skipped', skipped
     
     def grok_email_addresses(self, *address_strings):
         seen_contacts = {}
@@ -37,13 +65,9 @@ class JuniusAccount(object):
                 # XXX TODO: we can use 'keys' instead of just key.
                 contacts = model.Contact.by_identity(self.dbs.contacts,
                                                      key=['email', address])
-                print 'Contacts:'
-                pprint.pprint(contacts)
                 if len(contacts):
                     # the contact exists, use it
                     contact = list(contacts)[0]
-                    print 'Contact'
-                    pprint.pprint(contact)
                     if contact.id in seen_contacts:
                         contact = seen_contacts[contact.id]
                     else:
@@ -63,8 +87,6 @@ class JuniusAccount(object):
                 cur_results.append(contact)
             result_lists.append(cur_results)
         result_lists.append(involved_list)
-        print '-- Result Lists:'
-        pprint.pprint(result_lists)
         return result_lists
     
     def extract_message_id(self, message_id_string, acceptNonDelimitedReferences):
@@ -117,29 +139,32 @@ class JuniusAccount(object):
         return references
     
     def grok_message_conversation(self, imsg):
-        refs_str = imsg.headers.get('References') or imsg.headers.get('In-Reply-To')
+        self_header_message_id = imsg.headers['Message-Id'][1:-1]
+        refs_str = imsg.headers.get('References') or imsg.headers.get('In-Reply-To') or ''
         conversation_id = None
         conversations = {}
-        if refs_str:
-            print 'References', refs_str
-            header_message_ids = self.extract_message_ids(refs_str)
-            unseen = set(header_message_ids)
-            
-            messages = model.Message.by_header_id(self.dbs.messages,
-                                                  keys=header_message_ids)
-            for message in messages:
-                conversation_id = message.conversation_id
-                print 'message', message_id, 'has conversation', conversation_id
+        self_message = None
+        header_message_ids = self.extract_message_ids(refs_str)
+        unseen = set(header_message_ids)
+        
+        # see if the self-message already exists...
+        header_message_ids.append(self_header_message_id)
+        
+        messages = model.Message.by_header_id(self.dbs.messages,
+                                              keys=header_message_ids)
+        for message in messages:
+            if message.header_message_id == self_header_message_id:
+                self_message = message
+            else:
                 unseen.remove(message.header_message_id)
+            conversation_id = message.conversation_id
             
         if conversation_id is None:
             # we need to allocate a conversation_id...
-            print 'Headers:'
-            pprint.pprint(imsg.headers)
-            conversation_id = imsg.headers['Message-Id']
+            conversation_id = self_header_message_id
             
         # create dudes who are missing
-        if refs_str and unseen:
+        if unseen:
             missing_messages = []
             for header_message_id in unseen:
                 missing_messages.append(model.Message(
@@ -148,7 +173,7 @@ class JuniusAccount(object):
                     ))
             self.dbs.messages.update(missing_messages)
         
-        return conversation_id
+        return conversation_id, self_message
     
     def grok_message(self, imsg):
         attachments = {}
@@ -162,18 +187,18 @@ class JuniusAccount(object):
             imsg.headers.get('From', ''), imsg.headers.get('To', ''),
             imsg.headers.get('Cc', ''))
         
-        conversation_id = self.grok_message_conversation(imsg)
+        conversation_id, existing_message = self.grok_message_conversation(imsg)
         
         timestamp = email.utils.mktime_tz(email.utils.parsedate_tz(imsg.headers['Date']))
         
         
         cmsg = model.Message(
-            account_id=self.account_id,
+            account_id=self.account_def.id,
             storage_path=imsg.parent.path,
-            storage_id=imsg.UID,
+            storage_id=int(imsg.UID),
             #
             conversation_id=conversation_id,
-            header_message_id=imsg.headers.get('Message-Id'),
+            header_message_id=imsg.headers.get('Message-Id')[1:-1],
             #
             from_contact_id=from_contacts[0].id,
             to_contact_ids=[c.id for c in to_contacts],
@@ -189,8 +214,12 @@ class JuniusAccount(object):
             bodyPart=bodyPart,
             _attachments=attachments
         )
+        if existing_message:
+            cmsg.id = existing_message.id
+            # this is ugly, we should really just have the logic above use a
+            #  style that allows it to work with new or existing...
+            cmsg._data['_rev'] = existing_message.rev
         
-        pprint.pprint(cmsg.unwrap())
         cmsg.store(self.dbs.messages)
         
     
@@ -215,9 +244,18 @@ class JuniusAccount(object):
                                            'data': base64.b64encode(data)}
         return me
 
+class Grabber(object):
+    def __init__(self, dbs):
+        self.dbs = dbs
+    
+    def syncAccounts(self):
+        for account in model.Account.all(self.dbs.accounts):
+            junius_account = JuniusAccount(self.dbs, account)
+            junius_account.sync()
+
 if __name__ == '__main__':
     import os
     #acct = JuniusAccount('localhost', 8143, os.environ['USER'], 'pass')
     dbs = model.fab_db()
-    acct = JuniusAccount(dbs, 'localhost', 10143, 'test', 'bsdf')
-    acct.sync()
+    grabber = Grabber(dbs)
+    grabber.syncAccounts()

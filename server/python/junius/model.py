@@ -19,6 +19,13 @@ class Account(schema.Document):
     ssl = schema.BooleanField()
     
     folderStatuses = WildField(default={})
+    
+    # could we just do _all_docs?  I don't want the damn design docs though...
+    # (ironically, this is the first one :)
+    all = schema.View('all', '''\
+        function(doc) {
+            emit(null, doc);
+        }''')
 
 class Contact(schema.Document):
     name = schema.TextField()
@@ -43,7 +50,7 @@ class Contact(schema.Document):
                 for (i = 0; i < identity.value.length; i++)
                     emit(identity.value.substring(i), null);
             }
-        }''')
+        }''', include_docs=True)
 
 class Message(schema.Document):
     account_id = schema.TextField()
@@ -105,18 +112,25 @@ class Message(schema.Document):
     by_header_id = schema.View('by_header_id', '''\
         function(doc) {
             emit(doc.header_message_id, null);
-        }''')    
+        }''', include_docs=True)    
     
     by_timestamp = schema.View('by_timestamp', '''\
         function(doc) {
             emit(doc.timestamp, null);
-        }''')    
+        }''', include_docs=True)    
     
     by_involves = schema.View('by_involves', '''\
         function(doc) {
             for each (var contact_id in doc.involves_contact_ids)
                 emit(contact_id, null);
-        }''')
+        }''', include_docs=True)
+    
+    # -- storage info views
+    # so, this key is theoretically just wildly expensive
+    by_storage = schema.View('by_storage', '''\
+        function(doc) {
+            emit([doc.account_id, doc.storage_path, doc.storage_id], null);
+        }''', include_docs=False)
 
 DATABASES = {
     # the app database proper, no real data

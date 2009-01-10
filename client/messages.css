@@ -1,3 +1,3 @@
-message {
+.message {
   binding: url("messages.xml#message");
 }
