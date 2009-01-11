@@ -2,6 +2,10 @@
   binding: url("autocomplete.xml#autocomplete");
 }
 
+#constraints {
+  binding: url("bubbles.xml#constraint-list");
+}
+
 .message {
   binding: url("messages.xml#message");
 }

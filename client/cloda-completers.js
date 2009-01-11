@@ -11,7 +11,7 @@ var ContactCompleter = {
         var nodes = [];
         result.rows.forEach(function (row) {
           if (!(row.id in seen)) {
-            node = $("<div/>").addClass("auco_contact")[0];
+            var node = $("<div/>").addClass("auco_contact")[0];
             ElementXBL.prototype.addBinding.call(node, "autocomplete.xml#contact-completion");
             node.setContact(row.doc);
             nodes.push(node);

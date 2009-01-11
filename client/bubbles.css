@@ -1,0 +1,26 @@
+.bubble {
+  -moz-border-radius: 4px;
+  margin: 0px 2px 0px 0px;
+  padding: 0.1em 0.5em;
+  color: black !important;
+}
+
+.bubble[type="contact"] {
+  background-color: #FFAA78;
+  border: 1px solid #FF7D31;
+}
+
+.bubble[type="contact-collection"] {
+  background-color: #FFC357;
+  border: 1px solid #FFAB0F;
+}
+
+.bubble[type="folder"] {
+  background-color: #faf0b8;
+  border: 1px solid #b19065;
+}
+
+.bubble[type="tag"] {
+  background-color: #eeeeff;
+  border: 1px solid #8888cc;
+}

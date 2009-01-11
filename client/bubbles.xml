@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbl:xbl
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:xbl="http://www.w3.org/ns/xbl">
+
+  <xbl:binding id="constraint-list">
+    <xbl:template>
+      <div id="holder">
+      </div>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        _nConstraints: null,
+        addContact: function(aContact) {
+          var node = $("<div/>").addClass("bubble")[0];
+          ElementXBL.prototype.addBinding.call(node, "bubbles.xml#constraint-contact");
+          node.setContact(aContact);
+          $(this._nConstraints).append(node);
+          console.log("Contact", aContact, "added");
+        },
+        init: function() {
+          this._nConstraints = this.getElementById("holder");
+        },
+        xblBindingAttached: function () {
+          this.boundElement.init();
+        },
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+      <xbl:handler event="click"><![CDATA[
+      ]]></xbl:handler>
+    </xbl:handlers>
+  </xbl:binding>
+
+  <xbl:binding id="constraint-contact">
+    <xbl:template>
+      <img id="picture" class="con_contactpic"/>
+      <span id="name"></span>
+    </xbl:template>
+    <xbl:resources>
+      <xbl:style><![CDATA[
+        .con_contactpic {
+          width: 18;
+          height: 18;
+        }
+      ]]></xbl:style>
+    </xbl:resources>
+    <xbl:implementation><![CDATA[
+      ({
+        contact: null,
+        setContact: function(aContact) {
+          this.contact = aContact;
+          console.log("setContact", this);
+          this.getElementById("name").textContent = this.contact.name;
+          var bestEmail = null;
+          var emailText = this.contact.identities.forEach(function (identity) {
+            if (identity.kind == "email")
+              bestEmail = identity.value;
+          });
+          if (bestEmail) {
+            this.getElementById("picture").setAttribute("src",
+              "http://www.gravatar.com/avatar/" + hex_md5(bestEmail) +
+              ".jpg?r=pg&d=identicon&s=18");
+          }
+        },
+      })
+    ]]></xbl:implementation>
+  </xbl:binding>
+</xbl:xbl>

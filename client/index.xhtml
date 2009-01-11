@@ -7,8 +7,11 @@
   <script src="/_utils/script/jquery.js?1.2.6"></script>
   <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
   <script src="xbl-src.js"></script>
+  <script src="md5.js"></script>
   <link rel="stylesheet" href="bindings.css" type="text/css"></link>
   <link rel="stylesheet" href="autocomplete.css" type="text/css"></link>
+  <link rel="stylesheet" href="bubbles.css" type="text/css"></link>
+  <link rel="stylesheet" href="searchResults.css" type="text/css"></link>
   <script src="cloda.js"></script>
   <script src="cloda-completers.js"></script>
   <script type="text/javascript" charset="utf-8"><![CDATA[
@@ -16,10 +19,21 @@
       var autocompleter = document.getElementById("autocomplete");
       console.log("autocompleter", autocompleter);
       autocompleter.addCompleter(ContactCompleter);
+      console.log("contact completer registered");
+      
+      var constraints = document.getElementById("constraints");
+      autocompleter.actionListener = function (item) {
+        console.log("!!!Action Listener!!!", item);
+        if (item.type == "contact")
+          constraints.addContact(item.contact);
+        else
+          return;
+      };
+      console.log("constrainer registered");
     }
 
     $(function() {
-      window.setTimeout(funkyInit, 100);
+      window.setTimeout(funkyInit, 1000);
       //DocumentXBL.prototype.loadBindingDocument.call(document, "messages.xml");
       /*
       var dbMessages = $.couch.db("messages");
@@ -44,6 +58,7 @@
 </head>
 <body>
   <div id="autocomplete"></div>
+  <div id="constraints"/>
   <div id="messages">
   </div>
 </body>

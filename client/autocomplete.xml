@@ -54,7 +54,6 @@
         selectedIndex: null,
         setSelectedIndex: function(aDesiredIndex) {
           var children = this._resultDiv.childNodes;
-          console.log("Index change, cur", this.selectedIndex, "desired", aDesiredIndex, "length", children.length);
           if (children.length == 0)
             aDesiredIndex = null;
           else if (aDesiredIndex === undefined)
@@ -73,6 +72,19 @@
           if (this.selectedIndex != null)
             $(children[this.selectedIndex]).addClass(this.SELECTED_CLASS);
         },
+        /* ===== Action ===== */
+        actionListener: null,
+        actOnSelected: function() {
+          console.log("Taking action on index", this.selectedIndex);
+          if (this.selectedIndex != null) {
+            var selected = this._resultDiv.childNodes[this.selectedIndex];
+            if (this.actionListener != null)
+              this.actionListener(selected);
+            else
+              console.log("Warning! There was no action listener!", this, this.actionListener);
+          }
+          console.log("Actiong taking done!");
+        },
         
         /* ===== House-keeping ==== */
         xblBindingAttached: function () {
@@ -87,17 +99,17 @@
     ]]></xbl:implementation>
     <xbl:handlers>
       <xbl:handler event="textInput"><![CDATA[
-        console.log("text input!", this, event);
         var text = this._entry.value + event.data;
         this.goFish(text);
       ]]></xbl:handler>
       <xbl:handler event="keydown"><![CDATA[
         if (event.keyIdentifier == "Enter") {
+          this.actOnSelected();
           this.hideResultsList();
         }
         else if (event.keyIdentifier == "Up") {
           if (this.selectedIndex == 0)
-            this.setSelectedInex(null);
+            this.setSelectedIndex(null);
           else
             this.setSelectedIndex(this.selectedIndex - 1);
         }
@@ -106,6 +118,9 @@
             this.setSelectedIndex(0);
           else
             this.setSelectedIndex(this.selectedIndex + 1);
+        }
+        else if (event.keyIdentifier == "\u001b") {
+          this.hideResultsList();
         }
       ]]></xbl:handler>
       <xbl:handler event="blur"><![CDATA[
@@ -117,7 +132,7 @@
   <xbl:binding id="contact-completion">
     <xbl:template>
       <img id="picture" class="contactpic"/>
-      <span id="name"></span>
+      <span id="name"></span><br />
       <span id="emails"></span>
     </xbl:template>
     <xbl:resources>
@@ -125,11 +140,13 @@
         .contactpic {
           width: 32;
           height: 32;
+          float: left;
         }
       ]]></xbl:style>
     </xbl:resources>
     <xbl:implementation><![CDATA[
       ({
+        type: "contact",
         contact: null,
         setContact: function(aContact) {
           this._contact = aContact;
@@ -143,6 +160,9 @@
           }).join(", ");
           this._nEmails.textContent = emailText;
           if (bestEmail) {
+            this._nPicture.setAttribute("src",
+              "http://www.gravatar.com/avatar/" + hex_md5(bestEmail) +
+              ".jpg?r=pg&d=identicon&s=32");
             // XXX soon, let's point at the gravatar
             // XXX later, let's use a pic if it exists, or gravatar push if it
             //  doesn't.  (or maybe have a daemon that takes care of it?)
