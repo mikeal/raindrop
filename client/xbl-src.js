@@ -1451,7 +1451,7 @@ cElementXBL.prototype.addBinding	= function(sDocumentUri) {
 	// 3) Attach implementation
     function bind(func) {
       return function() {
-        func.apply(oBinding, arguments);
+        return func.apply(oBinding, arguments);
       };
     }
 

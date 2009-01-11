@@ -24,8 +24,15 @@
       var constraints = document.getElementById("constraints");
       autocompleter.addActionListener(function (item) {
         console.log("!!!Action Listener!!!", item);
-        if (item.getType() == "contact")
-          constraints.addContact(item.getContact());
+        var itemType = item.getType();
+        console.log(".type:", itemType);
+        if (itemType == "contact") {
+          console.log("..contact case");
+          var contact = item.getContact();
+          console.log("contact", contact);
+          constraints.addContact(contact);
+          console.log("added contact", contact);
+        }
         else
           return;
       });

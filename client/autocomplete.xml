@@ -150,17 +150,19 @@
     <xbl:implementation><![CDATA[
       ({
         type: "contact",
-        getType: function() { return this.type; },
+        getType: function() {
+          return this.type;
+        },
         contact: null,
         getContact: function() {
           return this.contact;
         },
         setContact: function(aContact) {
-          this._contact = aContact;
+          this.contact = aContact;
           console.log("setContact", this);
-          this._nName.textContent = this._contact.name;
+          this._nName.textContent = this.contact.name;
           var bestEmail = null;
-          var emailText = this._contact.identities.map(function (identity) {
+          var emailText = this.contact.identities.map(function (identity) {
             if (identity.kind == "email")
               bestEmail = identity.value;
             return identity.value;
