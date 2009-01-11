@@ -1,0 +1,11 @@
+#autocomplete {
+  binding: url("autocomplete.xml#autocomplete");
+}
+
+.message {
+  binding: url("messages.xml#message");
+}
+
+.auco_contact {
+  binding: url("autocomplete.xml#contact-completion");
+}

@@ -1,0 +1,12 @@
+#autocomplete input {
+  width: 600px;
+}
+
+.auco_results {
+  border: 1px solid black;
+  background-color: white;
+  z-index: 999;
+}
+.auco_selected {
+  background-color: #ffffcc;
+}

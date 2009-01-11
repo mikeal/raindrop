@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xbl:xbl
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:xbl="http://www.w3.org/ns/xbl">
+
+  <xbl:binding id="autocomplete">
+    <xbl:template>
+      <div>
+        <input id="entry" type="text" name="entryText" value="" />
+        <span id="subject"></span><br/>
+        <pre id="body"></pre>
+      </div>
+    </xbl:template>
+    <xbl:resources>
+      <xbl:style><![CDATA[
+
+      ]]></xbl:style>
+    </xbl:resources>
+    <xbl:implementation><![CDATA[
+      ({
+        SELECTED_CLASS: "auco_selected",
+        _autocompleters: [],
+        addCompleter: function (aCompleter) {
+          this._autocompleters.push(aCompleter);
+        },
+        _serial: 0,
+        goFish: function (aText) {
+          var serial = this._serial++;
+          this._autocompleters.forEach(function (completer) {
+            completer.complete(this, aText);
+          }, this);
+        },
+        haveSomeResults: function(aText, aNodes) {
+          this.clearResultsList();
+          $(this._resultDiv).append(aNodes);
+          this.showResultsList();
+        },
+        /* ===== Results List Stuff ===== */
+        _resultDiv: null,
+        showResultsList: function() {
+          var entryOffset = $(this._entry).offset();
+          $(this._resultDiv).css({
+            left: entryOffset.let,
+            top: entryOffset.top + this._entry.offsetHeight,
+            width: $(this._entry).width()
+          }).show();
+        },
+        hideResultsList: function() {
+          $(this._resultDiv).hide();
+        },
+        clearResultsList: function() {
+          $(this._resultDiv).empty();
+        },
+        selectedIndex: null,
+        setSelectedIndex: function(aDesiredIndex) {
+          var children = this._resultDiv.childNodes;
+          console.log("Index change, cur", this.selectedIndex, "desired", aDesiredIndex, "length", children.length);
+          if (children.length == 0)
+            aDesiredIndex = null;
+          else if (aDesiredIndex === undefined)
+            aDesiredIndex = 0;
+          else if (aDesiredIndex < 0)
+            aDesiredIndex = 0;
+          else if (aDesiredIndex >= children.length)
+            aDesiredIndex = children.length - 1;
+            
+          if (aDesiredIndex == this.selectedIndex)
+            return;
+          
+          if (this.selectedIndex != null)
+            $(children[this.selectedIndex]).removeClass(this.SELECTED_CLASS);
+          this.selectedIndex = aDesiredIndex;
+          if (this.selectedIndex != null)
+            $(children[this.selectedIndex]).addClass(this.SELECTED_CLASS);
+        },
+        
+        /* ===== House-keeping ==== */
+        xblBindingAttached: function () {
+          console.log("autocompleter binding and what not", this);
+          this._entry = this.boundElement.getElementById("entry");
+          this._resultDiv = $("<div/>").hide().css("position", "absolute")
+                             .addClass("auco_results")
+                             .appendTo(document.body)[0];
+          console.log("done binding");
+        },
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+      <xbl:handler event="textInput"><![CDATA[
+        console.log("text input!", this, event);
+        var text = this._entry.value + event.data;
+        this.goFish(text);
+      ]]></xbl:handler>
+      <xbl:handler event="keydown"><![CDATA[
+        if (event.keyIdentifier == "Enter") {
+          this.hideResultsList();
+        }
+        else if (event.keyIdentifier == "Up") {
+          if (this.selectedIndex == 0)
+            this.setSelectedInex(null);
+          else
+            this.setSelectedIndex(this.selectedIndex - 1);
+        }
+        else if (event.keyIdentifier == "Down") {
+          if (this.selectedIndex == null)
+            this.setSelectedIndex(0);
+          else
+            this.setSelectedIndex(this.selectedIndex + 1);
+        }
+      ]]></xbl:handler>
+      <xbl:handler event="blur"><![CDATA[
+      ]]></xbl:handler>
+
+    </xbl:handlers>
+  </xbl:binding>
+  <!-- Contact -->
+  <xbl:binding id="contact-completion">
+    <xbl:template>
+      <img id="picture" class="contactpic"/>
+      <span id="name"></span>
+      <span id="emails"></span>
+    </xbl:template>
+    <xbl:resources>
+      <xbl:style><![CDATA[
+        .contactpic {
+          width: 32;
+          height: 32;
+        }
+      ]]></xbl:style>
+    </xbl:resources>
+    <xbl:implementation><![CDATA[
+      ({
+        contact: null,
+        setContact: function(aContact) {
+          this._contact = aContact;
+          console.log("setContact", this);
+          this._nName.textContent = this._contact.name;
+          var bestEmail = null;
+          var emailText = this._contact.identities.map(function (identity) {
+            if (identity.kind == "email")
+              bestEmail = identity.value;
+            return identity.value;
+          }).join(", ");
+          this._nEmails.textContent = emailText;
+          if (bestEmail) {
+            // XXX soon, let's point at the gravatar
+            // XXX later, let's use a pic if it exists, or gravatar push if it
+            //  doesn't.  (or maybe have a daemon that takes care of it?)
+          }
+        },
+        xblBindingAttached: function () {
+          console.log("attaching contact result");
+          this.boundElement._nPicture = this.boundElement.getElementById("picture");
+          this.boundElement._nName = this.boundElement.getElementById("name");
+          this.boundElement._nEmails = this.boundElement.getElementById("emails");
+          console.log("done attaching contact result");
+        },
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+    </xbl:handlers>
+  </xbl:binding>
+
+</xbl:xbl>

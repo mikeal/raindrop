@@ -17,13 +17,6 @@
           this.getElementById("subject").textContent = this._message.headers.Subject;
           this.getElementById("body").textContent = this._message.bodyPart.data;
         },
-        xblBindingAttached: function() {
-          console.log("Message XBL binding attached!");
-          if (this._message) {
-            console.log("message exists, doing stuff!");
-            this.message = this._message;
-          }
-        }
       })
     ]]></xbl:implementation>
     <xbl:handlers>

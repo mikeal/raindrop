@@ -7,10 +7,21 @@
   <script src="/_utils/script/jquery.js?1.2.6"></script>
   <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
   <script src="xbl-src.js"></script>
-  <link rel="stylesheet" href="messages.css" type="text/css"></link>
+  <link rel="stylesheet" href="bindings.css" type="text/css"></link>
+  <link rel="stylesheet" href="autocomplete.css" type="text/css"></link>
+  <script src="cloda.js"></script>
+  <script src="cloda-completers.js"></script>
   <script type="text/javascript" charset="utf-8"><![CDATA[
+    function funkyInit() {
+      var autocompleter = document.getElementById("autocomplete");
+      console.log("autocompleter", autocompleter);
+      autocompleter.addCompleter(ContactCompleter);
+    }
+
     $(function() {
+      window.setTimeout(funkyInit, 100);
       //DocumentXBL.prototype.loadBindingDocument.call(document, "messages.xml");
+      /*
       var dbMessages = $.couch.db("messages");
       dbMessages.view("by_timestamp/by_timestamp", {
         include_docs: true,
@@ -27,10 +38,12 @@
           });
         }
       })
+      */
     });
   ]]></script>
 </head>
 <body>
+  <div id="autocomplete"></div>
   <div id="messages">
   </div>
 </body>
