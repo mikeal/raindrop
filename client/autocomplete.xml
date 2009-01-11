@@ -74,6 +74,9 @@
         },
         /* ===== Action ===== */
         actionListener: null,
+        addActionListener: function(aActionListener) {
+          this.actionListener = aActionListener;
+        },
         actOnSelected: function() {
           console.log("Taking action on index", this.selectedIndex);
           if (this.selectedIndex != null) {
@@ -89,7 +92,7 @@
         /* ===== House-keeping ==== */
         xblBindingAttached: function () {
           console.log("autocompleter binding and what not", this);
-          this._entry = this.boundElement.getElementById("entry");
+          this._entry = this.shadowTree.getElementById("entry");
           this._resultDiv = $("<div/>").hide().css("position", "absolute")
                              .addClass("auco_results")
                              .appendTo(document.body)[0];
@@ -147,7 +150,11 @@
     <xbl:implementation><![CDATA[
       ({
         type: "contact",
+        getType: function() { return this.type; },
         contact: null,
+        getContact: function() {
+          return this.contact;
+        },
         setContact: function(aContact) {
           this._contact = aContact;
           console.log("setContact", this);
@@ -170,9 +177,9 @@
         },
         xblBindingAttached: function () {
           console.log("attaching contact result");
-          this.boundElement._nPicture = this.boundElement.getElementById("picture");
-          this.boundElement._nName = this.boundElement.getElementById("name");
-          this.boundElement._nEmails = this.boundElement.getElementById("emails");
+          this._nPicture = this.shadowTree.getElementById("picture");
+          this._nName = this.shadowTree.getElementById("name");
+          this._nEmails = this.shadowTree.getElementById("emails");
           console.log("done attaching contact result");
         },
       })

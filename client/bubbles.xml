@@ -18,11 +18,8 @@
           $(this._nConstraints).append(node);
           console.log("Contact", aContact, "added");
         },
-        init: function() {
-          this._nConstraints = this.getElementById("holder");
-        },
         xblBindingAttached: function () {
-          this.boundElement.init();
+          this._nConstraints = this.shadowTree.getElementById("holder");
         },
       })
     ]]></xbl:implementation>
@@ -51,14 +48,14 @@
         setContact: function(aContact) {
           this.contact = aContact;
           console.log("setContact", this);
-          this.getElementById("name").textContent = this.contact.name;
+          this.shadowTree.getElementById("name").textContent = this.contact.name;
           var bestEmail = null;
           var emailText = this.contact.identities.forEach(function (identity) {
             if (identity.kind == "email")
               bestEmail = identity.value;
           });
           if (bestEmail) {
-            this.getElementById("picture").setAttribute("src",
+            this.shadowTree.getElementById("picture").setAttribute("src",
               "http://www.gravatar.com/avatar/" + hex_md5(bestEmail) +
               ".jpg?r=pg&d=identicon&s=18");
           }

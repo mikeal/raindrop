@@ -1444,12 +1444,30 @@ cElementXBL.prototype.addBinding	= function(sDocumentUri) {
 	if (!cBinding)
 		return;
 
+    // The oBinding is roughly the internal object, whereas 'this' gets to be
+    //  the external object.
 	var oBinding	= new cBinding;
 
 	// 3) Attach implementation
+    function bind(func) {
+      return function() {
+        func.apply(oBinding, arguments);
+      };
+    }
+
 	for (var sMember in oBinding)
-		if (sMember.indexOf("xbl") != 0)
-			this[sMember]	= oBinding[sMember];
+		if (sMember.indexOf("xbl") != 0) {
+            // All functions need to be wrapped to dispatch so that they are
+            //  calling the method on the inner object, otherwise things get
+            //  in a mess 'this'-wise.
+            if (typeof(oBinding[sMember]) == "function") {
+                this[sMember] = bind(oBinding[sMember]);
+            }
+            // ugh, and for now, don't copy any values across, but this really
+            //  would like to be approximated by getter/setters that proxy...
+            //else
+			//    this[sMember]	= oBinding[sMember];
+        }
 
 //	oBinding.$unique	= "xbl" + '-' + window.Math.floor(window.Math.random()*100000000);
 

@@ -14,8 +14,8 @@
       ({
         setMessage: function(aMessage) {
           this._message = aMessage;
-          this.getElementById("subject").textContent = this._message.headers.Subject;
-          this.getElementById("body").textContent = this._message.bodyPart.data;
+          this.shadowTree.getElementById("subject").textContent = this._message.headers.Subject;
+          this.shadowTree.getElementById("body").textContent = this._message.bodyPart.data;
         },
       })
     ]]></xbl:implementation>

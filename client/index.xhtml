@@ -22,13 +22,13 @@
       console.log("contact completer registered");
       
       var constraints = document.getElementById("constraints");
-      autocompleter.actionListener = function (item) {
+      autocompleter.addActionListener(function (item) {
         console.log("!!!Action Listener!!!", item);
-        if (item.type == "contact")
-          constraints.addContact(item.contact);
+        if (item.getType() == "contact")
+          constraints.addContact(item.getContact());
         else
           return;
-      };
+      });
       console.log("constrainer registered");
     }
 
