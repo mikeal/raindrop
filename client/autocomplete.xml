@@ -37,6 +37,7 @@
         },
         /* ===== Results List Stuff ===== */
         _resultDiv: null,
+        resultsVisible: false,
         showResultsList: function() {
           var entryOffset = $(this._entry).offset();
           $(this._resultDiv).css({
@@ -44,12 +45,15 @@
             top: entryOffset.top + this._entry.offsetHeight,
             width: $(this._entry).width()
           }).show();
+          this.resultsVisible = true;
         },
         hideResultsList: function() {
           $(this._resultDiv).hide();
+          this.resultsVisible = false;
         },
         clearResultsList: function() {
           $(this._resultDiv).empty();
+          this.selectedIndex = null;
         },
         selectedIndex: null,
         setSelectedIndex: function(aDesiredIndex) {
@@ -117,12 +121,19 @@
             this.setSelectedIndex(this.selectedIndex - 1);
         }
         else if (event.keyIdentifier == "Down") {
+          // if the results aren't currently visible, show them and go to the
+          //  first index
+          if (!this.resultsVisible) {
+            this.showResultsList();
+            this.setSelectedIndex(0);
+            return;
+          }
           if (this.selectedIndex == null)
             this.setSelectedIndex(0);
           else
             this.setSelectedIndex(this.selectedIndex + 1);
         }
-        else if (event.keyIdentifier == "\u001b") {
+        else if (event.keyIdentifier == "U+001B") { // escape
           this.hideResultsList();
         }
       ]]></xbl:handler>

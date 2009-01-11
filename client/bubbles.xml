@@ -12,7 +12,7 @@
       ({
         _nConstraints: null,
         addContact: function(aContact) {
-          var node = $("<div/>").addClass("bubble")[0];
+          var node = $("<div/>").addClass("bubble").attr("type", "contact")[0];
           ElementXBL.prototype.addBinding.call(node, "bubbles.xml#constraint-contact");
           node.setContact(aContact);
           $(this._nConstraints).append(node);
@@ -31,7 +31,7 @@
 
   <xbl:binding id="constraint-contact">
     <xbl:template>
-      <img id="picture" class="con_contactpic"/>
+      <img id="picture" height="18" width="18" class="con_contactpic"/>
       <span id="name"></span>
     </xbl:template>
     <xbl:resources>

@@ -1,8 +1,17 @@
 .bubble {
+  display: inline-block;
   -moz-border-radius: 4px;
   margin: 0px 2px 0px 0px;
   padding: 0.1em 0.5em;
   color: black !important;
+}
+
+.bubble img {
+  vertical-align: middle;
+}
+
+.bubble span {
+  vertical-align: middle;
 }
 
 .bubble[type="contact"] {
