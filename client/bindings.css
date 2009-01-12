@@ -6,6 +6,10 @@
   binding: url("bubbles.xml#constraint-list");
 }
 
+#query {
+  binding: url("messages.xml#query");
+}
+
 .message {
   binding: url("messages.xml#message");
 }

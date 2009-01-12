@@ -107,6 +107,10 @@ class Message(schema.Document):
               out.involves.push(contact_id);
             return out;
         }''', group=True, group_level=1)
+    by_conversation = schema.View('by_conversation', '''\
+        function(doc) {
+            emit(doc.conversation_id, null);
+        }''', include_docs=True)
 
     # -- message (id) views
     by_header_id = schema.View('by_header_id', '''\
@@ -118,12 +122,17 @@ class Message(schema.Document):
         function(doc) {
             emit(doc.timestamp, null);
         }''', include_docs=True)    
-    
+
+    # the key includes the timestamp so we can use it to limit our queries plus
+    #  pick up where we left off if we need to page/chunk.
+    # we expose the conversation id as the value because set intersection
+    #  on a conversation-basis demands it, and it would theoretically be too
+    #  expensive to just return the whole document via include_docs.
     by_involves = schema.View('by_involves', '''\
         function(doc) {
             for each (var contact_id in doc.involves_contact_ids)
-                emit(contact_id, null);
-        }''', include_docs=True)
+                emit([contact_id, doc.timestamp], doc.conversation_id);
+        }''')
     
     # -- storage info views
     # so, this key is theoretically just wildly expensive

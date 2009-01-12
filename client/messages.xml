@@ -3,6 +3,147 @@
   xmlns="http://www.w3.org/1999/xhtml"
   xmlns:xbl="http://www.w3.org/ns/xbl">
 
+  <xbl:binding id="query">
+    <xbl:template>
+      <span>I am the query binding.  Perhaps you would do faceting here?</span>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        resultsAhoy: function(aConversations) {
+          console.log("results ahoy", aConversations);
+          var convNode = $("#conversations").empty();
+          convNode.append(aConversations.map(function (conversation) {
+            var node = $("<div/>").addClass("auco_contact")[0];
+            ElementXBL.prototype.addBinding.call(node, "messages.xml#conversation");
+            node.setConversation(conversation);
+            return node;
+          }));
+        },
+        updateConstraints: function(aConstraints) {
+          console.log("updating constraints");
+          Gloda.queryByInvolved(aConstraints.getContacts(), this.resultsAhoy, this);
+          console.log("constraints updated");
+        }
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+      <xbl:handler event="click"><![CDATA[
+
+      ]]></xbl:handler>
+    </xbl:handlers>
+  </xbl:binding>
+
+  <xbl:binding id="conversation">
+    <xbl:template>
+      <div class="checkbox">
+        <input id="checkbox" type="checkbox" tabindex="-1"/>
+      </div>
+      <div class="target">
+        <div class="header">
+          <div class="meta">
+            <div id="oldestMessageDate" class="oldestMessageDate"/>
+            <div id="attachments" class="attachments"/>
+          </div>
+          <div id="subject" class="subject"/>
+          <div class="addressing">
+            <span id="author" class="author"/>
+            <span id="verb" class="verb">writes</span>
+            <div id="recipients" class="recipients"/>
+            <span id="date" class="date"/>
+          </div>
+          <div id="tags" class="tags"/>
+        </div>
+        <div id="snippet" class="body"/>
+      </div>
+      <div id="replies" class="replies"/>
+    </xbl:template>
+    <xbl:resources>
+      <xbl:style><![CDATA[
+/* CONVERSATION */
+conversation { padding: 1em 1px; margin: 0px;
+               border-top: 1px solid transparent; border-bottom: 1px solid #ddd;
+               display: block;
+               color: #555; background-color: #f5f6f7; /* default read */
+              }
+conversation:focus { border: 1px dotted #111; padding: 1em 0px; }
+conversation[unread="true"]:focus { border: 1px dotted #111; padding: 1em 0px; }
+conversation:focus:last-child { border: 1px dotted #111; padding: 1em 0px; }
+conversation:focus:first-child { border: 1px dotted #111; padding: 1em 0px; }
+conversation:last-child { border-bottom: 1px solid transparent; }
+conversation:first-child { border-top: 1px solid #ddd; }
+
+conversation > .target > .header,
+conversation > .target > .body,
+conversation > .target > .subject,
+conversation > .replies { margin-left: 24px; font-size: 95%; }
+
+conversation > .target { display: block; padding: 0.2em 0em; padding-right: 1em; }
+conversation > .target { cursor: pointer; }
+
+/* CHECKBOX */
+.checkbox { float: left; text-align: center; width: 24px; height: 24px;
+            padding: 0.1em 0.2em }
+.checkbox > input { vertical-align: middle; }
+
+/* HEADER */
+.header { margin-bottom: 0.5em; }
+.header .meta { float: right; padding-left: 2em; text-align: right; color: #999; font-size: 90%; }
+.header .meta .attachments { padding-right: 18px; background: url("chrome://messenger/skin/icons/attachment.png") transparent no-repeat center right; display: none; }
+.header .meta .attachments[count] { display: inline; }
+.header .meta .attachments:before { content: "("; }
+.header .meta .attachments:after { content: ")"; }
+.header .addressing .verb { font-size: 90%; color: #777; }
+.header .addressing .date { color: #999; font-size: 90%; }
+.header .addressing .date:before { content: "\2014  "; }
+      ]]></xbl:style>
+    </xbl:resources>
+    <xbl:implementation><![CDATA[
+      ({
+        conversation: null,
+        setConversation: function(aConversation) {
+          this.conversation = aConversation;
+          this.shadowTree.getElementById("oldestMessageDate").textContent =
+            makeTimestampFriendly(this.conversation.oldest);
+          var firstMessage = this.conversation.messages[0];
+          this.shadowTree.getElementById("subject").textContent = firstMessage.subject;
+          this.shadowTree.getElementById("snippet").textContent = firstMessage.bodySnippet;
+          this.shadowTree.getElementById("author").textContent = firstMessage.from.name;
+          this.shadowTree.getElementById("date").textContent =
+            makeTimestampFriendly(firstMessage.timestamp);
+
+          var replyNodes = this.shadowTree.getElementById("replies");
+          for (var iMsg = 1; iMsg < this.conversation.messages.length; iMsg++) {
+            var message = this.conversation.messages[iMsg];
+            var node = $("<div/>")[0];
+            ElementXBL.prototype.addBinding.call(node, "messages.xml#reply");
+            node.setMessage(message);
+          }
+        },
+      })
+    ]]></xbl:implementation>
+  </xbl:binding>
+
+  <xbl:binding id="reply">
+    <xbl:template>
+      <div class="author">
+        <span id="from" class="name"/>
+        <span id="date" class="data"/>
+      </div>
+      <div id="snippet" class="body"/>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        setMessage: function(aMessage) {
+          this.message = aMessage;
+          this.shadowTree.getElementById("from").textContent = aMessage.from.name;
+          this.shadowTree.getElementById("date").textContent =
+            makeTimestampFriendly(aMessage.timestamp);
+          this.shadowTree.getElementById("snippet").textContent = aMessage.bodySnippet;
+        },
+      })
+    ]]></xbl:implementation>
+  </xbl:binding>
+
   <xbl:binding id="message">
     <xbl:template>
       <div>

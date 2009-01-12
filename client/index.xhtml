@@ -5,7 +5,7 @@
   <title>Junius</title>
   <script src="/_utils/script/json2.js"></script>
   <script src="/_utils/script/jquery.js?1.2.6"></script>
-  <script src="/_utils/script/jquery.couch.js?0.9.0"></script>
+  <script src="jquery.couch.js"></script>
   <script src="xbl-src.js"></script>
   <script src="md5.js"></script>
   <link rel="stylesheet" href="bindings.css" type="text/css"></link>
@@ -14,13 +14,16 @@
   <link rel="stylesheet" href="searchResults.css" type="text/css"></link>
   <script src="cloda.js"></script>
   <script src="cloda-completers.js"></script>
+  <script src="utils.js"></script>
   <script type="text/javascript" charset="utf-8"><![CDATA[
     function funkyInit() {
       var autocompleter = document.getElementById("autocomplete");
       console.log("autocompleter", autocompleter);
       autocompleter.addCompleter(ContactCompleter);
       console.log("contact completer registered");
-      
+
+      var query = document.getElementById("query");
+
       var constraints = document.getElementById("constraints");
       autocompleter.addActionListener(function (item) {
         console.log("!!!Action Listener!!!", item);
@@ -35,6 +38,7 @@
         }
         else
           return;
+        query.updateConstraints(constraints);
       });
       console.log("constrainer registered");
     }
@@ -66,7 +70,8 @@
 <body>
   <div id="autocomplete"></div>
   <div id="constraints"/>
-  <div id="messages">
+  <div id="query"/>
+  <div id="conversations">
   </div>
 </body>
 </html>

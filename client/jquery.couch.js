@@ -124,6 +124,25 @@
         },
         allDocs: function(options) {
           options = options || {};
+          if (options.keys) {
+            $.ajax({
+              type: "POST",
+              url: this.uri + "_all_docs" + encodeOptions(options),
+              contentType: "application/json",
+              data: toJSON({keys: options.keys}), dataType: "json",
+              complete: function(req) {
+                var resp = $.httpData(req, "json");
+                if (req.status == 200) {
+                  if (options.success) options.success(resp);
+                } else if (options.error) {
+                  options.error(req.status, resp.error, resp.reason);
+                } else {
+                  alert("An error occurred accessing the view: " + resp.reason);
+                }
+              }
+            });
+            return;
+          }
           $.ajax({
             type: "GET", url: this.uri + "_all_docs" + encodeOptions(options),
             dataType: "json",
@@ -233,6 +252,25 @@
         },
         view: function(name, options) {
           options = options || {};
+          if (options.keys) {
+            $.ajax({
+              type: "POST",
+              url: this.uri + "_view/" + name + encodeOptions(options),
+              contentType: "application/json",
+              data: toJSON({keys: options.keys}), dataType: "json",
+              complete: function(req) {
+                var resp = $.httpData(req, "json");
+                if (req.status == 200) {
+                  if (options.success) options.success(resp);
+                } else if (options.error) {
+                  options.error(req.status, resp.error, resp.reason);
+                } else {
+                  alert("An error occurred accessing the view: " + resp.reason);
+                }
+              }
+            });
+            return;
+          }
           $.ajax({
             type: "GET", url: this.uri + "_view/" + name + encodeOptions(options),
             dataType: "json",
@@ -297,6 +335,8 @@
       for (var name in options) {
         if (name == "error" || name == "success") continue;
         var value = options[name];
+        // keys will result in a POST, so we don't need them in our GET part
+        if (name == "keys") continue;
         if (name == "key" || name == "startkey" || name == "endkey") {
           value = toJSON(value);
         }

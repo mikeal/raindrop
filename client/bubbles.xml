@@ -18,15 +18,17 @@
           $(this._nConstraints).append(node);
           console.log("Contact", aContact, "added");
         },
+        getContacts: function() {
+          return $(this._nConstraints).children().map(function (index, item) {
+            console.log("getting contact from", item);
+            return item.getContact();
+          }).get();
+        },
         xblBindingAttached: function () {
           this._nConstraints = this.shadowTree.getElementById("holder");
         },
       })
     ]]></xbl:implementation>
-    <xbl:handlers>
-      <xbl:handler event="click"><![CDATA[
-      ]]></xbl:handler>
-    </xbl:handlers>
   </xbl:binding>
 
   <xbl:binding id="constraint-contact">
@@ -45,6 +47,9 @@
     <xbl:implementation><![CDATA[
       ({
         contact: null,
+        getContact: function() {
+          return this.contact;
+        },
         setContact: function(aContact) {
           this.contact = aContact;
           console.log("setContact", this);

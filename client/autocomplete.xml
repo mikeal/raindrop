@@ -31,6 +31,9 @@
           }, this);
         },
         haveSomeResults: function(aText, aNodes) {
+          // bail if this is not the reslt for what is currently typed
+          if (aText != this._entry.value)
+            return;
           this.clearResultsList();
           $(this._resultDiv).append(aNodes);
           this.showResultsList();
