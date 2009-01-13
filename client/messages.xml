@@ -60,25 +60,25 @@
     <xbl:resources>
       <xbl:style><![CDATA[
 /* CONVERSATION */
-conversation { padding: 1em 1px; margin: 0px;
+:bound-element { padding: 1em 1px; margin: 0px;
                border-top: 1px solid transparent; border-bottom: 1px solid #ddd;
                display: block;
                color: #555; background-color: #f5f6f7; /* default read */
               }
-conversation:focus { border: 1px dotted #111; padding: 1em 0px; }
-conversation[unread="true"]:focus { border: 1px dotted #111; padding: 1em 0px; }
-conversation:focus:last-child { border: 1px dotted #111; padding: 1em 0px; }
-conversation:focus:first-child { border: 1px dotted #111; padding: 1em 0px; }
-conversation:last-child { border-bottom: 1px solid transparent; }
-conversation:first-child { border-top: 1px solid #ddd; }
+:bound-element:focus { border: 1px dotted #111; padding: 1em 0px; }
+:bound-element[unread="true"]:focus { border: 1px dotted #111; padding: 1em 0px; }
+:bound-element:focus:last-child { border: 1px dotted #111; padding: 1em 0px; }
+:bound-element:focus:first-child { border: 1px dotted #111; padding: 1em 0px; }
+:bound-element:last-child { border-bottom: 1px solid transparent; }
+:bound-element:first-child { border-top: 1px solid #ddd; }
 
-conversation > .target > .header,
-conversation > .target > .body,
-conversation > .target > .subject,
-conversation > .replies { margin-left: 24px; font-size: 95%; }
+:bound-element > .target > .header,
+:bound-element > .target > .body,
+:bound-element > .target > .subject,
+:bound-element > .replies { margin-left: 24px; font-size: 95%; }
 
-conversation > .target { display: block; padding: 0.2em 0em; padding-right: 1em; }
-conversation > .target { cursor: pointer; }
+:bound-element > .target { display: block; padding: 0.2em 0em; padding-right: 1em; }
+:bound-element > .target { cursor: pointer; }
 
 /* CHECKBOX */
 .checkbox { float: left; text-align: center; width: 24px; height: 24px;

@@ -547,13 +547,13 @@ cXBLLanguage.elements.xbl.binding.resources.style	= function(oNode, cBinding) {
 		var sSelectorBoundElement	= ':' + "bound-element";
 		// 2. Setup local context for CSS rules
 		// 	.{class}	-> .xbl-{class}-{binding}
-		sStyle	= sStyle.replace(/\s\.([\w-]+)([\s{+~>])/g, ' .' + "xbl" + '-$1-' + cBinding.id + '$2');
+		sStyle	= sStyle.replace(/\B\.((?:[-\w\[\]="]+:?)+)([\s{+~>,])/g, '.' + "xbl" + '-$1-' + cBinding.id + '$2');
 		//	#{id}		-> .xbl-id-{id}-{binding}
 		sStyle	= sStyle.replace(/#([\w-]+)([\s{+~>])/g, '.' + "xbl-id" + '-$1-' + cBinding.id + '$2');
 		//	::{pseudo}	-> .xbl-pseudo-{pseudo}-{binding}
 		sStyle	= sStyle.replace(/::([\w-]+)([\s{+~>])/g, '.' + "xbl-pseudo" + '-$1-' + cBinding.id + '$2');
 		// Shift context "selector {" -> ":bound-element selector {"
-		sStyle	= sStyle.replace(/\s*([^{\n]+{[^}]+})/g, sSelectorBoundElement + ' ' + '$1');
+		sStyle	= sStyle.replace(/\s*([^,{\n]+(?:,|{[^}]+}))/g, sSelectorBoundElement + ' ' + '$1\n');
 		// correct result from previous step
 		sStyle	= sStyle.replace(new window.RegExp(sSelectorBoundElement + ' ' + sSelectorBoundElement, 'g'), sSelectorBoundElement);
 		//	:bound-element	-> .xbl-bound-element-{binding}
