@@ -547,7 +547,7 @@ cXBLLanguage.elements.xbl.binding.resources.style	= function(oNode, cBinding) {
 		var sSelectorBoundElement	= ':' + "bound-element";
 		// 2. Setup local context for CSS rules
 		// 	.{class}	-> .xbl-{class}-{binding}
-		sStyle	= sStyle.replace(/\B\.((?:[-\w\[\]="]+:?)+)([\s{+~>,])/g, '.' + "xbl" + '-$1-' + cBinding.id + '$2');
+		sStyle	= sStyle.replace(/\B\.((?:[-\w\[\]()+="]+:?)+)([\s{+~>,])/g, '.' + "xbl" + '-$1-' + cBinding.id + '$2');
 		//	#{id}		-> .xbl-id-{id}-{binding}
 		sStyle	= sStyle.replace(/#([\w-]+)([\s{+~>])/g, '.' + "xbl-id" + '-$1-' + cBinding.id + '$2');
 		//	::{pseudo}	-> .xbl-pseudo-{pseudo}-{binding}

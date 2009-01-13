@@ -95,6 +95,28 @@
 .header .addressing .verb { font-size: 90%; color: #777; }
 .header .addressing .date { color: #999; font-size: 90%; }
 .header .addressing .date:before { content: "\2014  "; }
+
+.recipients { display: inline; color: #222; }
+.recipients .identity:first-child:before { content: ""; }
+.recipients .identity:after { content: ", "; }
+.recipients .identity:last-child:after { content: ""; }
+/* this will limit the number of recipients shown to the first 7
+   also adding an elipsis '...' after the 6th (if exists) */
+.recipients .identity:nth-child(n+7) { display: none; }
+.recipients .identity:nth-child(0n+6):after { content: "..."; }
+.recipients .you { }
+
+:bound-element > .target > .header > .subject { white-space: nowrap; overflow: hidden;
+                                              font-size: 115%; font-weight: bold;
+                                              color: #555; }
+:bound-element > .target > .body { color: #555; padding-left: 1em; }
+
+:bound-element > .target > .tags span { -moz-border-radius: 0.3em; padding: 0em 0.4em; }
+:bound-element > .target > .folder { background-color: #faf0b8; border: 1px solid #ede4af; }
+
+/* REPLIES */
+.replies { padding: 0em 3em; }
+
       ]]></xbl:style>
     </xbl:resources>
     <xbl:implementation><![CDATA[
@@ -117,6 +139,7 @@
             var node = $("<div/>")[0];
             ElementXBL.prototype.addBinding.call(node, "messages.xml#reply");
             node.setMessage(message);
+            replyNodes.appendChild(node);
           }
         },
       })
@@ -131,6 +154,18 @@
       </div>
       <div id="snippet" class="body"/>
     </xbl:template>
+    <xbl:resources>
+      <xbl:style><![CDATA[
+/* REPLY */
+:bound-element { display: list-item; list-style: none; margin: 0.5em 0em; }
+:bound-element:hover { list-style: none outside url("chrome://messenger/skin/icons/arrow/arrow-right.png"); }
+:bound-element { cursor: pointer; }
+
+:bound-element > .author > .date { color: #adb0a9; font-size: 90%; }
+:bound-element > .author > .date:before { content: "\2014 "; }
+:bound-element > .body { padding-left: 1em; color: #666; white-space: nowrap; overflow: hidden;  }
+      ]]></xbl:style>
+    </xbl:resources>
     <xbl:implementation><![CDATA[
       ({
         setMessage: function(aMessage) {
