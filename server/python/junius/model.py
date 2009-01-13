@@ -78,6 +78,7 @@ class Message(schema.Document):
     _attachments = WildField(default={})
 
     # -- conversation views
+    # no ghosts!
     conversation_info = schema.View('conversations', '''\
         function(doc) {
             if (doc.timestamp)
@@ -107,20 +108,25 @@ class Message(schema.Document):
               out.involves.push(contact_id);
             return out;
         }''', group=True, group_level=1)
+    # no ghosts!
     by_conversation = schema.View('by_conversation', '''\
         function(doc) {
-            emit(doc.conversation_id, null);
+            if (doc.timestamp)
+                emit(doc.conversation_id, null);
         }''', include_docs=True)
 
     # -- message (id) views
+    # ghosts are okay!
     by_header_id = schema.View('by_header_id', '''\
         function(doc) {
             emit(doc.header_message_id, null);
         }''', include_docs=True)    
-    
+
+    # no ghosts!
     by_timestamp = schema.View('by_timestamp', '''\
         function(doc) {
-            emit(doc.timestamp, null);
+            if (doc.timestamp)
+                emit(doc.timestamp, null);
         }''', include_docs=True)    
 
     # the key includes the timestamp so we can use it to limit our queries plus
@@ -128,6 +134,7 @@ class Message(schema.Document):
     # we expose the conversation id as the value because set intersection
     #  on a conversation-basis demands it, and it would theoretically be too
     #  expensive to just return the whole document via include_docs.
+    # (no ghosts!)
     by_involves = schema.View('by_involves', '''\
         function(doc) {
             for each (var contact_id in doc.involves_contact_ids)
@@ -136,9 +143,11 @@ class Message(schema.Document):
     
     # -- storage info views
     # so, this key is theoretically just wildly expensive
+    # no ghosts!
     by_storage = schema.View('by_storage', '''\
         function(doc) {
-            emit([doc.account_id, doc.storage_path, doc.storage_id], null);
+            if (doc.timestamp)
+                emit([doc.account_id, doc.storage_path, doc.storage_id], null);
         }''', include_docs=False)
 
 DATABASES = {
