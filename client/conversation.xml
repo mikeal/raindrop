@@ -16,7 +16,7 @@
         </div>
       </div>
       <div id="threader" class="threader">
-        <ul id="threadroot" class="thread top"></ul>
+        <ul id="threadroot" class="thread"></ul>
         <div style="font-size:x-small;margin-top:2em;">
           <div><a id="expandAll">Expand All</a></div>
           <div><a id="collapseAll">Collapse All</a></div>
@@ -52,7 +52,11 @@
 .between { font-size: small; margin: 0.5em 0em; }
 
 .threader { position: fixed; width: 12em; }
-.thread.top { }
+
+.threader ul { font-size: small; margin: 0em; padding: 0em;
+               border-left: 0.3em solid transparent; }
+.threader ul.selected { border-color: #cee1ef; }
+
       ]]></xbl:style>
     </xbl:resources>
     <xbl:implementation><![CDATA[
@@ -75,7 +79,7 @@
 
             // - thread tree
             console.log("creating thread node");
-            var threadnode = $("<li/>").attr("id", "thread" + topmessage.id)
+            var threadnode = $("<li/>").attr("id", "thread" + topmessage._id)
                                        .appendTo(threadRoot)[0];
             ElementXBL.prototype.addBinding.call(threadnode,
                                                  "conversation.xml#threadnode");
@@ -139,7 +143,17 @@
     </xbl:template>
     <xbl:resources>
       <xbl:style><![CDATA[
+:bound-element { white-space: nowrap; overflow: hidden; margin: 0px;
+                 margin-right: 1em; cursor: pointer; padding: 0.2em 0em;
+                 -moz-border-radius-topright: 0.3em;
+                 -moz-border-radius-bottomright: 0.3em;
+               }
+:bound-element[unread="true"] { font-weight: bold; }
+:bound-element.selected { color: #111; background-color: #cee1ef; }
+:bound-element:hover { background-color: #eaf3fa;  }
 
+:bound-element > .name { padding: 0.1em 0.5em; }
+:bound-element > .name:hover { text-decoration: underline; }
       ]]></xbl:style>
     </xbl:resources>
     <xbl:implementation><![CDATA[
@@ -158,7 +172,7 @@
             for (var iChild = 0; iChild < children.length; iChild++) {
               var child = children[iChild];
               var threadNode = $("<li/>").attr("type", "threadnode")
-                                         .attr("id", "thread" + child.id)
+                                         .attr("id", "thread" + child._id)
                                          .attr("unread", child.read)
                                          .appendTo(ulNode)[0];
               ElementXBL.prototype.addBinding.call(threadNode,
