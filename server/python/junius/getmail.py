@@ -146,7 +146,9 @@ class JuniusAccount(object):
         self_message = None
         header_message_ids = self.extract_message_ids(refs_str)
         unseen = set(header_message_ids)
-        
+
+        # save off the list of referenced messages
+        references = header_message_ids[:]
         # see if the self-message already exists...
         header_message_ids.append(self_header_message_id)
         
@@ -173,7 +175,7 @@ class JuniusAccount(object):
                     ))
             self.dbs.messages.update(missing_messages)
         
-        return conversation_id, self_message
+        return conversation_id, self_message, references
     
     def grok_message(self, imsg):
         attachments = {}
@@ -187,7 +189,7 @@ class JuniusAccount(object):
             imsg.headers.get('From', ''), imsg.headers.get('To', ''),
             imsg.headers.get('Cc', ''))
         
-        conversation_id, existing_message = self.grok_message_conversation(imsg)
+        conversation_id, existing_message, references = self.grok_message_conversation(imsg)
         
         timestamp = email.utils.mktime_tz(email.utils.parsedate_tz(imsg.headers['Date']))
         
@@ -199,6 +201,7 @@ class JuniusAccount(object):
             #
             conversation_id=conversation_id,
             header_message_id=imsg.headers.get('Message-Id')[1:-1],
+            references=references,
             #
             from_contact_id=from_contacts[0].id,
             to_contact_ids=[c.id for c in to_contacts],

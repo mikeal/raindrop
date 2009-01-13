@@ -59,6 +59,7 @@ class Message(schema.Document):
     
     conversation_id = schema.TextField()
     header_message_id = schema.TextField()
+    references = WildField()
     
     # canonical contacts
     from_contact_id = schema.TextField()
@@ -162,21 +163,36 @@ DATABASES = {
 class DBS(object):
     pass
 
+COUCH_SERVER = 'http://localhost:5984/'
+
+def nuke_db():
+    import couchdb
+    server = couchdb.Server(COUCH_SERVER)
+
+    for dbname in DATABASES.keys():
+      if dbname in server:
+        print "!!! Deleting database", dbname
+        del server[dbname]
+
+
 def fab_db(update_views=False):
     import couchdb
-    server = couchdb.Server('http://localhost:5984/')
+    server = couchdb.Server(COUCH_SERVER)
     
     dbs = DBS()
     
     for db_name, doc_class in DATABASES.items():
         if not db_name in server:
+            print 'Creating database', db_name
             db = server.create(db_name)
             update_views = True
         else:
             db = server[db_name]
         
         if update_views and doc_class:
-            views = [v for v in doc_class.__dict__.values() if isinstance(v, schema.View)]
+            print 'Updating views'
+            views = [getattr(doc_class, k) for k, v in doc_class.__dict__.items() if isinstance(v, schema.View)]
+            print 'Views:', views
             if views:
                 design.ViewDefinition.sync_many(db, views)
 

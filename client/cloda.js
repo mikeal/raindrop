@@ -3,7 +3,38 @@
  */
 
 var GlodaConversationProto = {
-
+  threadMessages: function(messages) {
+    var messageIdMap = {}, message, i, ref, parent, children;
+    for (var i = 0; i < messages.length; i++) {
+      messageIdMap[message.header_message_id] = message;
+    }
+    // now find their closest parent...
+    for each (message in messageIdMap) {
+      // references are ordered from old (0) to new (n-1), so walk backwards
+      for (var iRef = msgHdr.references.length-1; iRef >= 0; iRef--) {
+        ref = message.references[iRef];
+        if (ref in messageIdMap) {
+          // link them to their parent
+          parent = messageIdMap[ref];
+          message._parent = parent;
+          children = parent._children;
+          if (children === undefined)
+            children = parent._children = [];
+          children.push(message);
+          break;
+        }
+      }
+    }
+    // return list of parent-less nodes, sorted by date
+    var topnodes = [];
+    for each (message in messageIdMap) {
+      if (!message._parent) {
+        topnodes.push(message);
+      }
+    }
+    topnodes.sort(function (a,b) { return a.timestamp - b.timestamp; } );
+    return topnodes;
+  }
 };
 
 var GlodaMessageProto = {

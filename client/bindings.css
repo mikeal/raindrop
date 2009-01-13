@@ -17,3 +17,7 @@
 .auco_contact {
   binding: url("autocomplete.xml#contact-completion");
 }
+
+#conversation-reader {
+  binding: url("conversation.xml#conversation-reader");
+}

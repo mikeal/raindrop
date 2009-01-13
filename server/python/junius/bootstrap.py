@@ -3,6 +3,7 @@
 '''
 Setup the CouchDB server so that it is fully usable and what not.
 '''
+import model
 
 import os, os.path, mimetypes, base64, pprint
 
@@ -59,8 +60,13 @@ def install_client_files(dbs):
 
 
 def main():
-    dbs = model.fab_db()
-    
+    import sys
+    if 'nuke' in sys.argv:
+      print 'NUKING DATABASE!!!'
+      model.nuke_db()
+
+    dbs = model.fab_db(update_views='updateviews' in sys.argv)
+
     setup_account(dbs)
     install_client_files(dbs)
     
