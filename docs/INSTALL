@@ -1,0 +1,41 @@
+Installation Steps
+
+Have Python 2.5 or later installed.
+
+ If not 2.6: 
+    install setup_tools
+    easy_install simplejson
+
+ Prereqs:
+    easy_install couchdb (0.5 or later)
+
+Install couchdb trunk
+
+Pull asuth's version of gocept-imapapi:
+  hg clone http://clicky.visophyte.org/cgi-bin/hgwebdir.cgi/asuth/gocept-imapapi/
+  cd gocept-imapapi
+  python setup.py develop
+
+install junius:
+  cd junius/server/python/junius
+  python setup.py develop
+
+Configure IMAP account w/ some data in it, and edit bootstrap.py to point to it.
+
+With Couchdb running:
+
+Setup the tables:
+  python bootstrap.py
+
+Go to 
+to check that the tables are setup
+
+Load the mail:
+  python getmail.py (loads IMAP data)
+
+(reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
+
+Go to http://127.0.0.1:5984/junius/files/index.xhtml
+
+and do autocomplete to do searches.
+
