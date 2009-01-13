@@ -144,6 +144,12 @@
         },
       })
     ]]></xbl:implementation>
+    <xbl:handlers>
+      <xbl:handler event="click" phase="bubble" default-action="cancel"><![CDATA[
+        window.open(window.location.href.replace("index.xhtml",
+          "conversation.xhtml?id=" + this.conversation.id));
+      ]]></xbl:handler>
+    </xbl:handlers>
   </xbl:binding>
 
   <xbl:binding id="reply">

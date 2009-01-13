@@ -155,6 +155,7 @@ GlodaConvQuery.prototype = {
       if (conversation === undefined)
         conversation = conversations[message.conversation_id] = {
           __proto__: GlodaConversationProto,
+          id: message.conversation_id,
           oldest: message.timestamp, newest: message.timestamp,
           involves_contact_ids: {}, messages: []
         };
@@ -196,6 +197,12 @@ GlodaConvQuery.prototype = {
       contacts[contact._id] = contact;
     }
 
+    function mapContactMap(aMap) {
+      var out = [];
+      for (var key in aMap)
+        out.push(contacts[key]);
+      return out;
+    }
     function mapContactList(aList) {
       var out = [];
       for (var i = 0; i < aList.length; i++) {
@@ -207,7 +214,7 @@ GlodaConvQuery.prototype = {
     // -- process the conversations
     var convList = [];
     for each (var conversation in this.conversations) {
-      conversation.involves = mapContactList(conversation.involves_contact_ids);
+      conversation.involves = mapContactMap(conversation.involves_contact_ids);
       convList.push(conversation);
 
       for (var iMsg = 0; iMsg < conversation.messages.length; iMsg++) {
