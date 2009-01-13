@@ -47,7 +47,7 @@
           <div id="subject" class="subject"/>
           <div class="addressing">
             <span id="author" class="author"/>
-            <span id="verb" class="verb">writes</span>
+            <span id="verb" class="verb"> writes </span>
             <div id="recipients" class="recipients"/>
             <span id="date" class="date"/>
           </div>
