@@ -61,11 +61,15 @@
     </xbl:resources>
     <xbl:implementation><![CDATA[
       ({
+        getToolboxNode: function() {
+          return this.shadowTree.getElementById("toolbox");
+        },
         conversation: null,
         setConversation: function(aConversation) {
           this.conversation = aConversation;
           this.expandedMessageIds = {};
-          this.selectedMessage = null;
+          this.selectedMessageBinding = null;
+          this.selectedThreadBinding = null;
 
           this.shadowTree.getElementById("subject").textContent =
             this.conversation.subject;
@@ -101,7 +105,8 @@
         },
         addMessageNode: function(aMessage) {
           var messagesRoot = this.shadowTree.getElementById("messages");
-          var messageNode = $("<div/>").appendTo(messagesRoot)[0];
+          var messageNode = $("<div/>").attr("id", "msg" + aMessage._id)
+                                       .appendTo(messagesRoot)[0];
           ElementXBL.prototype.addBinding.call(messageNode,
                                                "conversation.xml#conv-message");
           console.log("setMessage with", aMessage);
@@ -113,6 +118,26 @@
               this.addMessageNode(childMessage);
             }
           }
+        },
+        selectMessage: function(aMessage) {
+          var binding = document.getElementById("msg" + aMessage._id);
+          // okay, maybe we don't really need to get the inner binding, because
+          //  this is ugly (and I think we were careful in the next func...)
+          this.selectMessageBinding(
+            binding.xblImplementations[binding.xblImplementations.length-1]);
+        },
+        selectMessageBinding: function(aInnerMessage) {
+          var message = aInnerMessage.getMessage();
+
+          aInnerMessage.expand();
+          aInnerMessage.ensureVisible();
+          this.selectedMessageBinding = aInnerMessage;
+
+          if (this.selectedThreadBinding)
+            this.selectedThreadBinding.unselect();
+          this.selectedThreadBinding =
+            document.getElementById("thread" + message._id);
+          this.selectedThreadBinding.select();
         },
         expand: function(aMessages) {
 
@@ -192,8 +217,8 @@
       })
     ]]></xbl:implementation>
     <xbl:handlers>
-      <xbl:handler event="click"><![CDATA[
-
+      <xbl:handler event="click" phase="bubble" propagate="stop"><![CDATA[
+        $("#conversation-reader")[0].selectMessage(this.message);
       ]]></xbl:handler>
     </xbl:handlers>
   </xbl:binding>
@@ -228,7 +253,7 @@
           <div>attachments</div>
           <ul id="attachment_ul"></ul>
         </div>
-        <div id="iframe" class="content"></div>
+        <pre id="iframe" class="content"></pre>
         <div class="attachments-area"></div>
         <div class="actions">
           <button>reply all | v</button>
@@ -307,6 +332,9 @@
     <xbl:implementation><![CDATA[
       ({
         message: null,
+        getMessage: function() {
+          return this.message;
+        },
         setMessage: function(aMessage) {
           this.message = aMessage;
 
@@ -332,12 +360,32 @@
         unselect: function() {
           $(this.boundElement).removeClass("selected")
                               .parent().removeClass("selected");
+        },
+        expand: function() {
+          $(this.boundElement).addClass("expanded");
+          this.expanded = true;
+        },
+        ensureVisible: function() {
+          // delay for offsets to be correct (maybe only needed for iframes?)
+          var dis = this;
+          window.setTimeout(function() {
+            var convReader = document.getElementById("conversation-reader");
+            var toolbox = convReader.getToolboxNode();
+            // XXX constant...
+            var targetOffset = $(dis.boundElement).offset().top - $(toolbox).height() - 10;
+            // XXX really?
+            $(document.getElementById('html')).animate(
+              { scrollTop: targetOffset }, "fast");
+            $(dis.boundElement).animate(
+                { backgroundColor: "#ffffcc" }, { queue: true, duration: 500 })
+              .animate({ backgroundColor: "#ffffff" }, 500);
+          }, 200);
         }
       })
     ]]></xbl:implementation>
     <xbl:handlers>
-      <xbl:handler event="click"><![CDATA[
-
+      <xbl:handler event="click" phase="bubble" default-action="cancel"><![CDATA[
+        $("#conversation-reader")[0].selectMessageBinding(this);
       ]]></xbl:handler>
     </xbl:handlers>
   </xbl:binding>
