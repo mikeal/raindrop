@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Junius</title>
+  <script src="/_utils/script/json2.js"></script>
+  <script src="/_utils/script/jquery.js?1.2.6"></script>
+  <script src="jquery.couch.js"></script>
+  <script src="xbl-src.js"></script>
+  <script src="md5.js"></script>
+  <link rel="stylesheet" href="bindings.css" type="text/css"></link>
+  <link rel="stylesheet" href="conversation.css" type="text/css"></link>
+  <script src="cloda.js"></script>
+  <script src="cloda-completers.js"></script>
+  <script src="utils.js"></script>
+  <script type="text/javascript" charset="utf-8"><![CDATA[
+    $(function() {
+      window.setTimeout(funkyInit, 1000);
+    });
+    function funkyInit() {
+      var searchPart = window.location.search;
+      var convId = searchPart.substring(searchPart.indexOf("id=")+3);
+      var query = new GlodaConvQuery();
+      query.getConversations([convId], function(conversations) {
+        console.log("received conversations!", conversations);
+        $("#conversation-reader")[0].setConversation(conversations[0]);
+      });
+    }
+  ]]></script>
+</head>
+<body id="body">
+  <div id="conversation-reader"></div>
+</body>
+</html>

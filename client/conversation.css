@@ -1,0 +1,17 @@
+/* the junk in here should migrate into the bindings where possible */
+
+.thread { font-size: small; margin: 0em; padding: 0em; }
+.thread > li { white-space: nowrap; overflow: hidden; margin: 0px;
+               margin-right: 1em; cursor: pointer; padding: 0.2em 0em;
+              -moz-border-radius-topright: 0.3em;
+              -moz-border-radius-bottomright: 0.3em;
+             }
+.thread > li[unread="true"] { font-weight: bold; }
+.thread > li > .name { padding: 0.1em 0.5em; }
+
+ul.thread > li.selected { color: #111; background-color: #cee1ef; }
+ul.thread.selected { border-color: #cee1ef; }
+
+ul.thread { border-left: 0.3em solid transparent; }
+ul.thread > li:hover { background-color: #eaf3fa;  }
+ul.thread > li > .name:hover { text-decoration: underline; }

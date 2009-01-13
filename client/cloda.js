@@ -3,15 +3,17 @@
  */
 
 var GlodaConversationProto = {
-  threadMessages: function(messages) {
+  threadMessages: function() {
+    var messages = this.messages;
     var messageIdMap = {}, message, i, ref, parent, children;
     for (var i = 0; i < messages.length; i++) {
+      message = messages[i];
       messageIdMap[message.header_message_id] = message;
     }
     // now find their closest parent...
     for each (message in messageIdMap) {
       // references are ordered from old (0) to new (n-1), so walk backwards
-      for (var iRef = msgHdr.references.length-1; iRef >= 0; iRef--) {
+      for (var iRef = message.references.length-1; iRef >= 0; iRef--) {
         ref = message.references[iRef];
         if (ref in messageIdMap) {
           // link them to their parent
@@ -34,7 +36,10 @@ var GlodaConversationProto = {
     }
     topnodes.sort(function (a,b) { return a.timestamp - b.timestamp; } );
     return topnodes;
-  }
+  },
+  get subject() {
+    return this.messages[0].subject;
+  },
 };
 
 var GlodaMessageProto = {
@@ -59,27 +64,40 @@ var GlodaMessageProto = {
   }
 };
 
-function GlodaConvQuery(aConstraints, aCallback, aCallbackThis) {
-  this.constraints = aConstraints;
-  this.callback = aCallback;
-  this.callbackThis = aCallbackThis;
-
-  var dis = this;
-  this.wrappedProcessResults = function() {
-    dis.processResults.apply(dis, arguments);
-  };
-  this.seenConversations = null;
-
-  this.constraintsPending = aConstraints.length;
-  this.constraints.forEach(this.dispatchConstraint, this);
+function GlodaConvQuery() {
 }
 GlodaConvQuery.prototype = {
+  /**
+   * Issue a query given a set of constraints where each constraint query will
+   *  return a set of conversations.  We intersect those sets in order to 
+   *  get the list of conversations we will actually load and return.
+   */
+  queryForConversations: function (aConstraints, aCallback, aCallbackThis) {
+    this.constraints = aConstraints;
+    this.callback = aCallback;
+    this.callbackThis = aCallbackThis;
+
+    var dis = this;
+    this.wrappedProcessResults = function() {
+      dis.processResults.apply(dis, arguments);
+    };
+    this.seenConversations = null;
+
+    this.constraintsPending = aConstraints.length;
+    this.constraints.forEach(this.dispatchConstraint, this);
+  },
   dispatchConstraint: function(aConstraint) {
     var viewName = aConstraint.view;
     delete aConstraint.view;
     aConstraint["success"] = this.wrappedProcessResults;
     Gloda.dbMessages.view(viewName, aConstraint);
   },
+  /**
+   * Result handling function for constraints issued by queryForConversations.
+   *  Each result set has rows whose values are conversation ids.  Once all
+   *  constraints have return their results, we load the conversations
+   *  by a call to getConversations.
+   */
   processResults: function(result) {
     var nextSeen = {}, rows = result.rows, iRow, row, conversationId;
     if (this.seenConversations == null) {
@@ -102,14 +120,24 @@ GlodaConvQuery.prototype = {
       for (conversationId in this.seenConversations) {
         conversationIds.push(conversationId);
       }
-      var dis = this;
-      Gloda.dbMessages.view("by_conversation/by_conversation", {
-        keys: conversationIds, include_docs: true,
-        success: function(result) {
-          dis.processConversationFetch(result);
-        }
-      });
+      this.getConversations(conversationIds, this.callback, this.callbackThis);
     }
+  },
+  /**
+   * Retrieve conversations by id, also loading any involved contacts and
+   *  reflecting them onto the messages themselves.
+   */
+  getConversations: function(aConversationIds, aCallback, aCallbackThis) {
+    this.callback = aCallback;
+    this.callbackThis = aCallbackThis;
+
+    var dis = this;
+    Gloda.dbMessages.view("by_conversation/by_conversation", {
+      keys: aConversationIds, include_docs: true,
+      success: function(result) {
+        dis.processConversationFetch(result);
+      }
+    });
   },
   processConversationFetch: function(result) {
     // we receive the list of fetched messages.  we need to group them by
@@ -216,7 +244,8 @@ var Gloda = {
         startkey: [contact._id, 0], endkey: [contact._id, MAX_TIMESTAMP]
       };
     }, this);
-    var query = new GlodaConvQuery(constraints, aCallback, aCallbackThis);
+    var query = new GlodaConvQuery();
+    query.queryForConversations(constraints, aCallback, aCallbackThis);
 
     // -- intersect all those conversations
     // -- (fetch the conversation meta-info)
