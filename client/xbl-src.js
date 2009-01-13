@@ -477,7 +477,7 @@ cXBLLanguage.elements.xbl.binding.handlers.handler	= function(oNode, cBinding) {
 				var sValue;
 				// Event
 				if (sValue = oNode.getAttribute("phase"))
-					fHandler["phase"]			= sValue == "capture" ? 1 : sValue == "target" ? 2 /* : sValue == "default-action" ? 0x78626C44*/ : 0;
+					fHandler["phase"]			= sValue == "capture" ? 1 : sValue == "target" ? 2 /* : sValue == "default-action" ? 0x78626C44*/ : 3;
 				if (sValue = oNode.getAttribute("trusted"))
 					fHandler["trusted"]			= sValue == "true";
 				if (sValue = oNode.getAttribute("propagate"))
