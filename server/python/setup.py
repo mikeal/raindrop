@@ -15,4 +15,5 @@ setup(
     license = 'MPL/GPL/LGPL tri-license',
     keywords = 'mail',
     url = 'www.mozillamessaging.com',
+    zip_safe = False,
 )
