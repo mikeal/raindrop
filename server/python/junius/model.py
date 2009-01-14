@@ -1,3 +1,4 @@
+import os, os.path
 from couchdb import schema, design
 
 class WildField(schema.Field):
@@ -196,14 +197,47 @@ DATABASES = {
     'messages': Message,
 }
 
-class DBS(object):
-    pass
+AVOID_REPLICATING = {
+    'accounts': 'Private info perhaps',
+}
 
-COUCH_SERVER = 'http://localhost:5984/'
+class DBS(object):
+    def __init__(self, server):
+        self.server = server
+
+DEFAULT_COUCH_SERVER = 'http://localhost:5984/'
+
+def get_remote_host_info():
+    remoteinfo_path = os.path.join(os.environ['HOME'], '.junius.remoteinfo')
+    
+    if os.path.exists(remoteinfo_path):
+        f = open(remoteinfo_path, 'r')
+        data = f.read()
+        f.close()
+        info = data.strip()
+        if info[-1] != '/':
+            info += '/'
+        return info
+    else:
+        raise Exception("You need a ~/.junius.remoteinfo file")
+
+def get_local_host_info():
+    localinfo_path = os.path.join(os.environ['HOME'], '.junius.localinfo')
+    if os.path.exists(localinfo_path):
+        f = open(localinfo_path, 'r')
+        data = f.read()
+        f.close()
+        info = data.strip()
+        if info[-1] != '/':
+            info += '/'
+        return info
+    else:
+        return DEFAULT_COUCH_SERVER
+    
 
 def nuke_db():
     import couchdb
-    server = couchdb.Server(COUCH_SERVER)
+    server = couchdb.Server(get_local_host_info())
 
     for dbname in DATABASES.keys():
       if dbname in server:
@@ -213,7 +247,7 @@ def nuke_db():
 
 def fab_db(update_views=False):
     import couchdb
-    server = couchdb.Server(COUCH_SERVER)
+    server = couchdb.Server(get_local_host_info())
     
     dbs = DBS()
     
