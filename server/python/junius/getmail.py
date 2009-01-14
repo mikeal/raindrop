@@ -16,7 +16,8 @@ class JuniusAccount(object):
         self.dbs = dbs
         self.account_def = account_def
         self.imap_account = Account(account_def.host, account_def.port,
-                                    account_def.username, account_def.password)
+                                    account_def.username, account_def.password,
+                                    account_def.ssl)
     
     def sync(self):
         self.considerFolders(self.imap_account.folders)

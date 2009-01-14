@@ -15,8 +15,8 @@ def setup_account(dbs):
         return
     
     account = model.Account(
-        kind='imap', host='localhost', port=10143, ssl=False,
-        username='test', password='bsdf',
+        kind='imap', host='mail.visophyte.org', port=993, ssl=True,
+        username='junius@visophyte.org', password='keepFallin',
     )
     account.store(dbs.accounts)
 
