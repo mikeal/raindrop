@@ -254,7 +254,7 @@
           <div>attachments</div>
           <ul id="attachment_ul"></ul>
         </div>
-        <pre id="iframe" class="content"></pre>
+        <div id="iframe" class="content"></div>
         <div class="attachments-area"></div>
         <div class="actions">
           <button>reply all | v</button>
@@ -305,7 +305,7 @@
                                    padding: 0em; }
 :bound-element .body .attachments-list { background-color: #f3f3f3; padding: 0.5em; -moz-border-radius: 0.3em; }
 :bound-element .body .attachments-list ul { margin-left: 0.5em; }
-:bound-element .body .content { color: #111; padding: 0.5em; }
+:bound-element .body .content { color: #111; padding: 0.5em; white-space: pre-wrap; }
 :bound-element .body .attachments-area { }
 :bound-element .body .actions { padding: 0.5em; background-color: #f3f3f3;
                                          -moz-border-radius-bottomright: 0.3em;
