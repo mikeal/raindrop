@@ -24,9 +24,10 @@ def setup_account(dbs):
     data = f.read()
     f.close()
     host, portstr, username, password, sslstr = data.split(',')
+    ssl = not (sslstr.lower() in ['false', 'f', 'no', '0'])
     
     account = model.Account(
-        kind='imap', host=host, port=int(portstr), ssl=bool(sslstr),
+        kind='imap', host=host, port=int(portstr), ssl=ssl,
         username=username, password=password,
     )
     account.store(dbs.accounts)
