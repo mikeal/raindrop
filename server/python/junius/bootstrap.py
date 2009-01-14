@@ -14,9 +14,20 @@ def setup_account(dbs):
         print 'Account presumably already exists, not adding it!'
         return
     
+    # we want a file of the form:
+    #  hostname,port,username,password,ssl?
+    # example:
+    #  mail.example.com,993,bob@example.com,sekret,True
+    import os, os.path
+    configPath = os.path.join(os.environ['HOME'], ".junius")
+    f = open(configPath, 'r')
+    data = f.read()
+    f.close()
+    host, portstr, username, password, sslstr = data.split(',')
+    
     account = model.Account(
-        kind='imap', host='mail.visophyte.org', port=993, ssl=True,
-        username='junius@visophyte.org', password='keepFallin',
+        kind='imap', host=host, port=int(portstr), ssl=bool(sslstr),
+        username=username, password=password,
     )
     account.store(dbs.accounts)
 
