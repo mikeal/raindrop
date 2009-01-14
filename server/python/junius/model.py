@@ -249,7 +249,7 @@ def fab_db(update_views=False):
     import couchdb
     server = couchdb.Server(get_local_host_info())
     
-    dbs = DBS()
+    dbs = DBS(server)
     
     for db_name, doc_class in DATABASES.items():
         if not db_name in server:
