@@ -73,6 +73,9 @@ class Message(schema.Document):
 
     # general attribute info...
     read = schema.BooleanField()
+    
+    # user-added meta-information
+    tags = WildField()
 
     headers = WildField()
     bodyPart = WildField()
@@ -140,6 +143,15 @@ class Message(schema.Document):
         function(doc) {
             for each (var contact_id in doc.involves_contact_ids)
                 emit([contact_id, doc.timestamp], doc.conversation_id);
+        }''')
+    
+    # -- user provided meta-info junk
+    by_tags = schema.View('by_tags', '''\
+        function(doc) {
+            if (doc.tags) {
+                for (var i = 0; i < doc.tags.length; i++)
+                    emit([doc.tags[i], doc.timestamp], doc.conversation_id);
+            }
         }''')
     
     # -- storage info views

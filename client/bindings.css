@@ -21,3 +21,7 @@
 #conversation-reader {
   binding: url("conversation.xml#conversation-reader");
 }
+
+.tags {
+  binding: url("tags.xml#tags");
+}

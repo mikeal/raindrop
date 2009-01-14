@@ -243,6 +243,7 @@
           <div class="details">
             <div class="participants">
               <span id="sender" class="sender"></span>
+              <span id="tags"/>
             </div>
             <div id="snippet" class="snippet"></div>
           </div>
@@ -344,14 +345,17 @@
             this.message.from.name;
 
           this.shadowTree.getElementById("snippet").textContent =
-            this.message.bodySnippet;
+            this.message.bodySnippet();
           this.shadowTree.getElementById("iframe").textContent =
-            this.message.bodyText;
+            this.message.bodyText();
 
           var nameNode = this.shadowTree.getElementById("sender")
           nameNode.textContent = this.message.from.name;
           nameNode.setAttribute("unread", !this.message.read);
 
+          var tagsNode = this.shadowTree.getElementById("tags");
+          ElementXBL.prototype.addBinding.call(tagsNode, "tags.xml#tags");
+          tagsNode.setMessage(aMessage);
         },
         select: function() {
           $(this.boundElement).addClass("selected")

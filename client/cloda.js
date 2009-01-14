@@ -38,12 +38,12 @@ var GlodaConversationProto = {
     return topnodes;
   },
   get subject() {
-    return this.messages[0].subject;
+    return this.messages[0].subject();
   },
 };
 
 var GlodaMessageProto = {
-  get subject() {
+  subject: function() {
     return this.headers["Subject"];
   },
   _bodyTextHelper: function(aPart) {
@@ -56,11 +56,43 @@ var GlodaMessageProto = {
     else
       return "";
   },
-  get bodyText() {
+  // something scary happens when these are getters in terms of putting things back
+  bodyText: function() {
     return this._bodyTextHelper(this.bodyPart);
   },
-  get bodySnippet() {
-    return this.bodyText.substring(0, 128);
+  bodySnippet: function() {
+    return this.bodyText().substring(0, 128);
+  },
+  _rawSetDefault: function(aKey, aDefaultValue) {
+    var raw = this.__proto__;
+    console.log("this", this, "raw", raw);
+    if (aKey in raw) {
+      var val = raw[aKey];
+      if (val != null)
+        return val;
+    }
+    return (raw[aKey] = aDefaultValue);
+  },
+  addTag: function(aTagName) {
+    var tags = this._rawSetDefault("tags", []);
+    tags.push(aTagName);
+    this.save();
+  },
+  save: function() {
+    // 'this' is actually a "phantom" protecting the raw message from
+    //  our convenience additions or foolish accidental mutations.  What we
+    //  want to persist is the raw message sans prototype, so we take the proto
+    //  out of the equation for the JSON snapshot period.
+    try {
+      var raw_message = this.__proto__;
+      raw_message.__proto__ = undefined;
+      delete raw_message.__proto__;
+      Gloda.dbMessages.saveDoc(raw_message);
+    }
+    catch (e) {
+      console.log("problem when saving...", e);
+    }
+    raw_message.__proto__ = GlodaMessageProto;
   }
 };
 
@@ -157,9 +189,9 @@ GlodaConvQuery.prototype = {
           __proto__: GlodaConversationProto,
           id: message.conversation_id,
           oldest: message.timestamp, newest: message.timestamp,
-          involves_contact_ids: {}, messages: []
+          involves_contact_ids: {}, raw_messages: []
         };
-      conversation.messages.push(message);
+      conversation.raw_messages.push(message);
       if (conversation.oldest > message.timestamp)
         conversation.oldest = message.timestamp;
       if (conversation.newest < message.timestamp)
@@ -217,17 +249,23 @@ GlodaConvQuery.prototype = {
       conversation.involves = mapContactMap(conversation.involves_contact_ids);
       convList.push(conversation);
 
-      for (var iMsg = 0; iMsg < conversation.messages.length; iMsg++) {
-        var message = conversation.messages[iMsg];
-        message.__proto__ = GlodaMessageProto;
+      wrapped_messages = [];
+      for (var iMsg = 0; iMsg < conversation.raw_messages.length; iMsg++) {
+        var raw_message = conversation.raw_messages[iMsg];
+        raw_message.__proto__ = GlodaMessageProto;
+        var message = {__proto__: raw_message};
         message.from = contacts[message.from_contact_id];
         message.to = mapContactList(message.to_contact_ids);
         message.cc = mapContactList(message.cc_contact_ids);
         message.involves = mapContactList(message.involves_contact_ids);
+        
+        wrapped_messages.push(message);
       }
+      conversation.messages = wrapped_messages;
+      conversation.messages.sort(function (a,b) {return a.timestamp - b.timestamp;});
     }
 
-    convList.sort(function (a, b) { return a.newest - b.newest; });
+    convList.sort(function (a, b) { return b.newest - a.newest; });
     console.log("callback with conv list", convList);
     this.callback.call(this.callbackThis, convList);
   }

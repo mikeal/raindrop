@@ -13,7 +13,7 @@
           console.log("results ahoy", aConversations);
           var convNode = $("#conversations").empty();
           convNode.append(aConversations.map(function (conversation) {
-            var node = $("<div/>").addClass("auco_contact")[0];
+            var node = $("<div/>")[0];
             ElementXBL.prototype.addBinding.call(node, "messages.xml#conversation");
             node.setConversation(conversation);
             return node;
@@ -49,9 +49,9 @@
             <span id="author" class="author"/>
             <span id="verb" class="verb"> writes </span>
             <div id="recipients" class="recipients"/>
-            <span id="date" class="date"/>
+            <span id="date" class="date"/>...
+            <span id="tags"/>
           </div>
-          <div id="tags" class="tags"/>
         </div>
         <div id="snippet" class="body"/>
       </div>
@@ -111,7 +111,6 @@
                                               color: #555; }
 :bound-element > .target > .body { color: #555; padding-left: 1em; }
 
-:bound-element > .target > .tags span { -moz-border-radius: 0.3em; padding: 0em 0.4em; }
 :bound-element > .target > .folder { background-color: #faf0b8; border: 1px solid #ede4af; }
 
 /* REPLIES */
@@ -127,11 +126,15 @@
           this.shadowTree.getElementById("oldestMessageDate").textContent =
             makeTimestampFriendly(this.conversation.oldest);
           var firstMessage = this.conversation.messages[0];
-          this.shadowTree.getElementById("subject").textContent = firstMessage.subject;
-          this.shadowTree.getElementById("snippet").textContent = firstMessage.bodySnippet;
+          this.shadowTree.getElementById("subject").textContent = firstMessage.subject();
+          this.shadowTree.getElementById("snippet").textContent = firstMessage.bodySnippet();
           this.shadowTree.getElementById("author").textContent = firstMessage.from.name;
           this.shadowTree.getElementById("date").textContent =
             makeTimestampFriendly(firstMessage.timestamp);
+            
+          var tagsNode = this.shadowTree.getElementById("tags");
+          ElementXBL.prototype.addBinding.call(tagsNode, "tags.xml#tags");
+          tagsNode.setMessage(firstMessage);
 
           var replyNodes = this.shadowTree.getElementById("replies");
           for (var iMsg = 1; iMsg < this.conversation.messages.length; iMsg++) {
@@ -157,7 +160,8 @@
       <div class="author">
         <span id="from" class="name"/>
         <span>, </span>
-        <span id="date" class="data"/>
+        <span id="date" class="data"/>...
+        <span id="tags"/>
       </div>
       <div id="snippet" class="body"/>
     </xbl:template>
@@ -180,7 +184,11 @@
           this.shadowTree.getElementById("from").textContent = aMessage.from.name;
           this.shadowTree.getElementById("date").textContent =
             makeTimestampFriendly(aMessage.timestamp);
-          this.shadowTree.getElementById("snippet").textContent = aMessage.bodySnippet;
+          this.shadowTree.getElementById("snippet").textContent = aMessage.bodySnippet();
+          
+          var tagsNode = this.shadowTree.getElementById("tags");
+          ElementXBL.prototype.addBinding.call(tagsNode, "tags.xml#tags");
+          tagsNode.setMessage(aMessage);
         },
       })
     ]]></xbl:implementation>
@@ -197,7 +205,7 @@
       ({
         setMessage: function(aMessage) {
           this._message = aMessage;
-          this.shadowTree.getElementById("subject").textContent = this._message.headers.Subject;
+          this.shadowTree.getElementById("subject").textContent = this._message.subject();
           this.shadowTree.getElementById("body").textContent = this._message.bodyPart.data;
         },
       })

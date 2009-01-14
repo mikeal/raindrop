@@ -557,7 +557,7 @@ cXBLLanguage.elements.xbl.binding.resources.style	= function(oNode, cBinding) {
 		// correct result from previous step
 		sStyle	= sStyle.replace(new window.RegExp(sSelectorBoundElement + ' ' + sSelectorBoundElement, 'g'), sSelectorBoundElement);
 		//	:bound-element	-> .xbl-bound-element-{binding}
-		sStyle	= sStyle.replace(/:bound-element([\s{+~>.:])/g, '.' + "xbl" + '-' + "bound-element" + '-' + cBinding.id + '$1');
+		sStyle	= sStyle.replace(/:bound-element([\s{+~>.:\[])/g, '.' + "xbl" + '-' + "bound-element" + '-' + cBinding.id + '$1');
 
 		// 3. Resolve relative uris
 		if (aCss = sStyle.match(/url\s*\([^\)]+\)/g)) {
