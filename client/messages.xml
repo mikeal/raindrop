@@ -156,6 +156,7 @@
     <xbl:template>
       <div class="author">
         <span id="from" class="name"/>
+        <span>, </span>
         <span id="date" class="data"/>
       </div>
       <div id="snippet" class="body"/>
