@@ -23,6 +23,8 @@
     function funkyInit() {
       var autocompleter = document.getElementById("autocomplete");
       console.log("autocompleter", autocompleter);
+      autocompleter.addCompleter(TagCompleter);
+      console.log("tag completer registered");
       autocompleter.addCompleter(ContactCompleter);
       console.log("contact completer registered");
 
@@ -36,9 +38,14 @@
         if (itemType == "contact") {
           console.log("..contact case");
           var contact = item.getContact();
-          console.log("contact", contact);
           constraints.addContact(contact);
           console.log("added contact", contact);
+        }
+        else if (itemType == "tag") {
+          console.log("..tag case");
+          var tagName = item.getTagName();
+          constraints.addTagName(tagName);
+          console.log("added tag name", tagName);
         }
         else
           return;

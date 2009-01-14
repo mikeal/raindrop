@@ -281,14 +281,25 @@ var Gloda = {
 
   },
 
-  queryByInvolved: function(aInvolvedContactIds, aCallback, aCallbackThis) {
+  queryByStuff: function(aInvolvedContactIds, aTagNames, aCallback, aCallbackThis) {
     // -- for each involved person, get the set of conversations they're in
-    var constraints = aInvolvedContactIds.map(function (contact) {
-      return {
-        view: "by_involves/by_involves",
-        startkey: [contact._id, 0], endkey: [contact._id, MAX_TIMESTAMP]
-      };
-    }, this);
+    var constraints = [];
+    if (aInvolvedContactIds && aInvolvedContactIds.length) {
+      constraints = constraints.concat(aInvolvedContactIds.map(function (contact) {
+        return {
+          view: "by_involves/by_involves",
+          startkey: [contact._id, 0], endkey: [contact._id, MAX_TIMESTAMP]
+        };
+      }, this));
+    }
+    if (aTagNames && aTagNames.length) {
+      constraints = constraints.concat(aTagNames.map(function (tagName) {
+        return {
+          view: "by_tags/by_tags",
+          startkey: [tagName, 0], endkey: [tagName, MAX_TIMESTAMP]
+        };
+      }, this));
+    }
     var query = new GlodaConvQuery();
     query.queryForConversations(constraints, aCallback, aCallbackThis);
 

@@ -21,7 +21,9 @@
         },
         updateConstraints: function(aConstraints) {
           console.log("updating constraints");
-          Gloda.queryByInvolved(aConstraints.getContacts(), this.resultsAhoy, this);
+          Gloda.queryByStuff(aConstraints.getContacts(),
+                             aConstraints.getTagNames(),
+                             this.resultsAhoy, this);
           console.log("constraints updated");
         }
       })

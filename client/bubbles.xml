@@ -18,11 +18,30 @@
           $(this._nConstraints).append(node);
           console.log("Contact", aContact, "added");
         },
+        addTagName: function(aTagName) {
+          var node = $("<div/>").addClass("bubble").attr("type", "tag")[0];
+          ElementXBL.prototype.addBinding.call(node, "bubbles.xml#constraint-tag");
+          node.setTagName(aTagName);
+          $(this._nConstraints).append(node);
+          console.log("Tag name constraint", aTagName, "added");
+        },
         getContacts: function() {
-          return $(this._nConstraints).children().map(function (index, item) {
-            console.log("getting contact from", item);
-            return item.getContact();
-          }).get();
+          var contacts = [];
+          $(this._nConstraints).children().map(function (index, item) {
+            if (item.getType() == "contact") {
+              contacts.push(item.getContact());
+            }
+          });
+          return contacts;
+        },
+        getTagNames: function() {
+          var tagNames = [];
+          $(this._nConstraints).children().map(function (index, item) {
+            if (item.getType() == "tag") {
+              tagNames.push(item.getTagName());
+            }
+          });
+          return tagNames;
         },
         xblBindingAttached: function () {
           this._nConstraints = this.shadowTree.getElementById("holder");
@@ -46,6 +65,7 @@
     </xbl:resources>
     <xbl:implementation><![CDATA[
       ({
+        getType: function() { return "contact"; },
         contact: null,
         getContact: function() {
           return this.contact;
@@ -65,6 +85,25 @@
               ".jpg?r=pg&d=identicon&s=18");
           }
         },
+      })
+    ]]></xbl:implementation>
+  </xbl:binding>
+  <!-- Tag -->
+  <xbl:binding id="constraint-tag">
+    <xbl:template>
+      <span id="tagname"></span>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        getType: function() { return "tag"; },
+        tagname: null,
+        getTagName: function() {
+          return this.tagname;
+        },
+        setTagName: function(aTagName) {
+          this.tagname = aTagName;
+          this.shadowTree.getElementById("tagname").textContent = aTagName;
+        }
       })
     ]]></xbl:implementation>
   </xbl:binding>

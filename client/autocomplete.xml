@@ -24,18 +24,29 @@
           this._autocompleters.push(aCompleter);
         },
         _serial: 0,
+        resultsByType: null,
         goFish: function (aText) {
           var serial = this._serial++;
+          this.resultsByType = {};
           this._autocompleters.forEach(function (completer) {
             completer.complete(this, aText);
           }, this);
         },
-        haveSomeResults: function(aText, aNodes) {
+        haveSomeResults: function(aText, aNodes, aCompleter, aPriority) {
           // bail if this is not the reslt for what is currently typed
           if (aText != this._entry.value)
             return;
+          this.resultsByType[aCompleter.type] = [aPriority, aNodes];
+          var nodes = [];
+          var prioritizedResults = [];
+          for each (var tupe in this.resultsByType)
+            prioritizedResults.push(tupe);
+          prioritizedResults.sort(function (a,b) { return b[0] - a[0]; });
+          for (var i = 0; i < prioritizedResults.length; i++)
+            nodes = nodes.concat(prioritizedResults[i][1]);
+          
           this.clearResultsList();
-          $(this._resultDiv).append(aNodes);
+          $(this._resultDiv).append(nodes);
           this.showResultsList();
         },
         /* ===== Results List Stuff ===== */
@@ -198,6 +209,30 @@
           this._nEmails = this.shadowTree.getElementById("emails");
           console.log("done attaching contact result");
         },
+      })
+    ]]></xbl:implementation>
+    <xbl:handlers>
+    </xbl:handlers>
+  </xbl:binding>
+  <!-- Tag -->
+  <xbl:binding id="tag-completion">
+    <xbl:template>
+      messages tagged <span id="tagname"/>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        type: "tag",
+        getType: function() {
+          return this.type;
+        },
+        tagname: null,
+        getTagName: function() {
+          return this.tagname;
+        },
+        setTagName: function(aTagName) {
+          this.tagname = aTagName;
+          this.shadowTree.getElementById("tagname").textContent = aTagName;
+        }
       })
     ]]></xbl:implementation>
     <xbl:handlers>

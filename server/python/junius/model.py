@@ -146,13 +146,37 @@ class Message(schema.Document):
         }''')
     
     # -- user provided meta-info junk
-    by_tags = schema.View('by_tags', '''\
+    tagmap_func = '''\
         function(doc) {
             if (doc.tags) {
                 for (var i = 0; i < doc.tags.length; i++)
                     emit([doc.tags[i], doc.timestamp], doc.conversation_id);
             }
-        }''')
+        }'''
+    by_tags = schema.View('by_tags', tagmap_func)
+    
+    # by reusing tagmap_func, we are able to consume its output from the
+    #  previous view without introducing additional storage needs
+    all_tags = schema.View('tags', tagmap_func, '''\
+        function(keys, values, rereduce) {
+            var keySet = {}, i, j;
+            if (!rereduce) {
+                for (i = 0; i < keys.length; i++)
+                    keySet[keys[i][0][0]] = true;
+            }
+            else {
+                for (i = 0; i < values.length; i++) {
+                    var inSet = values[i];
+                    for (j = 0; j < inSet.length; j++)
+                        keySet[inSet[j]] = true;
+                }
+            }
+            var out = [];
+            for (var key in keySet)
+                out.push(key);
+            out.sort();
+            return out;
+        }''', group=False, group_level=0)
     
     # -- storage info views
     # so, this key is theoretically just wildly expensive
