@@ -32,6 +32,23 @@ def setup_account(dbs):
     )
     account.store(dbs.accounts)
 
+def setup_twitter_account(dbs):
+    # we want a file of the form:
+    #  username,password
+    # example:
+    #  davidascher,sekret
+    import os, os.path
+    configPath = os.path.join(os.environ['HOME'], ".junius_twitter")
+    f = open(configPath, 'r')
+    data = f.read()
+    f.close()
+    username, password = data.split(',')
+
+    account = model.Account(
+        kind='twitter', username=username, password=password,
+    )
+    account.store(dbs.accounts)
+
 def path_part_nuke(path, count):
     for i in range(count):
         path = os.path.dirname(path)
@@ -80,6 +97,7 @@ def main():
     dbs = model.fab_db(update_views='updateviews' in sys.argv)
 
     setup_account(dbs)
+    setup_twitter_account(dbs)
     install_client_files(dbs)
     
 

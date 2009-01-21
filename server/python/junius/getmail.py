@@ -254,8 +254,9 @@ class Grabber(object):
     
     def syncAccounts(self):
         for account in model.Account.all(self.dbs.accounts):
-            junius_account = JuniusAccount(self.dbs, account)
-            junius_account.sync()
+            if account.kind == 'imap':
+                junius_account = JuniusAccount(self.dbs, account)
+                junius_account.sync()
 
 if __name__ == '__main__':
     import os

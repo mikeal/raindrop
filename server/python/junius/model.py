@@ -13,11 +13,11 @@ class WildField(schema.Field):
 
 class Account(schema.Document):
     kind = schema.TextField()
-    host = schema.TextField()
-    port = schema.IntegerField()
+    host = schema.TextField(default='')
+    port = schema.IntegerField(default=0)
     username = schema.TextField()
     password = schema.TextField()
-    ssl = schema.BooleanField()
+    ssl = schema.BooleanField(default=False)
     
     folderStatuses = WildField(default={})
     
