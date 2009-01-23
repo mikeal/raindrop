@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import base64, datetime, email.utils
+import base64, datetime, email.utils, email.header
 import pprint
 
 from gocept.imapapi.account import Account
@@ -78,6 +78,10 @@ class JuniusAccount(object):
                     # the contact does't exist, create it
                     if not name:
                         name = address
+                    else:
+                        name, encoding = email.header.decode_header(name)[0]
+                        if encoding:
+                            name = unicode(name, encoding)
                     contact = model.Contact(
                         name=name,
                         identities=[{'kind': 'email', 'value': address}]
