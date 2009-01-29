@@ -23,6 +23,7 @@
           console.log("updating constraints");
           Gloda.queryByStuff(aConstraints.getContacts(),
                              aConstraints.getTagNames(),
+                             aConstraints.getDiscussions(),
                              this.resultsAhoy, this);
           console.log("constraints updated");
         }

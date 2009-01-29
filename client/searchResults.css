@@ -32,7 +32,7 @@ conversation:focus { border: 1px dotted #111; padding: 1em 0px; }
 conversation[unread="true"]:focus { border: 1px dotted #111; padding: 1em 0px; }
 conversation:focus:last-child { border: 1px dotted #111; padding: 1em 0px; }
 conversation:focus:first-child { border: 1px dotted #111; padding: 1em 0px; }
-conversation:last-child { border-bottom: 1px solid transparent; }
+conversation:last-child { border-color: transparent; }
 conversation:first-child { border-top: 1px solid #ddd; }
 
 conversation > .target > .header,
@@ -107,3 +107,15 @@ search-toolbox > .notifications { float: right; }
 .notifications div { padding: 0.3em 1em; -moz-border-radius: 0.3em; }
 .notifications .alert { background-color: #fcaf3e; color: #111; }
 .notifications .info { background-color: inherit; color: #666; }
+
+#mc { display: table; }
+#left { display: table-cell; width: 10em; padding: 0.2em 1em 1ex 1em; }
+#right { display: table-cell; border: 2px solid lightsteelblue; -moz-border-radius: 4px; }
+.sMailbox { display: block; margin: 0.2ex 0px; }
+#dynamic-mailboxes { margin: 1ex 0px; max-width: 10em; }
+.dMailbox { margin: 1ex 0px; padding: 0px; border: 1px solid lightsteelblue; -moz-border-radius: 0.5em; }
+.dMailbox .title { background-color: steelblue; color: white; padding: 0.2ex 0.4em; position: relative; }
+.dMailbox .title { -moz-border-radius-topright: 0.2em; -moz-border-radius-topleft: 0.2em; }
+.dMailbox .title .toggle { position: absolute; right: 0.5em; font-weight: bold; cursor: pointer; }
+.dMailbox .results { list-style: none; margin: 0px; padding: 0.4ex 0.2em; font-size: small; white-space: nowrap; overflow: hidden; }
+.dMailbox .results li { padding: 0.2ex 0px; }

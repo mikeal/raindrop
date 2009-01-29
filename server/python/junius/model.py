@@ -187,7 +187,34 @@ class Message(schema.Document):
             if (doc.timestamp)
                 emit([doc.account_id, doc.storage_path, doc.storage_id], null);
         }''', include_docs=False)
+        
+    by_mailing_list = schema.View('by_header_id', '''\
+        function(doc) {
+          if (doc.headers && doc.headers["List-Id"]) {
+            var parts = doc.headers["List-Id"].match(/([\W\w]*)\s*<(.+)>.*/);
+            var keys = {"List-Id" : doc.headers["List-Id"],
+                         "id" : parts[2],
+                         "name" : parts[1] };
+            for each (var headerId in ["List-Post","List-Archive","List-Help",
+                                       "List-Subscribe","List-Unsubscribe"]) {
+              if (doc.headers[headerId])
+                keys[headerId] = doc.headers[headerId];
+            }
+            emit(keys, 1);
+          }
+        }''', '''\
+        function(keys, values, rereduce) {
+          return sum(values);
+        }''', include_docs=False, group=True, group_level=1)
 
+    by_list_id = schema.View('by_mailing_list', '''\
+        function(doc) {
+          if (doc.headers && doc.headers["List-Id"]) {
+            var parts = doc.headers["List-Id"].match(/[\W\w]\s*<(.+)>.*/);
+            emit([parts[1], doc.timestamp], doc.conversation_id);
+          }
+        }''', include_docs=True)    
+        
 DATABASES = {
     # the app database proper, no real data
     'junius': None,

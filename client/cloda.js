@@ -281,7 +281,7 @@ var Gloda = {
 
   },
 
-  queryByStuff: function(aInvolvedContactIds, aTagNames, aCallback, aCallbackThis) {
+  queryByStuff: function(aInvolvedContactIds, aTagNames, aDiscussionIds, aCallback, aCallbackThis) {
     // -- for each involved person, get the set of conversations they're in
     var constraints = [];
     if (aInvolvedContactIds && aInvolvedContactIds.length) {
@@ -297,6 +297,14 @@ var Gloda = {
         return {
           view: "by_tags/by_tags",
           startkey: [tagName, 0], endkey: [tagName, MAX_TIMESTAMP]
+        };
+      }, this));
+    }
+    if (aDiscussionIds && aDiscussionIds.length) {
+      constraints = constraints.concat(aDiscussionIds.map(function (discussion) {
+        return {
+          view: "by_mailing_list/by_list_id",
+          startkey: [discussion.id, 0], endkey: [discussion.id, MAX_TIMESTAMP]
         };
       }, this));
     }

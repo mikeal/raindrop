@@ -25,6 +25,13 @@
           $(this._nConstraints).append(node);
           console.log("Tag name constraint", aTagName, "added");
         },
+        addDiscussion: function(aDiscussion) {
+          var node = $("<div/>").addClass("bubble").attr("type", "discussion")[0];
+          ElementXBL.prototype.addBinding.call(node, "bubbles.xml#constraint-discussion");
+          node.setDiscussion(aDiscussion);
+          $(this._nConstraints).append(node);
+          console.log("Discussion constraint", aDiscussion, "added");        
+        },
         getContacts: function() {
           var contacts = [];
           $(this._nConstraints).children().map(function (index, item) {
@@ -42,6 +49,18 @@
             }
           });
           return tagNames;
+        },
+        getDiscussions: function() {
+          var discussions = [];
+          $(this._nConstraints).children().map(function (index, item) {
+            if (item.getType() == "discussion") {
+              discussions.push(item.getDiscussion());
+            }
+          });
+          return discussions;
+        },
+        clear: function() {
+          $(this._nConstraints).empty();
         },
         xblBindingAttached: function () {
           this._nConstraints = this.shadowTree.getElementById("holder");
@@ -103,6 +122,31 @@
         setTagName: function(aTagName) {
           this.tagname = aTagName;
           this.shadowTree.getElementById("tagname").textContent = aTagName;
+        }
+      })
+    ]]></xbl:implementation>
+  </xbl:binding>
+  <!-- Discussion -->
+  <xbl:binding id="constraint-discussion">
+    <xbl:template>
+      <span id="discussion"></span>
+    </xbl:template>
+    <xbl:implementation><![CDATA[
+      ({
+        getType: function() { return "discussion"; },
+        _discussion: null,
+        getDiscussion: function() {
+          return this._discussion;
+        },
+        _getAttr : function(attr) {
+          return this._discussion[attr];
+        },
+        getName: function() {
+          return this._getAttr("name");
+        },
+        setDiscussion: function(aDiscussion) {
+          this._discussion = aDiscussion;
+          this.shadowTree.getElementById("discussion").textContent = this.getName();
         }
       })
     ]]></xbl:implementation>

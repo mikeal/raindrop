@@ -52,6 +52,48 @@
         query.updateConstraints(constraints);
       });
       console.log("constrainer registered");
+
+      ru = new RainUtil();
+      ru.addStaticMailbox("Inbox","inbox");
+      ru.addStaticMailbox("Drafts","drafts");
+      ru.addStaticMailbox("Archives","archives");
+      ru.addStaticMailbox("Sent","sent");
+      ru.addStaticMailbox("Trash","trash");
+      ru.addStaticMailbox("Junk","junk");
+      
+      ru.addDynamicMailbox("People","people-by-frecency");
+      ru.addDynamicMailbox("Search","searches");
+      ru.addDynamicMailbox("Discussion","discussion");
+      
+      
+      var dbMessages = $.couch.db("messages");
+      dbMessages.view("by_header_id/by_mailing_list", {
+        include_docs: false,
+        group : true,
+        success: function(json) {
+          var parent = $("#discussion");
+          json.rows.forEach(function(row) {
+            var li = $(document.createElement("li")).addClass("discussion-list");
+            parent.append(li
+                          .append($(document.createElement("a"))
+                                            .addClass("discussion-list")
+                                            .attr("title", row.key["name"] + " (" + row.value + ")")
+                                            .attr("href","#/discussion/" + row.key["id"])
+                                            .mousedown(function() { 
+                                                          var c = document.getElementById("constraints"); 
+                                                          c.clear(); 
+                                                          c.addDiscussion(row.key);
+                                                          var query = document.getElementById("query");
+                                                          query.updateConstraints(c);
+                                                        }
+                                                      )
+                                            .text(row.key["name"] + " (" + row.value + ")")
+                                            )
+                                  );
+          });
+        }
+      });
+      
     }
 
     $(function() {
@@ -76,13 +118,49 @@
       })
       */
     });
-  ]]></script>
+
+  function RainUtil() { }
+  RainUtil.prototype = {
+    addStaticMailbox: function(aTitle, aQuery) {
+      var a = document.createElement("a");
+      $("#static-mailboxes").append($(a).addClass("sMailbox").attr("href","#" + aQuery).text(aTitle));
+    },
+    addDynamicMailbox: function(aTitle, aQuery) {
+      $("#dynamic-mailboxes").append(this._dynamicMailbox(aTitle,aQuery));
+    },
+    _dynamicMailbox: function(aTitle,aQuery) {
+      var d = document.createElement("div"), 
+          dt = document.createElement("div"),
+          span = document.createElement("span"),
+          ul = document.createElement("ul"),
+          li = document.createElement("li");
+      return $(d).addClass("dMailbox").append(
+              $(dt).addClass("title").text(aTitle).append(
+                $(span).addClass("toggle")
+                       .text("-")
+                       .click(function() { $(ul).slideToggle(); })),
+                        $(ul).addClass("results").attr("id", aQuery));
+    },
+  
+  };
+  ]]></script>  
 </head>
 <body>
   <div id="autocomplete"></div>
   <div id="constraints"/>
   <div id="query"/>
-  <div id="conversations">
+
+  <div id="mc">
+    <div id="left">
+      <div id="static-mailboxes">
+      </div>
+      <div id="dynamic-mailboxes">
+      </div>
+    </div>
+    <div id="right">
+      <div id="conversations">
+      </div>
+    </div>
   </div>
 </body>
 </html>
