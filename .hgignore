@@ -4,3 +4,4 @@ syntax:regexp
 \.pyc
 \.swp
 ^server/python/build/
+^nbproject/
