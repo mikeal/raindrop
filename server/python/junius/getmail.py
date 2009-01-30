@@ -53,6 +53,7 @@ class JuniusAccount(object):
                     self.grok_message(message)
                 except: 
                     print "ERROR groking messages"
+                    # http://trac.mozillamessaging.com/raindrop/ticket/3
                 processed += 1
             else:
                 skipped += 1
