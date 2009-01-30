@@ -83,9 +83,13 @@ class JuniusAccount(object):
                     if not name:
                         name = address
                     else:
-                        name, encoding = email.header.decode_header(name)[0]
-                        if encoding:
-                            name = unicode(name, encoding)
+                        try:
+                            pieces = email.header.decode_header(name)
+                            encoded_pieces = [piece.decode(encoding or "utf-8") for piece, encoding in pieces]
+                            name = u"".join(encoded_pieces)
+                        except (LookupError, UnicodeError):
+                            name = u""+name
+
                     contact = model.Contact(
                         name=name,
                         identities=[{'kind': 'email', 'value': address}]
