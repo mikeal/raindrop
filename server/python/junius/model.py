@@ -192,25 +192,32 @@ class Message(schema.Document):
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
             var parts = doc.headers["List-Id"].match(/([\W\w]*)\s*<(.+)>.*/);
-            var keys = {"List-Id" : doc.headers["List-Id"],
-                         "id" : parts[2],
-                         "name" : parts[1] };
+            var values = {"List-Id" : doc.headers["List-Id"],
+                          "id" : parts[2],
+                          "name" : parts[1] };
             for each (var headerId in ["List-Post","List-Archive","List-Help",
                                        "List-Subscribe","List-Unsubscribe"]) {
               if (doc.headers[headerId])
-                keys[headerId] = doc.headers[headerId];
+                values[headerId] = doc.headers[headerId];
             }
-            emit(keys, 1);
+            emit(parts[2], values);
           }
         }''', '''\
         function(keys, values, rereduce) {
-          return sum(values);
+          var output = {};
+          output.count = values.length;
+          for (var idx in values) {
+            for (var elm in values[idx]) {
+              output[elm] = values[idx][elm];
+            }
+          }
+          return output;
         }''', include_docs=False, group=True, group_level=1)
 
     by_list_id = schema.View('by_mailing_list', '''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
-            var parts = doc.headers["List-Id"].match(/[\W\w]\s*<(.+)>.*/);
+            var parts = doc.headers["List-Id"].match(/[\W\w\s]*<(.+)>.*/);
             emit([parts[1], doc.timestamp], doc.conversation_id);
           }
         }''', include_docs=True)    

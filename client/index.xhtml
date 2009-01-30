@@ -77,17 +77,17 @@
             parent.append(li
                           .append($(document.createElement("a"))
                                             .addClass("discussion-list")
-                                            .attr("title", row.key["name"] + " (" + row.value + ")")
-                                            .attr("href","#/discussion/" + row.key["id"])
+                                            .attr("title", row.value["name"] + " (" + row.value["count"] + ")\n" + row.value["id"])
+                                            .attr("href","#/discussion/" + row.key)
                                             .mousedown(function() { 
                                                           var c = document.getElementById("constraints"); 
                                                           c.clear(); 
-                                                          c.addDiscussion(row.key);
+                                                          c.addDiscussion(row.value);
                                                           var query = document.getElementById("query");
                                                           query.updateConstraints(c);
                                                         }
                                                       )
-                                            .text(row.key["name"] + " (" + row.value + ")")
+                                            .text(row.value["id"] + " (" + row.value["count"] + ")")
                                             )
                                   );
           });

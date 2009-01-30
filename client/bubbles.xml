@@ -144,9 +144,13 @@
         getName: function() {
           return this._getAttr("name");
         },
+        getListId: function() {
+          /* fake the real "List-Id" since we've done some clean up before */
+          return this.getName() + " " + "<" + this._getAttr("id") + ">";
+        },
         setDiscussion: function(aDiscussion) {
           this._discussion = aDiscussion;
-          this.shadowTree.getElementById("discussion").textContent = this.getName();
+          this.shadowTree.getElementById("discussion").textContent = this.getListId();
         }
       })
     ]]></xbl:implementation>
