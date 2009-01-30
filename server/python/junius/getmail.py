@@ -49,7 +49,10 @@ class JuniusAccount(object):
         for message in folder.messages.values():
             uid = int(message.UID)
             if uid not in known_uids:
-                self.grok_message(message)
+                try:
+                    self.grok_message(message)
+                except: 
+                    print "ERROR groking messages"
                 processed += 1
             else:
                 skipped += 1
