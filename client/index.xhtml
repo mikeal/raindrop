@@ -87,7 +87,11 @@
                                                           query.updateConstraints(c);
                                                         }
                                                       )
-                                            .text(row.value["id"] + " (" + row.value["count"] + ")")
+                                            .text(row.value["id"] + " ")
+                                            .append($(document.createElement("span"))
+                                                              .addClass("count")
+                                                              .text("(" + row.value["count"] + ")")
+                                                  )
                                             )
                                   );
           });

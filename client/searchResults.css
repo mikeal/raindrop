@@ -118,4 +118,5 @@ search-toolbox > .notifications { float: right; }
 .dMailbox .title { -moz-border-radius-topright: 0.2em; -moz-border-radius-topleft: 0.2em; }
 .dMailbox .title .toggle { position: absolute; right: 0.5em; font-weight: bold; cursor: pointer; }
 .dMailbox .results { list-style: none; margin: 0px; padding: 0.4ex 0.2em; font-size: small; white-space: nowrap; overflow: hidden; }
-.dMailbox .results li { padding: 0.2ex 0px; }
+.dMailbox .results li { padding: 0.2ex 0px; position: relative; }
+.dMailbox .results li a span.count { position: absolute; right: -0.4ex; background-color: #fff; padding: 0px 0.4ex; }
