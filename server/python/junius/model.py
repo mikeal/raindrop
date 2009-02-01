@@ -12,21 +12,34 @@ class WildField(schema.Field):
         return value
 
 class Account(schema.Document):
-    kind = schema.TextField()
-    host = schema.TextField(default='')
-    port = schema.IntegerField(default=0)
-    username = schema.TextField()
-    password = schema.TextField()
-    ssl = schema.BooleanField(default=False)
-    
-    folderStatuses = WildField(default={})
-    
-    # could we just do _all_docs?  I don't want the damn design docs though...
-    # (ironically, this is the first one :)
-    all = schema.View('all', '''\
-        function(doc) {
-            emit(null, doc);
-        }''')
+  '''
+  Accounts correspond to instances of protocols to send/receive messages.
+  Although they may correlate with the various identities of the user, they
+  are not the same.  Just because you have a facebook account does not mean
+  you get an account instance; you would always want the info on the facebook
+  account in the identity list for the user, but it doesn't get to be an
+  account until we are capable of doing something with it.  (In the specific
+  facebook case, having the account info to be able to do Facebook Connect-type
+  things is an example of a case where an account should exist.)
+  '''
+  kind = schema.TextField()
+  host = schema.TextField(default='')
+  port = schema.IntegerField(default=0)
+  username = schema.TextField()
+  password = schema.TextField()
+  ssl = schema.BooleanField(default=False)
+
+  #: Have we ever successfully connected to this account?
+  verified = schema.BooleanField(default=False)
+
+  folderStatuses = WildField(default={})
+
+  # could we just do _all_docs?  I don't want the damn design docs though...
+  # (ironically, this is the first one :)
+  all = schema.View('all', '''\
+      function(doc) {
+          emit(null, doc);
+      }''')
 
 class Contact(schema.Document):
     name = schema.TextField()
@@ -127,13 +140,6 @@ class Message(schema.Document):
             emit(doc.header_message_id, null);
         }''', include_docs=True)    
 
-    # no ghosts!
-    by_timestamp = schema.View('by_timestamp', '''\
-        function(doc) {
-            if (doc.timestamp)
-                emit(doc.timestamp, null);
-        }''', include_docs=True)    
-
     # the key includes the timestamp so we can use it to limit our queries plus
     #  pick up where we left off if we need to page/chunk.
     # we expose the conversation id as the value because set intersection
@@ -188,7 +194,7 @@ class Message(schema.Document):
                 emit([doc.account_id, doc.storage_path, doc.storage_id], null);
         }''', include_docs=False)
         
-    by_mailing_list = schema.View('by_header_id', '''\
+    by_mailing_list = schema.View('by_header_id', r'''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
             var parts = doc.headers["List-Id"].match(/([\W\w]*)\s*<(.+)>.*/);
@@ -214,7 +220,7 @@ class Message(schema.Document):
           return output;
         }''', include_docs=False, group=True, group_level=1)
 
-    by_list_id = schema.View('by_mailing_list', '''\
+    by_list_id = schema.View('by_mailing_list', r'''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
             var parts = doc.headers["List-Id"].match(/[\W\w\s]*<(.+)>.*/);
