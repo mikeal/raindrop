@@ -191,7 +191,7 @@ class Message(schema.Document):
     by_mailing_list = schema.View('by_header_id', '''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
-            var parts = doc.headers["List-Id"].match(/([\W\w]*)\s*<(.+)>.*/);
+            var parts = doc.headers["List-Id"].match(/([\\W\\w]*)\\s*<(.+)>.*/);
             var values = {"List-Id" : doc.headers["List-Id"],
                           "id" : parts[2],
                           "name" : parts[1] };
@@ -217,7 +217,7 @@ class Message(schema.Document):
     by_list_id = schema.View('by_mailing_list', '''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
-            var parts = doc.headers["List-Id"].match(/[\W\w\s]*<(.+)>.*/);
+            var parts = doc.headers["List-Id"].match(/[\\W\\w\\s]*<(.+)>.*/);
             emit([parts[1], doc.timestamp], doc.conversation_id);
           }
         }''', include_docs=True)    
