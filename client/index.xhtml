@@ -54,12 +54,12 @@
       console.log("constrainer registered");
 
       ru = new RainUtil();
-      ru.addStaticMailbox("Inbox","inbox");
-      ru.addStaticMailbox("Drafts","drafts");
-      ru.addStaticMailbox("Archives","archives");
-      ru.addStaticMailbox("Sent","sent");
-      ru.addStaticMailbox("Trash","trash");
-      ru.addStaticMailbox("Junk","junk");
+      ru.addStaticMailbox("Inbox",":inbox");
+      ru.addStaticMailbox("Drafts",":drafts");
+      ru.addStaticMailbox("Archives",":archives");
+      ru.addStaticMailbox("Sent",":sent");
+      ru.addStaticMailbox("Trash",":trash");
+      ru.addStaticMailbox("Junk",":junk");
       
       ru.addDynamicMailbox("People","people-by-frecency");
       ru.addDynamicMailbox("Search","searches");
@@ -67,7 +67,7 @@
       
       
       var dbMessages = $.couch.db("messages");
-      dbMessages.view("by_header_id/by_mailing_list", {
+      dbMessages.view("by_list_id/by_mailing_list", {
         include_docs: false,
         group : true,
         success: function(json) {
@@ -82,12 +82,13 @@
                                             .mousedown(function() { 
                                                           var c = document.getElementById("constraints"); 
                                                           c.clear(); 
+                                                          $("#conversations").empty();
                                                           c.addDiscussion(row.value);
                                                           var query = document.getElementById("query");
                                                           query.updateConstraints(c);
                                                         }
                                                       )
-                                            .text(row.value["id"] + " ")
+                                            .text(row.value["id"])
                                             .append($(document.createElement("span"))
                                                               .addClass("count")
                                                               .text("(" + row.value["count"] + ")")
@@ -150,21 +151,24 @@
   ]]></script>  
 </head>
 <body>
-  <div id="autocomplete"></div>
-  <div id="constraints"/>
-  <div id="query"/>
 
-  <div id="mc">
-    <div id="left">
-      <div id="static-mailboxes">
-      </div>
-      <div id="dynamic-mailboxes">
-      </div>
+  <div id="middle">
+    <div class="left">
+      <div id="brand"></div>
+      <div id="static-mailboxes"></div>
+      <div id="dynamic-mailboxes"></div>
     </div>
-    <div id="right">
-      <div id="conversations">
-      </div>
+    <div class="right">
+      <div id="autocomplete"></div>
+      <div id="constraints"/>
+      <div id="query"/>  
+      <div id="description"></div>
+      <div class="toolbar top"></div>
+      <div id="conversations"></div>
+      <div class="toolbar bottom"></div>
     </div>
   </div>
+  <div class="section" id="footer"></div>
+
 </body>
 </html>

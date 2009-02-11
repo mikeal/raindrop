@@ -76,7 +76,7 @@ class JuniusAccount(object):
                     if contact.id in seen_contacts:
                         contact = seen_contacts[contact.id]
                     else:
-                        involved_list.append(contact)
+                        involved_list.append( (address,contact) )
                         seen_contacts[contact.id] = contact
                 else:
                     # the contact does't exist, create it
@@ -95,9 +95,9 @@ class JuniusAccount(object):
                         identities=[{'kind': 'email', 'value': address}]
                     )
                     contact.store(self.dbs.contacts)
-                    involved_list.append(contact)
+                    involved_list.append( (address,contact) )
                     seen_contacts[contact.id] = contact
-                cur_results.append(contact)
+                cur_results.append( (address,contact) )
             result_lists.append(cur_results)
         result_lists.append(involved_list)
         return result_lists
@@ -164,7 +164,7 @@ class JuniusAccount(object):
         references = header_message_ids[:]
         # see if the self-message already exists...
         header_message_ids.append(self_header_message_id)
-        
+
         messages = model.Message.by_header_id(self.dbs.messages,
                                               keys=header_message_ids)
         for message in messages:
@@ -201,12 +201,11 @@ class JuniusAccount(object):
         from_contacts, to_contacts, cc_contacts, involves_contacts = self.grok_email_addresses(
             imsg.headers.get('From', ''), imsg.headers.get('To', ''),
             imsg.headers.get('Cc', ''))
-        
+
         conversation_id, existing_message, references = self.grok_message_conversation(imsg)
         
         timestamp = email.utils.mktime_tz(email.utils.parsedate_tz(imsg.headers['Date']))
-        
-        
+
         cmsg = model.Message(
             account_id=self.account_def.id,
             storage_path=imsg.parent.path,
@@ -216,10 +215,16 @@ class JuniusAccount(object):
             header_message_id=imsg.headers.get('Message-Id')[1:-1],
             references=references,
             #
-            from_contact_id=from_contacts[0].id,
-            to_contact_ids=[c.id for c in to_contacts],
-            cc_contact_ids=[c.id for c in cc_contacts],
-            involves_contact_ids=[c.id for c in involves_contacts],
+            from_contact_id=from_contacts[0][1].id,
+            to_contact_ids=[c.id for k,c in to_contacts],
+            cc_contact_ids=[c.id for k,c in cc_contacts],
+            involves_contact_ids=[c.id for k,c in involves_contacts],
+            #
+            from_contact=dict([ (from_contacts[0][1].id, dict([ ("name",from_contacts[0][1].name), 
+                                                                ("email",from_contacts[0][0]) ]) ) ]),
+            to_contacts=dict([ (c.id , dict([("name" , c.name),("email",k)]) ) for k,c in to_contacts]),
+            cc_contacts=dict([ (c.id , dict([("name" , c.name),("email",k)]) ) for k,c in cc_contacts]),
+            involves_contacts=dict([ (c.id , dict([("name" , c.name),("email",k)]) ) for k,c in involves_contacts]),
             #
             date=datetime.datetime.utcfromtimestamp(timestamp),
             timestamp=timestamp,
@@ -230,6 +235,7 @@ class JuniusAccount(object):
             bodyPart=bodyPart,
             _attachments=attachments
         )
+
         if existing_message:
             cmsg.id = existing_message.id
             # this is ugly, we should really just have the logic above use a

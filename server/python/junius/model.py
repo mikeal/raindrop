@@ -68,7 +68,13 @@ class Message(schema.Document):
     cc_contact_ids = schema.ListField(schema.TextField())
     # convenience contacts with enough semantics to not just map it (for now)
     involves_contact_ids = schema.ListField(schema.TextField())
-    
+
+    # actual contact objects, a little duplication; but for good, not evil
+    from_contact = WildField()
+    to_contacts = WildField(default={})
+    cc_contacts = WildField(default={})
+    involves_contacts = WildField(default={})
+
     date = schema.DateTimeField()
     timestamp = schema.IntegerField()
 
@@ -188,7 +194,7 @@ class Message(schema.Document):
                 emit([doc.account_id, doc.storage_path, doc.storage_id], null);
         }''', include_docs=False)
         
-    by_mailing_list = schema.View('by_header_id', '''\
+    by_mailing_list = schema.View('by_list_id', '''\
         function(doc) {
           if (doc.headers && doc.headers["List-Id"]) {
             var parts = doc.headers["List-Id"].match(/([\\W\\w]*)\\s*<(.+)>.*/);
