@@ -3,6 +3,7 @@
 import base64, datetime, email.utils
 import pprint
 import re
+from urllib2 import urlopen
 
 import twitter
 
@@ -33,12 +34,30 @@ class JuniusAccount(object):
 
         contacts = model.Contact.by_identity(self.dbs.contacts,
                                              key=['twitter', username])
+
         if len(contacts) == 0:
             # the contact does't exist, create it
+
+            attachments = {}
+            if account.profile_image_url:
+                try:
+                  response = urlopen(account.profile_image_url)
+                  attachments['default'] = { 'content_type': response.info()['Content-Type'],
+                                             'data': base64.b64encode(response.read()) }
+                except:
+                    pass
+
+            identities = [{'kind': 'twitter', 'value': username }]
+            if account.url: 
+                identities.append({'kind': 'url' , 'value' : account.url })
+
             contact = model.Contact(
                 name=account.name,
-                identities=[{'kind': 'twitter', 'value': username }]
+                identities=identities,
+                location=account.location,
+                _attachments=attachments
             )
+
             contact.store(self.dbs.contacts)
         else:
             contact = [model.Contact.load(self.dbs.contacts,contact.value['_id']) for contact in contacts.rows][0]
