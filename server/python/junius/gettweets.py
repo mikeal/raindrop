@@ -27,6 +27,8 @@ class JuniusAccount(object):
 
     def create_contact_if_necessary(self, username, account=None):
         if account is None:
+            # after getting this info we should really be putting lots of it into
+            # the contact database.  Location, Picture, Web Site
             account = self.twitter_account.GetUser(username)
 
         contacts = model.Contact.by_identity(self.dbs.contacts,
@@ -38,6 +40,9 @@ class JuniusAccount(object):
                 identities=[{'kind': 'twitter', 'value': username }]
             )
             contact.store(self.dbs.contacts)
+        else:
+            contact = [model.Contact.load(self.dbs.contacts,contact.value['_id']) for contact in contacts.rows][0]
+
         return contact
 
     def sync(self):
@@ -59,7 +64,7 @@ class JuniusAccount(object):
         skipped = 0
 
         for message in self.twitter_account.GetUserTimeline():
-            if message.id not in known_uids:
+            if str(message.id) not in known_uids:
                 self.grok_message(self.author, message)
                 processed += 1
             else:
