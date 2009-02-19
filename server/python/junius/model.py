@@ -36,6 +36,10 @@ class Contact(schema.Document):
     )))
     location = schema.TextField()
     _attachments = WildField(default={})
+    all = schema.View('contacts', '''\
+        function(doc) {
+            emit(doc._id, null);
+        }''')
     #: expose contacts by their identities
     by_identity = schema.View('contacts', '''\
         function(doc) {

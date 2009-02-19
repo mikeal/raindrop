@@ -1,63 +1,58 @@
+
 /* copy most of noun_type_contact */
-var noun_type_rdcontact = {
-  _name: "rdcontact",
+var noun_type_raindrop_contact = {
+  _name: "raindrop contact",
   contactList: null,
   callback:function(contacts) {
-    noun_type_contact.contactList = noun_type_contact.contactList.concat(contacts);
+    noun_type_raindrop_contact.contactList = noun_type_raindrop_contact.contactList.concat(contacts);
   },
 
   suggest: function(text, html) {
     
-    if (noun_type_contact.contactList == null) {
-      noun_type_contact.contactList = [];
-      getRainDropContacts( noun_type_contact.callback );
-      var suggs = noun_type_email.suggest(text, html);
-      return suggs.length > 0 ? suggs : [];
+    if (noun_type_raindrop_contact.contactList == null) {
+      noun_type_raindrop_contact.contactList = [];
+      getRainDropContacts( noun_type_raindrop_contact.callback );
     }
 
     if( text.length < 1 ) return [];
 
     var suggestions  = [];
-    for ( var c in noun_type_contact.contactList ) {
-      var contact = noun_type_contact.contactList[c];
-      
-      if ((contact["name"].match(text, "i")) || (contact["email"].match(text, "i"))){
-	      suggestions.push(CmdUtils.makeSugg(contact["name"], "<span class='selection'>" + contact["email"] + "</span>", contact));
+    for ( var c in noun_type_raindrop_contact.contactList ) {
+      var contact = noun_type_raindrop_contact.contactList[c];
+
+      if ((contact["name"].match(text, "i")) || (contact["value"].match(text, "i"))){
+	      suggestions.push(CmdUtils.makeSugg(contact["name"], null, contact));
+	      if (suggestions.length > 5) return suggestions;
 	    }
     }
 
-    var suggs = noun_type_email.suggest(text, html);
-    // TODO the next line would be a lot clearer as an if() {} statement.
-    suggs.length > 0 ? suggestions.push(suggs[0]) : null;
-
-    return suggestions.splice(0, 5);
+    return suggestions;
   }
 };
 
 /* grab all contacts from the raindrop system */
 function getRainDropContacts( callback ){
   
-  var url = "http://localhost:5984/contacts/_all_docs";
+  var url = "http://localhost:5984/contacts/_view/contacts/all";
 
   var params = {
-      "include_docs" : true,
+    "include_docs" : "true",
   };
   
   jQuery.get(url, params, function(data) {
 
     var contacts = [];
-    for each( var line in data.rows ){
-      
-      var name = line.doc.name; 
-      for each( var idx in line.doc.identities ) {
-        if ( idx.kind == "email" ) {
-          var contact = {};
-          contact["name"] = name;
-          contact["email"] =  idx.value;
-          contact["doc"] = line.doc
-          contacts.push(contact);
-        }
+    for each( var row in data.rows ){
+
+      var contact = { "name" : row.doc.name,
+                      "doc" : row.doc,
+                      "value" : "" };
+
+      for each( var idx in row.doc.identities ) {
+        contact["value"] +=  idx.value + " ";
       }
+
+      contacts.push(contact);
     }
     callback(contacts);
   }, "json");
@@ -91,9 +86,85 @@ CmdUtils.CreateCommand({
   author: { name: "Bryan Clark", email: "clarkbw@mozillamessaging.com"},
   license: "GPL/MPL/",
 
+  name: "where",
+  modifiers: {is: noun_type_raindrop_contact},
+  url: "http://localhost:5984/junius/files/index.xhtml#{QUERY}",
+  icon: "http://localhost:5984/favicon.ico",
+  description: "Finds your contacts location from <a href=\"http://localhost:5984/junius/files/index.xhtml\">rain drop</a>.",
+  preview: function(pblock, directObject, modifiers){
+    var host = "http://localhost:5984";
+    var contact = modifiers.is.data;
+
+    if ( ! contact ) return;
+
+    pblock.innerHTML = "" +
+                      '<h2>' + contact.name + '</h2>' +
+                      '<img src="' + host + '/contacts/' + contact.doc["_id"] + 
+                      '/default"/>';
+                      
+    pblock.innerHTML += '<ul>';
+
+    for each ( var idx in contact.doc.identities )
+      pblock.innerHTML += '<li style="list-style:none;">' + idx.value + '</li>';
+
+    pblock.innerHTML += "</ul>";
+
+    if (! contact.doc.location) {
+      /* No location information, let them know and 
+         exit from the rest of the code */
+      pblock.innerHTML += "<strong>I don't know where this person is... :(</strong>";
+      return;
+    }
+    
+    pblock.innerHTML += '<h4>' + contact.doc.location + '</h4>';
+
+    pblock.innerHTML += "<span id='loading'>Mapping...</span>";
+
+
+    var mapUrl = "http://maps.google.com/staticmap?";
+    var API_KEY = "ABQIAAAAO0oNFUXoUNx4MuxcPwakNhR3yUCx-o6JvWtDFa7jNOakHN7MrBSTsaKtGJjaVMeVURIpTa3cD1qNfA";
+    // This API key is for https://people.mozilla.com only."
+
+    var default_params = {
+      size: "500x300",
+      key: API_KEY,
+      zoom : 13,
+      sensor : false
+    };
+
+    var mapURL = mapUrl + jQuery.param( default_params );
+    var doc = context.focusedWindow.document;
+    var img = doc.createElement( "img" );
+    jQuery(pblock).append( img );
+
+    CmdUtils.geocodeAddress( contact.doc.location, function(points){
+      if( points != null){
+
+        jQuery( "#loading:visible", pblock).slideUp();
+
+        var params = {
+          lat: points[0].lat,
+          "long": points[0].long,
+        };
+
+        img.src = mapURL + CmdUtils.renderTemplate( "&center=${lat},${long}", params );
+
+        jQuery( pblock ).animate( {height: "+=6px"} );
+      }
+    });
+
+  }
+});
+
+
+CmdUtils.CreateCommand({
+  homepage: "http://www.mozillamessaging.com/",
+  author: { name: "Bryan Clark", email: "clarkbw@mozillamessaging.com"},
+  license: "GPL/MPL/",
+
   name: "raindrops",
   synonyms: ["emails"],
-  modifiers: {from: noun_type_rdcontact},
+  modifiers: {from: noun_type_raindrop_contact},
   url: "http://localhost:5984/junius/files/index.xhtml#{QUERY}",
   icon: "http://localhost:5984/favicon.ico",
   description: "Searches <a href=\"http://localhost:5984/junius/files/index.xhtml\">rain drop</a> for messages matching your words.",
@@ -119,7 +190,7 @@ CmdUtils.CreateCommand({
       // JavaScript Templates
       // http://code.google.com/p/trimpath/wiki/JavaScriptTemplates
       pblock.innerHTML = CmdUtils.renderTemplate(
-        '<h3>${c.name} <span style="color:gray;font-size:smaller;">${c.email}</span></h3>' +
+        '<h3>${c["name"]} <span style="color:gray;font-size:smaller;">${c["value"]}</span></h3>' +
         '<ul style="list-style:none;">' +
         '{for row in results}' + 
           '<li style="margin:0.8ex 0px;">' + 
