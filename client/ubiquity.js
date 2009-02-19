@@ -128,7 +128,7 @@ CmdUtils.CreateCommand({
     var default_params = {
       size: "500x300",
       key: API_KEY,
-      zoom : 13,
+      zoom : 11,
       sensor : false
     };
 

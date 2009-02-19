@@ -76,7 +76,6 @@ class JuniusAccount(object):
         #for row in model.Message.by_header_id(self.dbs.messages, startkey=startkey, endkey=endkey).rows:
         ## XXX optimize this to only look for tweets from this user
         for row in model.Message.by_header_id(self.dbs.messages).rows:
-            print row
             known_uids.add(row.key)
         
         processed = 0
@@ -89,7 +88,15 @@ class JuniusAccount(object):
             else:
                 skipped += 1
         print '  processed', processed, 'skipped', skipped
-    
+
+        print '***** Fetching friends'
+        
+        for friend in self.twitter_account.GetFriends():
+            self.create_contact_if_necessary(friend.screen_name, friend)
+
+        print 'synchronization of friends completed'
+
+
     def grok_message(self, author, imsg):
         involves = self.grok_involves(author, imsg)
 
