@@ -39,6 +39,9 @@ def setup_twitter_account(dbs):
     #  davidascher,sekret
     import os, os.path
     configPath = os.path.join(os.environ['HOME'], ".junius_twitter")
+    if not os.path.isfile(configPath):
+        print "Skipping twitter - no config file '%s'" % (configPath,)
+        return
     f = open(configPath, 'r')
     data = f.read()
     f.close()
@@ -48,6 +51,38 @@ def setup_twitter_account(dbs):
         kind='twitter', username=username, password=password,
     )
     account.store(dbs.accounts)
+
+def setup_skype_account(dbs):
+    # For now we just use whoever is currently logged into skype (but we
+    # probably do want a config file and should skip things if that user
+    # isn't current.)
+
+    # XXX - paramaterized views?
+    accts = [acct for acct in model.Account.all(dbs.accounts) if acct.kind=='skype']
+    if accts:
+        print 'Skype accounts for %r already exist, not automatically adding a new one!' % \
+              [acct.username for a in accts]
+        return
+
+    try:
+        import Skype4Py
+    except ImportError:
+        print "skipping skype as the Skype4Py module isn't installed"
+    else:
+        skype = Skype4Py.Skype()
+        skype.Timeout = 10000 # default of 30 seconds is painful...
+        print 'Connecting to Skype (please check skype; you may need to authorize us)'
+        try:
+            skype.Attach()
+        except Skype4Py.SkypeAPIError, exc:
+            print 'Failed to attach to Skype (is it installed and running? Is authorization pending?)'
+            print '  error was:', exc
+            return
+        print 'Creating skype account for current user', skype.CurrentUser.Handle
+        account = model.Account(
+            kind='skype', username=skype.CurrentUser.Handle,
+        )
+        account.store(dbs.accounts)
 
 def path_part_nuke(path, count):
     for i in range(count):
@@ -98,6 +133,7 @@ def main():
 
     setup_account(dbs)
     setup_twitter_account(dbs)
+    setup_skype_account(dbs)
     install_client_files(dbs)
     
 
