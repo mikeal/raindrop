@@ -10,7 +10,7 @@ import re
 from urllib2 import urlopen
 
 import Skype4Py
-
+global skype
 import junius.model as model
 
 
@@ -21,11 +21,24 @@ class SkypeAccount(object):
         self.account_def = account_def
         self.skype = skype
         self.re_tags = re.compile(r'#(\w+)')
+        self._knownContactsByHandle= {}
 
     def create_account_if_necessary(self):
-        self.author = self.create_contact_if_necessary(self.skype.CurrentUser)
+        self.author = self.create_contact_if_necessary()
 
-    def create_contact_if_necessary(self, skype_user):
+    def create_contact_if_necessary(self, handle=None):
+        #print "skype_user = " + skype_user.FullName
+        if handle in self._knownContactsByHandle:
+            return self._knownContactsByHandle[handle]
+        if not handle:
+            skype_user = self.skype.CurrentUser
+            handle = skype_user.Handle
+        else:
+            if isinstance(handle, Skype4Py.user.IUser):
+                skype_user = handle
+            else:
+                print "getting user for handle", handle
+                skype_user = skype.User(handle)
         contacts = model.Contact.by_identity(self.dbs.contacts,
                                              key=['skype', skype_user.Handle])
 
@@ -47,16 +60,18 @@ class SkypeAccount(object):
                 identities.append({'kind': 'url' , 'value' : skype_user.Homepage })
 
             contact = model.Contact(
-                name=skype_user.DisplayName,
+                name=skype_user.FullName,
                 identities=identities,
                 #location=account.location, xxxxxx ???????? what is this?
                 _attachments=attachments
             )
+            #print "XXX adding contact: ", skype_user.FullName
 
             contact.store(self.dbs.contacts)
         else:
             contact = [model.Contact.load(self.dbs.contacts,contact.value['_id']) for contact in contacts.rows][0]
 
+        self._knownContactsByHandle[handle] = contact
         return contact
 
     def sync(self):
@@ -104,18 +119,19 @@ class SkypeAccount(object):
         # (eg, sending, sent) as well as for received.  An explicit status of
         # 'read' exists - so we assume if it is 'received' it isn't read yet.
         is_read = msg.Status != Skype4Py.cmsReceived
+        msgauthor = self.create_contact_if_necessary(msg.FromHandle)
         cmsg = model.Message(
             account_id=self.account_def.id,
             # Is this expected to be a real URL?
             storage_path='http://skype.com/%s' % (chat.Name,),
             storage_id=str(msg.Id),
             #
-            conversation_id=chat.Name,
+            conversation_id=chat.Name.replace('/', '').replace('#', ''),
             header_message_id=msg.Id,
             references=[], # should reference the 'parent' (ie, the chat iself?)
             # XXX - fixup 'from' and 'to' handling.
-            from_contact_id=str(author.id),
-            from_contact={ str(author.id) : { "name" : author.name } },
+            from_contact_id=str(msgauthor.id),
+            from_contact={ str(msgauthor.id) : { "name" : msg.FromDisplayName} },
             to_contact_ids=[],
             cc_contact_ids=[],
             involves_contact_ids=[involved for involved in involves],
@@ -136,8 +152,9 @@ class SkypeAccount(object):
         involves = { author.id : { 'name' : author.name }  }
         for m in chat.Members:
             account = self.create_contact_if_necessary(m)
+            user = skype.User(m.Handle)
             involves[account.id] = { 'username' : m.Handle,
-                                     'name' : m.DisplayName }
+                                     'name' : user.FullName}
         return involves
 
 
@@ -146,6 +163,7 @@ class Grabber(object):
         self.dbs = dbs
     
     def syncAccounts(self):
+        global skype
         skype = Skype4Py.Skype()
         print "attaching to skype..."
         skype.Attach()
