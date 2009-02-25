@@ -45,7 +45,7 @@ def setup_twitter_account(dbs):
     f = open(configPath, 'r')
     data = f.read()
     f.close()
-    username, password = data.split(',')
+    username, password = data.strip().split(',')
 
     account = model.Account(
         kind='twitter', username=username, password=password,
