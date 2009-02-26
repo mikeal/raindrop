@@ -112,6 +112,7 @@ def install_client_files(dbs):
     
     for filename in os.listdir(client_dir):
         path = os.path.join(client_dir, filename)
+        if filename.endswith("~") or filename.startswith("."): continue;
         if os.path.isfile(path):
             f = open(path, 'rb')
             ct = mimetypes.guess_type(filename)[0]
