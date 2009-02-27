@@ -46,6 +46,9 @@ class SkypeAccount(object):
             # the contact does't exist, create it
 
             attachments = {}
+            #fname = '/tmp/foo.png' # os.getcwd() + '/' + 'skypeavatar' + skype_user.Handle + '.jpg'
+            #open(fname,'w').close();
+            #skype_user.SaveAvatarToFile(fname) - fails, don't know why.
             # XXXX - skype_user.SaveAvatarToFile -> get the image!
             if False: ######
                 try:
