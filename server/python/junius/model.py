@@ -58,6 +58,12 @@ class Contact(schema.Document):
                     emit(identity.value.substring(i), null);
             }
         }''', include_docs=True)
+    #: expose contacts with pictures
+    with_pictures = schema.View('contacts', '''\
+        function(doc) {
+            if (doc._attachments['default'])
+                emit(doc._id, null);
+        }''')
 
 class Message(schema.Document):
     account_id = schema.TextField()

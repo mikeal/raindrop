@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Raindrop Contacts</title>
+  <script type="text/javascript" charset="utf-8"><![CDATA[
+    if (window.console === undefined)
+      console = {log: function() {}};
+  ]]></script>
+  <script src="/_utils/script/json2.js"></script>
+  <script src="/_utils/script/jquery.js?1.2.6"></script>
+  <script src="jquery.couch.js"></script>
+  <script src="utils.js"></script>
+  <script type="text/javascript" charset="utf-8"><![CDATA[
+    function funkyInit() {
+      var dbMessages = $.couch.db("contacts");
+      dbMessages.view("contacts/with_pictures", {
+        include_docs: true,
+        group : false,
+        success: function(json) {
+          var parent = $("#middle");
+          json.rows.forEach(function(row) {
+            //alert(row);
+            console.log("row = ", row);
+            try {
+              var src = dbMessages.uri + row['id'] + '/default/';
+              console.log("src = ", src);
+              var img = $(document.createElement("img")).attr("src", src).attr("width", "64").attr("height", "64");
+              parent.append(img)
+            } catch (e) {
+              console.error(e);
+            }
+          })
+        }
+      })
+    }
+    $(function() {
+      window.setTimeout(funkyInit, 1000);
+    });
+  ]]></script>  
+</head>
+<body>
+
+  <div id="middle">
+  </div>
+  <div class="section" id="footer"></div>
+
+</body>
+</html>
