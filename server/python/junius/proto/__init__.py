@@ -1,7 +1,7 @@
-import junius.proto.imap as imap
-import junius.proto.twitter as twitter
+from .imap import IMAPAccount
+#from .twitter import TwitterAccount
 
 protocols = {
-    'imap': imap.IMAPAccount,
-    'twitter': twitter.TwitterAccount,
+    'imap': IMAPAccount,
+#    'twitter': TwitterAccount,
 }

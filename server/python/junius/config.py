@@ -6,13 +6,14 @@ class Config(object):
   COUCH_DEFAULTS = {'host': 'localhost', 'port': 5984, 'name': 'raindrop'}
   def __init__(self):
     self.parser = ConfigParser.SafeConfigParser()
-    self.load()
 
     self.couches = {'local': self.COUCH_DEFAULTS.copy()}
     self.accounts = {}
 
     # configuration and logging.  two great flavors that go together.
     logging.basicConfig()
+    logging.getLogger().setLevel(logging.DEBUG) # XXX - read this from config.
+    self.load()
 
 
   def dictifySection(self, section_name, defaults=None, name=None):
@@ -38,20 +39,17 @@ class Config(object):
         except:
           pass
 
-      results[key] = value
+      results[name] = value
     return results
 
   def load(self):
     self.parser.read([os.path.expanduser('~/.raindrop')])
 
-    self.local_couch = self.parser.get('couches', 'local')
-    self.remote_couch = self.parser.get('couches', 'remote')
-
     COUCH_PREFIX = 'couch-'
     ACCOUNT_PREFIX = 'account-'
     for section_name in self.parser.sections():
       if section_name.startswith(COUCH_PREFIX):
-        couch_name = section_name[len(COUCH_NAME):]
+        couch_name = section_name[len(COUCH_PREFIX):]
         self.couches[couch_name] = self.dictifySection(section_name,
                                                        self.COUCH_DEFAULTS)
 
@@ -59,6 +57,9 @@ class Config(object):
         account_name = section_name[len(ACCOUNT_PREFIX):]
         self.accounts[account_name] = self.dictifySection(section_name, None,
                                                           account_name)
+
+    self.local_couch = self.couches['local']
+    self.remote_couch = self.couches.get('remote') # may be None
 
 CONFIG = None
 def get_config():

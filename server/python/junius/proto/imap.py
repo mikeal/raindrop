@@ -81,6 +81,9 @@ class ImapClientFactory(protocol.ClientFactory):
                               brat.TEMPORARY)
     self.account.log.warning('Failed to connect, will retry after %d secs',
                              self.backoff)
+    # It occurs that some "account manager" should be reported of the error,
+    # and *it* asks us to retry later?  eg, how do I ask 'ignore backoff -
+    # try again *now*"?
     reactor.callLater(self.backoff, self.connect)
     self.backoff = min(self.backoff * 2, 600) # magic number
 

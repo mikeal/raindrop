@@ -20,15 +20,32 @@ install junius:
   cd junius/server/python/junius
   python setup.py develop
 
-Configure IMAP account w/ some data in it, and edit bootstrap.py to point to it.
+configure junuis:
+  * edit ~/.raindrop
+  * if your 'local' couchdb isn't on localhost, add a section along the lines of:
+        [couch-local]
+        host=hostname
+        port=port
+
+  * Add imap accounts along the lines of
+        [account-some-account-name]
+        type=imap
+        server=imap.gmail.com
+        port=993
+        username=username@gmail.com
+        password=topsecret
+        ssl=True
 
 With Couchdb running:
 
 Setup the tables:
-  python bootstrap.py
+  python bootstrap.py [nuke]
 
-Go to 
-to check that the tables are setup
+  WARNING: using 'nuke' will wipe ALL your databases we may touch.
+  USE WITH CAUTION
+
+Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
+setup
 
 Load the mail:
   python getmail.py (loads IMAP data)

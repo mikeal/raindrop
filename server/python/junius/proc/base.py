@@ -2,6 +2,8 @@ import logging
 
 __all__ = ['Rat', 'AccountBase']
 
+logger = logging.getLogger("accounts")
+
 class Rat(object):
   '''
   Account reasons rationale... this is here to make typing easier...
@@ -68,8 +70,8 @@ class Rat(object):
 
 
 class AccountBase(Rat):
-  def reportStatus(self, what, state, why=AccountBase.UNKNOWN,
-                   expectedDuration=AccountBase.UNKNOWN):
+  def reportStatus(self, what, state, why=Rat.UNKNOWN,
+                   expectedDuration=Rat.UNKNOWN):
     '''
     Report status relating to this account.
 
@@ -82,7 +84,8 @@ class AccountBase(Rat):
     Server busy: SERVER NEUTRAL BUSY TEMPORARY
     (for example, last.fm will sometimes refuse submission requests)
     '''
-    pass
+    logger.debug("ReportStatus: %s %s (why=%s, duration=%s)",
+                 what, state, why, expectedDuration)
 
   def sync(self):
     pass

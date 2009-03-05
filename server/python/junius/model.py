@@ -1,5 +1,31 @@
-import os, os.path
+import os
+import logging
+import paisley
 from couchdb import schema, design
+from junius.config import get_config
+
+config = get_config()
+
+class _NotSpecified:
+    pass
+
+logger = logging.getLogger('model')
+
+DBs = {}
+
+def get_db(couchname="local", dbname=_NotSpecified):
+    try:
+        return DBs[couchname]
+    except KeyError:
+        pass
+    dbinfo = config.couches[couchname]
+    if dbname is _NotSpecified:
+        dbname = dbinfo['name']
+    logger.info("Connecting to couchdb at %s", dbinfo)
+    db = paisley.CouchDB(dbinfo['host'], dbinfo['port'], dbname)
+    DBs[couchname] = db
+    return db
+
 
 class WildField(schema.Field):
     '''
@@ -11,7 +37,10 @@ class WildField(schema.Field):
     def _to_json(self, value):
         return value
 
-class Account(schema.Document):
+class RaindropDocument(schema.Document):
+    type = schema.TextField()
+
+class Account(RaindropDocument):
   '''
   Accounts correspond to instances of protocols to send/receive messages.
   Although they may correlate with the various identities of the user, they
@@ -22,6 +51,7 @@ class Account(schema.Document):
   facebook case, having the account info to be able to do Facebook Connect-type
   things is an example of a case where an account should exist.)
   '''
+
   kind = schema.TextField()
   host = schema.TextField(default='')
   port = schema.IntegerField(default=0)
@@ -34,39 +64,19 @@ class Account(schema.Document):
 
   folderStatuses = WildField(default={})
 
-  # could we just do _all_docs?  I don't want the damn design docs though...
-  # (ironically, this is the first one :)
-  all = schema.View('all', '''\
-      function(doc) {
-          emit(null, doc);
-      }''')
+  view_src = 'accounts'
 
-class Contact(schema.Document):
+class Contact(RaindropDocument):
     name = schema.TextField()
     identities = schema.ListField(schema.DictField(schema.Schema.build(
         kind = schema.TextField(),
         value = schema.TextField()
     )))
-    #: expose contacts by their identities
-    by_identity = schema.View('contacts', '''\
-        function(doc) {
-            for each (var identity in doc.identities) {
-                emit([identity.kind, identity.value], doc);
-            }
-        }''')
-    #: expose all suffixes of the contact name and identity values
-    by_suffix = schema.View('contact_ids', '''\
-        function(doc) {
-            var i;
-            for (i = 0; i < doc.name.length; i++)
-                emit(doc.name.substring(i), null);
-            for each (var identity in doc.identities) {
-                for (i = 0; i < identity.value.length; i++)
-                    emit(identity.value.substring(i), null);
-            }
-        }''', include_docs=True)
 
-class Message(schema.Document):
+    view_src = 'contacts'
+
+
+class Message(RaindropDocument):
     account_id = schema.TextField()
     storage_path = schema.TextField()
     storage_id = schema.IntegerField()
@@ -95,6 +105,9 @@ class Message(schema.Document):
     bodyPart = WildField()
     _attachments = WildField(default={})
 
+    view_src = 'messages'
+
+    xxxxxxxxxxxx = """
     # -- conversation views
     # no ghosts!
     conversation_info = schema.View('conversations', '''\
@@ -227,85 +240,91 @@ class Message(schema.Document):
             emit([parts[1], doc.timestamp], doc.conversation_id);
           }
         }''', include_docs=True)    
-        
-DATABASES = {
-    # the app database proper, no real data
-    'junius': None,
-    #
-    'accounts': Account,
-    'contacts': Contact,
-    'messages': Message,
-}
+    """
 
-AVOID_REPLICATING = {
-    'accounts': 'Private info perhaps',
-}
-
-class DBS(object):
-    def __init__(self, server):
-        self.server = server
-
-DEFAULT_COUCH_SERVER = 'http://localhost:5984/'
-
-def get_remote_host_info():
-    remoteinfo_path = os.path.join(os.environ['HOME'], '.junius.remoteinfo')
-    
-    if os.path.exists(remoteinfo_path):
-        f = open(remoteinfo_path, 'r')
-        data = f.read()
-        f.close()
-        info = data.strip()
-        if info[-1] != '/':
-            info += '/'
-        return info
-    else:
-        raise Exception("You need a ~/.junius.remoteinfo file")
-
-def get_local_host_info():
-    localinfo_path = os.path.join(os.environ['HOME'], '.junius.localinfo')
-    if os.path.exists(localinfo_path):
-        f = open(localinfo_path, 'r')
-        data = f.read()
-        f.close()
-        info = data.strip()
-        if info[-1] != '/':
-            info += '/'
-        return info
-    else:
-        return DEFAULT_COUCH_SERVER
-    
 
 def nuke_db():
-    import couchdb
-    server = couchdb.Server(get_local_host_info())
+    couch_name = 'local'
+    db = get_db(couch_name, None)
+    dbinfo = config.couches[couch_name]
 
-    for dbname in DATABASES.keys():
-      if dbname in server:
-        print "!!! Deleting database", dbname
-        del server[dbname]
+    def _nuke_failed(failure, *args, **kwargs):
+        if failure.value.status != '404':
+            failure.raiseException()
+        logger.info("DB doesn't exist!")
+
+    def _nuked_ok(d):
+        logger.info("NUKED DATABASE!")
+
+    deferred = db.deleteDB(dbinfo['name'])
+    deferred.addCallbacks(_nuked_ok, _nuke_failed)
+    return deferred
+
+
+def load_views_from_manifest(fname):
+    import ConfigParser
+    parser = ConfigParser.SafeConfigParser()
+    assert os.path.exists(fname), fname
+    parser.read([fname])
+    ret = {}
+    relative_to = os.path.dirname(fname)
+    VIEW_PREFIX = 'view-'
+    for section_name in parser.sections():
+      if section_name.startswith(VIEW_PREFIX):
+        view_name = section_name[len(VIEW_PREFIX):]
+        map_fname = parser.get(section_name, 'map')
+        map_code = open(os.path.join(relative_to, map_fname)).read()
+        reduce_code = None
+        try:
+            reduce_fname = parser.get(section_name, 'reduce')
+        except ConfigParser.NoOptionError:
+            pass
+        else:
+            reduce_code = open(os.path.join(relative_to, reduce_fname)).read()
+        yield view_name, map_code, reduce_code
 
 
 def fab_db(update_views=False):
-    import couchdb
-    server = couchdb.Server(get_local_host_info())
-    
-    dbs = DBS(server)
-    
-    for db_name, doc_class in DATABASES.items():
-        if not db_name in server:
-            print 'Creating database', db_name
-            db = server.create(db_name)
-            update_views = True
-        else:
-            db = server[db_name]
+    # XXX - we ignore update_views and always update them.  Its not clear
+    # how to hook this in cleanly to twisted (ie, even if update_views is
+    # False, we must still do it if the db didn't exist)
+    couch_name = 'local'
+    db = get_db(couch_name, None)
+    dbinfo = config.couches[couch_name]
+
+    def _create_failed(failure, *args, **kw):
+        if failure.value.status != '412': # precondition failed.
+            failure.raiseException()
+        logger.info("DB already exists!")
+
+    def _created_ok(d):
+        logger.info("created new database")
+        view_src = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                "../../../schema/views"))
+        logger.info("Updating views from '%s'", view_src)
         
-        if update_views and doc_class:
-            print 'Updating views'
-            views = [getattr(doc_class, k) for k, v in doc_class.__dict__.items() if isinstance(v, schema.View)]
-            print 'Views:', views
+        doc_types = [x for x in globals().itervalues()
+                     if isinstance(x, type) and issubclass(x, RaindropDocument)
+                     and x is not RaindropDocument]
+        for doc_class in doc_types:
+            manifest_dir = os.path.join(view_src, doc_class.view_src)
+            view_gen = load_views_from_manifest(os.path.join(manifest_dir, "MANIFEST"))
+            views = []
+            for view_name, map_src, reduce_src in view_gen:
+                logger.debug("Creating view '%s', map=%r, reduce=%r",
+                             view_name, map_src, reduce_src)
+                view = schema.View(view_name, map_src, reduce_src)
+                #view = design.ViewDefinition(view_doc, view_name, map_src, reduce_src)
+                views.append(view)
+
+            # SOB - need a twisted version of this...
             if views:
-                design.ViewDefinition.sync_many(db, views)
+                import couchdb
+                url = 'http://%(host)s:%(port)s/' % dbinfo
+                sserver = couchdb.Server(url)
+                sdb = sserver[dbinfo['name']]
+                design.ViewDefinition.sync_many(sdb, views)
 
-        setattr(dbs, db_name, db)
-
-    return dbs    
+    d = db.createDB(dbinfo['name'])
+    d.addCallbacks(_created_ok, _create_failed)
+    return d

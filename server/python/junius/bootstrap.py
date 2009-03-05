@@ -3,11 +3,12 @@
 '''
 Setup the CouchDB server so that it is fully usable and what not.
 '''
+from twisted.internet import reactor, defer
+import os, os.path, mimetypes, base64, pprint
 import model
 
-import os, os.path, mimetypes, base64, pprint
-
-import junius.model as model
+import logging
+logger = logging.getLogger(__name__)
 
 def setup_account(dbs):
     if len(model.Account.all(dbs.accounts)):
@@ -90,15 +91,48 @@ def install_client_files(dbs):
 
 def main():
     import sys
+
+    d = defer.Deferred()
+    def mutter(whateva):
+        print "Raindrops keep falling on my head..."
+    d.addCallback(mutter)
+
     if 'nuke' in sys.argv:
-      print 'NUKING DATABASE!!!'
-      model.nuke_db()
+        def do_nuke(whateva):
+            # returns a deferred.
+            return model.nuke_db()
+        d.addCallback(do_nuke)
 
-    dbs = model.fab_db(update_views='updateviews' in sys.argv)
+    def do_fab(whateva):
+        # returns a deferred.
+        return model.fab_db(update_views='updateviews' in sys.argv)
 
-    setup_account(dbs)
-    setup_twitter_account(dbs)
-    install_client_files(dbs)
+    d.addCallback(do_fab)
+
+    #dbs = model.fab_db(update_views='updateviews' in sys.argv)
+    #
+    #setup_account(dbs)
+    #setup_twitter_account(dbs)
+
+    #install_client_files(dbs)
+
+    def done(whateva):
+        print "Finished."
+        reactor.stop()
+
+    def error(*args, **kw):
+        from twisted.python import log
+        log.err(*args, **kw)
+        print "FAILED."
+        reactor.stop()
+
+    d.addCallbacks(done, error)
+
+    reactor.callWhenRunning(d.callback, None)
+
+    logger.debug('starting reactor')
+    reactor.run()
+    logger.debug('reactor done')
     
 
 if __name__ == '__main__':
