@@ -48,6 +48,11 @@ def setup_twitter_account(dbs):
     f.close()
     username, password = data.strip().split(',')
 
+    accts = [acct for acct in model.Account.all(dbs.accounts) if acct.kind=='twitter' and acct.username==username]
+    if accts and len(accts) > 0:
+        print 'Twitter account for %s already exist, not automatically adding a new one!' % username
+        return
+
     account = model.Account(
         kind='twitter', username=username, password=password,
     )
