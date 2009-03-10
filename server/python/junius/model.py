@@ -81,16 +81,12 @@ class Account(RaindropDocument):
 
   folderStatuses = WildField(default={})
 
-  view_src = 'accounts'
-
 class Contact(RaindropDocument):
     name = schema.TextField()
     identities = schema.ListField(schema.DictField(schema.Schema.build(
         kind = schema.TextField(),
         value = schema.TextField()
     )))
-
-    view_src = 'contacts'
 
 
 class Message(RaindropDocument):
@@ -121,8 +117,6 @@ class Message(RaindropDocument):
     headers = WildField()
     bodyPart = WildField()
     _attachments = WildField(default={})
-
-    view_src = 'messages'
 
     xxxxxxxxxxxx = """
     # -- conversation views
@@ -277,28 +271,75 @@ def nuke_db():
     deferred.addCallbacks(_nuked_ok, _nuke_failed)
     return deferred
 
-
-def load_views_from_manifest(fname):
-    import ConfigParser
-    parser = ConfigParser.SafeConfigParser()
-    assert os.path.exists(fname), fname
-    parser.read([fname])
+def _build_doc_from_directory(ddir):
+    # for now all we look for is the views.
     ret = {}
-    relative_to = os.path.dirname(fname)
-    VIEW_PREFIX = 'view-'
-    for section_name in parser.sections():
-      if section_name.startswith(VIEW_PREFIX):
-        view_name = section_name[len(VIEW_PREFIX):]
-        map_fname = parser.get(section_name, 'map')
-        map_code = open(os.path.join(relative_to, map_fname)).read()
-        reduce_code = None
+    try:
+        views = os.listdir(os.path.join(ddir, 'views'))
+    except OSError:
+        logger.warning("document directory %r has no 'views' subdirectory - skipping this document", ddir)
+        return ret
+
+    ret_views = ret['views'] = {}
+    for view_name in views:
+        view_dir = os.path.join(ddir, 'views', view_name)
+        if not os.path.isdir(view_dir):
+            logger.info("skipping view non-directory: %s", view_dir)
+            continue
         try:
-            reduce_fname = parser.get(section_name, 'reduce')
-        except ConfigParser.NoOptionError:
-            pass
-        else:
-            reduce_code = open(os.path.join(relative_to, reduce_fname)).read()
-        yield view_name, map_code, reduce_code
+            f = open(os.path.join(view_dir, 'map.js'))
+            try:
+                ret_views[view_name] = {'map': f.read()}
+            finally:
+                f.close()
+        except (OSError, IOError):
+            logger.info("can't open map.js in view directory %r - skipping entire document", view_dir)
+            continue
+        try:
+            f = open(os.path.join(view_dir, 'reduce.js'))
+            ret_views[view_name] = {'reduce': f.read()}
+            f.close()
+        except (OSError, IOError):
+            # no reduce - no problem...
+            logger.debug("no reduce.js in '%s' - skipping reduce for this view", view_dir)
+            continue
+    if not ret_views:
+        logger.warning("Document in directory %r appears to have no views", ddir)
+    return ret
+
+
+def generate_designs_from_filesystem(root):
+    # This is pretty dumb (but therefore simple).
+    # root/* -> directories used purely for a 'namespace'
+    # root/*/* -> directories which hold the contents of a document.
+    # root/*/*/views -> directory holding views for the document
+    # root/*/*/views/* -> directory for each named view.
+    # root/*/*/views/*/map.js|reduce.js -> view content
+    logger.debug("Starting to build design documents from %r", root)
+    for top_name in os.listdir(root):
+        fq_child = os.path.join(root, top_name)
+        if not os.path.isdir(fq_child):
+            logger.debug("skipping non-directory: %s", fq_child)
+            continue
+        # so we have a 'namespace' directory.
+        num_docs = 0
+        for doc_name in os.listdir(fq_child):
+            fq_doc = os.path.join(fq_child, doc_name)
+            if not os.path.isdir(fq_doc):
+                logger.info("skipping document non-directory: %s", fq_doc)
+                continue
+            # have doc - build a dict from its dir.
+            doc = _build_doc_from_directory(fq_doc)
+            # XXX - note the artificial 'raindrop' prefix - the intent here
+            # is that we need some way to determine which design documents we
+            # own, and which are owned by extensions...
+            # XXX - *sob* - and that we can't use '/' in the doc ID at the moment...
+            doc['_id'] = '_design/' + ('!'.join(['raindrop', top_name, doc_name]))
+            yield doc
+            num_docs += 1
+
+        if not num_docs:
+            logger.info("skipping sub-directory without child directories: %s", fq_child)
 
 
 def fab_db(update_views=False):
@@ -317,30 +358,11 @@ def fab_db(update_views=False):
 
     def _created_ok(d):
         logger.info("created new database")
-        view_src = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                "../../../schema/views"))
-        logger.info("Updating views from '%s'", view_src)
-        
-        doc_types = [x for x in globals().itervalues()
-                     if isinstance(x, type) and issubclass(x, RaindropDocument)
-                     and x is not RaindropDocument]
-        docs = []
-        for doc_class in doc_types:
-            manifest_dir = os.path.join(view_src, doc_class.view_src)
-            view_gen = load_views_from_manifest(os.path.join(manifest_dir, "MANIFEST"))
-            # XXX - rework this.
-            for view_name, map_src, reduce_src in view_gen:
-                logger.debug("Creating view '%s', map=%r, reduce=%r",
-                             view_name, map_src, reduce_src)
-                view_doc = "_design/" + doc_class.view_src + "/" + view_name
-                view = {'map': map_src}
-                if reduce_src:
-                    view['reduce'] = reduce_src
-                views = {view_name: view}
-                # don't bother setting language= - we always use default of js.
-                doc = {'_id': view_doc, 'views': views}
-                docs.append(doc)
+        schema_src = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                  "../../../schema"))
 
+        docs = [d for d in generate_designs_from_filesystem(schema_src)]
+        logger.info("Found %d documents in '%s'", len(docs), schema_src)
         assert docs, 'surely I have *some* docs!'
         url = '/%(name)s/_bulk_docs' % dbinfo
         ob = {'docs' : docs}
