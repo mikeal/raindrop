@@ -66,8 +66,8 @@
       ru.addDynamicMailbox("Discussion","discussion");
       
       
-      var dbMessages = $.couch.db("messages");
-      dbMessages.view("by_header_id/by_mailing_list", {
+      var dbMessages = $.couch.db("raindrop");
+      dbMessages.view("raindrop!mailing_lists!all/by_list_id", {
         include_docs: false,
         group : true,
         success: function(json) {
