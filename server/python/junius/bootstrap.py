@@ -3,6 +3,7 @@
 '''
 Setup the CouchDB server so that it is fully usable and what not.
 '''
+import sys
 from twisted.internet import reactor, defer
 import twisted.web.error
 import os, os.path, mimetypes, base64, pprint
@@ -84,15 +85,26 @@ def install_client_files(whateva):
         logger.info("listing contents of '%s'", client_dir)
         
         for filename in os.listdir(client_dir):
-            logger.debug("filename '%s'", filename)
             path = os.path.join(client_dir, filename)
             if os.path.isfile(path):
                 f = open(path, 'rb')
+                ct = mimetypes.guess_type(filename)[0]
+                if ct is None and sys.platform=="win32":
+                    # A very simplistic check in the windows registry.
+                    import _winreg
+                    try:
+                        k = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
+                                            os.path.splitext(filename)[1])
+                        ct = _winreg.QueryValueEx(k, "Content Type")[0]
+                    except EnvironmentError:
+                        pass
+                assert ct, "can't guess the content type for '%s'" % filename
                 attachments[filename] = {
-                    'content_type': mimetypes.guess_type(filename)[0],
+                    'content_type': ct,
                     'data': base64.b64encode(f.read())
                 }
                 f.close()
+            logger.debug("filename '%s' (%s)", filename, ct)
         return d.saveDoc('raindrop', design_doc, FILES_DOC)
 
     defrd = d.openDoc('raindrop', FILES_DOC) # XXX - why the db name??
