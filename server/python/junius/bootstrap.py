@@ -4,6 +4,7 @@
 Setup the CouchDB server so that it is fully usable and what not.
 '''
 from twisted.internet import reactor, defer
+import twisted.web.error
 import os, os.path, mimetypes, base64, pprint
 import model
 
@@ -58,35 +59,46 @@ def path_part_nuke(path, count):
 
 FILES_DOC = 'files' #'_design/files'
 
-def install_client_files(dbs):
+def install_client_files(whateva):
     '''
     cram everyone in 'client' into the 'junius' app database
     '''
-    if FILES_DOC in dbs.junius:
-        print 'Design doc already exists, will be updating/overwriting files'
-        design_doc = dbs.junius[FILES_DOC]
+    from model import get_db
+    d = get_db()
+
+    def _opened_ok(doc):
+        logger.info('Design doc already exists, will be updating/overwriting files')
+        return doc
+
+    def _open_not_exists(failure, *args, **kw):
+        failure.trap(twisted.web.error.Error)
+        if failure.value.status != '404': # not found.
+            failure.raiseException()
+        return {} # return an empty doc.
+
+    def _update_doc(design_doc):
         attachments = design_doc['_attachments'] = {}
-    else:
-        design_doc = {}
-        attachments = design_doc['_attachments'] = {}
-    
-    # we cannot go in a zipped egg...
-    junius_root_dir = path_part_nuke(model.__file__, 4)
-    client_dir = os.path.join(junius_root_dir, 'client')
-    print 'listing contents of', client_dir
-    
-    for filename in os.listdir(client_dir):
-        print 'filename', filename
-        path = os.path.join(client_dir, filename)
-        if os.path.isfile(path):
-            f = open(path, 'rb')
-            attachments[filename] = {
-                'content_type': mimetypes.guess_type(filename)[0],
-                'data': base64.b64encode(f.read())
-            }
-            f.close()
-    
-    dbs.junius[FILES_DOC] = design_doc
+        # we cannot go in a zipped egg...
+        junius_root_dir = path_part_nuke(model.__file__, 4)
+        client_dir = os.path.join(junius_root_dir, 'client')
+        logger.info("listing contents of '%s'", client_dir)
+        
+        for filename in os.listdir(client_dir):
+            logger.debug("filename '%s'", filename)
+            path = os.path.join(client_dir, filename)
+            if os.path.isfile(path):
+                f = open(path, 'rb')
+                attachments[filename] = {
+                    'content_type': mimetypes.guess_type(filename)[0],
+                    'data': base64.b64encode(f.read())
+                }
+                f.close()
+        return d.saveDoc('raindrop', design_doc, FILES_DOC)
+
+    defrd = d.openDoc('raindrop', FILES_DOC) # XXX - why the db name??
+    defrd.addCallbacks(_opened_ok, _open_not_exists)
+    defrd.addCallback(_update_doc)
+    return defrd
 
 
 def main():
@@ -108,6 +120,8 @@ def main():
         return model.fab_db(update_views='updateviews' in sys.argv)
 
     d.addCallback(do_fab)
+
+    d.addCallback(install_client_files)
 
     #dbs = model.fab_db(update_views='updateviews' in sys.argv)
     #
