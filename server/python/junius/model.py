@@ -1,8 +1,16 @@
 import os
 import logging
+
+import twisted.web.error
+try:
+    import simplejson as json
+except ImportError:
+    import json # Python 2.6
+
 import paisley
-from couchdb import schema, design
+from couchdb import schema
 from junius.config import get_config
+
 
 config = get_config()
 
@@ -13,6 +21,15 @@ logger = logging.getLogger('model')
 
 DBs = {}
 
+class CouchDB(paisley.CouchDB):
+    def postob(self, uri, ob):
+        # This seems to not use keep-alives etc where using twisted.web
+        # directly doesn't?
+        body = json.dumps(ob, allow_nan=False,
+                          ensure_ascii=False).encode('utf-8')
+        return self.post(uri, body)
+
+
 def get_db(couchname="local", dbname=_NotSpecified):
     try:
         return DBs[couchname]
@@ -22,7 +39,7 @@ def get_db(couchname="local", dbname=_NotSpecified):
     if dbname is _NotSpecified:
         dbname = dbinfo['name']
     logger.info("Connecting to couchdb at %s", dbinfo)
-    db = paisley.CouchDB(dbinfo['host'], dbinfo['port'], dbname)
+    db = CouchDB(dbinfo['host'], dbinfo['port'], dbname)
     DBs[couchname] = db
     return db
 
@@ -293,6 +310,7 @@ def fab_db(update_views=False):
     dbinfo = config.couches[couch_name]
 
     def _create_failed(failure, *args, **kw):
+        failure.trap(twisted.web.error.Error)
         if failure.value.status != '412': # precondition failed.
             failure.raiseException()
         logger.info("DB already exists!")
@@ -306,24 +324,28 @@ def fab_db(update_views=False):
         doc_types = [x for x in globals().itervalues()
                      if isinstance(x, type) and issubclass(x, RaindropDocument)
                      and x is not RaindropDocument]
+        docs = []
         for doc_class in doc_types:
             manifest_dir = os.path.join(view_src, doc_class.view_src)
             view_gen = load_views_from_manifest(os.path.join(manifest_dir, "MANIFEST"))
-            views = []
+            # XXX - rework this.
             for view_name, map_src, reduce_src in view_gen:
                 logger.debug("Creating view '%s', map=%r, reduce=%r",
                              view_name, map_src, reduce_src)
-                view = schema.View(view_name, map_src, reduce_src)
-                #view = design.ViewDefinition(view_doc, view_name, map_src, reduce_src)
-                views.append(view)
+                view_doc = "_design/" + doc_class.view_src + "/" + view_name
+                view = {'map': map_src}
+                if reduce_src:
+                    view['reduce'] = reduce_src
+                views = {view_name: view}
+                # don't bother setting language= - we always use default of js.
+                doc = {'_id': view_doc, 'views': views}
+                docs.append(doc)
 
-            # SOB - need a twisted version of this...
-            if views:
-                import couchdb
-                url = 'http://%(host)s:%(port)s/' % dbinfo
-                sserver = couchdb.Server(url)
-                sdb = sserver[dbinfo['name']]
-                design.ViewDefinition.sync_many(sdb, views)
+        assert docs, 'surely I have *some* docs!'
+        url = '/%(name)s/_bulk_docs' % dbinfo
+        ob = {'docs' : docs}
+        deferred = db.postob(url, ob)
+        return deferred
 
     d = db.createDB(dbinfo['name'])
     d.addCallbacks(_created_ok, _create_failed)
