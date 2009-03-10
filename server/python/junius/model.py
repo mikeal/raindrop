@@ -297,12 +297,13 @@ def _build_doc_from_directory(ddir):
             continue
         try:
             f = open(os.path.join(view_dir, 'reduce.js'))
-            ret_views[view_name] = {'reduce': f.read()}
+            ret_views[view_name]['reduce'] = f.read()
             f.close()
         except (OSError, IOError):
             # no reduce - no problem...
             logger.debug("no reduce.js in '%s' - skipping reduce for this view", view_dir)
             continue
+    logger.info("Document in directory %r has views %s", ddir, ret_views.keys())
     if not ret_views:
         logger.warning("Document in directory %r appears to have no views", ddir)
     return ret
