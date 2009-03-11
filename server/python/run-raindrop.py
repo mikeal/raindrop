@@ -99,10 +99,6 @@ def main():
                            "specified log.",
                       default=["INFO"])
 
-    parser.add_option("", "--nuke-db-and-delete-everything-forever", dest="nuke",
-                      action="store_true",
-                      help="Delete the entire databases including all messages")
-
     options, args = parser.parse_args()
 
     _setup_logging(options)
