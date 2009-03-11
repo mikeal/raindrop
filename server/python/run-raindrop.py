@@ -59,17 +59,17 @@ def _setup_logging(options):
             level = val
         # convert a level name to a value.
         try:
-            val = int(getattr(logging, val.upper()))
+            level = int(getattr(logging, level.upper()))
         except (ValueError, AttributeError):
             # not a level name from the logging module - maybe a literal.
             try:
-                val = int(options.log_level)
+                level = int(level)
             except ValueError:
                 init_errors.append(
-                    "Invalid log-level '%s' ignored" % (options.log_level,))
+                    "Invalid log-level '%s' ignored" % (val,))
                 continue
         l = logging.getLogger(name)
-        l.setLevel(val)
+        l.setLevel(level)
 
     # write the errors after the logging is completely setup.
     for e in init_errors:
