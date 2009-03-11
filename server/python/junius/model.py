@@ -21,6 +21,14 @@ logger = logging.getLogger('model')
 
 DBs = {}
 
+
+def _raw_to_rows(raw):
+    # {'rows': [], 'total_rows': 0} -> the actual rows.
+    ret = raw['rows']
+    assert len(ret)==raw['total_rows'], raw
+    return ret
+
+
 class CouchDB(paisley.CouchDB):
     def postob(self, uri, ob):
         # This seems to not use keep-alives etc where using twisted.web
@@ -29,18 +37,25 @@ class CouchDB(paisley.CouchDB):
                           ensure_ascii=False).encode('utf-8')
         return self.post(uri, body)
 
+    def openView(self, *args, **kwargs):
+        # The base class of this returns the raw json object - eg:
+        # {'rows': [], 'total_rows': 0}
+        base_ret = super(CouchDB, self).openView(*args, **kwargs)
+        return base_ret.addCallback(_raw_to_rows)
+
 
 def get_db(couchname="local", dbname=_NotSpecified):
-    try:
-        return DBs[couchname]
-    except KeyError:
-        pass
     dbinfo = config.couches[couchname]
     if dbname is _NotSpecified:
         dbname = dbinfo['name']
+    key = couchname, dbname
+    try:
+        return DBs[key]
+    except KeyError:
+        pass
     logger.info("Connecting to couchdb at %s", dbinfo)
     db = CouchDB(dbinfo['host'], dbinfo['port'], dbname)
-    DBs[couchname] = db
+    DBs[key] = db
     return db
 
 
@@ -50,12 +65,14 @@ class WildField(schema.Field):
     '''
     def _to_python(self, value):
         return value
-    
+
     def _to_json(self, value):
         return value
 
+
 class RaindropDocument(schema.Document):
     type = schema.TextField()
+
 
 class Account(RaindropDocument):
   '''
@@ -80,6 +97,7 @@ class Account(RaindropDocument):
   verified = schema.BooleanField(default=False)
 
   folderStatuses = WildField(default={})
+
 
 class Contact(RaindropDocument):
     name = schema.TextField()
@@ -355,7 +373,7 @@ def fab_db(update_views=False):
         failure.trap(twisted.web.error.Error)
         if failure.value.status != '412': # precondition failed.
             failure.raiseException()
-        logger.info("DB already exists!")
+        logger.info("couch database %(name)r already exists", dbinfo)
 
     def _created_ok(d):
         logger.info("created new database")
