@@ -114,7 +114,7 @@ def main():
 
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
-    if args[0]=='help':
+    if args and args[0]=='help':
         if args[1:]:
             which = args[1:]
         else:
