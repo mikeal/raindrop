@@ -10,9 +10,9 @@ class Config(object):
     self.couches = {'local': self.COUCH_DEFAULTS.copy()}
     self.accounts = {}
 
-    # configuration and logging.  two great flavors that go together.
-    logging.basicConfig()
-    logging.getLogger().setLevel(logging.DEBUG) # XXX - read this from config.
+    # XXX - this seems wrong: most of the time the 'config' - particularly the
+    # list of accounts etc - will come from the DB.  The config file should only
+    # be used during bootstrapping.
     self.load()
 
 
@@ -55,8 +55,13 @@ class Config(object):
 
       if section_name.startswith(ACCOUNT_PREFIX):
         account_name = section_name[len(ACCOUNT_PREFIX):]
-        self.accounts[account_name] = self.dictifySection(section_name, None,
-                                                          account_name)
+        acct = self.accounts[account_name] = \
+                    self.dictifySection(section_name, None, account_name)
+        if 'id' in acct:
+          acct['_id'] = acct['id']
+          del acct['id']
+        else:
+          acct['_id'] = acct['username']
 
     self.local_couch = self.couches['local']
     self.remote_couch = self.couches.get('remote') # may be None
