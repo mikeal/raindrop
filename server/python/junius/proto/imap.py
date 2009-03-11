@@ -1,8 +1,13 @@
-from twisted.internet import protocol, ssl, defer, reactor
+from twisted.internet import protocol, ssl, defer, reactor, error
 from twisted.mail import imap4
+import logging
 
-from junius.proc import base
+from ..proc import base
+from ..model import get_db
+
 brat = base.Rat
+
+logger = logging.getLogger(__name__)
 
 class ImapClient(imap4.IMAP4Client):
   '''
@@ -11,12 +16,13 @@ class ImapClient(imap4.IMAP4Client):
   don't turn out to benefit from the subclassing relationship.
   '''
   def serverGreeting(self, caps):
+    logger.debug("IMAP server greeting: capabilities are %s", caps)
     d = self._doAuthenticate()
     d.addCallback(self._reqList)
 
 
   def _doAuthenticate(self):
-    if self.account.details['crypto'] == 'TLS':
+    if self.account.details.get('crypto') == 'TLS':
       d = self.startTLS(self.factory.ctx)
       d.addErrback(self.accountStatus,
                    brat.SERVER, brat.BAD, brat.CRYPTO, brat.PERMANENT)
@@ -37,8 +43,111 @@ class ImapClient(imap4.IMAP4Client):
     return self.list('', '*').addCallback(self._procList)
 
   def _procList(self, result, *args, **kwargs):
-    for flags, delim, name in result:
-      print 'Mailbox', flags, delim, name
+    # As per http://python.codefetch.com/example/ow/tnpe_code/ch07/imapdownload.py,
+    # We keep a 'stack' of items left to process in an instance variable...
+    self.folder_infos = result[:]
+    return self._processNextFolder()
+
+  def _processNextFolder(self):
+    if not self.folder_infos:
+      # yay - all done!
+      logger.info("Finished synchronizing IMAP folders")
+      # need to report we are done somewhere?
+      from ..sync import get_conductor
+      return get_conductor().accountFinishedSync(self)
+
+    self.current_folder_info = self.folder_infos.pop()
+    flags, delim, name = self.current_folder_info
+    logger.debug('Processing folder %s (flags=%s, delim=%s)', name, flags, delim)
+    return self.examine(name
+                 ).addCallback(self._examineFolder, name
+                 ).addErrback(self._cantExamineFolder, name)
+
+  def _examineFolder(self, result, name):
+    logger.debug('Looking for messages already fetched for mailbox %s', name)
+    startkey=[self.account.details['_id'], name, 0]
+    endkey=[self.account.details['_id'], name, 4000000000]
+    get_db().openView('raindrop!messages!by', 'by_storage'
+        ).addCallback(self._fetchAndProcess, name)
+
+  def _fetchAndProcess(self, rows, name):
+    allMessages = imap4.MessageSet(1, None)
+    key_check = [self.account.details['_id'], name]
+    seen_ids = [r['key'][2] for r in rows if r['key'][0:2]==key_check]
+    return self.fetchUID(allMessages, True).addCallback(
+            self._gotUIDs, name, seen_ids)
+
+  def _gotUIDs(self, uidResults, name, seen_uids):
+    uids = set([result['UID'] for result in uidResults.values()])
+    need = uids - set(seen_uids)
+    logger.info("Folder %s has %d messages, %d of which we haven't seen",
+                 name, len(uids), len(need))
+    self.messages_remaining = need
+    return self._processNextMessage()
+
+  def _processNextMessage(self):
+    logger.debug("processNextMessage has %d messages to go...",
+                 len(self.messages_remaining))
+    if not self.messages_remaining:
+      return self._processNextFolder()
+
+    uid = self.messages_remaining.pop()
+    to_fetch = imap4.MessageSet(uid)
+    # grr - we have to get the rfc822 body and the flags in separate requests.
+    logger.debug("fetching rfc822 for message %s", to_fetch)
+    return self.fetchMessage(to_fetch, uid=True
+                ).addCallback(self._gotBody, to_fetch
+                )
+
+  def _gotBody(self, result, to_fetch):
+    _, result = result.popitem()
+    try:
+      body = result['RFC822'].decode('utf8')
+    except UnicodeError, why:
+      logger.error("Failed to decode a message as UTF8: %s", why)
+      body = result['RFC822'].decode('utf8', 'ignore')
+    # grr - get the flags
+    logger.debug("fetching flags for message %s", to_fetch)
+    return self.fetchFlags(to_fetch, uid=True
+                ).addCallback(self._gotMessage, body
+                ).addErrback(self._cantGetMessage
+                )
+
+  def _gotMessage(self, result, body):
+    # not sure about this - can we ever get more?
+    assert len(result)==1, result
+    _, result = result.popitem()
+    flags = result['FLAGS']
+    # put the 'raw' document object together and save it.
+    doc = dict(
+      type='rawMessage',
+      subtype='rfc822',
+      account_id=self.account.details['_id'],
+      storage_path=self.current_folder_info[2],
+      storage_id=result['UID'],
+      rfc822=body,
+      read=r'\Seen' in flags,
+      )
+    get_db().saveDoc(doc
+            ).addCallback(self._savedDocument
+            ).addErrback(self._cantSaveDocument
+            )
+
+  def _cantGetMessage(self, failure):
+    logger.error("Failed to fetch message: %s", failure)
+    return self._processNextMessage()
+
+  def _savedDocument(self, result):
+    logger.debug("Saved message %s", result)
+    return self._processNextMessage()
+
+  def _cantSaveDocument(self, failure):
+    logger.error("Failed to save message: %s", failure)
+    return self._processNextMessage()
+
+  def _cantExamineFolder(self, failure, name, *args, **kw):
+    logger.warning("Failed to examine folder '%s': %s", name, failure)
+    return self._processNextFolder()
 
   def accountStatus(self, result, *args):
     self.account.reportStatus(*args)
@@ -61,9 +170,9 @@ class ImapClientFactory(protocol.ClientFactory):
 
   def connect(self):
     details = self.account.details
-    self.account.log.debug('attempting to connect to %s:%d (ssl: %s)',
-                           details['host'], details['port'], details['ssl'])
-    if self.details.get('ssl'):
+    logger.debug('attempting to connect to %s:%d (ssl: %s)',
+                 details['host'], details['port'], details['ssl'])
+    if details.get('ssl'):
       reactor.connectSSL(details['host'], details['port'], self, self.ctx)
     else:
       reactor.connectTCP(details['host'], details['port'], self)
@@ -72,15 +181,22 @@ class ImapClientFactory(protocol.ClientFactory):
     # the flaw in this is that we start from scratch every time; which is why
     #  most of the logic in the client class should really be pulled out into
     #  the account logic, probably.  this class itself may have issues too...
-    self.account.log.debug(
-      'lost connection to server, going to reconnect in a bit')
-    reactor.callLater(2, self.connect)
+    # XXX - also note that a simple exception in other callbacks can trigger
+    # this - meaning we retry just to hit the same exception.
+    if reason.check(error.ConnectionDone):
+        # only an error if premature
+        if not self.deferred.called:
+            self.deferred.errback(reason)
+    else:
+        #self.deferred.errback(reason)
+        logger.debug('lost connection to server, going to reconnect in a bit')
+        reactor.callLater(2, self.connect)
 
   def clientConnectionFailed(self, connector, reason):
     self.account.reportStatus(brat.SERVER, brat.BAD, brat.UNREACHABLE,
                               brat.TEMPORARY)
-    self.account.log.warning('Failed to connect, will retry after %d secs',
-                             self.backoff)
+    logger.warning('Failed to connect, will retry after %d secs',
+                   self.backoff)
     # It occurs that some "account manager" should be reported of the error,
     # and *it* asks us to retry later?  eg, how do I ask 'ignore backoff -
     # try again *now*"?
@@ -92,7 +208,6 @@ class IMAPAccount(base.AccountBase):
   def __init__(self, db, details):
     self.db = db
     self.details = details
-    self.log = logging.getLogger('imap')
 
   def startSync(self, conductor):
     self.factory = ImapClientFactory(self)
