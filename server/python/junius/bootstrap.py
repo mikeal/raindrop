@@ -4,10 +4,12 @@
 Setup the CouchDB server so that it is fully usable and what not.
 '''
 import sys
-from twisted.internet import reactor, defer
 import twisted.web.error
+from twisted.internet import defer
 import os, os.path, mimetypes, base64, pprint
 import model
+
+from junius.config import get_config
 
 import logging
 logger = logging.getLogger(__name__)
@@ -62,13 +64,14 @@ FILES_DOC = 'files' #'_design/files'
 
 def install_client_files(whateva):
     '''
-    cram everyone in 'client' into the 'junius' app database
+    cram everyone in 'client' into the app database
     '''
     from model import get_db
     d = get_db()
 
     def _opened_ok(doc):
-        logger.info('Design doc already exists, will be updating/overwriting files')
+        logger.info("document '%(_id)s' already exists, will be updating/overwriting existing records",
+                    doc)
         return doc
 
     def _open_not_exists(failure, *args, **kw):
@@ -82,8 +85,8 @@ def install_client_files(whateva):
         # we cannot go in a zipped egg...
         junius_root_dir = path_part_nuke(model.__file__, 4)
         client_dir = os.path.join(junius_root_dir, 'client')
-        logger.info("listing contents of '%s'", client_dir)
-        
+        logger.debug("listing contents of '%s' to look for client files", client_dir)
+
         for filename in os.listdir(client_dir):
             path = os.path.join(client_dir, filename)
             if os.path.isfile(path):
@@ -105,61 +108,47 @@ def install_client_files(whateva):
                 }
                 f.close()
             logger.debug("filename '%s' (%s)", filename, ct)
-        return d.saveDoc('raindrop', design_doc, FILES_DOC)
+        return d.saveDoc(design_doc, FILES_DOC)
 
-    defrd = d.openDoc('raindrop', FILES_DOC) # XXX - why the db name??
+    defrd = d.openDoc(FILES_DOC)
     defrd.addCallbacks(_opened_ok, _open_not_exists)
     defrd.addCallback(_update_doc)
     return defrd
 
+def install_accounts(whateva):
+    from model import get_db
+    db = get_db()
+    config = get_config()
 
-def main():
-    import sys
+    def _opened_ok(doc):
+        logger.info("account '%(_id)s' already exists, will be updating existing account",
+                    doc)
+        return doc
+
+    def _open_not_exists(failure, doc_id, *args, **kw):
+        failure.trap(twisted.web.error.Error)
+        if failure.value.status != '404': # not found.
+            failure.raiseException()
+        return {'_id': doc_id} # return an empty doc for the account.
+
+    def _update_acct(doc, info):
+        logger.debug("updating %s with %s", doc, info)
+        doc.update(info)
+        doc['type'] = 'account'
+        return db.saveDoc(doc, doc['_id'])
+
+    def _open_doc(whateva, key):
+        return db.openDoc(key)
 
     d = defer.Deferred()
-    def mutter(whateva):
-        print "Raindrops keep falling on my head..."
-    d.addCallback(mutter)
 
-    if 'nuke' in sys.argv:
-        def do_nuke(whateva):
-            # returns a deferred.
-            return model.nuke_db()
-        d.addCallback(do_nuke)
+    for acct_name, acct_info in config.accounts.iteritems():
+        acct_id = acct_info['_id']
+        logger.info("Adding account '%s'", acct_id)
+        d.addCallback(_open_doc, acct_id)
+        d.addCallbacks(_opened_ok, _open_not_exists, errbackArgs=(acct_id,))
+        d.addCallback(_update_acct, acct_info)
 
-    def do_fab(whateva):
-        # returns a deferred.
-        return model.fab_db(update_views='updateviews' in sys.argv)
-
-    d.addCallback(do_fab)
-
-    d.addCallback(install_client_files)
-
-    #dbs = model.fab_db(update_views='updateviews' in sys.argv)
-    #
-    #setup_account(dbs)
-    #setup_twitter_account(dbs)
-
-    #install_client_files(dbs)
-
-    def done(whateva):
-        print "Finished."
-        reactor.stop()
-
-    def error(*args, **kw):
-        from twisted.python import log
-        log.err(*args, **kw)
-        print "FAILED."
-        reactor.stop()
-
-    d.addCallbacks(done, error)
-
-    reactor.callWhenRunning(d.callback, None)
-
-    logger.debug('starting reactor')
-    reactor.run()
-    logger.debug('reactor done')
-    
-
-if __name__ == '__main__':
-    main()
+    # Start the chain and return.
+    d.callback(None)
+    return d

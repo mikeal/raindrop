@@ -9,28 +9,33 @@ Have Python 2.5 or later installed.
  Prereqs:
     easy_install couchdb (0.5 or later)
 
-Install couchdb trunk
+Install couchdb trunk.  This currently means you need to google for
+instructions that work only on Linux - Windows doesn't work.  If you want to
+work on Windows you must install Couch on a Linux box and point your windows
+~/.raindrop file at the server.
 
-Pull asuth's version of gocept-imapapi:
-  hg clone http://clicky.visophyte.org/cgi-bin/hgwebdir.cgi/asuth/gocept-imapapi/
-  cd gocept-imapapi
-  python setup.py develop
+Install twisted.
 
-install junius:
+Install 'paisley' from launchpad.
+
+Either install junius:
   cd junius/server/python/junius
   python setup.py develop
+*or* just add it to your PYTHONPATH
+  set PYTHONPATH=c:\src\path\to\junius\server\python
 
 configure junuis:
   * edit ~/.raindrop
+
   * if your 'local' couchdb isn't on localhost, add a section along the lines of:
         [couch-local]
         host=hostname
         port=port
 
   * Add imap accounts along the lines of
-        [account-some-account-name]
+        [account-some-account-name] # the 'account-' prefix is important!
         type=imap
-        server=imap.gmail.com
+        host=imap.gmail.com
         port=993
         username=username@gmail.com
         password=topsecret
@@ -39,20 +44,19 @@ configure junuis:
 With Couchdb running:
 
 Setup the tables:
-  python bootstrap.py [nuke]
 
-  WARNING: using 'nuke' will wipe ALL your databases we may touch.
+  python run-raindrop.py --nuke-db-and-delete-everything-forever
+
+  WARNING: using this coommand will wipe ALL your databases we may touch.
   USE WITH CAUTION
 
 Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
 setup
 
 Load the mail:
-  python getmail.py (loads IMAP data)
+  python run-raindrop.py sync_messages
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 
-Go to http://127.0.0.1:5984/junius/files/index.xhtml
-
-and do autocomplete to do searches.
-
+Go to http://127.0.0.1:5984/junius/files/index.xhtml and do autocomplete to do
+searches.
