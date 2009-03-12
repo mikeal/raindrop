@@ -9,16 +9,20 @@ from junius.model import get_db
 logger = logging.getLogger(__name__)
 
 _conductor = None
-def get_conductor():
+
+def get_conductor(options=None):
   global _conductor
   if _conductor is None:
-    _conductor = SyncConductor()
+    _conductor = SyncConductor(options)
+  else:
+    assert options is None, 'can only set this at startup'
   return _conductor
   
   
 class SyncConductor(object):
-  def __init__(self):
+  def __init__(self, options):
     self.log = logger
+    self.options = options
 
     self.db = get_db()
 
@@ -38,16 +42,17 @@ class SyncConductor(object):
     for row in rows:
       account_details = row['value']
       kind = account_details['kind']
-      if kind in proto.protocols:
-        account = proto.protocols[kind](self.db, account_details)
-        self.log.info('Starting sync of %s account: %s',
-                      account_details['kind'],
-                      account_details.get('name', '(un-named)'))
-        account.startSync(self)
-        self.active_accounts.append(account)
+      if not self.options.protocols or kind in self.options.protocols:
+        if kind in proto.protocols:
+          account = proto.protocols[kind](self.db, account_details)
+          self.log.info('Starting sync of %s account: %s',
+                        kind, account_details.get('name', '(un-named)'))
+          account.startSync(self)
+          self.active_accounts.append(account)
+        else:
+          self.log.error("Don't know what to do with account kind: %s", kind)
       else:
-        log.error("Don't know what to do with account kind: %s",
-                  account_details['kind'])
+          self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
   def accountFinishedSync(self, account):
     self.log.debug("Account %s reports it has finished", account)
