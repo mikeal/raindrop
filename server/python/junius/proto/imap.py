@@ -154,7 +154,7 @@ class ImapClient(imap4.IMAP4Client):
       storage_path=self.current_folder_path,
       storage_id=result['UID'],
       rfc822=body,
-      read=r'\Seen' in flags,
+      imap_flags=flags,
       )
     get_db().saveDoc(doc
             ).addCallback(self._savedDocument
