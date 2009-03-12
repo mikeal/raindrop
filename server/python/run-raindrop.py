@@ -8,6 +8,7 @@ from twisted.internet import reactor, defer
 
 from junius import model
 from junius import bootstrap
+from junius.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
 
@@ -44,7 +45,6 @@ def install_files(result, parser, options):
 
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
-    from junius.sync import get_conductor
     conductor = get_conductor()
     return conductor.sync(None)
 
@@ -99,9 +99,16 @@ def main():
                            "specified log.",
                       default=["INFO"])
 
+    parser.add_option("-p", "--protocol", action="append", dest='protocols',
+                      help="Specifies the protocols to enable.  If not "
+                           "specified, all protocols are enabled")
+
     options, args = parser.parse_args()
 
     _setup_logging(options)
+
+    # do this very early just to set the options
+    get_conductor(options)
 
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
