@@ -50,6 +50,8 @@ class SyncConductor(object):
                   account_details['kind'])
 
   def accountFinishedSync(self, account):
+    self.log.debug("Account %s reports it has finished", account)
+    assert account in self.active_accounts, (account, self.active_accounts)
     self.active_accounts.remove(account)
     if not self.active_accounts:
       self.log.info("sync has finished; stopping reactor")
