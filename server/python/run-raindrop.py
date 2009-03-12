@@ -44,8 +44,8 @@ def install_files(result, parser, options):
 
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
-    from junius.sync import SyncConductor
-    conductor = SyncConductor()
+    from junius.sync import get_conductor
+    conductor = get_conductor()
     return conductor.sync(None)
 
 def _setup_logging(options):
@@ -91,7 +91,7 @@ def main():
                                    description=description,
                                    formatter=HelpFormatter())
 
-    parser.add_option("", "--log-level", action="append",
+    parser.add_option("-l", "--log-level", action="append",
                       help="Specifies either an integer or a logging module "
                            "constant (such as INFO) to set all logs to the "
                            "specified level.  Optionally can be in the format "
