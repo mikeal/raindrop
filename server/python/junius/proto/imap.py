@@ -9,6 +9,11 @@ brat = base.Rat
 
 logger = logging.getLogger(__name__)
 
+# It would appear twisted assumes 'imap4-utf-7' (which would appear to be
+# simply utf-7), but gmail apparently doesn't. This clearly should not be a
+# global; we need to grok this better...
+imap_encoding = 'utf-8'
+
 class ImapClient(imap4.IMAP4Client):
   '''
   Much of our logic here should perhaps be in another class that holds a
@@ -54,17 +59,28 @@ class ImapClient(imap4.IMAP4Client):
       logger.info("Finished synchronizing IMAP folders")
       # need to report we are done somewhere?
       from ..sync import get_conductor
-      return get_conductor().accountFinishedSync(self)
+      return get_conductor().accountFinishedSync(self.account)
 
-    self.current_folder_info = self.folder_infos.pop()
-    flags, delim, name = self.current_folder_info
-    logger.debug('Processing folder %s (flags=%s, delim=%s)', name, flags, delim)
+    flags, delim, name = self.folder_infos.pop()
+    self.current_folder_path = cfp = name.split(delim)
+    logger.debug('Processing folder %s (flags=%s)', name, flags)
+    if r"\Noselect" in flags:
+      logger.debug("'%s' is unselectable - skipping", name)
+      return self._processNextFolder()
+
+    # XXX - sob - markh sees:
+    # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven't seen'
+    # although we obviously have seen them already in the other folders.
+    if cfp and cfp[0].startswith('[') and cfp[0].endswith(']'):
+      logger.info("'%s' appears special -skipping", name)
+      return self._processNextFolder()
+
     return self.examine(name
-                 ).addCallback(self._examineFolder, name
-                 ).addErrback(self._cantExamineFolder, name)
+                 ).addCallback(self._examineFolder, cfp
+                 ).addErrback(self._cantExamineFolder, cfp)
 
   def _examineFolder(self, result, name):
-    logger.debug('Looking for messages already fetched for mailbox %s', name)
+    logger.debug('Looking for messages already fetched for folder %s', name)
     startkey=[self.account.details['_id'], name, 0]
     endkey=[self.account.details['_id'], name, 4000000000]
     get_db().openView('raindrop!messages!by', 'by_storage'
@@ -74,6 +90,8 @@ class ImapClient(imap4.IMAP4Client):
     allMessages = imap4.MessageSet(1, None)
     key_check = [self.account.details['_id'], name]
     seen_ids = [r['key'][2] for r in rows if r['key'][0:2]==key_check]
+    logger.debug("%d messages already exist from %s",
+                 len(seen_ids), name)
     return self.fetchUID(allMessages, True).addCallback(
             self._gotUIDs, name, seen_ids)
 
@@ -102,10 +120,19 @@ class ImapClient(imap4.IMAP4Client):
   def _gotBody(self, result, to_fetch):
     _, result = result.popitem()
     try:
-      body = result['RFC822'].decode('utf8')
+      body = result['RFC822'].decode(imap_encoding)
     except UnicodeError, why:
-      logger.error("Failed to decode a message as UTF8: %s", why)
-      body = result['RFC822'].decode('utf8', 'ignore')
+      logger.error("Failed to decode message "
+                   "(but will re-decode ignoring errors) : %s", why)
+      # heh - 'ignore' and 'replace' are apparently ignored for the 'utf-7'
+      # codecs...
+      try:
+        body = result['RFC822'].decode(imap_encoding, 'ignore')
+      except UnicodeError, why:
+        logger.error("and failed to 'ignore' unicode errors - skipping it: %s",
+                     why)
+        return self._processNextMessage()
+
     # grr - get the flags
     logger.debug("fetching flags for message %s", to_fetch)
     return self.fetchFlags(to_fetch, uid=True
@@ -115,6 +142,7 @@ class ImapClient(imap4.IMAP4Client):
 
   def _gotMessage(self, result, body):
     # not sure about this - can we ever get more?
+    logger.debug("flags are %s", result)
     assert len(result)==1, result
     _, result = result.popitem()
     flags = result['FLAGS']
@@ -123,7 +151,7 @@ class ImapClient(imap4.IMAP4Client):
       type='rawMessage',
       subtype='rfc822',
       account_id=self.account.details['_id'],
-      storage_path=self.current_folder_info[2],
+      storage_path=self.current_folder_path,
       storage_id=result['UID'],
       rfc822=body,
       read=r'\Seen' in flags,
