@@ -90,12 +90,38 @@ class TwistySkype(object):
                     )
 
     def got_chats(self, chats):
-        logger.debug("Processing %d chat(s)", len(chats))
+        logger.debug("skype has %d chat(s) total", len(chats))
+        # work out which ones are 'new'
+        startkey=['skype/chat', self.account.details['_id']]
+        # oh for https://issues.apache.org/jira/browse/COUCHDB-194 to be fixed...
+        endkey=['skype/chat', self.account.details['_id'] + 'ZZZZZZZZZZZZZZZZZZ']
+        # XXX - this isn't quite right - the properties of each chat may have
+        # changed, so we need to re-process the ones we've seen.  Later...
+        get_db().openView('raindrop!messages!by', 'by_storage',
+                          startkey=startkey, endkey=endkey,
+            ).addCallback(self.got_seen_chats, chats)
+
+    def got_seen_chats(self, rows, all_chats):
+        seen_chats = set([r['key'][2] for r in rows])
+        need = [chat for chat in all_chats if chat.Name not in seen_chats]
+        logger.info("Skype has %d chats(s), %d of which we haven't seen",
+                     len(all_chats), len(need))
         # Is a 'DeferredList' more appropriate here?
         d = defer.Deferred()
-        for chat in chats:
+        for chat in need:
             d.addCallback(self.got_chat, chat)
+        # But *every* chat must have its messages processed, new and old.
+        for chat in all_chats:
+            d.addCallback(self.start_processing_messages, chat)
+
+        # and when this deferred chain completes, this account is complete.
+        d.addCallback(self.finished)
+
         return d.callback(None)
+
+    def finished(self, result):
+      from ..sync import get_conductor
+      return get_conductor().accountFinishedSync(self.account)
 
     def got_chat(self, result, chat):
         logger.debug("starting processing of chat '%s'", chat.Name)
@@ -112,6 +138,7 @@ class TwistySkype(object):
           type='rawMessage',
           subtype='skype/chat',
           account_id=self.account.details['_id'],
+          storage_key=chat.Name
           )
         for (name, typ), (ok, val) in zip(CHAT_PROPS, results):
             if ok:
@@ -125,21 +152,39 @@ class TwistySkype(object):
                 )
 
     def saved_chat(self, result, chat):
-        # saved the chat - now start on the messages...
+        logger.debug("Finished processing of new chat '%s'", chat.Name)
+        # nothing else to do for the chat (the individual messages are
+        # processed by a different path; we are here only for new ones...
+
+    def start_processing_messages(self, result, chat):
+        # Get each of the messages in the chat
         return threads.deferToThread(chat._GetMessages
-                    ).addCallback(self.got_messages, chat
+                    ).addCallback(self.got_messages, chat,
                     )
 
     def got_messages(self, messages, chat):
-        logger.info("Processing chat '%s' (%d messages)",
-                    chat.Name, len(messages))
+        logger.debug("chat '%s' has %d message(s) total; looking for new ones",
+                     chat.Name, len(messages))
+        startkey=['skype/message', self.account.details['_id'], [chat.Name, 0]]
+        endkey=['skype/message', self.account.details['_id'], [chat.Name, 4000000000]]
+        get_db().openView('raindrop!messages!by', 'by_storage',
+                          startkey=startkey, endkey=endkey,
+            ).addCallback(self.got_seen_messages, messages, chat)
+
+    def got_seen_messages(self, rows, messages, chat):
+        seen_ids = set([r['key'][2][1] for r in rows])
+        need = [msg for msg in messages if msg._Id not in seen_ids]
+        logger.info("Chat '%s' has %d messages, %d of which we haven't seen",
+                     chat.Name, len(messages), len(need))
+        
+        # XXX - DeferredList?
         d = defer.Deferred()
-        for msg in messages:
-            d.addCallback(self.got_msg, chat, msg)
+        for i, msg in enumerate(need):
+            d.addCallback(self.got_new_msg, chat, msg, i)
         return d.callback(None)
 
-    def got_msg(self, result, chat, msg):
-        logger.debug("Processing message")
+    def got_new_msg(self, result, chat, msg, i):
+        logger.debug("Processing message %d from chat '%s'", i, chat.Name)
         # make a 'deferred list' to fetch each property one at a time.
         ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
         return defer.DeferredList(ds
@@ -151,6 +196,7 @@ class TwistySkype(object):
           type='rawMessage',
           subtype='skype/message',
           account_id=self.account.details['_id'],
+          storage_key=[chat.Name, msg._Id]
           )
         for (name, typ), (ok, val) in zip(MSG_PROPS, results):
             if ok:
