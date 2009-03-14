@@ -26,8 +26,20 @@ DBs = {}
 def _raw_to_rows(raw):
     # {'rows': [], 'total_rows': 0} -> the actual rows.
     ret = raw['rows']
-    assert len(ret)==raw['total_rows'], raw
+    # hrmph - on a view with start_key etc params, total_rows will be
+    # greater than the rows.
+    assert len(ret)<=raw['total_rows'], raw
     return ret
+
+# from the couchdb package; not sure what makes these names special...
+def _encode_options(options):
+    retval = {}
+    for name, value in options.items():
+        if name in ('key', 'startkey', 'endkey') \
+                or not isinstance(value, basestring):
+            value = json.dumps(value, allow_nan=False, ensure_ascii=False)
+        retval[name] = value
+    return retval
 
 
 class CouchDB(paisley.CouchDB):
@@ -41,7 +53,8 @@ class CouchDB(paisley.CouchDB):
     def openView(self, *args, **kwargs):
         # The base class of this returns the raw json object - eg:
         # {'rows': [], 'total_rows': 0}
-        base_ret = super(CouchDB, self).openView(*args, **kwargs)
+        # *sob* - and it also doesn't handle encoding options...
+        base_ret = super(CouchDB, self).openView(*args, **_encode_options(kwargs))
         return base_ret.addCallback(_raw_to_rows)
 
 
