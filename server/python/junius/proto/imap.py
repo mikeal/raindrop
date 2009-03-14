@@ -79,24 +79,24 @@ class ImapClient(imap4.IMAP4Client):
                  ).addCallback(self._examineFolder, cfp
                  ).addErrback(self._cantExamineFolder, cfp)
 
-  def _examineFolder(self, result, name):
-    logger.debug('Looking for messages already fetched for folder %s', name)
-    startkey=[self.account.details['_id'], name, 0]
-    endkey=[self.account.details['_id'], name, 4000000000]
-    get_db().openView('raindrop!messages!by', 'by_storage'
-        ).addCallback(self._fetchAndProcess, name)
+  def _examineFolder(self, result, folder_path):
+    logger.debug('Looking for messages already fetched for folder %s', folder_path)
+    startkey=['rfc822', self.account.details['_id'], [folder_path, 0]]
+    endkey=['rfc822', self.account.details['_id'], [folder_path, 4000000000]]
+    get_db().openView('raindrop!messages!by', 'by_storage',
+                      startkey=startkey, endkey=endkey,
+        ).addCallback(self._fetchAndProcess, folder_path)
 
-  def _fetchAndProcess(self, rows, name):
+  def _fetchAndProcess(self, rows, folder_path):
     allMessages = imap4.MessageSet(1, None)
-    key_check = [self.account.details['_id'], name]
-    seen_ids = [r['key'][2] for r in rows if r['key'][0:2]==key_check]
+    seen_ids = [r['key'][2][1] for r in rows]
     logger.debug("%d messages already exist from %s",
-                 len(seen_ids), name)
+                 len(seen_ids), folder_path)
     return self.fetchUID(allMessages, True).addCallback(
-            self._gotUIDs, name, seen_ids)
+            self._gotUIDs, folder_path, seen_ids)
 
   def _gotUIDs(self, uidResults, name, seen_uids):
-    uids = set([result['UID'] for result in uidResults.values()])
+    uids = set([int(result['UID']) for result in uidResults.values()])
     need = uids - set(seen_uids)
     logger.info("Folder %s has %d messages, %d of which we haven't seen",
                  name, len(uids), len(need))
@@ -151,8 +151,7 @@ class ImapClient(imap4.IMAP4Client):
       type='rawMessage',
       subtype='rfc822',
       account_id=self.account.details['_id'],
-      storage_path=self.current_folder_path,
-      storage_id=result['UID'],
+      storage_key=[self.current_folder_path, int(result['UID'])],
       rfc822=body,
       imap_flags=flags,
       )
