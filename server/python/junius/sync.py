@@ -13,6 +13,7 @@ _conductor = None
 def get_conductor(options=None):
   global _conductor
   if _conductor is None:
+    proto.init_protocols()
     _conductor = SyncConductor(options)
   else:
     assert options is None, 'can only set this at startup'

@@ -6,9 +6,8 @@ _protocol_infos = [
     ('twitter', 'junius.proto.twitter', 'TwitterAccount'),
 ]
 
-# it must be time I looked up dict-comps ;)
 protocols = {}
-def _load():
+def init_protocols():
     import sys, logging
     logger = logging.getLogger('raindrop.proto')
     for name, mod, factname in _protocol_infos:
@@ -17,13 +16,10 @@ def _load():
             mod = sys.modules[mod]
             fact = getattr(mod, factname)
         except ImportError, why:
-            logger.info("Failed to import '%s' factory: %s", name, why)
+            logger.error("Failed to import '%s' factory: %s", name, why)
         except:
             logger.exception("Error creating '%s' factory", name)
         else:
             protocols[name] = fact
 
-_load()
-del _load
-
-__all__ = protocols
+__all__ = [protocols, init_protocols]
