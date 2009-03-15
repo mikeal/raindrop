@@ -121,7 +121,7 @@ class TwistySkype(object):
 
     def finished(self, result):
       from ..sync import get_conductor
-      return get_conductor().accountFinishedSync(self.account)
+      return get_conductor().accountFinishedSync(self.account, result)
 
     def got_chat(self, result, chat):
         logger.debug("starting processing of chat '%s'", chat.Name)
@@ -167,9 +167,9 @@ class TwistySkype(object):
                      chat.Name, len(messages))
         startkey=['skype/message', self.account.details['_id'], [chat.Name, 0]]
         endkey=['skype/message', self.account.details['_id'], [chat.Name, 4000000000]]
-        get_db().openView('raindrop!messages!by', 'by_storage',
-                          startkey=startkey, endkey=endkey,
-            ).addCallback(self.got_seen_messages, messages, chat)
+        return get_db().openView('raindrop!messages!by', 'by_storage',
+                                 startkey=startkey, endkey=endkey,
+                    ).addCallback(self.got_seen_messages, messages, chat)
 
     def got_seen_messages(self, rows, messages, chat):
         seen_ids = set([r['key'][2][1] for r in rows])
@@ -177,11 +177,13 @@ class TwistySkype(object):
         logger.info("Chat '%s' has %d messages, %d of which we haven't seen",
                      chat.Name, len(messages), len(need))
         
-        # XXX - DeferredList?
-        d = defer.Deferred()
+        dl = []
         for i, msg in enumerate(need):
+            d = defer.Deferred()
             d.addCallback(self.got_new_msg, chat, msg, i)
-        return d.callback(None)
+            dl.append(d)
+            d.callback(None)
+        return defer.DeferredList(dl)
 
     def got_new_msg(self, result, chat, msg, i):
         logger.debug("Processing message %d from chat '%s'", i, chat.Name)
