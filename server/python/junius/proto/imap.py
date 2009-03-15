@@ -20,11 +20,18 @@ class ImapClient(imap4.IMAP4Client):
   reference to the IMAP4Client instance subclass.  Consider refactoring if we
   don't turn out to benefit from the subclassing relationship.
   '''
+  def finished(self, result):
+    # See bottom of file - it would be good to remove this...
+    logger.info("Finished synchronizing IMAP folders")
+    # XXX - this should be done via callback/errback
+    from ..sync import get_conductor
+    return get_conductor().accountFinishedSync(self.account, result)
+
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
-    d = self._doAuthenticate()
-    d.addCallback(self._reqList)
-
+    return self._doAuthenticate(
+            ).addCallback(self._reqList
+            ).addBoth(self.finished)
 
   def _doAuthenticate(self):
     if self.account.details.get('crypto') == 'TLS':
@@ -56,10 +63,7 @@ class ImapClient(imap4.IMAP4Client):
   def _processNextFolder(self):
     if not self.folder_infos:
       # yay - all done!
-      logger.info("Finished synchronizing IMAP folders")
-      # need to report we are done somewhere?
-      from ..sync import get_conductor
-      return get_conductor().accountFinishedSync(self.account)
+      return
 
     flags, delim, name = self.folder_infos.pop()
     self.current_folder_path = cfp = name.split(delim)
@@ -83,9 +87,9 @@ class ImapClient(imap4.IMAP4Client):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
     startkey=['rfc822', self.account.details['_id'], [folder_path, 0]]
     endkey=['rfc822', self.account.details['_id'], [folder_path, 4000000000]]
-    get_db().openView('raindrop!messages!by', 'by_storage',
-                      startkey=startkey, endkey=endkey,
-        ).addCallback(self._fetchAndProcess, folder_path)
+    return get_db().openView('raindrop!messages!by', 'by_storage',
+                             startkey=startkey, endkey=endkey,
+              ).addCallback(self._fetchAndProcess, folder_path)
 
   def _fetchAndProcess(self, rows, folder_path):
     allMessages = imap4.MessageSet(1, None)
@@ -155,10 +159,10 @@ class ImapClient(imap4.IMAP4Client):
       rfc822=body,
       imap_flags=flags,
       )
-    get_db().saveDoc(doc
-            ).addCallback(self._savedDocument
-            ).addErrback(self._cantSaveDocument
-            )
+    return get_db().saveDoc(doc
+                ).addCallback(self._savedDocument
+                ).addErrback(self._cantSaveDocument
+                )
 
   def _cantGetMessage(self, failure):
     logger.error("Failed to fetch message: %s", failure)
@@ -177,7 +181,7 @@ class ImapClient(imap4.IMAP4Client):
     return self._processNextFolder()
 
   def accountStatus(self, result, *args):
-    self.account.reportStatus(*args)
+    return self.account.reportStatus(*args)
 
 
 class ImapClientFactory(protocol.ClientFactory):
@@ -239,3 +243,6 @@ class IMAPAccount(base.AccountBase):
   def startSync(self, conductor):
     self.factory = ImapClientFactory(self)
     self.factory.connect()
+    # XXX - wouldn't it be good to return a deferred here, so the conductor
+    # can reliably wait for the deferred to complete, rather than forcing
+    # each deferred to manage 'finished' itself?
