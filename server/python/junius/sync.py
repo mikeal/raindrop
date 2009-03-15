@@ -1,6 +1,7 @@
 import logging
 
 from twisted.internet import reactor, defer
+from twisted.python.failure import Failure
 import paisley
 
 import junius.proto as proto
@@ -55,8 +56,11 @@ class SyncConductor(object):
       else:
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
-  def accountFinishedSync(self, account):
-    self.log.debug("Account %s reports it has finished", account)
+  def accountFinishedSync(self, account, result):
+    if isinstance(result, Failure):
+      self.log.error("Account %s failed with an error: %s", account, result)
+    else:
+      self.log.debug("Account %s reports it has finished", account)
     assert account in self.active_accounts, (account, self.active_accounts)
     self.active_accounts.remove(account)
     if not self.active_accounts:
