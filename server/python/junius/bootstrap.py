@@ -14,46 +14,6 @@ from junius.config import get_config
 import logging
 logger = logging.getLogger(__name__)
 
-def setup_account(dbs):
-    if len(model.Account.all(dbs.accounts)):
-        print 'Account presumably already exists, not adding it!'
-        return
-    
-    # we want a file of the form:
-    #  hostname,port,username,password,ssl?
-    # example:
-    #  mail.example.com,993,bob@example.com,sekret,True
-    import os, os.path
-    configPath = os.path.join(os.environ['HOME'], ".junius")
-    f = open(configPath, 'r')
-    data = f.read()
-    f.close()
-    host, portstr, username, password, sslstr = data.split(',')
-    ssl = not (sslstr.strip().lower() in ['false', 'f', 'no', '0'])
-    
-    account = model.Account(
-        kind='imap', host=host, port=int(portstr), ssl=ssl,
-        username=username, password=password,
-    )
-    account.store(dbs.accounts)
-
-def setup_twitter_account(dbs):
-    # we want a file of the form:
-    #  username,password
-    # example:
-    #  davidascher,sekret
-    import os, os.path
-    configPath = os.path.join(os.environ['HOME'], ".junius_twitter")
-    f = open(configPath, 'r')
-    data = f.read()
-    f.close()
-    username, password = data.split(',')
-
-    account = model.Account(
-        kind='twitter', username=username, password=password,
-    )
-    account.store(dbs.accounts)
-
 def path_part_nuke(path, count):
     for i in range(count):
         path = os.path.dirname(path)
