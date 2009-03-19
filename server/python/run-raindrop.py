@@ -8,6 +8,7 @@ from twisted.internet import reactor, defer
 
 from junius import model
 from junius import bootstrap
+from junius import pipeline
 from junius.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
@@ -47,6 +48,13 @@ def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
     return conductor.sync(None)
+
+def process(result, parser, options):
+    """Process all messages to see if any extensions need running"""
+    def done(result):
+        print "Message pipeline has finished..."
+    p = pipeline.Pipeline(model.get_doc_model())
+    return p.start().addCallback(done)
 
 def _setup_logging(options):
     init_errors = []

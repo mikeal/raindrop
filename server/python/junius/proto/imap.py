@@ -1,4 +1,4 @@
-from twisted.internet import protocol, ssl, defer, reactor, error
+from twisted.internet import protocol, ssl, defer, error
 from twisted.mail import imap4
 import logging
 
@@ -23,9 +23,7 @@ class ImapClient(imap4.IMAP4Client):
   def finished(self, result):
     # See bottom of file - it would be good to remove this...
     logger.info("Finished synchronizing IMAP folders")
-    # XXX - this should be done via callback/errback
-    from ..sync import get_conductor
-    return get_conductor().accountFinishedSync(self.account, result)
+    self.conductor.on_synch_finished(self.account, result)
 
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
@@ -187,8 +185,9 @@ class ImapClient(imap4.IMAP4Client):
 class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
 
-  def __init__(self, account):
+  def __init__(self, account, conductor):
     self.account = account
+    self.conductor = conductor
 
     self.ctx = ssl.ClientContextFactory()
     self.backoff = 8 # magic number
@@ -197,12 +196,14 @@ class ImapClientFactory(protocol.ClientFactory):
     p = self.protocol(self.ctx)
     p.factory = self
     p.account = self.account
+    p.conductor = self.conductor
     return p
 
   def connect(self):
     details = self.account.details
     logger.debug('attempting to connect to %s:%d (ssl: %s)',
                  details['host'], details['port'], details['ssl'])
+    reactor = self.conductor.reactor    
     if details.get('ssl'):
       reactor.connectSSL(details['host'], details['port'], self, self.ctx)
     else:
@@ -221,7 +222,7 @@ class ImapClientFactory(protocol.ClientFactory):
     else:
         #self.deferred.errback(reason)
         logger.debug('lost connection to server, going to reconnect in a bit')
-        reactor.callLater(2, self.connect)
+        self.conductor.reactor.callLater(2, self.connect)
 
   def clientConnectionFailed(self, connector, reason):
     self.account.reportStatus(brat.SERVER, brat.BAD, brat.UNREACHABLE,
@@ -231,7 +232,7 @@ class ImapClientFactory(protocol.ClientFactory):
     # It occurs that some "account manager" should be reported of the error,
     # and *it* asks us to retry later?  eg, how do I ask 'ignore backoff -
     # try again *now*"?
-    reactor.callLater(self.backoff, self.connect)
+    self.conductor.reactor.callLater(self.backoff, self.connect)
     self.backoff = min(self.backoff * 2, 600) # magic number
 
 
@@ -241,7 +242,7 @@ class IMAPAccount(base.AccountBase):
     self.details = details
 
   def startSync(self, conductor):
-    self.factory = ImapClientFactory(self)
+    self.factory = ImapClientFactory(self, conductor)
     self.factory.connect()
     # XXX - wouldn't it be good to return a deferred here, so the conductor
     # can reliably wait for the deferred to complete, rather than forcing

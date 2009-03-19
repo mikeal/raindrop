@@ -11,7 +11,7 @@ import logging
 from urllib2 import urlopen
 
 import twisted.python.log
-from twisted.internet import reactor, defer, threads
+from twisted.internet import defer, threads
 
 from ..proc import base
 from ..model import get_db
@@ -72,9 +72,9 @@ def simple_convert(str_val, typ):
 
 
 class TwistySkype(object):
-    def __init__(self, account, reactor):
+    def __init__(self, account, conductor):
         self.account = account
-        self.reactor = reactor
+        self.conductor = conductor
         self.skype = Skype4Py.Skype()
 
     def attach(self):
@@ -120,8 +120,7 @@ class TwistySkype(object):
         return d.callback(None)
 
     def finished(self, result):
-      from ..sync import get_conductor
-      return get_conductor().accountFinishedSync(self.account, result)
+      return self.conductor.on_synch_finished(self.account, result)
 
     def got_chat(self, result, chat):
         logger.debug("starting processing of chat '%s'", chat.Name)
@@ -220,4 +219,4 @@ class SkypeAccount(base.AccountBase):
     self.details = details
 
   def startSync(self, conductor):
-    TwistySkype(self, reactor).attach()
+    TwistySkype(self, conductor).attach()

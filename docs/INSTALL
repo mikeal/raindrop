@@ -1,10 +1,13 @@
+Late Breaking News/Known Problems
+=================================
+
+* The reactor must always be stopped with ctrl+c; it never stops by itself.
+
+
 Installation Steps
+==================
 
-Have Python 2.5 or later installed.
-
- If not 2.6: 
-    install setup_tools
-    easy_install simplejson
+Have Python 2.6 or later installed.
 
  Prereqs:
     easy_install couchdb (0.5 or later)
@@ -24,7 +27,7 @@ Either install junius:
 *or* just add it to your PYTHONPATH
   set PYTHONPATH=c:\src\path\to\junius\server\python
 
-configure junuis:
+configure raindrop:
   * edit ~/.raindrop
 
   * if your 'local' couchdb isn't on localhost, add a section along the lines of:
@@ -41,20 +44,50 @@ configure junuis:
         password=topsecret
         ssl=True
 
-With Couchdb running:
+  * Add a 'test' account - for the 'test suite' - along the lines of:
+        [account-test]
+        kind=test
+        username=test # not used, but we die without it!
+        num_test_docs=1 # this defaults to 5 - but 1 is useful sometimes!
 
-Setup the tables:
+With the couchdb server running....
 
-  python run-raindrop.py --nuke-db-and-delete-everything-forever
+Setup the database and upload views and other content:
 
-  WARNING: using this coommand will wipe ALL your databases we may touch.
-  USE WITH CAUTION
+  WARNING: using this command will wipe ALL your databases we may touch.
+  USE WITH CAUTION.
+
+  % run-raindrop.py nuke-db-and-delete-everything-forever
+
+  See --help for how to update the various bits without nuking the database.
 
 Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
 setup
 
-Load the mail:
-  python run-raindrop.py sync_messages
+Test everything using the 'test suite' (one day it *will* be a test suite :)
+
+  % run-raindrop.py -p test sync-messages process
+
+  THEN repeat the above - sorry about that - the first run didn't quite
+  do everything it was supposed to.
+
+  % run-raindrop.py -p test sync-messages process
+
+  Note the '-p' says to only load the 'test' protocol; without it we
+  will attempt to load all protocols (eg, imap, skype, twitter, etc).
+  But further note that we don't attempt a protocol - even the 'test' 
+  protocol - until we have an account of that 'type' set up.
+
+  Add '-l debug' to the above command-line for debug log messages.  This
+  can get quite verbose; you can also say -l log.name=debug to set a specific
+  log to debug.
+
+  See --help for more.
+
+
+Get *real* messages:
+
+  % run-raindrop.py sync-messages process
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 

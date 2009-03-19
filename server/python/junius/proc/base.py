@@ -94,3 +94,7 @@ class AccountBase(Rat):
     '''
     '''
     pass
+
+class ConverterBase(object):
+    def __init__(self, doc_model):
+       self.doc_model = doc_model

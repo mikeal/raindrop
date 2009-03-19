@@ -5,6 +5,8 @@ _protocol_infos = [
     ('skype', 'junius.proto.skype', 'SkypeAccount'),
     ('twitter', 'junius.proto.twitter', 'TwitterAccount'),
 ]
+if __debug__:
+    _protocol_infos.append(('test', 'junius.proto.test', 'TestAccount'))
 
 protocols = {}
 def init_protocols():
@@ -12,6 +14,7 @@ def init_protocols():
     logger = logging.getLogger('raindrop.proto')
     for name, mod, factname in _protocol_infos:
         try:
+            logger.debug("attempting import of '%s' for '%s'", mod, factname)
             __import__(mod)
             mod = sys.modules[mod]
             fact = getattr(mod, factname)

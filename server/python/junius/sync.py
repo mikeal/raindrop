@@ -2,6 +2,7 @@ import logging
 
 from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
+import twisted.web.error
 import paisley
 
 import junius.proto as proto
@@ -20,11 +21,19 @@ def get_conductor(options=None):
     assert options is None, 'can only set this at startup'
   return _conductor
   
-  
+
+# XXX - rename this to plain 'Conductor' and move to a different file.
+# This 'conducts' synchronization, the work queues and the interactions with
+# the extensions and database.
 class SyncConductor(object):
   def __init__(self, options):
     self.log = logger
     self.options = options
+    # apparently it is now considered 'good form' to pass reactors around, so
+    # a future of multiple reactors is possible.
+    # We capture it here, and all the things we 'conduct' use this reactor
+    # (but later it should be passed to our ctor too)
+    self.reactor = reactor
 
     self.db = get_db()
 
@@ -32,7 +41,7 @@ class SyncConductor(object):
 
   def _ohNoes(self, failure, *args, **kwargs):
     self.log.error('OH NOES! failure! %s', failure)
-    reactor.stop()
+    #self.reactor.stop()
 
   def _getAllAccounts(self):
     return self.db.openView('raindrop!accounts!all', 'all'
@@ -44,6 +53,7 @@ class SyncConductor(object):
     for row in rows:
       account_details = row['value']
       kind = account_details['kind']
+      self.log.debug("Found account using protocol %s", kind)
       if not self.options.protocols or kind in self.options.protocols:
         if kind in proto.protocols:
           account = proto.protocols[kind](self.db, account_details)
@@ -56,7 +66,15 @@ class SyncConductor(object):
       else:
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
-  def accountFinishedSync(self, account, result):
+  def sync(self, whateva=None):
+    return self._getAllAccounts()
+
+  # The callbacks called by the accounts as they do interesting things.
+  # XXX - this kinda sucks - ideally when we start the sync we would get
+  # a deferred, which we could add own callback to to manage this.
+  # The complication is IMAP - ProtocolFactory based clients don't lend
+  # themselves to this.
+  def on_synch_finished(self, account, result):
     if isinstance(result, Failure):
       self.log.error("Account %s failed with an error: %s", account, result)
     else:
@@ -64,12 +82,9 @@ class SyncConductor(object):
     assert account in self.active_accounts, (account, self.active_accounts)
     self.active_accounts.remove(account)
     if not self.active_accounts:
-      self.log.info("sync has finished; stopping reactor")
-      return reactor.stop()
-
-  def sync(self, whateva=None):
-    return self._getAllAccounts()
-
+      self.log.info("sync has finished; NOT stopping reactor yet, but I should...")
+      #self.log.info("sync has finished; stopping reactor")
+      #return self.reactor.stop()
 
 if __name__ == '__main__':
   # normal entry-point is the app itself; this is purely for debugging...
@@ -77,8 +92,8 @@ if __name__ == '__main__':
   logging.getLogger().setLevel(logging.DEBUG)
 
   conductor = get_conductor()
-  reactor.callWhenRunning(conductor.sync)
+  conductor.reactor.callWhenRunning(conductor.sync)
 
   logger.debug('starting reactor')
-  reactor.run()
+  conductor.reactor.run()
   logger.debug('reactor done')
