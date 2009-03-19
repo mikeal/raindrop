@@ -1,8 +1,13 @@
+import sys
 import os
 import logging
+import time
+import urllib
 
 import twisted.web.error
 from twisted.internet import defer
+from twisted.python.failure import Failure
+
 try:
     import simplejson as json
 except ImportError:
@@ -22,13 +27,24 @@ logger = logging.getLogger('model')
 
 DBs = {}
 
+# XXXX - this relies on couch giving us some kind of 'sequence id'.  For
+# now we use a timestamp, but that obviously sucks in many scenarios.
+if sys.platform=='win32':
+    # woeful resolution on windows and equal timestamps are bad.
+    clock_start = time.time()
+    time.clock() # time.clock starts counting from zero the first time its called.
+    def get_seq():
+        return clock_start + time.clock()
+else:
+    get_seq = time.time()
+
 
 def _raw_to_rows(raw):
     # {'rows': [], 'total_rows': 0} -> the actual rows.
     ret = raw['rows']
     # hrmph - on a view with start_key etc params, total_rows will be
     # greater than the rows.
-    assert len(ret)<=raw['total_rows'], raw
+    assert 'total_rows' not in raw or len(ret)<=raw['total_rows'], raw
     return ret
 
 # from the couchdb package; not sure what makes these names special...
@@ -45,7 +61,7 @@ def _encode_options(options):
 class CouchDB(paisley.CouchDB):
     def postob(self, uri, ob):
         # This seems to not use keep-alives etc where using twisted.web
-        # directly doesn't?
+        # directly does?
         body = json.dumps(ob, allow_nan=False,
                           ensure_ascii=False).encode('utf-8')
         return self.post(uri, body)
@@ -54,9 +70,8 @@ class CouchDB(paisley.CouchDB):
         # The base class of this returns the raw json object - eg:
         # {'rows': [], 'total_rows': 0}
         # *sob* - and it also doesn't handle encoding options...
-        base_ret = super(CouchDB, self).openView(*args, **_encode_options(kwargs))
-        return base_ret.addCallback(_raw_to_rows)
-
+        return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
+                        ).addCallback(_raw_to_rows)
 
 def get_db(couchname="local", dbname=_NotSpecified):
     dbinfo = config.couches[couchname]
@@ -72,6 +87,94 @@ def get_db(couchname="local", dbname=_NotSpecified):
     DBs[key] = db
     return db
 
+class DocumentModel(object):
+    """The layer between 'documents' and the 'database'.  Responsible for
+       creating the unique ID for each document (other than the raw document),
+       for fetching documents based on an ID, etc
+    """
+    def __init__(self, db):
+        self.db = db
+
+    def open_document(self, doc_id):
+        """Open the specific extension's document for the given ID"""
+        doc_id = urllib.quote(doc_id, safe="")
+        return self.db.openDoc(doc_id).addBoth(self._cb_doc_opened)
+
+    def _cb_doc_opened(self, result):
+        if isinstance(result, Failure):
+            result.trap(twisted.web.error.Error)
+            if result.value.status != '404': # not found
+                result.raiseException()
+            result = None # indicate no doc exists.
+        return result
+
+    def create_raw_document(self, doc, doc_type, account):
+        assert '_id' in doc, doc # gotta give us an ID!
+        assert 'raindrop_account' not in doc, doc # we look after that!
+        doc['raindrop_account'] = account.details['_id']
+
+        assert 'type' not in doc, doc # we look after that!
+        doc['type'] = doc_type
+
+        assert 'raindrop_seq' not in doc, doc # we look after that!
+        doc['raindrop_seq'] = get_seq()
+
+        # save the document.
+        return self.db.saveDoc(doc, docId=doc['_id'],
+                    ).addCallback(self._cb_saved_document
+                    ).addErrback(self._cb_save_failed
+                    )
+
+    def _cb_saved_document(self, result):
+        logger.debug("Saved message %s", result)
+        # XXX - now what?
+
+    def _cb_save_failed(self, failure):  
+        logger.error("Failed to save message: %s", failure)
+        failure.raiseException()
+
+    def create_ext_document(self, doc, ext, rootdocId):
+        assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
+        assert 'raindrop_seq' not in doc, doc # we look after that!
+        doc['raindrop_seq'] = get_seq()
+        doc['type'] = ext
+        docid = rootdocId + "!" + urllib.quote(ext, safe='') # XXX - this isn't right??
+        # save the document.
+        logger.debug('saving extension document %r as %s', docid, doc)
+        return self.db.saveDoc(doc, docId=docid,
+                    ).addCallback(self._cb_saved_document
+                    ).addErrback(self._cb_save_failed
+                    )
+
+    def get_last_ext_for_document(self, doc_id):
+        """Given a base docid, find the most-recent extension to have run.
+        This will differ from the latest extension in the document chain if
+        the document chain has been 'reset' for any reason (eg, change
+        detected at the source of the message, user adding annotations, etc)
+        """
+        startkey = [doc_id]
+        endkey = [doc_id, 99999999999999]
+        return self.db.openView('raindrop!messages!by',
+                                'by_doc_extension_sequence',
+                                startkey=startkey, endkey=endkey
+                    ).addCallback(self._cb_des_opened, doc_id)
+
+    def _cb_des_opened(self, rows, doc_id):
+        if not rows:
+            ret = None, None
+        else:
+            last = rows[-1]
+            ret = last["value"], last["id"]
+        logger.debug("document '%s' has last-extension of %r", doc_id, ret)
+        return ret
+
+_doc_model = None
+
+def get_doc_model():
+    global _doc_model
+    if _doc_model is None:
+        _doc_model = DocumentModel(get_db())
+    return _doc_model
 
 def nuke_db():
     couch_name = 'local'
@@ -112,7 +215,7 @@ def _build_doc_from_directory(ddir):
             finally:
                 f.close()
         except (OSError, IOError):
-            logger.info("can't open map.js in view directory %r - skipping entire document", view_dir)
+            logger.warning("can't open map.js in view directory %r - skipping this view", view_dir)
             continue
         try:
             f = open(os.path.join(view_dir, 'reduce.js'))
