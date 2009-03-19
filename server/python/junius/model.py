@@ -15,7 +15,7 @@ except ImportError:
 
 import paisley
 from couchdb import schema
-from junius.config import get_config
+from .config import get_config
 
 
 config = get_config()

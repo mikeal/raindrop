@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
-import os, os.path
-
-try:
-    import simplejson as json
-except ImportError:
-    import json # Python 2.6
-
-
-import os, os.path, httplib2
-from junius import model
+import os
+import json
+import httplib2
+from . import model
 
 class Replicator(object):
     def __init__(self):

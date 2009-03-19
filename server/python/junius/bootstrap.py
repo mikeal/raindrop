@@ -9,7 +9,7 @@ from twisted.internet import defer
 import os, os.path, mimetypes, base64, pprint
 import model
 
-from junius.config import get_config
+from .config import get_config
 
 import logging
 logger = logging.getLogger(__name__)
