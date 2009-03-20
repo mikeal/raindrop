@@ -15,7 +15,10 @@ chain = [
                            'junius.proto.skype.SkypeConverter'),
     # skype-chat is 'terminal'
     ('proto/skype-chat', None, None),
-    #('proto/imap', 'raw/message/rfc822', 'core.proto.imap'),
+    ('proto/imap',         'raw/message/rfc822',
+                           'junius.proto.imap.IMAPConverter'),
+    ('proto/twitter',      'message',
+                           'junius.proto.twitter.TwitterConverter'),
     ('raw/message/rfc822', 'raw/message/email',
                            'junius.ext.message.rfc822.RFC822Converter'),
     ('raw/message/email',  'message',
@@ -100,11 +103,11 @@ class Pipeline(object):
         assert doc is not None, "failed to locate the doc for %r" % rootdocid
         dest_type, xformer = xform_info
         logger.debug("calling %r to create a %s from %s", xformer, dest_type,
-                     doc)
+                     doc['_id'])
         return defer.maybeDeferred(xformer.convert, doc
                         ).addCallback(self._cb_converted, dest_type, rootdocid)
 
     def _cb_converted(self, new_doc, dest_type, rootdocid):
-        logger.debug("converter created new document %s", new_doc)
+        logger.debug("converter returned new document for %s", rootdocid)
         self.num_this_process += 1
         return self.doc_model.create_ext_document(new_doc, dest_type, rootdocid)
