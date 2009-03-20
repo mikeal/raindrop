@@ -123,7 +123,7 @@ class DocumentModel(object):
         doc['raindrop_seq'] = get_seq()
 
         # save the document.
-        logger.debug('create_raw_document saving doc %r: %s', docid, doc)
+        logger.debug('create_raw_document saving doc %r', docid)
         return self.db.saveDoc(doc, docId=quote_id(docid),
                     ).addCallback(self._cb_saved_document
                     ).addErrback(self._cb_save_failed
@@ -144,7 +144,7 @@ class DocumentModel(object):
         doc['type'] = ext
         docid = quote_id(rootdocId + "!" + ext)
         # save the document.
-        logger.debug('saving extension document %r as %s', docid, doc)
+        logger.debug('saving extension document %r', docid)
         return self.db.saveDoc(doc, docId=docid,
                     ).addCallback(self._cb_saved_document
                     ).addErrback(self._cb_save_failed
