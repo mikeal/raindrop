@@ -17,6 +17,7 @@ class RFC822Converter(base.ConverterBase):
         self.hdr_parser = HeaderParser()
     def convert(self, doc):
         msg = self.hdr_parser.parsestr(doc['headers'])
-        return {'from': msg['from'],
+        # for now, 'from' etc are all tuples of [identity_type, identity_id]
+        return {'from': ['email', msg['from']],
                 'subject': msg['subject'],
                 'body': doc['body']}
