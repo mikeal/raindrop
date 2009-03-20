@@ -10,12 +10,18 @@ chain = [
     # trom_type, to_type, transformer)
     ('proto/test',         'raw/message/rfc822',
                            'junius.proto.test.TestConverter'),
-    #('proto/skype', 'raw/message/email', 'core.proto.skype'),
+    # skype goes directly to 'message' for now...
+    ('proto/skype-msg',    'message',
+                           'junius.proto.skype.SkypeConverter'),
+    # skype-chat is 'terminal'
+    ('proto/skype-chat', None, None),
     #('proto/imap', 'raw/message/rfc822', 'core.proto.imap'),
     ('raw/message/rfc822', 'raw/message/email',
                            'junius.ext.message.rfc822.RFC822Converter'),
     ('raw/message/email',  'message',
                            'junius.ext.message.email.EmailConverter'),
+    # message is 'terminal'
+    ('message', None, None),
 ]
 
 
@@ -24,15 +30,19 @@ class Pipeline(object):
         self.doc_model = doc_model
         self.forward_chain = {}
         for from_type, to_type, xformname in chain:
-            root, tail = xformname.rsplit('.', 1)
-            try:
-                mod = __import__(root, fromlist=[tail])
-                klass = getattr(mod, tail)
-                inst = klass(doc_model)
-            except:
-                logger.exception("Failed to load extension %r", xformname)
+            if xformname:
+                root, tail = xformname.rsplit('.', 1)
+                try:
+                    mod = __import__(root, fromlist=[tail])
+                    klass = getattr(mod, tail)
+                    inst = klass(doc_model)
+                except:
+                    logger.exception("Failed to load extension %r", xformname)
+                else:
+                    self.forward_chain[from_type] = (to_type, inst)
             else:
-                self.forward_chain[from_type] = (to_type, inst)
+                assert not to_type, 'no xformname must mean to no_type'
+                self.forward_chain[from_type] = None
 
     def start(self):
         return defer.maybeDeferred(self.process_all_documents
@@ -71,13 +81,17 @@ class Pipeline(object):
             logger.debug("Document '%s' doesn't appear to be a message; skipping",
                          rootdocid)
             return None
+        logger.debug("Last extension for doc '%s' is '%s'", docid, last_ext)
         try:
             xform_info = self.forward_chain[last_ext]
         except KeyError:
             logger.warning("Can't find transformer for message type %r - skipping %r",
                            last_ext, docid)
             return None
-        logger.debug("Last extension for doc '%s' is '%s'", docid, last_ext)
+        if xform_info is None:
+            logger.debug("Document %r is already at its terminal type of %r",
+                         rootdocid, last_ext)
+            return None
         return self.doc_model.open_document(docid
                     ).addCallback(self._cb_got_last_doc, rootdocid, xform_info
                     )

@@ -5,12 +5,13 @@ from twisted.python.failure import Failure
 import twisted.web.error
 import paisley
 
-import junius.proto as proto
-from junius.model import get_db
+from . import proto as proto
+from .model import get_db
 
 logger = logging.getLogger(__name__)
 
 _conductor = None
+from .model import get_doc_model
 
 def get_conductor(options=None):
   global _conductor
@@ -49,6 +50,7 @@ class SyncConductor(object):
       ).addErrback(self._ohNoes)
 
   def _gotAllAccounts(self, rows, *args, **kwargs):
+    doc_model = get_doc_model()
     self.log.info("Have %d accounts to synch", len(rows))
     for row in rows:
       account_details = row['value']
@@ -59,7 +61,7 @@ class SyncConductor(object):
           account = proto.protocols[kind](self.db, account_details)
           self.log.info('Starting sync of %s account: %s',
                         kind, account_details.get('name', '(un-named)'))
-          account.startSync(self)
+          account.startSync(self, doc_model)
           self.active_accounts.append(account)
         else:
           self.log.error("Don't know what to do with account kind: %s", kind)

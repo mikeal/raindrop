@@ -14,11 +14,12 @@ import twisted.python.log
 from twisted.internet import defer, threads
 
 from ..proc import base
-from ..model import get_db
 
 import Skype4Py
 
 logger = logging.getLogger(__name__)
+
+max_run = 4 # for the deferred semaphore...
 
 # These are the raw properties we fetch from skype.
 CHAT_PROPS = [
@@ -72,10 +73,17 @@ def simple_convert(str_val, typ):
 
 
 class TwistySkype(object):
-    def __init__(self, account, conductor):
+    def __init__(self, account, conductor, doc_model):
         self.account = account
         self.conductor = conductor
+        self.doc_model = doc_model
         self.skype = Skype4Py.Skype()
+
+    def get_docid_for_chat(self, chat):
+        return "skypechat-" + chat.Name.encode('utf8') # hrmph!
+
+    def get_docid_for_msg(self, msg):
+        return "skypemsg-%s-%d" % (self.account.details['username'], msg._Id)
 
     def attach(self):
         logger.info("attaching to skype...")
@@ -86,59 +94,49 @@ class TwistySkype(object):
     def attached(self, status):
         logger.info("attached to skype - getting chats")
         return threads.deferToThread(self.skype._GetChats
-                    ).addCallback(self.got_chats
+                    ).addCallback(self._cb_got_chats
                     )
 
-    def got_chats(self, chats):
+    def _cb_got_chats(self, chats):
         logger.debug("skype has %d chat(s) total", len(chats))
-        # work out which ones are 'new'
-        startkey=['skype/chat', self.account.details['_id']]
-        # oh for https://issues.apache.org/jira/browse/COUCHDB-194 to be fixed...
-        endkey=['skype/chat', self.account.details['_id'] + 'ZZZZZZZZZZZZZZZZZZ']
-        # XXX - this isn't quite right - the properties of each chat may have
-        # changed, so we need to re-process the ones we've seen.  Later...
-        get_db().openView('raindrop!messages!by', 'by_storage',
-                          startkey=startkey, endkey=endkey,
-            ).addCallback(self.got_seen_chats, chats)
+        dl = []
+        # *sob* - I'd so like to work out the correct pattern for this.
+        # Using a DeferredList with > xxx elts appears to cause:
+        # | File "...\twisted\internet\selectreactor.py", line 40, in win32select
+        # |  r, w, e = select.select(r, w, w, timeout)
+        # | exceptions.ValueError: too many file descriptors in select()
+        # Tada - DeferredSemaphore's to the rescue!  See
+        # http://oubiwann.blogspot.com/2008/06/async-batching-with-twisted-walkthrough.html
+        dl = []
+        sem = defer.DeferredSemaphore(max_run)
+        for chat in chats[:5]: ###################################################################
+            dl.append(sem.run(self._cb_maybe_process_chat, chat))
+            # and also process the messages in each chat.
+            dl.append(sem.run(self._cb_process_chat_messages, chat))
 
-    def got_seen_chats(self, rows, all_chats):
-        seen_chats = set([r['key'][2] for r in rows])
-        need = [chat for chat in all_chats if chat.Name not in seen_chats]
-        logger.info("Skype has %d chats(s), %d of which we haven't seen",
-                     len(all_chats), len(need))
-        # Is a 'DeferredList' more appropriate here?
-        d = defer.Deferred()
-        for chat in need:
-            d.addCallback(self.got_chat, chat)
-        # But *every* chat must have its messages processed, new and old.
-        for chat in all_chats:
-            d.addCallback(self.start_processing_messages, chat)
+        return defer.DeferredList(dl).addCallback(self.finished)
 
-        # and when this deferred chain completes, this account is complete.
-        d.addCallback(self.finished)
+    def _cb_maybe_process_chat(self, chat):
+        logger.debug("seeing if skype chat %r exists", chat.Name)
+        return self.doc_model.open_document(self.get_docid_for_chat(chat),
+                        ).addCallback(self._cb_process_chat, chat)
 
-        return d.callback(None)
+    def _cb_process_chat(self, existing_doc, chat):
+        if existing_doc is None:
+            logger.info("Creating new skype chat %r", chat.Name)
+            # make a 'deferred list' to fetch each property one at a time.
+            ds = [threads.deferToThread(chat._Property, p)
+                  for p, _ in CHAT_PROPS]
+            return defer.DeferredList(ds
+                        ).addCallback(self._cb_got_chat_props, chat)
+        else:
+            logger.debug("Skipping skype chat %r - already exists", chat.Name)
+            # we are done.
 
-    def finished(self, result):
-      return self.conductor.on_synch_finished(self.account, result)
-
-    def got_chat(self, result, chat):
-        logger.debug("starting processing of chat '%s'", chat.Name)
-        # make a 'deferred list' to fetch each property one at a time.
-        ds = [threads.deferToThread(chat._Property, p)
-              for p, _ in CHAT_PROPS]
-
-        return defer.DeferredList(ds
-                    ).addCallback(self.got_chat_props, chat)
-
-    def got_chat_props(self, results, chat):
-        # create the couch document for the chat itself.
-        doc = dict(
-          type='rawMessage',
-          subtype='skype/chat',
-          account_id=self.account.details['_id'],
-          storage_key=chat.Name
-          )
+    def _cb_got_chat_props(self, results, chat):
+        logger.debug("got chat %r properties: %s", chat.Name, results)
+        docid = self.get_docid_for_chat(chat)
+        doc ={}
         for (name, typ), (ok, val) in zip(CHAT_PROPS, results):
             if ok:
                 doc['skype_'+name.lower()] = simple_convert(val, typ)
@@ -146,71 +144,67 @@ class TwistySkype(object):
         # 'Name' is a special case that doesn't come via a prop.  We use
         # 'chatname' as that is the equiv attr on the messages themselves.
         doc['skype_chatname'] = chat.Name
-        return get_db().saveDoc(doc
-                ).addCallback(self.saved_chat, chat
-                )
-
-    def saved_chat(self, result, chat):
-        logger.debug("Finished processing of new chat '%s'", chat.Name)
-        # nothing else to do for the chat (the individual messages are
-        # processed by a different path; we are here only for new ones...
-
-    def start_processing_messages(self, result, chat):
-        # Get each of the messages in the chat
-        return threads.deferToThread(chat._GetMessages
-                    ).addCallback(self.got_messages, chat,
+        return self.doc_model.create_raw_document(docid, doc,
+                                                  'proto/skype-chat',
+                                                  self.account
                     )
 
-    def got_messages(self, messages, chat):
+    def finished(self, result):
+        return self.conductor.on_synch_finished(self.account, result)
+
+    # Processing the messages for each chat...
+    def _cb_process_chat_messages(self, chat):
+        # Get each of the messages in the chat
+        return threads.deferToThread(chat._GetMessages
+                    ).addCallback(self._cb_got_messages, chat,
+                    )
+
+    def _cb_got_messages(self, messages, chat):
         logger.debug("chat '%s' has %d message(s) total; looking for new ones",
                      chat.Name, len(messages))
-        startkey=['skype/message', self.account.details['_id'], [chat.Name, 0]]
-        endkey=['skype/message', self.account.details['_id'], [chat.Name, 4000000000]]
-        return get_db().openView('raindrop!messages!by', 'by_storage',
-                                 startkey=startkey, endkey=endkey,
-                    ).addCallback(self.got_seen_messages, messages, chat)
-
-    def got_seen_messages(self, rows, messages, chat):
-        seen_ids = set([r['key'][2][1] for r in rows])
-        need = [msg for msg in messages if msg._Id not in seen_ids]
-        logger.info("Chat '%s' has %d messages, %d of which we haven't seen",
-                     chat.Name, len(messages), len(need))
-        
+        # See *sob* above...
         dl = []
-        for i, msg in enumerate(need):
-            d = defer.Deferred()
-            d.addCallback(self.got_new_msg, chat, msg, i)
-            dl.append(d)
-            d.callback(None)
+        sem = defer.DeferredSemaphore(max_run)
+        for msg in messages:
+            dl.append(sem.run(self._cb_check_message, chat, msg))
         return defer.DeferredList(dl)
 
-    def got_new_msg(self, result, chat, msg, i):
-        logger.debug("Processing message %d from chat '%s'", i, chat.Name)
-        # make a 'deferred list' to fetch each property one at a time.
-        ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
-        return defer.DeferredList(ds
-                    ).addCallback(self.got_msg_props, chat, msg)
+    def _cb_check_message(self, chat, msg):
+        logger.debug("seeing if message %r exists (in chat %r)",
+                     msg._Id, chat.Name)
+        return self.doc_model.open_document(self.get_docid_for_msg(msg)
+                        ).addCallback(self._cb_maybe_process_message, chat, msg)
 
-    def got_msg_props(self, results, chat, msg):
-        # create the couch document for the chat message itself.
-        doc = dict(
-          type='rawMessage',
-          subtype='skype/message',
-          account_id=self.account.details['_id'],
-          storage_key=[chat.Name, msg._Id]
-          )
+    def _cb_maybe_process_message(self, existing_doc, chat, msg):
+        if existing_doc is None:
+            logger.debug("New skype message %d", msg._Id)
+            # make a 'deferred list' to fetch each property one at a time.
+            ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
+            return defer.DeferredList(ds
+                        ).addCallback(self._cb_got_msg_props, chat, msg)
+        else:
+            logger.debug("already have raw doc for msg %r; skipping", msg._Id)
+
+    def _cb_got_msg_props(self, results, chat, msg):
+        doc = {}
         for (name, typ), (ok, val) in zip(MSG_PROPS, results):
             if ok:
                 doc['skype_'+name.lower()] = simple_convert(val, typ)
-        # The 'Id' attribute doesn't come via a property.
-        doc['skype_msgid'] = msg._Id
+        # we include the skype username with the ID as they are unique per user.
+        docid = self.get_docid_for_msg(msg)
+        return self.doc_model.create_raw_document(docid, doc, 'proto/skype-msg',
+                                                  self.account
+                    )
 
-        return get_db().saveDoc(doc
-                ).addCallback(self.saved_message, chat
-                )
 
-    def saved_message(self, result, chat):
-        logger.debug('message processing complete')
+# A 'converter' - takes a proto/skype-msg as input and creates a
+# 'message' as output (some other intermediate step might end up more
+# appopriate)
+class SkypeConverter(base.ConverterBase):
+    def convert(self, doc):
+        return {'from': ['skype', doc['skype_from_handle']],
+                'subject': 'I gotta get this from the chat itself :(',
+                'body': doc['skype_body']}
 
 
 class SkypeAccount(base.AccountBase):
@@ -218,5 +212,5 @@ class SkypeAccount(base.AccountBase):
     self.db = db
     self.details = details
 
-  def startSync(self, conductor):
-    TwistySkype(self, conductor).attach()
+  def startSync(self, conductor, doc_model):
+    TwistySkype(self, conductor, doc_model).attach()

@@ -2,18 +2,15 @@
 import logging
 from twisted.internet import defer, error
 
-
-
 logger = logging.getLogger(__name__)
 
 from ...proc import base
-from ...model import get_doc_model
 
 class TestMessageProvider(object):
-    def __init__(self, account, conductor):
+    def __init__(self, account, conductor, doc_model):
         self.account = account
         self.conductor = conductor
-        self.doc_model = get_doc_model()
+        self.doc_model = doc_model
 
     def attach(self):
         logger.info("preparing to synch test messages...")
@@ -35,10 +32,10 @@ class TestMessageProvider(object):
         if existing_doc is None:
             logger.info("Creating new test message with ID %d", doc_num)
             doc = dict(
-              _id="test.message.%d" % doc_num,
               storage_key=doc_num,
               )
-            return self.doc_model.create_raw_document(doc, 'proto/test',
+            did = "test.message.%d" % doc_num
+            return self.doc_model.create_raw_document(did, doc, 'proto/test',
                                                       self.account
                         ).addCallback(self.saved_message, doc)
         else:
@@ -50,7 +47,7 @@ class TestMessageProvider(object):
       self.conductor.on_synch_finished(self.account, result)
 
     def saved_message(self, result, doc):
-        logger.debug("Finished saving test message (%s)", doc['_id'])
+        logger.debug("Finished saving test message %r", result)
         # done
 
 # A 'converter' - takes a proto/test as input and creates a
@@ -75,5 +72,5 @@ class TestAccount(base.AccountBase):
     self.db = db
     self.details = details
 
-  def startSync(self, conductor):
-    TestMessageProvider(self, conductor).attach()
+  def startSync(self, conductor, doc_model):
+    TestMessageProvider(self, conductor, doc_model).attach()
