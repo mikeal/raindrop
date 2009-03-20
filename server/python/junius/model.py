@@ -87,6 +87,9 @@ def get_db(couchname="local", dbname=_NotSpecified):
     DBs[key] = db
     return db
 
+def quote_id(doc_id):
+    return urllib.quote(doc_id, safe="")
+
 class DocumentModel(object):
     """The layer between 'documents' and the 'database'.  Responsible for
        creating the unique ID for each document (other than the raw document),
@@ -97,8 +100,7 @@ class DocumentModel(object):
 
     def open_document(self, doc_id):
         """Open the specific extension's document for the given ID"""
-        doc_id = urllib.quote(doc_id, safe="")
-        return self.db.openDoc(doc_id).addBoth(self._cb_doc_opened)
+        return self.db.openDoc(quote_id(doc_id)).addBoth(self._cb_doc_opened)
 
     def _cb_doc_opened(self, result):
         if isinstance(result, Failure):
@@ -108,8 +110,9 @@ class DocumentModel(object):
             result = None # indicate no doc exists.
         return result
 
-    def create_raw_document(self, doc, doc_type, account):
-        assert '_id' in doc, doc # gotta give us an ID!
+    def create_raw_document(self, docid, doc, doc_type, account):
+        assert '_id' not in doc # that isn't how you specify the ID.
+        assert '!' not in docid, docid # these chars are special.
         assert 'raindrop_account' not in doc, doc # we look after that!
         doc['raindrop_account'] = account.details['_id']
 
@@ -120,17 +123,18 @@ class DocumentModel(object):
         doc['raindrop_seq'] = get_seq()
 
         # save the document.
-        return self.db.saveDoc(doc, docId=doc['_id'],
+        logger.debug('create_raw_document saving doc %r: %s', docid, doc)
+        return self.db.saveDoc(doc, docId=quote_id(docid),
                     ).addCallback(self._cb_saved_document
                     ).addErrback(self._cb_save_failed
                     )
 
     def _cb_saved_document(self, result):
-        logger.debug("Saved message %s", result)
+        logger.debug("Saved document %s", result)
         # XXX - now what?
 
     def _cb_save_failed(self, failure):  
-        logger.error("Failed to save message: %s", failure)
+        logger.error("Failed to save document: %s", failure)
         failure.raiseException()
 
     def create_ext_document(self, doc, ext, rootdocId):
@@ -138,7 +142,7 @@ class DocumentModel(object):
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
         doc['type'] = ext
-        docid = rootdocId + "!" + urllib.quote(ext, safe='') # XXX - this isn't right??
+        docid = quote_id(rootdocId + "!" + ext)
         # save the document.
         logger.debug('saving extension document %r as %s', docid, doc)
         return self.db.saveDoc(doc, docId=docid,
