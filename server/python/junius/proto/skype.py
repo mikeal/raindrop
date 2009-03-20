@@ -109,7 +109,7 @@ class TwistySkype(object):
         # http://oubiwann.blogspot.com/2008/06/async-batching-with-twisted-walkthrough.html
         dl = []
         sem = defer.DeferredSemaphore(max_run)
-        for chat in chats[:5]: ###################################################################
+        for chat in chats:
             dl.append(sem.run(self._cb_maybe_process_chat, chat))
             # and also process the messages in each chat.
             dl.append(sem.run(self._cb_process_chat_messages, chat))
