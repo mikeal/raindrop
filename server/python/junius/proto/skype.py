@@ -202,9 +202,24 @@ class TwistySkype(object):
 # appopriate)
 class SkypeConverter(base.ConverterBase):
     def convert(self, doc):
+        # We need to open the 'chat' for this Message.  Clearly this is
+        # going to be inefficient...
+        chat_id = "skypechat-" + doc['skype_chatname'].encode('utf8') # hrmph!
+        return self.doc_model.open_document(chat_id
+                        ).addCallback(self.finish_convert, doc)
+
+    def finish_convert(self, chat_doc, doc):
+        if chat_doc is None:
+            subject = "<failed to fetch skype chat!>"
+        else:
+            subject = chat_doc['skype_friendlyname']
         return {'from': ['skype', doc['skype_from_handle']],
-                'subject': 'I gotta get this from the chat itself :(',
-                'body': doc['skype_body']}
+                'subject': subject,
+                'body': doc['skype_body'],
+                'body_preview': doc['skype_body'][:128],
+                'conversation_id': doc['skype_chatname'],
+                'timestamp': doc['skype_timestamp'], # skype's works ok here?
+                }
 
 
 class SkypeAccount(base.AccountBase):
