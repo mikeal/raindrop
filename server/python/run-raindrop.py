@@ -54,6 +54,8 @@ def process(result, parser, options):
     def done(result):
         print "Message pipeline has finished..."
     p = pipeline.Pipeline(model.get_doc_model())
+    # XXX - this deferred completes before the process is actually complete;
+    # we need to grok this better...
     return p.start().addCallback(done)
 
 def _setup_logging(options):
