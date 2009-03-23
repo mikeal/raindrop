@@ -4,6 +4,7 @@ from __future__ import absolute_import # stop 'email' import finding our ext
 
 import logging
 from email.parser import HeaderParser
+from email.utils import mktime_tz, parsedate_tz
 from twisted.internet import defer
 
 
@@ -18,6 +19,16 @@ class RFC822Converter(base.ConverterBase):
     def convert(self, doc):
         msg = self.hdr_parser.parsestr(doc['headers'])
         # for now, 'from' etc are all tuples of [identity_type, identity_id]
-        return {'from': ['email', msg['from']],
-                'subject': msg['subject'],
-                'body': doc['body']}
+        ret = {'from': ['email', msg['from']],
+               'subject': msg['subject'],
+               'body': doc['body'],
+               'body_preview': doc['body'][:128],
+        }
+        try:
+            dval = msg['Date']
+        except KeyError:
+            pass
+        else:
+            if dval:
+                ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+        return ret
