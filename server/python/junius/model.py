@@ -73,6 +73,13 @@ class CouchDB(paisley.CouchDB):
         return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
                         ).addCallback(_raw_to_rows)
 
+    def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
+        # paisley appears to use an old api for attachments?
+        if attachment:
+            uri = "/%s/%s/%s" % (dbName, docId, attachment)
+            return  self.get(uri)
+        return super(CouchDB, self).openDoc(dbName, docId, revision, full)
+
 def get_db(couchname="local", dbname=_NotSpecified):
     dbinfo = config.couches[couchname]
     if dbname is _NotSpecified:
@@ -98,9 +105,9 @@ class DocumentModel(object):
     def __init__(self, db):
         self.db = db
 
-    def open_document(self, doc_id):
-        """Open the specific extension's document for the given ID"""
-        return self.db.openDoc(quote_id(doc_id)).addBoth(self._cb_doc_opened)
+    def open_document(self, doc_id, **kw):
+        """Open the specific document, returning None if it doesn't exist"""
+        return self.db.openDoc(quote_id(doc_id), **kw).addBoth(self._cb_doc_opened)
 
     def _cb_doc_opened(self, result):
         if isinstance(result, Failure):
@@ -110,7 +117,7 @@ class DocumentModel(object):
             result = None # indicate no doc exists.
         return result
 
-    def create_raw_document(self, docid, doc, doc_type, account):
+    def create_raw_document(self, docid, doc, doc_type, account, attachments=None):
         assert '_id' not in doc # that isn't how you specify the ID.
         assert '!' not in docid, docid # these chars are special.
         assert 'raindrop_account' not in doc, doc # we look after that!
@@ -121,6 +128,12 @@ class DocumentModel(object):
 
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
+
+        # XXX - for small blobs this is good (we get the attachment in the
+        # same request as the doc).  For large blobs this is bad, as we
+        # base64 encode the data in memory before sending it.
+        if attachments:
+            self.db.addAttachments(doc, attachments)
 
         # save the document.
         logger.debug('create_raw_document saving doc %r', docid)
