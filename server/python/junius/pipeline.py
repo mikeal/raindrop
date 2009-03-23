@@ -1,19 +1,19 @@
 # This is the raindrop pipeline; it moves messages from their most raw
 # form to their most useful form.
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 import logging
 
 logger = logging.getLogger(__name__)
 
 # Simple forward chaining.
 chain = [
-    # trom_type, to_type, transformer)
+    # from_type, to_type, transformer)
     ('proto/test',         'raw/message/rfc822',
                            'junius.proto.test.TestConverter'),
     # skype goes directly to 'message' for now...
     ('proto/skype-msg',    'message',
                            'junius.proto.skype.SkypeConverter'),
-    # skype-chat is 'terminal'
+    # skype-chat is 'terminal' for now.
     ('proto/skype-chat', None, None),
     ('proto/imap',         'raw/message/rfc822',
                            'junius.proto.imap.IMAPConverter'),
@@ -23,8 +23,10 @@ chain = [
                            'junius.ext.message.rfc822.RFC822Converter'),
     ('raw/message/email',  'message',
                            'junius.ext.message.email.EmailConverter'),
-    # message is 'terminal'
-    ('message', None, None),
+    ('message',            'anno/tags',
+                           'junius.ext.message.message.MessageAnnotator'),
+    # anno/tags is 'terminal'
+    ('anno/tags', None, None),
 ]
 
 
@@ -44,12 +46,11 @@ class Pipeline(object):
                 else:
                     self.forward_chain[from_type] = (to_type, inst)
             else:
-                assert not to_type, 'no xformname must mean to no_type'
+                assert not to_type, 'no xformname must mean no to_type'
                 self.forward_chain[from_type] = None
 
     def start(self):
-        return defer.maybeDeferred(self.process_all_documents
-                    ).addCallback(self._cb_maybe_reprocess_all_documents)
+        return defer.maybeDeferred(self.process_all_documents)
 
     def process_all_documents(self):
         # check *every* doc in the DB.  This exists until we can derive
@@ -57,7 +58,7 @@ class Pipeline(object):
         self.num_this_process = 0
         return self.doc_model.db.openView('raindrop!messages!by',
                                           'by_doc_roots',
-                                          group=True, limit=100,
+                                          group=True,
                     ).addCallback(self._cb_roots_opened)
 
     def _cb_maybe_reprocess_all_documents(self, result):
@@ -68,15 +69,31 @@ class Pipeline(object):
         logger.info('pipeline is finished.')
 
     def _cb_roots_opened(self, rows):
-        dl = []
-        for row in rows:
-            did = row['key']
-            logger.debug("Finding last extension point for %s", did)
-            dl.append(
-                self.doc_model.get_last_ext_for_document(did).addCallback(
-                    self._cb_got_doc_last_ext, did)
-                )
-        return defer.DeferredList(dl)
+        self.remaining_roots = [r['key'] for r in rows]
+        return self._process_next_root()
+
+    def _process_next_root(self):
+        if not self.remaining_roots:
+            logger.debug("Finished document roots")
+            d = defer.Deferred()
+            d.addCallback(self._cb_maybe_reprocess_all_documents)
+            d.callback(None)
+            return d
+
+        did = self.remaining_roots.pop()
+        logger.debug("Finding last extension point for %s", did)
+        return self.doc_model.get_last_ext_for_document(did
+                    ).addCallback(self._cb_got_doc_last_ext, did
+                    ).addErrback(self._eb_doc_failed
+                    ).addCallback(self._cb_did_doc_root
+                    )
+
+    def _eb_doc_failed(self, failure):
+        logger.error("FAILED to pipe a doc: %s", failure)
+        # and we will auto skip to the next doc...
+
+    def _cb_did_doc_root(self, result):
+        return reactor.callLater(0, self._process_next_root)
 
     def _cb_got_doc_last_ext(self, ext_info, rootdocid):
         last_ext, docid = ext_info
