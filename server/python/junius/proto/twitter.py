@@ -7,6 +7,7 @@ Fetch twitter raw* objects
 from __future__ import absolute_import
 
 import logging
+import re
 import twisted.python.log
 from twisted.internet import defer, threads
 
@@ -46,7 +47,6 @@ class TwitterProcessor(object):
         return threads.deferToThread(twitter.Api,
                                   username=username, password=pw
                     ).addCallback(self.attached
-                    ).addBoth(self.finished
                     )
 
     def attached(self, twit):
@@ -63,27 +63,32 @@ class TwitterProcessor(object):
     def process_next_friend(self):
         if not self.friends_remaining:
             logger.debug("Finished processing twitter friends")
-            return
+            return defer.maybeDeferred(self.finished, None)
 
         fid = self.friends_remaining.pop()
         return threads.deferToThread(self.twit.GetUserTimeline, fid
                             ).addCallback(self.got_friend_timeline, fid
                             ).addErrback(self.err_friend_timeline, fid
+                            ).addCallback(self.finished_friend
                             )
+
+    def finished_friend(self, result):
+        self.conductor.reactor.callLater(0, self.process_next_friend)
 
     def err_friend_timeline(self, failure, fid):
         logger.error("Failed to fetch timeline for '%s': %s", fid, failure)
-        return self.process_next_friend()
 
     def got_friend_timeline(self, timeline, fid):
         self.current_fid = fid
         self.remaining_tweets = timeline[:]
+        logger.debug("Friend %r has %d items in their timeline", fid,
+                     len(self.remaining_tweets))
         return self.process_next_tweet()
 
     def process_next_tweet(self):
         if not self.remaining_tweets:
             logger.debug("Finished processing timeline")
-            return self.process_next_friend()
+            return
 
         tweet = self.remaining_tweets.pop()
 
@@ -95,7 +100,7 @@ class TwitterProcessor(object):
     def maybe_process_tweet(self, existing_doc, docid, tweet):
         if existing_doc is None:
             # put the 'raw' document object together and save it.
-            logger.info("New tweet %s", tweet.id)
+            logger.info("New tweet '%s...' (%s)", tweet.text[:25], tweet.id)
             # create the couch document for the tweet itself.
             doc = {}
             for name in TWEET_PROPS:
@@ -122,11 +127,20 @@ class TwitterProcessor(object):
 
 # A 'converter' - takes a proto/twitter as input and creates a
 # 'message' as output (some other intermediate step might end up more
-# appopriate)
+# appropriate)
 class TwitterConverter(base.ConverterBase):
+    re_tags = re.compile(r'#(\w+)')    
     def convert(self, doc):
+        # for now, if a 'proto' can detect tags, it writes them directly
+        # to a 'tags' attribute.
+        body = doc['twitter_text']
+        tags = self.re_tags.findall(body)
         return {'from': ['twitter', doc['twitter_user']],
-                'body': doc['twitter_text']}
+                'body': body,
+                'body_preview': body[:128],
+                'tags': tags,
+                'timestamp': int(doc['twitter_created_at_in_seconds'])
+                }
 
 
 class TwitterAccount(base.AccountBase):
