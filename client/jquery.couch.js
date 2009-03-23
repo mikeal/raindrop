@@ -265,7 +265,7 @@
                 } else if (options.error) {
                   options.error(req.status, resp.error, resp.reason);
                 } else {
-                  alert("An error occurred accessing the view: " + resp.reason);
+                  alert("An error occurred accessing the view '" + name + "': " + resp.reason);
                 }
               }
             });
@@ -281,7 +281,7 @@
               } else if (options.error) {
                 options.error(req.status, resp.error, resp.reason);
               } else {
-                alert("An error occurred accessing the view: " + resp.reason);
+                alert("An error occurred accessing the view '" + name + "': " + resp.reason);
               }
             }
           });

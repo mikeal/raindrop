@@ -2,7 +2,7 @@ var ContactCompleter = {
   type: "contact",
   complete: function(aAutocomplete, aText) {
     console.log("Contact completer firing on", aText);
-    Gloda.dbContacts.view("contact_ids/by_suffix", {
+    Gloda.dbContacts.view("raindrop!contacts!all/by_suffix", {
       startkey: aText,
       endkey: aText + "\u9999",
       include_docs: true,
@@ -31,11 +31,15 @@ var TagCompleter = {
   type: "tag",
   complete: function(aAutocomplete, aText) {
     console.log("Tag completer firing on", aText);
-    Gloda.dbMessages.view("tags/all_tags", {
+    Gloda.dbMessages.view("raindrop!tags!all/all", {
       success: function(result) {
+        var nodes = [];
+        if (!result.rows) {
+          console.log("Tag completer can't see any tags; db is new?");
+          return;
+        }
         var tagNames = result.rows[0].value;
         console.log("Tag completer got tag names:", tagNames);
-        var nodes = [];
         var textLength = aText.length;
         tagNames.forEach(function (tagName) {
           if (tagName.substring(0, textLength) == aText) {
