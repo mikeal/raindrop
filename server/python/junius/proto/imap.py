@@ -9,10 +9,6 @@ brat = base.Rat
 
 logger = logging.getLogger(__name__)
 
-# It would appear twisted assumes 'imap4-utf-7' (which would appear to be
-# simply utf-7), but gmail apparently doesn't. This clearly should not be a
-# global; we need to grok this better...
-imap_encoding = 'utf-8'
 
 class ImapClient(imap4.IMAP4Client):
   '''
@@ -131,23 +127,9 @@ class ImapClient(imap4.IMAP4Client):
 
   def _cb_got_body(self, result, uid, did, to_fetch):
     _, result = result.popitem()
-    try:
-      content = result['RFC822'].decode(imap_encoding)
-    except UnicodeError, why:
-      logger.error("Failed to decode message "
-                   "(but will re-decode ignoring errors) : %s", why)
-      # heh - 'ignore' and 'replace' are apparently ignored for the 'utf-7'
-      # codecs...
-      try:
-        body = result['RFC822'].decode(imap_encoding, 'ignore')
-      except UnicodeError, why:
-        # XXX - is this possible???
-        logger.error("and failed to 'ignore' unicode errors - skipping it: %s",
-                     why)
-        return self._process_next_message()
-
+    content = result['RFC822']
     # grr - get the flags
-    logger.debug("fetching flags for message %s", did)
+    logger.debug("message %r has %d bytes; fetching flags", did, len(content))
     return self.fetchFlags(to_fetch, uid=True
                 ).addCallback(self._cb_got_flags, uid, did, content
                 ).addErrback(self._cantGetMessage
@@ -162,10 +144,11 @@ class ImapClient(imap4.IMAP4Client):
     doc = dict(
       storage_key=[self.current_folder, uid],
       imap_flags=flags,
-      imap_content=content,
       )
+    attachments = {'rfc822' : content}
     return self.doc_model.create_raw_document(did, doc, 'proto/imap',
-                                              self.account
+                                              self.account,
+                                              attachments=attachments,
                 ).addCallback(self._cb_saved_message)
     
   def _cantGetMessage(self, failure):
@@ -248,9 +231,15 @@ class ImapClientFactory(protocol.ClientFactory):
 # 'raw/message/rfc822' as output
 class IMAPConverter(base.ConverterBase):
   def convert(self, doc):
-    headers, body = doc['imap_content'].split('\r\n\r\n', 1)
-    return {'headers': headers, 'body': body}
+    # I need the binary attachment.
+    return self.doc_model.open_document(doc['_id'], attachment="rfc822"
+              ).addCallback(self._cb_got_attachment, doc)
 
+  def _cb_got_attachment(self, content, doc):
+    headers, body = content.split('\r\n\r\n', 1)
+    # XXX - *sob* - this is still wrong - 'body' is a still blob so needs to
+    # go into an attachment.
+    return {'headers': headers, 'body': body}
 
 class IMAPAccount(base.AccountBase):
   def __init__(self, db, details):
