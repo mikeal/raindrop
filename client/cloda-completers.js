@@ -36,8 +36,8 @@ var TagCompleter = {
       endkey: aText + "\u9999",
       success: function(result) {
         var nodes = [];
-        if (!result.rows) {
-          console.log("Tag completer can't see any tags; db is new?");
+        if (result.rows.length==0) {
+          console.log("Tag completer can't see any tags starting with", aText);
           return;
         }
         var tagNames = result.rows[0].value;
