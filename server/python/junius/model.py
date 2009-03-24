@@ -211,37 +211,36 @@ def nuke_db():
     return deferred
 
 def _build_doc_from_directory(ddir):
-    # for now all we look for is the views.
+    # all we look for is the views.
     ret = {}
-    try:
-        views = os.listdir(os.path.join(ddir, 'views'))
-    except OSError:
-        logger.warning("document directory %r has no 'views' subdirectory - skipping this document", ddir)
-        return ret
-
     ret_views = ret['views'] = {}
-    for view_name in views:
-        view_dir = os.path.join(ddir, 'views', view_name)
-        if not os.path.isdir(view_dir):
-            logger.info("skipping view non-directory: %s", view_dir)
-            continue
-        try:
-            f = open(os.path.join(view_dir, 'map.js'))
+    # The '-map.js' file is the 'trigger' for creating a view...
+    tail = "-map.js"
+    rtail = "-reduce.js"
+    files = os.listdir(ddir)
+    for f in files:
+        fqf = os.path.join(ddir, f)
+        if f.endswith(tail):
+            view_name = f[:-len(tail)]
             try:
-                ret_views[view_name] = {'map': f.read()}
-            finally:
-                f.close()
-        except (OSError, IOError):
-            logger.warning("can't open map.js in view directory %r - skipping this view", view_dir)
-            continue
-        try:
-            f = open(os.path.join(view_dir, 'reduce.js'))
-            ret_views[view_name]['reduce'] = f.read()
-            f.close()
-        except (OSError, IOError):
-            # no reduce - no problem...
-            logger.debug("no reduce.js in '%s' - skipping reduce for this view", view_dir)
-            continue
+                with open(fqf) as f:
+                    ret_views[view_name] = {'map': f.read()}
+            except (OSError, IOError):
+                logger.warning("can't open map file %r - skipping this view", fqf)
+                continue
+            fqr = os.path.join(ddir, view_name + rtail)
+            try:
+                with open(fqr) as f:
+                    ret_views[view_name]['reduce'] = f.read()
+            except (OSError, IOError):
+                # no reduce - no problem...
+                logger.debug("no reduce file %r - skipping reduce for view '%s'",
+                             fqr, view_name)
+        else:
+            # avoid noise...
+            if not f.endswith(rtail) and not f.startswith("."):
+                logger.info("skipping non-map/reduce file %r", fqf)
+
     logger.info("Document in directory %r has views %s", ddir, ret_views.keys())
     if not ret_views:
         logger.warning("Document in directory %r appears to have no views", ddir)
@@ -249,21 +248,22 @@ def _build_doc_from_directory(ddir):
 
 
 def generate_designs_from_filesystem(root):
+    # We use the same file-system layout as 'CouchRest' does:
+    # http://jchrisa.net/drl/_design/sofa/_show/post/release__couchrest_0_9_0
+    # note however that we don't create a design documents in exactly the same
+    # way - the view is always named as specified, and currently no 'map only'
+    # view is created (and if/when it is, only it will have a "special" name)
+    # See http://groups.google.com/group/raindrop-core/web/maintaining-design-docs
+
     # This is pretty dumb (but therefore simple).
     # root/* -> directories used purely for a 'namespace'
     # root/*/* -> directories which hold the contents of a document.
-    # root/*/*/views -> directory holding views for the document
-    # root/*/*/views/* -> directory for each named view.
-    # root/*/*/views/*/map.js|reduce.js -> view content
+    # root/*/*-map.js and maybe *-reduce.js -> view content with name b4 '-'
     logger.debug("Starting to build design documents from %r", root)
     for top_name in os.listdir(root):
         fq_child = os.path.join(root, top_name)
         if not os.path.isdir(fq_child):
             logger.debug("skipping non-directory: %s", fq_child)
-            continue
-        # hack for debugging - rename a dir to end with .ignore...
-        if fq_child.endswith('.ignore'):
-            logger.info("skipping .ignored directory: %s", fq_child)
             continue
         # so we have a 'namespace' directory.
         num_docs = 0
@@ -277,7 +277,9 @@ def generate_designs_from_filesystem(root):
             # XXX - note the artificial 'raindrop' prefix - the intent here
             # is that we need some way to determine which design documents we
             # own, and which are owned by extensions...
-            # XXX - *sob* - and that we can't use '/' in the doc ID at the moment...
+            # XXX - *sob* - and that we shouldn't use '/' in the doc ID at the
+            # moment (well - we probably could if we ensured we quoted all the
+            # '/' chars, but that seems too much burden for no gain...)
             doc['_id'] = '_design/' + ('!'.join(['raindrop', top_name, doc_name]))
             yield doc
             num_docs += 1
