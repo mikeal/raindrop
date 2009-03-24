@@ -2,7 +2,7 @@ function(keys, values, rereduce) {
   var keySet = {}, i, j;
   if (!rereduce) {
     for (i = 0; i < keys.length; i++)
-      keySet[keys[i][0][0]] = true;
+      keySet[keys[i][0]] = true;
   }
   else {
     for (i = 0; i < values.length; i++) {

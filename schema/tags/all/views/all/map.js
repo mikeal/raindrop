@@ -3,6 +3,6 @@ function(doc) {
         var id = doc._id;
         var emit_id = id.substr(0, id.indexOf('!')) + '!message';
         for (var i = 0; i < doc.tags.length; i++)
-            emit([doc.tags[i], doc.raindrop_seq], emit_id);
+            emit(doc.tags[i], null);
     }
 }
