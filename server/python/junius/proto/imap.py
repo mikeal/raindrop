@@ -79,23 +79,24 @@ class ImapClient(imap4.IMAP4Client):
 
   def _examineFolder(self, result, folder_path):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
-    startkey=['rfc822', self.account.details['_id'], [folder_path, 0]]
-    endkey=['rfc822', self.account.details['_id'], [folder_path, 4000000000]]
-    return get_db().openView('raindrop!messages!by', 'by_storage',
-                             startkey=startkey, endkey=endkey,
+    return get_db().openView('raindrop!proto!imap', 'seen',
+                             startkey=[folder_path], endkey=[folder_path, {}]
               ).addCallback(self._fetchAndProcess, folder_path)
 
   def _fetchAndProcess(self, rows, folder_path):
+    # XXX - we should look at the flags and update the message if it's not
+    # the same - later.
+    seen_uids = set(row['key'][1] for row in rows)
+    # now build a list of all message currently in the folder.
     allMessages = imap4.MessageSet(1, None)
-    seen_ids = [r['key'][2][1] for r in rows]
-    logger.debug("%d messages exist in %s", len(seen_ids), folder_path)
     return self.fetchUID(allMessages, True).addCallback(
-            self._gotUIDs, folder_path, seen_ids)
+            self._gotUIDs, folder_path, seen_uids)
 
   def _gotUIDs(self, uidResults, name, seen_uids):
-    uids = [int(result['UID']) for result in uidResults.values()]
-    logger.info("Folder %s has %d messages", name, len(uids))
-    self.messages_remaining = uids
+    all_uids = set(int(result['UID']) for result in uidResults.values())
+    self.messages_remaining = all_uids - seen_uids
+    logger.info("Folder %s has %d messages, %d new", name,
+                len(all_uids), len(self.messages_remaining))
     return self._process_next_message()
 
   def _process_next_message(self):
@@ -107,23 +108,12 @@ class ImapClient(imap4.IMAP4Client):
     uid = self.messages_remaining.pop()
     # XXX - we need something to make this truly unique.
     did = "%s#%d" % (self.current_folder, uid)
-    logger.debug("seeing if imap message %r exists", did)
-    return self.doc_model.open_document(did,
-                    ).addCallback(self._cb_process_message, uid, did
-                    )
-
-  def _cb_process_message(self, existing_doc, uid, did):
-    if existing_doc is None:
-      logger.debug("new imap message %r - fetching content", did)
-      # grr - we have to get the rfc822 body and the flags in separate requests.
-      to_fetch = imap4.MessageSet(uid)
-      return self.fetchMessage(to_fetch, uid=True
-                  ).addCallback(self._cb_got_body, uid, did, to_fetch
-                  )
-    else:
-      logger.debug("Skipping message %r - already exists", did)
-      # we are done with this message.
-      return self._process_next_message()
+    logger.debug("new imap message %r - fetching content", did)
+    # grr - we have to get the rfc822 body and the flags in separate requests.
+    to_fetch = imap4.MessageSet(uid)
+    return self.fetchMessage(to_fetch, uid=True
+                ).addCallback(self._cb_got_body, uid, did, to_fetch
+                )
 
   def _cb_got_body(self, result, uid, did, to_fetch):
     _, result = result.popitem()
