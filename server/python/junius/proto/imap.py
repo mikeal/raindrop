@@ -4,6 +4,7 @@ import logging
 
 from ..proc import base
 from ..model import get_db
+from ..ext.message.rfc822 import doc_from_bytes
 
 brat = base.Rat
 
@@ -51,6 +52,10 @@ class ImapClient(imap4.IMAP4Client):
   def _procList(self, result, *args, **kwargs):
     # As per http://python.codefetch.com/example/ow/tnpe_code/ch07/imapdownload.py,
     # We keep a 'stack' of items left to process in an instance variable...
+    # (*sob* - but its not clear why this doesn't suffer from
+    # death-by-recursion like the other impls can demonstrate? Even though we
+    # use a 'stack' of items left to process, each call to
+    # _process_next_folder is recursive?
     self.folder_infos = result[:]
     return self._process_next_folder()
 
@@ -135,7 +140,10 @@ class ImapClient(imap4.IMAP4Client):
       storage_key=[self.current_folder, uid],
       imap_flags=flags,
       )
-    attachments = {'rfc822' : content}
+    attachments = {'rfc822' : {'content_type': 'message',
+                               'data': content,
+                               }
+                  }
     return self.doc_model.create_raw_document(did, doc, 'proto/imap',
                                               self.account,
                                               attachments=attachments,
@@ -226,10 +234,10 @@ class IMAPConverter(base.ConverterBase):
               ).addCallback(self._cb_got_attachment, doc)
 
   def _cb_got_attachment(self, content, doc):
-    headers, body = content.split('\r\n\r\n', 1)
-    # XXX - *sob* - this is still wrong - 'body' is a still blob so needs to
-    # go into an attachment.
-    return {'headers': headers, 'body': body}
+    assert content, "can't locate attachment for %r" % doc['_id']
+    # the 'rfc822' module knows what to do...
+    return doc_from_bytes(content)
+
 
 class IMAPAccount(base.AccountBase):
   def __init__(self, db, details):

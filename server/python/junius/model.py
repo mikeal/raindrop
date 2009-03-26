@@ -80,6 +80,83 @@ class CouchDB(paisley.CouchDB):
             return  self.get(uri)
         return super(CouchDB, self).openDoc(dbName, docId, revision, full)
 
+    # This is a potential addition to the paisley API;  It is hard to avoid
+    # a hacky workaround due to the use of 'partial' in paisley...
+    def saveAttachment(self, dbName, docId, name, data,
+                       content_type="application/octet-stream",
+                       revision=None):
+        """
+        Save/create an attachment to a document in a given database.
+
+        @param dbName: identifier of the database.
+        @type dbName: C{str}
+
+        @param docId: the identifier of the document.
+        @type docId: C{str}
+
+        #param name: name of the attachment
+        @type name: C{str}
+
+        @param body: content of the attachment.
+        @type body: C{sequence}
+
+        @param content_type: content type of the attachment
+        @type body: C{str}
+
+        @param revision: if specified, the revision of the attachment this
+                         is updating
+        @type revision: C{str}
+        """
+        # Responses: ???
+        # 409 Conflict, 500 Internal Server Error
+        url = "/%s/%s/%s" % (dbName, docId, name)
+        if revision:
+            url = url + '?rev=' + revision
+        # *sob* - and I can't use put as it doesn't allow custom headers :(
+        # and neither does _getPage!!
+        # ** start of self._getPage clone setup...** (plus an import or 2...)
+        from twisted.web.client import HTTPClientFactory
+        kwargs = {'method': 'PUT',
+                  'postdata': data}
+        kwargs["headers"] = {"Accept": "application/json",
+                             "Content-Type": content_type,
+                             }
+        factory = HTTPClientFactory(url, **kwargs)
+        from twisted.internet import reactor
+        reactor.connectTCP(self.host, self.port, factory)
+        d = factory.deferred
+        # ** end of self._getPage clone **
+        d.addCallback(self.parseResult)
+        return d
+
+    def updateDocuments(self, dbName, docs):
+        # update/insert/delete multiple docs in a single request using
+        # _bulk_docs
+        # from couchdb-python.
+        docs = []
+        for doc in docs:
+            if isinstance(doc, dict):
+                docs.append(doc)
+            elif hasattr(doc, 'items'):
+                docs.append(dict(doc.items()))
+            else:
+                raise TypeError('expected dict, got %s' % type(doc))
+        url = "/%s/_bulk_docs" % dbName
+        body = json.dumps({'docs': docs})
+        return self.post(url, body
+                    ).addCallback(self.parseResult
+                    )
+
+    # Hack so our new bound methods work.
+    def bindToDB(self, dbName):
+        super(CouchDB, self).bindToDB(dbName)
+        partial = paisley.partial # it works hard to get this!
+        for methname in ["saveAttachment", "updateDocuments"]:
+            method = getattr(self, methname)
+            newMethod = partial(method, dbName)
+            setattr(self, methname, newMethod)
+
+
 def get_db(couchname="local", dbname=_NotSpecified):
     dbinfo = config.couches[couchname]
     if dbname is _NotSpecified:
@@ -129,25 +206,22 @@ class DocumentModel(object):
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
 
-        # XXX - for small blobs this is good (we get the attachment in the
-        # same request as the doc).  For large blobs this is bad, as we
-        # base64 encode the data in memory before sending it.
-        if attachments:
-            self.db.addAttachments(doc, attachments)
-
         # save the document.
         logger.debug('create_raw_document saving doc %r', docid)
-        return self.db.saveDoc(doc, docId=quote_id(docid),
-                    ).addCallback(self._cb_saved_document
-                    ).addErrback(self._cb_save_failed
+        qid = quote_id(docid)
+        return self.db.saveDoc(doc, docId=qid,
+                    ).addCallback(self._cb_saved_document, 'raw-message', docid
+                    ).addErrback(self._cb_save_failed, 'raw-message', docid
+                    ).addCallback(self._cb_save_attachments, attachments, qid
                     )
 
-    def _cb_saved_document(self, result):
-        logger.debug("Saved document %s", result)
+    def _cb_saved_document(self, result, what, ids):
+        logger.debug("Saved %s %s", what, result)
         # XXX - now what?
+        return result
 
-    def _cb_save_failed(self, failure):  
-        logger.error("Failed to save document: %s", failure)
+    def _cb_save_failed(self, failure, what, ids):
+        logger.error("Failed to save %s (%r): %s", what, ids, failure)
         failure.raiseException()
 
     def create_ext_document(self, doc, ext, rootdocId):
@@ -156,12 +230,45 @@ class DocumentModel(object):
         doc['raindrop_seq'] = get_seq()
         doc['type'] = ext
         docid = quote_id(rootdocId + "!" + ext)
+        try:
+            attachments = doc['_attachments']
+            # nuke attachments specified
+            del doc['_attachments']
+        except KeyError:
+            attachments = None
+
         # save the document.
         logger.debug('saving extension document %r', docid)
         return self.db.saveDoc(doc, docId=docid,
-                    ).addCallback(self._cb_saved_document
-                    ).addErrback(self._cb_save_failed
+                    ).addCallback(self._cb_saved_document, 'ext-message', docid
+                    ).addErrback(self._cb_save_failed, 'ext-message', docid
+                    ).addCallback(self._cb_save_attachments, attachments, docid
                     )
+
+    def _cb_save_attachments(self, saved_doc, attachments, docid):
+        if not attachments:
+            return saved_doc
+        # Each time we save an attachment the doc gets a new revision number.
+        # So we need to do them in a chain, passing the result from each to
+        # the next.
+        remaining = attachments.copy()
+        # This is recursive, but that should be OK.
+        return self._cb_save_next_attachment(saved_doc, docid, remaining)
+
+    def _cb_save_next_attachment(self, result, docid, remaining):
+        if not remaining:
+            return result
+        revision = result['rev']
+        name, info = remaining.popitem()
+        logger.debug('saving attachment %r to doc %r', name, docid)
+        d = self.db.saveAttachment(docid, # already quoted by caller...
+                                   quote_id(name), info['data'],
+                                   content_type=info['content_type'],
+                                   revision=revision,
+                ).addCallback(self._cb_saved_document, 'attachment', (docid, name)
+                ).addErrback(self._cb_save_failed, 'attachment', (docid, name)
+                ).addCallback(self._cb_save_next_attachment, docid, remaining
+                )
 
     def get_last_ext_for_document(self, doc_id):
         """Given a base docid, find the most-recent extension to have run.
