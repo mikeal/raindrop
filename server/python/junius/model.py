@@ -69,6 +69,9 @@ class CouchDB(paisley.CouchDB):
     def openView(self, *args, **kwargs):
         # The base class of this returns the raw json object - eg:
         # {'rows': [], 'total_rows': 0}
+        # XXX - Note that paisley isn't interested in this enhancement, so
+        # we need to remove it...
+
         # *sob* - and it also doesn't handle encoding options...
         return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
                         ).addCallback(_raw_to_rows)
@@ -129,12 +132,12 @@ class CouchDB(paisley.CouchDB):
         d.addCallback(self.parseResult)
         return d
 
-    def updateDocuments(self, dbName, docs):
+    def updateDocuments(self, dbName, user_docs):
         # update/insert/delete multiple docs in a single request using
         # _bulk_docs
         # from couchdb-python.
         docs = []
-        for doc in docs:
+        for doc in user_docs:
             if isinstance(doc, dict):
                 docs.append(doc)
             elif hasattr(doc, 'items'):
