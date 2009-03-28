@@ -65,17 +65,15 @@ def delete_docs(result, parser, options):
     # intermediate docs has the same result...
     from urllib import quote
     db = model.get_db()
-    # use a semaphore so we don't overload things...
-    d_sem = defer.DeferredSemaphore(4)
+
     def _del_docs(to_del):
-        deferreds = []
+        docs = []
         for id, rev in to_del:
-            d = d_sem.run(db.deleteDoc, id, rev)
-            deferreds.append(d)
-        return defer.DeferredList(deferreds)
+            docs.append({'_id': id, '_rev': rev, '_deleted': True})
+        return db.updateDocuments(docs)
 
     def _got_docs(result, dt):
-        to_del = [(quote(row['id'], safe=''), row['value']) for row in result]
+        to_del = [(row['id'], row['value']) for row in result]
         logger.info("Deleting %d documents of type %r", len(to_del), dt)
         return to_del
 
@@ -83,14 +81,13 @@ def delete_docs(result, parser, options):
         parser.error("You must specify one or more --doctype")
     deferreds = []
     for dt in options.doctypes:
-        d = d_sem.run(
-                db.openView, 'raindrop!messages!by', 'by_doc_type', key=dt
+        d = db.openView('raindrop!messages!by', 'by_doc_type', key=dt
                 ).addCallback(_got_docs, dt
                 ).addCallback(_del_docs
                 )
         deferreds.append(d)
-
     return defer.DeferredList(deferreds)
+
 
 def _setup_logging(options):
     init_errors = []
