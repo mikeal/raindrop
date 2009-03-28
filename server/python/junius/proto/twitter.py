@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import logging
 import re
 import twisted.python.log
-from twisted.internet import defer, threads
+from twisted.internet import defer, threads, task
 
 from ..proc import base
 
@@ -39,6 +39,9 @@ class TwitterProcessor(object):
         self.doc_model = doc_model
         self.twit = None
         self.seen_tweets = None
+        # use a cooperator to do the work via a generator.
+        # XXX - should we own the cooperator or use our parents?
+        self.coop = task.Cooperator()
 
     def attach(self):
         logger.info("attaching to twitter...")
@@ -50,52 +53,49 @@ class TwitterProcessor(object):
                     )
 
     def attached(self, twit):
+        logger.info("attached to twitter - fetching friends")
         self.twit = twit
         # build the list of all users we will fetch tweets from.
         return threads.deferToThread(self.twit.GetFriends
-                  ).addCallback(self.got_friends)
+                  ).addCallback(self._cb_got_friends)
 
-    def got_friends(self, friends):
-        # None at the start means 'me'
-        self.friends_remaining = [None] + [f.screen_name for f in friends]
-        return self.process_next_friend()
+    def _cb_got_friends(self, friends):
+        return self.coop.coiterate(self.gen_friends_info(friends))
+        
+    def gen_friends_info(self, friends):
+        logger.info("apparently I've %d friends", len(friends))
+        def do_fid(fid):
+            return threads.deferToThread(self.twit.GetUserTimeline, fid
+                                ).addCallback(self.got_friend_timeline, fid
+                                ).addErrback(self.err_friend_timeline, fid
+                                ).addCallback(self.finished_friend
+                                )
 
-    def process_next_friend(self):
-        if not self.friends_remaining:
-            logger.debug("Finished processing twitter friends")
-            return defer.maybeDeferred(self.finished, None)
+        # None means 'me'
+        yield do_fid(None)
+        for f in friends:
+            yield do_fid(f.screen_name)
 
-        fid = self.friends_remaining.pop()
-        return threads.deferToThread(self.twit.GetUserTimeline, fid
-                            ).addCallback(self.got_friend_timeline, fid
-                            ).addErrback(self.err_friend_timeline, fid
-                            ).addCallback(self.finished_friend
-                            )
+        logger.debug("Finished friends")
+        yield self.conductor.on_synch_finished(self.account, None) # Must die
 
     def finished_friend(self, result):
-        self.conductor.reactor.callLater(0, self.process_next_friend)
+        logger.debug("finished friend: %s", result)
 
     def err_friend_timeline(self, failure, fid):
         logger.error("Failed to fetch timeline for '%s': %s", fid, failure)
 
     def got_friend_timeline(self, timeline, fid):
-        self.current_fid = fid
-        self.remaining_tweets = timeline[:]
         logger.debug("Friend %r has %d items in their timeline", fid,
-                     len(self.remaining_tweets))
-        return self.process_next_tweet()
+                     len(timeline))
+        return self.coop.coiterate(self.gen_friend_timeline(timeline, fid))
 
-    def process_next_tweet(self):
-        if not self.remaining_tweets:
-            logger.debug("Finished processing timeline")
-            return
-
-        tweet = self.remaining_tweets.pop()
-
-        logger.debug("seeing if tweet %r exists", tweet.id)
-        docid = "tweet.%d" % (tweet.id,)
-        return self.doc_model.open_document(docid,
-                        ).addCallback(self.maybe_process_tweet, docid, tweet)
+    def gen_friend_timeline(self, timeline, fid):
+        for tweet in timeline:
+            logger.debug("seeing if tweet %r exists", tweet.id)
+            docid = "tweet.%d" % (tweet.id,)
+            yield self.doc_model.open_document(docid,
+                            ).addCallback(self.maybe_process_tweet, docid, tweet)
 
     def maybe_process_tweet(self, existing_doc, docid, tweet):
         if existing_doc is None:
@@ -109,20 +109,11 @@ class TwitterProcessor(object):
                 if isinstance(val, twitter.User):
                     val = val.id
                 doc['twitter_'+name.lower()] = val
-            return self.doc_model.create_raw_document(docid, doc, 'proto/twitter',
-                                                      self.account
-                        ).addCallback(self.saved_tweet, tweet)
+            return self.doc_model.create_raw_document(
+                            self.account, docid, doc, 'proto/twitter')
         else:
             # Must be a seen one.
             logger.debug("Skipping seen tweet '%s'", tweet.id)
-            return self.process_next_tweet()
-
-    def saved_tweet(self, result, tweet):
-        logger.debug("Finished processing of new tweet '%s'", tweet.id)
-        return self.process_next_tweet()
-
-    def finished(self, result):
-        return self.conductor.on_synch_finished(self.account, result)
 
 
 # A 'converter' - takes a proto/twitter as input and creates a

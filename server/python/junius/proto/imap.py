@@ -1,4 +1,4 @@
-from twisted.internet import protocol, ssl, defer, error
+from twisted.internet import protocol, ssl, defer, error, task
 from twisted.mail import imap4
 import logging
 
@@ -17,16 +17,12 @@ class ImapClient(imap4.IMAP4Client):
   reference to the IMAP4Client instance subclass.  Consider refactoring if we
   don't turn out to benefit from the subclassing relationship.
   '''
-  def finished(self, result):
-    # See bottom of file - it would be good to remove this...
-    logger.info("Finished synchronizing IMAP folders")
-    self.conductor.on_synch_finished(self.account, result)
-
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
+    self.coop = task.Cooperator()
     return self._doAuthenticate(
             ).addCallback(self._reqList
-            ).addBoth(self.finished)
+            )
 
   def _doAuthenticate(self):
     if self.account.details.get('crypto') == 'TLS':
@@ -50,37 +46,27 @@ class ImapClient(imap4.IMAP4Client):
     return self.list('', '*').addCallback(self._procList)
 
   def _procList(self, result, *args, **kwargs):
-    # As per http://python.codefetch.com/example/ow/tnpe_code/ch07/imapdownload.py,
-    # We keep a 'stack' of items left to process in an instance variable...
-    # (*sob* - but its not clear why this doesn't suffer from
-    # death-by-recursion like the other impls can demonstrate? Even though we
-    # use a 'stack' of items left to process, each call to
-    # _process_next_folder is recursive?
-    self.folder_infos = result[:]
-    return self._process_next_folder()
+    return self.coop.coiterate(self.gen_folder_list(result))
 
-  def _process_next_folder(self):
-    if not self.folder_infos:
-      # yay - all done!
-      return
+  def gen_folder_list(self, result):
+    for flags, delim, name in result:
+      logger.debug('Processing folder %s (flags=%s)', name, flags)
+      if r"\Noselect" in flags:
+        logger.debug("'%s' is unselectable - skipping", name)
+        continue
 
-    flags, delim, name = self.folder_infos.pop()
-    self.current_folder = name
-    logger.debug('Processing folder %s (flags=%s)', name, flags)
-    if r"\Noselect" in flags:
-      logger.debug("'%s' is unselectable - skipping", name)
-      return self._process_next_folder()
+      # XXX - sob - markh sees:
+      # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven't seen'
+      # although we obviously have seen them already in the other folders.
+      if name and name.startswith('['):
+        logger.info("'%s' appears special -skipping", name)
+        continue
 
-    # XXX - sob - markh sees:
-    # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven't seen'
-    # although we obviously have seen them already in the other folders.
-    if name and name.startswith('['):
-      logger.info("'%s' appears special -skipping", name)
-      return self._process_next_folder()
-
-    return self.examine(name
+      yield self.examine(name
                  ).addCallback(self._examineFolder, name
                  ).addErrback(self._cantExamineFolder, name)
+    logger.debug('imap processing finished.')
+    yield self.conductor.on_synch_finished(self.account, None) # XXX - must die!
 
   def _examineFolder(self, result, folder_path):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
@@ -91,6 +77,8 @@ class ImapClient(imap4.IMAP4Client):
   def _fetchAndProcess(self, rows, folder_path):
     # XXX - we should look at the flags and update the message if it's not
     # the same - later.
+    logger.debug('_FetchAndProcess says we have seen %d items for %r',
+                 len(rows), folder_path)
     seen_uids = set(row['key'][1] for row in rows)
     # now build a list of all message currently in the folder.
     allMessages = imap4.MessageSet(1, None)
@@ -99,71 +87,61 @@ class ImapClient(imap4.IMAP4Client):
 
   def _gotUIDs(self, uidResults, name, seen_uids):
     all_uids = set(int(result['UID']) for result in uidResults.values())
-    self.messages_remaining = all_uids - seen_uids
+    remaining = all_uids - seen_uids
     logger.info("Folder %s has %d messages, %d new", name,
-                len(all_uids), len(self.messages_remaining))
-    return self._process_next_message()
+                len(all_uids), len(remaining))
+    def gen_remaining(folder_name, reming):
+      for uid in reming:
+        # XXX - we need something to make this truly unique.
+        did = "%s#%d" % (folder_name, uid)
+        logger.debug("new imap message %r - fetching content", did)
+        # grr - we have to get the rfc822 body and the flags in separate requests.
+        to_fetch = imap4.MessageSet(uid)
+        yield self.fetchMessage(to_fetch, uid=True
+                    ).addCallback(self._cb_got_body, uid, did, folder_name, to_fetch
+                    )
+    return self.coop.coiterate(gen_remaining(name, remaining))
 
-  def _process_next_message(self):
-    logger.debug("processNextMessage has %d messages to go...",
-                 len(self.messages_remaining))
-    if not self.messages_remaining:
-      return self._process_next_folder()
-
-    uid = self.messages_remaining.pop()
-    # XXX - we need something to make this truly unique.
-    did = "%s#%d" % (self.current_folder, uid)
-    logger.debug("new imap message %r - fetching content", did)
-    # grr - we have to get the rfc822 body and the flags in separate requests.
-    to_fetch = imap4.MessageSet(uid)
-    return self.fetchMessage(to_fetch, uid=True
-                ).addCallback(self._cb_got_body, uid, did, to_fetch
-                )
-
-  def _cb_got_body(self, result, uid, did, to_fetch):
+  def _cb_got_body(self, result, uid, did, folder_name, to_fetch):
     _, result = result.popitem()
     content = result['RFC822']
     # grr - get the flags
     logger.debug("message %r has %d bytes; fetching flags", did, len(content))
     return self.fetchFlags(to_fetch, uid=True
-                ).addCallback(self._cb_got_flags, uid, did, content
+                ).addCallback(self._cb_got_flags, uid, did, folder_name, content
                 ).addErrback(self._cantGetMessage
                 )
 
-  def _cb_got_flags(self, result, uid, did, content):
+  def _cb_got_flags(self, result, uid, did, folder_name, content):
     logger.debug("flags are %s", result)
     assert len(result)==1, result
     _, result = result.popitem()
     flags = result['FLAGS']
     # put the 'raw' document object together and save it.
     doc = dict(
-      storage_key=[self.current_folder, uid],
+      storage_key=[folder_name, uid],
       imap_flags=flags,
       )
     attachments = {'rfc822' : {'content_type': 'message',
                                'data': content,
                                }
                   }
-    return self.doc_model.create_raw_document(did, doc, 'proto/imap',
-                                              self.account,
+    return self.doc_model.create_raw_document(self.account,
+                                              did, doc, 'proto/imap',
                                               attachments=attachments,
                 ).addCallback(self._cb_saved_message)
-    
+
   def _cantGetMessage(self, failure):
     logger.error("Failed to fetch message: %s", failure)
-    return self._process_next_message()
 
   def _cb_saved_message(self, result):
     logger.debug("Saved message %s", result)
-    return self._process_next_message()
 
   def _cantSaveDocument(self, failure):
     logger.error("Failed to save message: %s", failure)
-    return self._process_next_message()
 
   def _cantExamineFolder(self, failure, name, *args, **kw):
     logger.warning("Failed to examine folder '%s': %s", name, failure)
-    return self._process_next_folder()
 
   def accountStatus(self, result, *args):
     return self.account.reportStatus(*args)
@@ -247,6 +225,3 @@ class IMAPAccount(base.AccountBase):
   def startSync(self, conductor, doc_model):
     self.factory = ImapClientFactory(self, conductor, doc_model)
     self.factory.connect()
-    # XXX - wouldn't it be good to return a deferred here, so the conductor
-    # can reliably wait for the deferred to complete, rather than forcing
-    # each deferred to manage 'finished' itself?

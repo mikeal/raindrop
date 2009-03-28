@@ -1,6 +1,6 @@
 # This is the raindrop pipeline; it moves messages from their most raw
 # form to their most useful form.
-from twisted.internet import defer, reactor
+from twisted.internet import defer, reactor, task
 import logging
 
 logger = logging.getLogger(__name__)
@@ -34,6 +34,9 @@ class Pipeline(object):
     def __init__(self, doc_model):
         self.doc_model = doc_model
         self.forward_chain = {}
+        # use a cooperator to do the work via a generator.
+        # XXX - should we own the cooperator or use our parents?
+        self.coop = task.Cooperator()
         for from_type, to_type, xformname in chain:
             if xformname:
                 root, tail = xformname.rsplit('.', 1)
@@ -50,50 +53,39 @@ class Pipeline(object):
                 self.forward_chain[from_type] = None
 
     def start(self):
-        return defer.maybeDeferred(self.process_all_documents)
+        return self.coop.coiterate(self.gen_all_documents())
 
-    def process_all_documents(self):
+    def gen_all_documents(self):
         # check *every* doc in the DB.  This exists until we can derive
         # a workqueue based on views.
         self.num_this_process = 0
-        return self.doc_model.db.openView('raindrop!messages!by',
-                                          'by_doc_roots',
-                                          group=True,
-                    ).addCallback(self._cb_roots_opened)
-
-    def _cb_maybe_reprocess_all_documents(self, result):
-        if self.num_this_process:
-            logger.debug('pipeline processed %d documents last time; trying again',
-                         self.num_this_process)
-            return self.start()
-        logger.info('pipeline is finished.')
+        while True:
+            logger.debug('opening view for work queue...')
+            yield self.doc_model.db.openView('raindrop!messages!by',
+                                             'by_doc_roots',
+                                             group=True,
+                        ).addCallback(self._cb_roots_opened)
+            logger.debug('this time we did %d documents', self.num_this_process)
+            if self.num_this_process == 0:
+                break
+        logger.debug('finally run out of documents.')
 
     def _cb_roots_opened(self, rows):
-        self.remaining_roots = [r['key'] for r in rows]
-        return self._process_next_root()
+        logger.info('work queue has %d items to process.', len(rows))
+        def gen_todo(todo):
+            for row in todo:
+                did = row['key']
+                logger.debug("Finding last extension point for %s", did)
+                yield self.doc_model.get_last_ext_for_document(did
+                            ).addCallback(self._cb_got_doc_last_ext, did
+                            ).addErrback(self._eb_doc_failed
+                            )
 
-    def _process_next_root(self):
-        if not self.remaining_roots:
-            logger.debug("Finished document roots")
-            d = defer.Deferred()
-            d.addCallback(self._cb_maybe_reprocess_all_documents)
-            d.callback(None)
-            return d
-
-        did = self.remaining_roots.pop()
-        logger.debug("Finding last extension point for %s", did)
-        return self.doc_model.get_last_ext_for_document(did
-                    ).addCallback(self._cb_got_doc_last_ext, did
-                    ).addErrback(self._eb_doc_failed
-                    ).addCallback(self._cb_did_doc_root
-                    )
+        return self.coop.coiterate(gen_todo(rows))
 
     def _eb_doc_failed(self, failure):
         logger.error("FAILED to pipe a doc: %s", failure)
         # and we will auto skip to the next doc...
-
-    def _cb_did_doc_root(self, result):
-        return reactor.callLater(0, self._process_next_root)
 
     def _cb_got_doc_last_ext(self, ext_info, rootdocid):
         last_ext, docid = ext_info
@@ -112,6 +104,7 @@ class Pipeline(object):
             logger.debug("Document %r is already at its terminal type of %r",
                          rootdocid, last_ext)
             return None
+        logger.info("Processing document %r", docid)
         return self.doc_model.open_document(docid
                     ).addCallback(self._cb_got_last_doc, rootdocid, xform_info
                     )

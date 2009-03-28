@@ -5,7 +5,7 @@ Fetch skype contacts and chats.
 import logging
 
 import twisted.python.log
-from twisted.internet import defer, threads
+from twisted.internet import defer, threads, task
 
 from ..proc import base
 
@@ -69,10 +69,10 @@ class TwistySkype(object):
         self.account = account
         self.conductor = conductor
         self.doc_model = doc_model
+        # use a cooperator to do the work via a generator.
+        # XXX - should we own the cooperator or use our parents?
+        self.coop = task.Cooperator()
         self.skype = Skype4Py.Skype()
-
-    def finished(self, result):
-        return self.conductor.on_synch_finished(self.account, result)
 
     def get_docid_for_chat(self, chat):
         return "skypechat-" + chat.Name.encode('utf8') # hrmph!
@@ -94,24 +94,19 @@ class TwistySkype(object):
 
     def _cb_got_chats(self, chats):
         logger.debug("skype has %d chat(s) total", len(chats))
-        # 'chats' is a tuple
-        self.remaining_chats = list(chats)
-        return self.process_next_chat()
-
-
-    def process_next_chat(self):
-        if not self.remaining_chats:
-            logger.debug("finished processing chats")
-            self.finished(None) # not sure this is the right place...
-            return
-
-        chat = self.remaining_chats.pop()
         # fetch all the messages (future optimization; all we need are the
         # IDs, but we suffer from creating an instance wrapper for each item.
         # Sadly the skype lib doesn't offer a clean way of doing this.)
-        return threads.deferToThread(chat._GetMessages
-                    ).addCallback(self._cb_got_messages, chat,
-                    )
+        def gen_chats(chats):
+            for chat in chats:
+                yield threads.deferToThread(chat._GetMessages
+                        ).addCallback(self._cb_got_messages, chat,
+                        )
+            logger.info("nothing left to do - finished!")
+            # XXX - on_synch_finished must die - caller knows this!!!
+            yield self.conductor.on_synch_finished(self.account, None)
+
+        return self.coop.coiterate(gen_chats(chats))
 
     def _cb_got_messages(self, messages, chat):
         logger.debug("chat '%s' has %d message(s) total; looking for new ones",
@@ -119,8 +114,8 @@ class TwistySkype(object):
 
         # Finally got all the messages for this chat.  Execute a view to
         # determine which we have seen (note that we obviously could just
-        # fetch the *entire* view once - but we do it this way on purpose
-        # to ensure we remain scalable...)
+        # fetch the *entire* chats+msgs view once - but we do it this way on
+        # purpose to ensure we remain scalable...)
         return self.doc_model.db.openView('raindrop!proto!skype', 'seen',
                                           startkey=[chat.Name],
                                           endkey=[chat.Name, {}]
@@ -128,58 +123,53 @@ class TwistySkype(object):
                     )
 
     def _cb_got_seen(self, result, chat, messages):
-        self.msgs_by_id = dict((m._Id, m) for m in messages)
-        self.current_chat = chat
+        msgs_by_id = dict((m._Id, m) for m in messages)
         chatname = chat.Name
         # The view gives us a list of [chat_name, msg_id], where msg_id is
         # None if we've seen the chat itself.  Create a set of messages we
         # *haven't* seen - including the [chat_name, None] entry if applic.
         all_keys = [(chatname, None)]
-        all_keys.extend((chatname, mid) for mid in self.msgs_by_id.keys())
+        all_keys.extend((chatname, mid) for mid in msgs_by_id.keys())
         seen_chats = set([tuple(row['key']) for row in result])
-        self.remaining_items = set(all_keys)-set(seen_chats)
+        add_bulk = [] # we bulk-update these at the end!
+        remaining = set(all_keys)-set(seen_chats)
         # we could just process the empty list as normal, but the logging of
         # an info when we do have items is worthwhile...
-        if not self.remaining_items:
+        if not remaining:
             logger.debug("Chat %r has no new items to process", chatname)
-            self.msgs_by_id = None
-            return self.process_next_chat()
+            return None
         # we have something to do...
         logger.info("Chat %r has %d items to process", chatname,
-                    len(self.remaining_items))
+                    len(remaining))
         logger.debug("we've already seen %d items from this chat",
                      len(seen_chats))
-        return self.process_next_item()
+        return self.coop.coiterate(self.gen_items(chat, remaining, msgs_by_id))
 
-    def process_next_item(self):
-        if not self.remaining_items:
-            self.msgs_by_id = None
-            logger.debug("finished processing messages for this chat")
-            return self.conductor.reactor.callLater(0, self.process_next_chat)
+    def gen_items(self, chat, todo, msgs_by_id):
+        tow = []
+        for _, msgid in todo:
+            if msgid is None:
+                # we haven't seen the chat itself - do that.
+                logger.debug("Creating new skype chat %r", chat.Name)
+                # make a 'deferred list' to fetch each property one at a time.
+                ds = [threads.deferToThread(chat._Property, p)
+                      for p, _ in CHAT_PROPS]
+                yield defer.DeferredList(ds
+                            ).addCallback(self._cb_got_chat_props, chat, tow)
+            else:
+                msg = msgs_by_id[msgid]
+                # A new msg in this chat.
+                logger.debug("New skype message %d", msg._Id)
+                # make a 'deferred list' to fetch each property one at a time.
+                ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
+                yield defer.DeferredList(ds
+                            ).addCallback(self._cb_got_msg_props, chat, msg, tow)
 
-        chatname, msgid = self.remaining_items.pop()
-        chat = self.current_chat
-        if msgid is None:
-            # we haven't seen the chat itself - do that.
-            logger.debug("Creating new skype chat %r", chat.Name)
-            # make a 'deferred list' to fetch each property one at a time.
-            ds = [threads.deferToThread(chat._Property, p)
-                  for p, _ in CHAT_PROPS]
-            ret = defer.DeferredList(ds
-                        ).addCallback(self._cb_got_chat_props, chat)
-        else:
-            msg = self.msgs_by_id[msgid]
-            # A new msg in this chat.
-            logger.debug("New skype message %d", msg._Id)
-            # make a 'deferred list' to fetch each property one at a time.
-            ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
-            ret = defer.DeferredList(ds
-                        ).addCallback(self._cb_got_msg_props, chat, msg)
+        if tow:
+            yield self.doc_model.create_raw_documents(self.account, tow)
+        logger.debug("finished processing chat %r", chat.Name)
 
-        ret.addCallback(self._cb_doc_saved)
-        return ret
-
-    def _cb_got_chat_props(self, results, chat):
+    def _cb_got_chat_props(self, results, chat, pending):
         logger.debug("got chat %r properties: %s", chat.Name, results)
         docid = self.get_docid_for_chat(chat)
         doc ={}
@@ -190,12 +180,10 @@ class TwistySkype(object):
         # 'Name' is a special case that doesn't come via a prop.  We use
         # 'chatname' as that is the equiv attr on the messages themselves.
         doc['skype_chatname'] = chat.Name
-        return self.doc_model.create_raw_document(docid, doc,
-                                                  'proto/skype-chat',
-                                                  self.account
-                    )
+        pending.append((docid, doc, 'proto/skype-chat'))
 
-    def _cb_got_msg_props(self, results, chat, msg):
+    def _cb_got_msg_props(self, results, chat, msg, pending):
+        logger.debug("got message properties for %s", msg._Id)
         doc = {}
         for (name, typ), (ok, val) in zip(MSG_PROPS, results):
             if ok:
@@ -203,14 +191,8 @@ class TwistySkype(object):
         doc['skype_id'] = msg._Id
         # we include the skype username with the ID as they are unique per user.
         docid = self.get_docid_for_msg(msg)
-        return self.doc_model.create_raw_document(docid, doc, 'proto/skype-msg',
-                                                  self.account
-                    )
+        pending.append((docid, doc, 'proto/skype-msg'))
 
-    def _cb_doc_saved(self, result):
-        # the 'pattern' we copied from the imap sample code calls for us
-        # to recurse - but that can recurse too far...
-        return self.conductor.reactor.callLater(0, self.process_next_item)
 
 # A 'converter' - takes a proto/skype-msg as input and creates a
 # 'message' as output (some other intermediate step might end up more

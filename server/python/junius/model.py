@@ -197,8 +197,8 @@ class DocumentModel(object):
             result = None # indicate no doc exists.
         return result
 
-    def create_raw_document(self, docid, doc, doc_type, account, attachments=None):
-        assert '_id' not in doc # that isn't how you specify the ID.
+    def _prepare_raw_doc(self, account, docid, doc, doc_type):
+        assert '_id' not in doc, doc # that isn't how you specify the ID.
         assert '!' not in docid, docid # these chars are special.
         assert 'raindrop_account' not in doc, doc # we look after that!
         doc['raindrop_account'] = account.details['_id']
@@ -208,6 +208,48 @@ class DocumentModel(object):
 
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
+
+    def create_raw_documents(self, account, doc_infos):
+        """A high-performance version of 'create_raw_document', but doesn't
+        support attachments yet."""
+        docs = []
+        dids = [] # purely for the log :(
+        logger.debug('create_raw_documents preparing %d docs', len(doc_infos))
+        for (docid, doc, doc_type) in doc_infos:
+            self._prepare_raw_doc(account, docid, doc, doc_type)
+            # in a bulk-update, the ID is in the doc itself.
+            doc['_id'] = docid
+            docs.append(doc)
+            dids.append(docid)
+        logger.debug('create_raw_documents saving docs %s', dids)
+        return self.db.updateDocuments(docs
+                    ).addCallback(self._cb_saved_multi_docs,
+                    ).addErrback(self._cb_save_multi_failed,
+                    )
+
+    def _cb_saved_multi_docs(self, result):
+        # result: {'ok': True, 'new_revs': [{'rev': 'xxx', 'id': '...'}, ...]}
+        logger.debug("saved multiple docs with result=%(ok)s", result)
+        return result
+
+    def _cb_save_multi_failed(self, failure):
+        logger.error("Failed to save lotsa docs: %s", failure)
+        failure.raiseException()
+
+    def create_raw_document(self, account, docid, doc, doc_type, attachments=None):
+        self._prepare_raw_doc(account, docid, doc, doc_type)
+        # XXX - attachments need more thought - ultimately we need to be able
+        # to 'push' them via a generator or similar to avoid reading them
+        # entirely in memory.  Further, we need some way of the document
+        # knowing if the attachment failed (or vice-versa) given we have
+        # no transactional semantics.
+        # fixup attachments.
+        try:
+            attachments = doc['_attachments']
+            # nuke attachments specified
+            del doc['_attachments']
+        except KeyError:
+            attachments = None
 
         # save the document.
         logger.debug('create_raw_document saving doc %r', docid)
