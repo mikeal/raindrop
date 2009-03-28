@@ -280,7 +280,7 @@ class DocumentModel(object):
         detected at the source of the message, user adding annotations, etc)
         """
         startkey = [doc_id]
-        endkey = [doc_id, 99999999999999]
+        endkey = [doc_id, {}]
         return self.db.openView('raindrop!messages!by',
                                 'by_doc_extension_sequence',
                                 startkey=startkey, endkey=endkey
