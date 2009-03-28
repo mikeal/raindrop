@@ -55,14 +55,13 @@ class TestMessageProvider(object):
 class TestConverter(base.ConverterBase):
     def convert(self, doc):
         me = doc['storage_key']
-        headers = """\
-From: from%(storage_key)d@test.com
-To: from%(storage_key)d@test.com
-Subject: This is test document %(storage_key)d
-""" % doc
-        headers = headers.replace('\n', '\r\n')
-        body = "Hello, this is test message %(storage_key)d" % doc
+        headers = {'from': 'From: from%(storage_key)d@test.com',
+                   'subject' : 'This is test document %(storage_key)d',
+        }
+        for h in headers:
+            headers[h] = headers[h] % doc
 
+        body = u"Hello, this is test message %(storage_key)d (with extended \xa9haracter!)" % doc
         new_doc = dict(headers=headers, body=body)
         return new_doc
 
