@@ -4,9 +4,6 @@ Late Breaking News/Known Problems
 * The reactor must always be stopped with ctrl+c; it never stops by itself.
   One twisted day seem so twisted wont.
 
-* Only the 'test' protocol works; I'm working on the rest, but 'push early, 
-  push often'...
-
 Installation Steps
 ==================
 
@@ -40,7 +37,7 @@ configure raindrop:
 
   * Add imap accounts along the lines of
         [account-some-account-name] # the 'account-' prefix is important!
-        type=imap
+        kind=imap
         host=imap.gmail.com
         port=993
         username=username@gmail.com
