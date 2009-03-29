@@ -236,7 +236,7 @@ class DocumentModel(object):
         logger.error("Failed to save lotsa docs: %s", failure)
         failure.raiseException()
 
-    def create_raw_document(self, account, docid, doc, doc_type, attachments=None):
+    def create_raw_document(self, account, docid, doc, doc_type):
         self._prepare_raw_doc(account, docid, doc, doc_type)
         # XXX - attachments need more thought - ultimately we need to be able
         # to 'push' them via a generator or similar to avoid reading them
@@ -257,7 +257,7 @@ class DocumentModel(object):
         return self.db.saveDoc(doc, docId=qid,
                     ).addCallback(self._cb_saved_document, 'raw-message', docid
                     ).addErrback(self._cb_save_failed, 'raw-message', docid
-                    ).addCallback(self._cb_save_attachments, attachments, qid
+                    ).addCallback(self._cb_save_attachments, attachments
                     )
 
     def _cb_saved_document(self, result, what, ids):
@@ -269,50 +269,65 @@ class DocumentModel(object):
         logger.error("Failed to save %s (%r): %s", what, ids, failure)
         failure.raiseException()
 
-    def create_ext_document(self, doc, ext, rootdocId):
+    def prepare_ext_document(self, rootdocid, doc_type, doc):
         assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
+        assert 'type' not in doc, doc # we manage this too!
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
-        doc['type'] = ext
-        docid = quote_id(rootdocId + "!" + ext)
-        try:
-            attachments = doc['_attachments']
-            # nuke attachments specified
-            del doc['_attachments']
-        except KeyError:
-            attachments = None
+        doc['type'] = doc_type
+        doc['_id'] = rootdocid + "!" + doc['type'] # docs ids need more thought...
+
+    def create_ext_documents(self, rootdocid, docs):
+        # Attachments are all done separately.  We could optimize this -
+        # eg, attachments under a certain size could go in the doc itself,
+        # saving a request but costing a base64 encode.
+        all_attachments = []
+        for doc in docs:
+            assert '_id' in doc # should have called prepare_ext_document!
+            try:
+                all_attachments.append(doc['_attachments'])
+                # nuke attachments specified
+                del doc['_attachments']
+            except KeyError:
+                all_attachments.append(None)
 
         # save the document.
-        logger.debug('saving extension document %r', docid)
-        return self.db.saveDoc(doc, docId=docid,
-                    ).addCallback(self._cb_saved_document, 'ext-message', docid
-                    ).addErrback(self._cb_save_failed, 'ext-message', docid
-                    ).addCallback(self._cb_save_attachments, attachments, docid
+        logger.debug('saving %d extension documents for %r', len(docs), rootdocid)
+        return self.db.updateDocuments(docs,
+                    ).addCallback(self._cb_saved_ext_docs, all_attachments
                     )
 
-    def _cb_save_attachments(self, saved_doc, attachments, docid):
-        if not attachments:
-            return saved_doc
+    def _cb_saved_ext_docs(self, result, attachments):
+        # result: {'ok': True, 'new_revs': [{'rev': 'xxx', 'id': '...'}, ...]}
+        logger.debug("saved multiple docs with result=%(ok)s", result)
+        ds = []
+        for dinfo, dattach in zip(result['new_revs'], attachments):
+            if dattach:
+                ds.append(self._cb_save_attachments(dinfo, dattach))
+        return defer.DeferredList(ds)
+
+    def _cb_save_attachments(self, saved_doc, attachments):
         # Each time we save an attachment the doc gets a new revision number.
         # So we need to do them in a chain, passing the result from each to
         # the next.
         remaining = attachments.copy()
         # This is recursive, but that should be OK.
-        return self._cb_save_next_attachment(saved_doc, docid, remaining)
+        return self._cb_save_next_attachment(saved_doc, remaining)
 
-    def _cb_save_next_attachment(self, result, docid, remaining):
+    def _cb_save_next_attachment(self, result, remaining):
         if not remaining:
             return result
         revision = result['rev']
+        docid = result['id']
         name, info = remaining.popitem()
         logger.debug('saving attachment %r to doc %r', name, docid)
-        d = self.db.saveAttachment(docid, # already quoted by caller...
+        return self.db.saveAttachment(quote_id(docid),
                                    quote_id(name), info['data'],
                                    content_type=info['content_type'],
                                    revision=revision,
                 ).addCallback(self._cb_saved_document, 'attachment', (docid, name)
                 ).addErrback(self._cb_save_failed, 'attachment', (docid, name)
-                ).addCallback(self._cb_save_next_attachment, docid, remaining
+                ).addCallback(self._cb_save_next_attachment, remaining
                 )
 
     def get_last_ext_for_document(self, doc_id):

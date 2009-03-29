@@ -78,7 +78,12 @@ class TestConverter(base.ConverterBase):
             headers[h] = headers[h] % doc
 
         body = u"Hello, this is test message %(storage_key)d (with extended \xa9haracter!)" % doc
-        new_doc = dict(headers=headers, body=body)
+        # make an attachment for testing purposes.
+        attachments = {"attach1" : {"content_type" : 'application/octet-stream',
+                                    "data" : 'test\0blob'
+                                    }
+                      }
+        new_doc = dict(headers=headers, body=body, _attachments=attachments)
         return new_doc
 
 

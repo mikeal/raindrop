@@ -93,31 +93,65 @@ class Pipeline(object):
             logger.debug("Document '%s' doesn't appear to be a message; skipping",
                          rootdocid)
             return None
-        logger.debug("Last extension for doc '%s' is '%s'", docid, last_ext)
-        try:
-            xform_info = self.forward_chain[last_ext]
-        except KeyError:
-            logger.warning("Can't find transformer for message type %r - skipping %r",
-                           last_ext, docid)
-            return None
-        if xform_info is None:
-            logger.debug("Document %r is already at its terminal type of %r",
-                         rootdocid, last_ext)
-            return None
-        logger.info("Processing document %r", docid)
-        return self.doc_model.open_document(docid
-                    ).addCallback(self._cb_got_last_doc, rootdocid, xform_info
+
+        docs_by_type = {}
+        new_docs = []
+        # take the message to it's terminal type in one hit
+
+        def gen_processes():
+            did_ext = last_ext
+            thisdocid = docid
+            while True:
+                logger.debug("Last extension for doc '%s' is '%s'", thisdocid, did_ext)
+                try:
+                    xform_info = self.forward_chain[did_ext]
+                except KeyError:
+                    logger.warning("Can't find transformer for message type %r - skipping %r",
+                                   did_ext, thisdocid)
+                    break
+                if xform_info is None:
+                    logger.debug("Document %r is at its terminal type of %r",
+                                 rootdocid, did_ext)
+                    break
+                dest_type, xformer = xform_info
+                logger.debug("Processing document %r - %s->%s", thisdocid,
+                            did_ext, dest_type)
+                if did_ext in docs_by_type:
+                    logger.debug("already have doc for type %r", did_ext)
+                    yield self._cb_got_last_doc(docs_by_type[did_ext],
+                                                rootdocid, xform_info,
+                                                docs_by_type, new_docs)
+                else:
+                    logger.debug("need to open doc for type %r (%r)", did_ext, thisdocid)
+                    yield self.doc_model.open_document(thisdocid
+                                ).addCallback(self._cb_got_last_doc, rootdocid,
+                                              xform_info, docs_by_type, new_docs
+                                )
+                ld = new_docs[-1]
+                assert ld['type'] == dest_type
+                did_ext = dest_type
+                thisdocid = ld['_id']
+
+        return self.coop.coiterate(gen_processes()
+                    ).addCallback(self._cb_docs_done, rootdocid, new_docs
                     )
 
-    def _cb_got_last_doc(self, doc, rootdocid, xform_info):
+    def _cb_docs_done(self, result, rootdocid, new_docs):
+        return self.doc_model.create_ext_documents(rootdocid, new_docs)
+
+    def _cb_got_last_doc(self, doc, rootdocid, xform_info, docs_by_type, new_docs):
         assert doc is not None, "failed to locate the doc for %r" % rootdocid
         dest_type, xformer = xform_info
         logger.debug("calling %r to create a %s from %s", xformer, dest_type,
-                     doc['_id'])
+                     doc['type'])
         return defer.maybeDeferred(xformer.convert, doc
-                        ).addCallback(self._cb_converted, dest_type, rootdocid)
+                        ).addCallback(self._cb_converted, dest_type, rootdocid,
+                                      docs_by_type, new_docs)
 
-    def _cb_converted(self, new_doc, dest_type, rootdocid):
-        logger.debug("converter returned new document for %s", rootdocid)
+    def _cb_converted(self, new_doc, dest_type, rootdocid, docs_by_type, new_docs):
         self.num_this_process += 1
-        return self.doc_model.create_ext_document(new_doc, dest_type, rootdocid)
+        # This should really be in the model, but oh well
+        self.doc_model.prepare_ext_document(rootdocid, dest_type, new_doc)
+        logger.debug("converter returned new document type %r for %r: %r", dest_type, rootdocid, new_doc['_id'])
+        docs_by_type[dest_type] = new_doc
+        new_docs.append(new_doc)
