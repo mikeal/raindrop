@@ -12,4 +12,5 @@ class EmailConverter(base.ConverterBase):
         for n in ret.keys():
             if n.startswith('_') or n.startswith('raindrop'):
                 del ret[n]
+        del ret['type']
         return ret
