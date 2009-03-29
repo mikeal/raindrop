@@ -61,17 +61,17 @@ class Pipeline(object):
         self.num_this_process = 0
         while True:
             logger.debug('opening view for work queue...')
-            yield self.doc_model.db.openView('raindrop!messages!by',
+            yield self.doc_model.db.openView('raindrop!messages!workqueue',
                                              'by_doc_roots',
                                              group=True,
                         ).addCallback(self._cb_roots_opened)
-            logger.debug('this time we did %d documents', self.num_this_process)
+            logger.info('processed %d documents', self.num_this_process)
             if self.num_this_process == 0:
                 break
         logger.debug('finally run out of documents.')
 
     def _cb_roots_opened(self, rows):
-        logger.info('work queue has %d items to process.', len(rows))
+        logger.info('work queue has %d items to check.', len(rows))
         def gen_todo(todo):
             for row in todo:
                 did = row['key']
@@ -137,7 +137,8 @@ class Pipeline(object):
                     )
 
     def _cb_docs_done(self, result, rootdocid, new_docs):
-        return self.doc_model.create_ext_documents(rootdocid, new_docs)
+        if new_docs:
+            self.doc_model.create_ext_documents(rootdocid, new_docs)
 
     def _cb_got_last_doc(self, doc, rootdocid, xform_info, docs_by_type, new_docs):
         assert doc is not None, "failed to locate the doc for %r" % rootdocid
@@ -150,7 +151,6 @@ class Pipeline(object):
 
     def _cb_converted(self, new_doc, dest_type, rootdocid, docs_by_type, new_docs):
         self.num_this_process += 1
-        # This should really be in the model, but oh well
         self.doc_model.prepare_ext_document(rootdocid, dest_type, new_doc)
         logger.debug("converter returned new document type %r for %r: %r", dest_type, rootdocid, new_doc['_id'])
         docs_by_type[dest_type] = new_doc
