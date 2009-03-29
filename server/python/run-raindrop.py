@@ -17,45 +17,42 @@ class HelpFormatter(optparse.IndentedHelpFormatter):
     def format_description(self, description):
         return description
 
-# a decorator for our global functions, so they can force other commands
-# to be run after they have (eg, 'nuking' the database requires a reconfigure)
-def forces_commands(*commands):
-    def decorate(f):
-        f.forces = commands
-        return f
-    return decorate
+# a decorator for our global functions, so they can insist they complete
+# before the next command executes;
+def asynch_command(f):
+    f.asynch = True
+    return f
 
 # NOTE: All global functions with docstrings are 'commands'
 # They must all return a deferred.
-
-@forces_commands('install-files', 'install-accounts')
 def nuke_db_and_delete_everything_forever(result, parser, options):
     """Nuke the database AND ALL MESSAGES FOREVER"""
-    return model.nuke_db()
+    return model.nuke_db(
+                ).addCallback(bootstrap.install_accounts)
 
 
+# XXX - install_accounts should die too, but how to make a safe 'fingerprint'
+# so we can do it implicitly? We could create a hash which doesn't include
+# the password, but then the password changing wouldn't be enough to trigger
+# an update.  Including even the *hash* of the password might risk leaking
+# info.  So for now you must install manually.
 def install_accounts(result, parser, options):
     """Install accounts in the database from the config file"""
     return bootstrap.install_accounts(None)
 
 
-def install_files(result, parser, options):
-    """Install all local content files into the database"""
-    return model.fab_db(update_views=True
-            ).addCallback(bootstrap.install_client_files)
-
+@asynch_command
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
     return conductor.sync(None)
 
+@asynch_command
 def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
         print "Message pipeline has finished..."
     p = pipeline.Pipeline(model.get_doc_model())
-    # XXX - this deferred completes before the process is actually complete;
-    # we need to grok this better...
     return p.start().addCallback(done)
 
 def delete_docs(result, parser, options):
@@ -126,7 +123,8 @@ def main():
 
     all_arg_names = sorted(all_args.keys())
     description= __doc__ + "\nCommands\n  help\n  " + \
-                 "\n  ".join(all_args.keys()) + '\n'
+                 "\n  ".join(all_args.keys()) + \
+                 "\nUse '%prog help command-name' for help on a specific command.\n"
 
     parser = optparse.OptionParser("%prog [options]",
                                    description=description,
@@ -148,6 +146,10 @@ def main():
                       help="Specifies the document types to use for some "
                            "operations.")
 
+    parser.add_option("", "--force", action="store_true",
+                      help="Forces some operations which would otherwise not "
+                           "be done.")
+
     options, args = parser.parse_args()
 
     _setup_logging(options)
@@ -155,44 +157,62 @@ def main():
     # do this very early just to set the options
     get_conductor(options)
 
-    # create an initial deferred to perform tasks which must occur before we
-    # can start.  The final callback added will fire up the real servers.
     if args and args[0]=='help':
         if args[1:]:
             which = args[1:]
         else:
             which = all_args.keys()
         for this in which:
+            if this=='help': # ie, 'help help'
+                doc = "show help for the commands."
+            else:
+                try:
+                    doc = all_args[this].__doc__
+                except KeyError:
+                    print "No such command '%s':" % this
+                    continue
             print "Help for command '%s':" % this
-            print all_args[this].__doc__
+            print doc
             print
-
+    
         sys.exit(0)
 
+    # create an initial deferred to perform tasks which must occur before we
+    # can start.  The final callback added will fire up the real servers.
+    asynch_tasks = []
     d = defer.Deferred()
     def mutter(whateva):
         print "Raindrops keep falling on my head..."
     d.addCallback(mutter)
 
-    for arg in args:
-        current = [arg]
-        while current:
-            this = current.pop(0)
-            try:
-                func = all_args[this]
-            except KeyError:
-                parser.error("Invalid command: " + this)
+    # Check DB exists.
+    d.addCallback(model.fab_db)
+    # Check if the files on the filesystem need updating.
+    d.addCallback(bootstrap.install_client_files, options)
+    d.addCallback(bootstrap.install_views, options)
 
+    # Now process the args specified.
+    for arg in args:
+        try:
+            func = all_args[arg]
+        except KeyError:
+            parser.error("Invalid command: " + arg)
+
+        asynch = getattr(func, 'acynch', False)
+        if asynch:
+            asynch_tasks.append(func)
+        else:
             d.addCallback(func, parser, options)
-            # and if that command forces any others, do them.
-            forces = getattr(func, 'forces', [])
-            current.extend(forces)
 
     # and some final deferreds to control the process itself.
     def done(whateva):
-        print "Startup complete - reactor running..."
-        #print "Finished."
-        #reactor.stop()
+        if asynch_tasks:
+            print "Finished."
+            reactor.stop()
+            return
+        print "Startup complete - running tasks..."
+        dl = defer.DeferredList([f(None, parser, options) for f in asynch_tasks])
+        return dl
 
     def error(*args, **kw):
         from twisted.python import log

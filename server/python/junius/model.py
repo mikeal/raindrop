@@ -338,7 +338,7 @@ class DocumentModel(object):
         """
         startkey = [doc_id]
         endkey = [doc_id, {}]
-        return self.db.openView('raindrop!messages!by',
+        return self.db.openView('raindrop!messages!workqueue',
                                 'by_doc_extension_sequence',
                                 startkey=startkey, endkey=endkey
                     ).addCallback(self._cb_des_opened, doc_id)
@@ -377,88 +377,9 @@ def nuke_db():
     deferred.addCallbacks(_nuked_ok, _nuke_failed)
     return deferred
 
-def _build_doc_from_directory(ddir):
-    # all we look for is the views.
-    ret = {}
-    ret_views = ret['views'] = {}
-    # The '-map.js' file is the 'trigger' for creating a view...
-    tail = "-map.js"
-    rtail = "-reduce.js"
-    files = os.listdir(ddir)
-    for f in files:
-        fqf = os.path.join(ddir, f)
-        if f.endswith(tail):
-            view_name = f[:-len(tail)]
-            try:
-                with open(fqf) as f:
-                    ret_views[view_name] = {'map': f.read()}
-            except (OSError, IOError):
-                logger.warning("can't open map file %r - skipping this view", fqf)
-                continue
-            fqr = os.path.join(ddir, view_name + rtail)
-            try:
-                with open(fqr) as f:
-                    ret_views[view_name]['reduce'] = f.read()
-            except (OSError, IOError):
-                # no reduce - no problem...
-                logger.debug("no reduce file %r - skipping reduce for view '%s'",
-                             fqr, view_name)
-        else:
-            # avoid noise...
-            if not f.endswith(rtail) and not f.startswith("."):
-                logger.info("skipping non-map/reduce file %r", fqf)
-
-    logger.info("Document in directory %r has views %s", ddir, ret_views.keys())
-    if not ret_views:
-        logger.warning("Document in directory %r appears to have no views", ddir)
-    return ret
 
 
-def generate_designs_from_filesystem(root):
-    # We use the same file-system layout as 'CouchRest' does:
-    # http://jchrisa.net/drl/_design/sofa/_show/post/release__couchrest_0_9_0
-    # note however that we don't create a design documents in exactly the same
-    # way - the view is always named as specified, and currently no 'map only'
-    # view is created (and if/when it is, only it will have a "special" name)
-    # See http://groups.google.com/group/raindrop-core/web/maintaining-design-docs
-
-    # This is pretty dumb (but therefore simple).
-    # root/* -> directories used purely for a 'namespace'
-    # root/*/* -> directories which hold the contents of a document.
-    # root/*/*-map.js and maybe *-reduce.js -> view content with name b4 '-'
-    logger.debug("Starting to build design documents from %r", root)
-    for top_name in os.listdir(root):
-        fq_child = os.path.join(root, top_name)
-        if not os.path.isdir(fq_child):
-            logger.debug("skipping non-directory: %s", fq_child)
-            continue
-        # so we have a 'namespace' directory.
-        num_docs = 0
-        for doc_name in os.listdir(fq_child):
-            fq_doc = os.path.join(fq_child, doc_name)
-            if not os.path.isdir(fq_doc):
-                logger.info("skipping document non-directory: %s", fq_doc)
-                continue
-            # have doc - build a dict from its dir.
-            doc = _build_doc_from_directory(fq_doc)
-            # XXX - note the artificial 'raindrop' prefix - the intent here
-            # is that we need some way to determine which design documents we
-            # own, and which are owned by extensions...
-            # XXX - *sob* - and that we shouldn't use '/' in the doc ID at the
-            # moment (well - we probably could if we ensured we quoted all the
-            # '/' chars, but that seems too much burden for no gain...)
-            doc['_id'] = '_design/' + ('!'.join(['raindrop', top_name, doc_name]))
-            yield doc
-            num_docs += 1
-
-        if not num_docs:
-            logger.info("skipping sub-directory without child directories: %s", fq_child)
-
-
-def fab_db(update_views=False):
-    # XXX - we ignore update_views and always update them.  Its not clear
-    # how to hook this in cleanly to twisted (ie, even if update_views is
-    # False, we must still do it if the db didn't exist)
+def fab_db(whateva):
     couch_name = 'local'
     db = get_db(couch_name, None)
     dbinfo = config.couches[couch_name]
@@ -473,41 +394,6 @@ def fab_db(update_views=False):
         logger.info("created new database")
         return _update_views(d)
 
-    def _doc_not_found(failure):
-        return None
-
-    def _got_existing_docs(results, docs):
-        put_docs = []
-        for (whateva, existing), doc in zip(results, docs):
-            if existing:
-                assert existing['_id']==doc['_id']
-                assert '_rev' not in doc
-                existing.update(doc)
-                doc = existing
-            put_docs.append(doc)
-        url = '/%(name)s/_bulk_docs' % dbinfo
-        ob = {'docs' : put_docs}
-        deferred = db.postob(url, ob)
-        return deferred
-
-    def _update_views(d):
-        schema_src = os.path.abspath(os.path.join(os.path.dirname(__file__),
-                                                  "../../../schema"))
-
-        docs = [d for d in generate_designs_from_filesystem(schema_src)]
-        logger.info("Found %d documents in '%s'", len(docs), schema_src)
-        assert docs, 'surely I have *some* docs!'
-        # ack - I need to open existing docs first to get the '_rev' property.
-        dl = []
-        for doc in docs:
-            deferred = get_db().openDoc(doc['_id']).addErrback(_doc_not_found)
-            dl.append(deferred)
-
-        return defer.DeferredList(dl
-                    ).addCallback(_got_existing_docs, docs)
-
-    d = db.createDB(dbinfo['name'])
-    d.addCallbacks(_created_ok, _create_failed)
-    if update_views:
-        d.addCallback(_update_views)
-    return d
+    return db.createDB(dbinfo['name']
+                ).addCallbacks(_created_ok, _create_failed
+                )
