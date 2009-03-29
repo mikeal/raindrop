@@ -198,7 +198,8 @@ def main():
         except KeyError:
             parser.error("Invalid command: " + arg)
 
-        asynch = getattr(func, 'acynch', False)
+        asynch = getattr(func, 'asynch', False)
+        print "GOT", func, asynch
         if asynch:
             asynch_tasks.append(func)
         else:
@@ -206,8 +207,8 @@ def main():
 
     # and some final deferreds to control the process itself.
     def done(whateva):
-        if asynch_tasks:
-            print "Finished."
+        if not asynch_tasks:
+            print "Nothing left to do - terminating."
             reactor.stop()
             return
         print "Startup complete - running tasks..."
