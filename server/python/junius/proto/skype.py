@@ -102,9 +102,7 @@ class TwistySkype(object):
                 yield threads.deferToThread(chat._GetMessages
                         ).addCallback(self._cb_got_messages, chat,
                         )
-            logger.info("nothing left to do - finished!")
-            # XXX - on_synch_finished must die - caller knows this!!!
-            yield self.conductor.on_synch_finished(self.account, None)
+            logger.info("skype has finished processing all chats")
 
         return self.coop.coiterate(gen_chats(chats))
 
@@ -225,4 +223,4 @@ class SkypeAccount(base.AccountBase):
     self.details = details
 
   def startSync(self, conductor, doc_model):
-    TwistySkype(self, conductor, doc_model).attach()
+    return TwistySkype(self, conductor, doc_model).attach()

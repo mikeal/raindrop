@@ -211,21 +211,26 @@ def main():
 
     # and some final deferreds to control the process itself.
     def done(whateva):
+        print "Apparently everything is finished - terminating."
+        reactor.stop()
+
+    def start(whateva):
         if not asynch_tasks:
             print "Nothing left to do - terminating."
             reactor.stop()
             return
         print "Startup complete - running tasks..."
         dl = defer.DeferredList([f(None, parser, options) for f in asynch_tasks])
+        dl.addCallback(done)
         return dl
 
     def error(*args, **kw):
         from twisted.python import log
         log.err(*args, **kw)
-        print "FAILED."
+        print "A startup task failed - not executing servers."
         reactor.stop()
 
-    d.addCallbacks(done, error)
+    d.addCallbacks(start, error)
 
     reactor.callWhenRunning(d.callback, None)
 

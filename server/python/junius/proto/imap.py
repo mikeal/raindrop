@@ -22,7 +22,7 @@ class ImapClient(imap4.IMAP4Client):
     self.coop = task.Cooperator()
     return self._doAuthenticate(
             ).addCallback(self._reqList
-            )
+            ).addCallback(self.deferred.callback)
 
   def _doAuthenticate(self):
     if self.account.details.get('crypto') == 'TLS':
@@ -66,7 +66,6 @@ class ImapClient(imap4.IMAP4Client):
                  ).addCallback(self._examineFolder, name
                  ).addErrback(self._cantExamineFolder, name)
     logger.debug('imap processing finished.')
-    yield self.conductor.on_synch_finished(self.account, None) # XXX - must die!
 
   def _examineFolder(self, result, folder_path):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
@@ -151,6 +150,7 @@ class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
 
   def __init__(self, account, conductor, doc_model):
+    # base-class has no __init__
     self.account = account
     self.conductor = conductor
     self.doc_model = doc_model
@@ -164,17 +164,20 @@ class ImapClientFactory(protocol.ClientFactory):
     p.account = self.account
     p.conductor = self.conductor
     p.doc_model = self.doc_model
+    p.deferred = self.deferred # this isn't going to work in reconnect scenarios
     return p
 
   def connect(self):
     details = self.account.details
     logger.debug('attempting to connect to %s:%d (ssl: %s)',
                  details['host'], details['port'], details['ssl'])
-    reactor = self.conductor.reactor    
+    reactor = self.conductor.reactor
+    self.deferred = defer.Deferred()
     if details.get('ssl'):
       reactor.connectSSL(details['host'], details['port'], self, self.ctx)
     else:
       reactor.connectTCP(details['host'], details['port'], self)
+    return self.deferred
 
   def clientConnectionLost(self, connector, reason):
     # the flaw in this is that we start from scratch every time; which is why
@@ -224,4 +227,4 @@ class IMAPAccount(base.AccountBase):
 
   def startSync(self, conductor, doc_model):
     self.factory = ImapClientFactory(self, conductor, doc_model)
-    self.factory.connect()
+    return self.factory.connect()

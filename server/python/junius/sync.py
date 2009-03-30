@@ -49,9 +49,14 @@ class SyncConductor(object):
       ).addCallback(self._gotAllAccounts
       ).addErrback(self._ohNoes)
 
-  def _gotAllAccounts(self, rows, *args, **kwargs):
+  def _gotAllAccounts(self, rows):
+    # we don't use a cooperator here as we want them all to run in parallel.
+    return defer.DeferredList([d for d in self._genAccountSynchs(rows)])
+
+  def _genAccountSynchs(self, rows):
     doc_model = get_doc_model()
     self.log.info("Have %d accounts to synch", len(rows))
+    to_synch = []
     for row in rows:
       account_details = row['value']
       kind = account_details['kind']
@@ -61,8 +66,9 @@ class SyncConductor(object):
           account = proto.protocols[kind](self.db, account_details)
           self.log.info('Starting sync of %s account: %s',
                         kind, account_details.get('name', '(un-named)'))
-          account.startSync(self, doc_model)
           self.active_accounts.append(account)
+          yield account.startSync(self, doc_model
+                    ).addBoth(self._cb_sync_finished, account)
         else:
           self.log.error("Don't know what to do with account kind: %s", kind)
       else:
@@ -71,22 +77,16 @@ class SyncConductor(object):
   def sync(self, whateva=None):
     return self._getAllAccounts()
 
-  # The callbacks called by the accounts as they do interesting things.
-  # XXX - this kinda sucks - ideally when we start the sync we would get
-  # a deferred, which we could add own callback to to manage this.
-  # The complication is IMAP - ProtocolFactory based clients don't lend
-  # themselves to this.
-  def on_synch_finished(self, account, result):
+  def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):
       self.log.error("Account %s failed with an error: %s", account, result)
     else:
-      self.log.debug("Account %s reports it has finished", account)
+      self.log.debug("Account %s finished successfully", account)
     assert account in self.active_accounts, (account, self.active_accounts)
     self.active_accounts.remove(account)
     if not self.active_accounts:
-      self.log.info("sync has finished; NOT stopping reactor yet, but I should...")
-      #self.log.info("sync has finished; stopping reactor")
-      #return self.reactor.stop()
+      self.log.info("all accounts have finished synchronizing")
+
 
 if __name__ == '__main__':
   # normal entry-point is the app itself; this is purely for debugging...

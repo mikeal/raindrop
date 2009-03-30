@@ -77,7 +77,6 @@ class TwitterProcessor(object):
             yield do_fid(f.screen_name)
 
         logger.debug("Finished friends")
-        yield self.conductor.on_synch_finished(self.account, None) # Must die
 
     def finished_friend(self, result):
         logger.debug("finished friend: %s", result)

@@ -20,7 +20,6 @@ class TestMessageProvider(object):
         if self.bulk_docs:
             yield self.doc_model.create_raw_documents(self.account,
                                                       self.bulk_docs)
-        yield self.conductor.on_synch_finished(self.account, None) # must die!
 
     def attach(self):
         logger.info("preparing to synch test messages...")
@@ -93,4 +92,4 @@ class TestAccount(base.AccountBase):
     self.details = details
 
   def startSync(self, conductor, doc_model):
-    TestMessageProvider(self, conductor, doc_model).attach()
+    return TestMessageProvider(self, conductor, doc_model).attach()
