@@ -392,7 +392,6 @@ def fab_db(whateva):
 
     def _created_ok(d):
         logger.info("created new database")
-        return _update_views(d)
 
     return db.createDB(dbinfo['name']
                 ).addCallbacks(_created_ok, _create_failed
