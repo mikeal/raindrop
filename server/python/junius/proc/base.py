@@ -17,7 +17,7 @@ class Rat(object):
 
   UNREACHABLE = 'unreachable'
   PASSWORD = 'password'
-  MAINTENANCE = 'maintenace'
+  MAINTENANCE = 'maintenance'
   BUSY = 'busy'
   #: something is up with the crypto; this needs to be exploded
   CRYPTO = 'crypto'
