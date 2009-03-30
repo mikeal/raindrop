@@ -199,7 +199,6 @@ def main():
             parser.error("Invalid command: " + arg)
 
         asynch = getattr(func, 'asynch', False)
-        print "GOT", func, asynch
         if asynch:
             asynch_tasks.append(func)
         else:
