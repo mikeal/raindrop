@@ -36,7 +36,7 @@ if sys.platform=='win32':
     def get_seq():
         return clock_start + time.clock()
 else:
-    get_seq = time.time()
+    get_seq = time.time
 
 
 def _raw_to_rows(raw):
