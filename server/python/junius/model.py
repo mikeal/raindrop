@@ -307,6 +307,8 @@ class DocumentModel(object):
         return defer.DeferredList(ds)
 
     def _cb_save_attachments(self, saved_doc, attachments):
+        if not attachments:
+            return saved_doc
         # Each time we save an attachment the doc gets a new revision number.
         # So we need to do them in a chain, passing the result from each to
         # the next.
@@ -389,9 +391,11 @@ def fab_db(whateva):
         if failure.value.status != '412': # precondition failed.
             failure.raiseException()
         logger.info("couch database %(name)r already exists", dbinfo)
+        return False
 
     def _created_ok(d):
         logger.info("created new database")
+        return True
 
     return db.createDB(dbinfo['name']
                 ).addCallbacks(_created_ok, _create_failed
