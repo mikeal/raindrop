@@ -58,14 +58,14 @@ class Pipeline(object):
     def gen_all_documents(self):
         # check *every* doc in the DB.  This exists until we can derive
         # a workqueue based on views.
-        self.num_this_process = 0
         while True:
+            self.num_this_process = 0
             logger.debug('opening view for work queue...')
             yield self.doc_model.db.openView('raindrop!messages!workqueue',
                                              'by_doc_roots',
                                              group=True,
                         ).addCallback(self._cb_roots_opened)
-            logger.info('processed %d documents', self.num_this_process)
+            logger.info('created %d new documents', self.num_this_process)
             if self.num_this_process == 0:
                 break
         logger.debug('finally run out of documents.')
