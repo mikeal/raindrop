@@ -1,8 +1,9 @@
 Late Breaking News/Known Problems
 =================================
 
-* The reactor must always be stopped with ctrl+c; it never stops by itself.
-  One twisted day seem so twisted wont.
+* Error handling is poor.  I'm trying to get a handle on the best way to
+  manage errors in a twisted environment before adding too much handling
+  which may end up inappropriate.
 
 Installation Steps
 ==================
@@ -27,6 +28,14 @@ Either install junius:
 *or* just add it to your PYTHONPATH
   set PYTHONPATH=c:\src\path\to\junius\server\python
 
+install modules required for 'protocols' - note that these are technically
+optional - if the modules aren't installed a warning will be generated and
+the protocol will simply be disabled
+
+* imap - PyOpenSSL (link?)
+* skype - Skype4Py (link?)
+* twitter - python-twitter (link?)
+
 configure raindrop:
   * edit ~/.raindrop
 
@@ -50,16 +59,27 @@ configure raindrop:
         username=test # not used, but we die without it!
         num_test_docs=1 # this defaults to 5 - but 1 is useful sometimes!
 
+** NOTE: if you edit this file, you must run 'run-raindrop.py install-accounts'
+to get the new data into the raindrop database (the accounts are automatically
+updated if the database is created, but we don't detect when the accounts
+change)
+
+
 With the couchdb server running....
 
 Setup the database and upload views and other content:
 
-  WARNING: using this command will wipe ALL your databases we may touch.
-  USE WITH CAUTION.
+  % run-raindrop.py
 
-  % run-raindrop.py nuke-db-and-delete-everything-forever
+you should see output similar to:
 
-  See --help for how to update the various bits without nuking the database.
+  INFO:model:created new database
+  INFO:junius.bootstrap:Adding account 'test'
+  INFO:junius.bootstrap:client files are different - updating doc
+  INFO:junius.bootstrap:design doc '_design/raindrop!accounts!all' has changed - updating
+  ...
+  Nothing left to do - terminating.  
+
 
 Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
 setup
@@ -93,3 +113,8 @@ Get *real* messages:
 
 Go to http://127.0.0.1:5984/junius/files/index.xhtml and do autocomplete to do
 searches.
+
+You can edit any of the files in the 'schema' or 'client' directories, and
+when run-raindrop is next started, the changes to these files will be detected
+and they will be sent to the database.  We don't detect the changes while we
+are running though - you must restart.
