@@ -42,7 +42,6 @@ class SyncConductor(object):
 
   def _ohNoes(self, failure, *args, **kwargs):
     self.log.error('OH NOES! failure! %s', failure)
-    #self.reactor.stop()
 
   def _getAllAccounts(self):
     return self.db.openView('raindrop!accounts!all', 'all'
