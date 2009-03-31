@@ -28,6 +28,7 @@ def asynch_command(f):
 def nuke_db_and_delete_everything_forever(result, parser, options):
     """Nuke the database AND ALL MESSAGES FOREVER"""
     return model.nuke_db(
+                ).addCallback(model.fab_db
                 ).addCallback(bootstrap.install_accounts)
 
 
@@ -65,13 +66,12 @@ def unprocess(result, parser, options):
     return p.unprocess().addCallback(done)
 
 def delete_docs(result, parser, options):
-    """Delete all documents of a particular type.  Use with caution"""
+    """Delete all documents of a particular type.  Use with caution or see
+       the 'unprocess' command for an alternative.
+    """
     # NOTE: This is for development only, until we get a way to say
     # 'reprocess stuff you've already done' - in the meantime deleting those
     # intermediate docs has the same result...
-    from urllib import quote
-    db = model.get_db()
-
     def _del_docs(to_del):
         docs = []
         for id, rev in to_del:
@@ -79,7 +79,7 @@ def delete_docs(result, parser, options):
         return db.updateDocuments(docs)
 
     def _got_docs(result, dt):
-        to_del = [(row['id'], row['value']) for row in result]
+        to_del = [(row['id'], row['value']) for row in result['rows']]
         logger.info("Deleting %d documents of type %r", len(to_del), dt)
         return to_del
 
@@ -87,7 +87,8 @@ def delete_docs(result, parser, options):
         parser.error("You must specify one or more --doctype")
     deferreds = []
     for dt in options.doctypes:
-        d = db.openView('raindrop!messages!by', 'by_doc_type', key=dt
+        d = model.get_doc_model().open_view('raindrop!messages!by',
+                                            'by_doc_type', key=dt
                 ).addCallback(_got_docs, dt
                 ).addCallback(_del_docs
                 )

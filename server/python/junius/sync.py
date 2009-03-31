@@ -1,12 +1,11 @@
 import logging
 
-from twisted.internet import reactor, defer
+from twisted.internet import reactor, defer, task
 from twisted.python.failure import Failure
 import twisted.web.error
 import paisley
 
 from . import proto as proto
-from .model import get_db
 
 logger = logging.getLogger(__name__)
 
@@ -35,25 +34,30 @@ class SyncConductor(object):
     # We capture it here, and all the things we 'conduct' use this reactor
     # (but later it should be passed to our ctor too)
     self.reactor = reactor
-
-    self.db = get_db()
+    self.coop = task.Cooperator()
+    reactor.addSystemEventTrigger("before", "shutdown", self._kill_coop)
+    self.doc_model = get_doc_model()
 
     self.active_accounts = []
+
+  def _kill_coop(self):
+    logger.debug('stopping the coordinator')
+    self.coop.stop()
+    logger.debug('coordinator stopped')
 
   def _ohNoes(self, failure, *args, **kwargs):
     self.log.error('OH NOES! failure! %s', failure)
 
   def _getAllAccounts(self):
-    return self.db.openView('raindrop!accounts!all', 'all'
+    return self.doc_model.open_view('raindrop!accounts!all', 'all'
       ).addCallback(self._gotAllAccounts
       ).addErrback(self._ohNoes)
 
-  def _gotAllAccounts(self, rows):
-    # we don't use a cooperator here as we want them all to run in parallel.
-    return defer.DeferredList([d for d in self._genAccountSynchs(rows)])
+  def _gotAllAccounts(self, result):
+    # we don't use the cooperator here as we want them all to run in parallel.
+    return defer.DeferredList([d for d in self._genAccountSynchs(result['rows'])])
 
   def _genAccountSynchs(self, rows):
-    doc_model = get_doc_model()
     self.log.info("Have %d accounts to synch", len(rows))
     to_synch = []
     for row in rows:
@@ -62,11 +66,11 @@ class SyncConductor(object):
       self.log.debug("Found account using protocol %s", kind)
       if not self.options.protocols or kind in self.options.protocols:
         if kind in proto.protocols:
-          account = proto.protocols[kind](self.db, account_details)
+          account = proto.protocols[kind](self.doc_model, account_details)
           self.log.info('Starting sync of %s account: %s',
                         kind, account_details.get('name', '(un-named)'))
           self.active_accounts.append(account)
-          yield account.startSync(self, doc_model
+          yield account.startSync(self
                     ).addBoth(self._cb_sync_finished, account)
         else:
           self.log.error("Don't know what to do with account kind: %s", kind)

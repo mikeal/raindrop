@@ -56,9 +56,9 @@ class Pipeline(object):
         # A bit of a hack that will suffice until we get better dependency
         # management.  Determines which doc-types are 'derived', then deletes
         # them all.
-        def delete_docs(rows, doc_type):
+        def delete_docs(result, doc_type):
             docs = []
-            to_del = [(row['id'], row['value']) for row in rows]
+            to_del = [(row['id'], row['value']) for row in result['rows']]
             for id, rev in to_del:
                 docs.append({'_id': id, '_rev': rev, '_deleted': True})
             logger.info('deleting %d messages of type %r', len(docs), doc_type)
@@ -66,9 +66,9 @@ class Pipeline(object):
 
         def gen_deleting_docs(doc_types):
             for t in doc_types:
-                yield self.doc_model.db.openView('raindrop!messages!by',
-                                                 'by_doc_type',
-                                                 key=t,
+                yield self.doc_model.open_view('raindrop!messages!by',
+                                               'by_doc_type',
+                                               key=t,
                             ).addCallback(delete_docs, t)
 
         derived = set()
@@ -88,16 +88,17 @@ class Pipeline(object):
         while True:
             self.num_this_process = 0
             logger.debug('opening view for work queue...')
-            yield self.doc_model.db.openView('raindrop!messages!workqueue',
-                                             'by_doc_roots',
-                                             group=True,
+            yield self.doc_model.open_view('raindrop!messages!workqueue',
+                                           'by_doc_roots',
+                                           group=True,
                         ).addCallback(self._cb_roots_opened)
             logger.info('created %d new documents', self.num_this_process)
             if self.num_this_process == 0:
                 break
         logger.debug('finally run out of documents.')
 
-    def _cb_roots_opened(self, rows):
+    def _cb_roots_opened(self, result):
+        rows = result['rows']
         logger.info('work queue has %d items to check.', len(rows))
         def gen_todo(todo):
             for row in todo:

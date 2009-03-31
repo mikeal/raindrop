@@ -1,16 +1,16 @@
 # This is an implementation of a 'test' protocol.
 import logging
-from twisted.internet import defer, error, task
+from twisted.internet import defer, error
 
 logger = logging.getLogger(__name__)
 
 from ...proc import base
 
 class TestMessageProvider(object):
-    def __init__(self, account, conductor, doc_model):
+    def __init__(self, account, conductor):
         self.account = account
+        self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
-        self.doc_model = doc_model
 
     def sync_generator(self):
         num_docs = int(self.account.details.get('num_test_docs', 5))
@@ -24,10 +24,8 @@ class TestMessageProvider(object):
     def attach(self):
         logger.info("preparing to synch test messages...")
         self.bulk_docs = [] # anything added here will be done in bulk
-        # Experimenting with a 'cooperator'...
-        coop = task.Cooperator()
-        gen = self.sync_generator()
-        return coop.coiterate(gen)
+        # use the cooperator for testing purposes.
+        return self.conductor.coop.coiterate(self.sync_generator())
 
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
@@ -87,9 +85,5 @@ class TestConverter(base.ConverterBase):
 
 
 class TestAccount(base.AccountBase):
-  def __init__(self, db, details):
-    self.db = db
-    self.details = details
-
-  def startSync(self, conductor, doc_model):
-    return TestMessageProvider(self, conductor, doc_model).attach()
+  def startSync(self, conductor):
+    return TestMessageProvider(self, conductor).attach()

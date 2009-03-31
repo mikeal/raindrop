@@ -39,14 +39,6 @@ else:
     get_seq = time.time
 
 
-def _raw_to_rows(raw):
-    # {'rows': [], 'total_rows': 0} -> the actual rows.
-    ret = raw['rows']
-    # hrmph - on a view with start_key etc params, total_rows will be
-    # greater than the rows.
-    assert 'total_rows' not in raw or len(ret)<=raw['total_rows'], raw
-    return ret
-
 # from the couchdb package; not sure what makes these names special...
 def _encode_options(options):
     retval = {}
@@ -67,14 +59,9 @@ class CouchDB(paisley.CouchDB):
         return self.post(uri, body)
 
     def openView(self, *args, **kwargs):
-        # The base class of this returns the raw json object - eg:
-        # {'rows': [], 'total_rows': 0}
-        # XXX - Note that paisley isn't interested in this enhancement, so
-        # we need to remove it...
-
-        # *sob* - and it also doesn't handle encoding options...
+        # paisley doesn't handle encoding options...
         return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
-                        ).addCallback(_raw_to_rows)
+                        )
 
     def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
         # paisley appears to use an old api for attachments?
@@ -184,6 +171,11 @@ class DocumentModel(object):
     """
     def __init__(self, db):
         self.db = db
+
+    def open_view(self, *args, **kwargs):
+        # A convenience method for completeness so consumers don't hit the
+        # DB directly (and to give a consistent 'style').  Is it worth it?
+        return self.db.openView(*args, **kwargs)
 
     def open_document(self, doc_id, **kw):
         """Open the specific document, returning None if it doesn't exist"""
@@ -340,12 +332,13 @@ class DocumentModel(object):
         """
         startkey = [doc_id]
         endkey = [doc_id, {}]
-        return self.db.openView('raindrop!messages!workqueue',
-                                'by_doc_extension_sequence',
-                                startkey=startkey, endkey=endkey
+        return self.open_view('raindrop!messages!workqueue',
+                              'by_doc_extension_sequence',
+                              startkey=startkey, endkey=endkey
                     ).addCallback(self._cb_des_opened, doc_id)
 
-    def _cb_des_opened(self, rows, doc_id):
+    def _cb_des_opened(self, result, doc_id):
+        rows = result['rows']
         if not rows:
             ret = None, None
         else:

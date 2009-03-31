@@ -1,9 +1,8 @@
-from twisted.internet import protocol, ssl, defer, error, task
+from twisted.internet import protocol, ssl, defer, error
 from twisted.mail import imap4
 import logging
 
 from ..proc import base
-from ..model import get_db
 from ..ext.message.rfc822 import doc_from_bytes
 
 brat = base.Rat
@@ -19,7 +18,6 @@ class ImapClient(imap4.IMAP4Client):
   '''
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
-    self.coop = task.Cooperator()
     return self._doAuthenticate(
             ).addCallback(self._reqList
             ).addCallback(self.deferred.callback)
@@ -46,7 +44,7 @@ class ImapClient(imap4.IMAP4Client):
     return self.list('', '*').addCallback(self._procList)
 
   def _procList(self, result, *args, **kwargs):
-    return self.coop.coiterate(self.gen_folder_list(result))
+    return self.conductor.coop.coiterate(self.gen_folder_list(result))
 
   def gen_folder_list(self, result):
     for flags, delim, name in result:
@@ -69,13 +67,14 @@ class ImapClient(imap4.IMAP4Client):
 
   def _examineFolder(self, result, folder_path):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
-    return get_db().openView('raindrop!proto!imap', 'seen',
+    return self.doc_model.open_view('raindrop!proto!imap', 'seen',
                              startkey=[folder_path], endkey=[folder_path, {}]
               ).addCallback(self._fetchAndProcess, folder_path)
 
-  def _fetchAndProcess(self, rows, folder_path):
+  def _fetchAndProcess(self, result, folder_path):
     # XXX - we should look at the flags and update the message if it's not
     # the same - later.
+    rows = result['rows']
     logger.debug('_FetchAndProcess says we have seen %d items for %r',
                  len(rows), folder_path)
     seen_uids = set(row['key'][1] for row in rows)
@@ -99,7 +98,7 @@ class ImapClient(imap4.IMAP4Client):
         yield self.fetchMessage(to_fetch, uid=True
                     ).addCallback(self._cb_got_body, uid, did, folder_name, to_fetch
                     )
-    return self.coop.coiterate(gen_remaining(name, remaining))
+    return self.conductor.coop.coiterate(gen_remaining(name, remaining))
 
   def _cb_got_body(self, result, uid, did, folder_name, to_fetch):
     _, result = result.popitem()
@@ -149,11 +148,11 @@ class ImapClient(imap4.IMAP4Client):
 class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
 
-  def __init__(self, account, conductor, doc_model):
+  def __init__(self, account, conductor):
     # base-class has no __init__
     self.account = account
     self.conductor = conductor
-    self.doc_model = doc_model
+    self.doc_model = account.doc_model # this is a little confused...
 
     self.ctx = ssl.ClientContextFactory()
     self.backoff = 8 # magic number
@@ -163,7 +162,7 @@ class ImapClientFactory(protocol.ClientFactory):
     p.factory = self
     p.account = self.account
     p.conductor = self.conductor
-    p.doc_model = self.doc_model
+    p.doc_model = self.account.doc_model
     p.deferred = self.deferred # this isn't going to work in reconnect scenarios
     return p
 
@@ -221,10 +220,6 @@ class IMAPConverter(base.ConverterBase):
 
 
 class IMAPAccount(base.AccountBase):
-  def __init__(self, db, details):
-    self.db = db
-    self.details = details
-
-  def startSync(self, conductor, doc_model):
-    self.factory = ImapClientFactory(self, conductor, doc_model)
+  def startSync(self, conductor):
+    self.factory = ImapClientFactory(self, conductor)
     return self.factory.connect()

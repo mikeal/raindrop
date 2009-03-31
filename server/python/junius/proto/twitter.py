@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import logging
 import re
 import twisted.python.log
-from twisted.internet import defer, threads, task
+from twisted.internet import defer, threads
 
 from ..proc import base
 
@@ -33,15 +33,12 @@ TWEET_PROPS = """
 
 
 class TwitterProcessor(object):
-    def __init__(self, account, conductor, doc_model):
+    def __init__(self, account, conductor):
         self.account = account
+        self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
-        self.doc_model = doc_model
         self.twit = None
         self.seen_tweets = None
-        # use a cooperator to do the work via a generator.
-        # XXX - should we own the cooperator or use our parents?
-        self.coop = task.Cooperator()
 
     def attach(self):
         logger.info("attaching to twitter...")
@@ -60,7 +57,7 @@ class TwitterProcessor(object):
                   ).addCallback(self._cb_got_friends)
 
     def _cb_got_friends(self, friends):
-        return self.coop.coiterate(self.gen_friends_info(friends))
+        return self.conductor.coop.coiterate(self.gen_friends_info(friends))
         
     def gen_friends_info(self, friends):
         logger.info("apparently I've %d friends", len(friends))
@@ -87,7 +84,8 @@ class TwitterProcessor(object):
     def got_friend_timeline(self, timeline, fid):
         logger.debug("Friend %r has %d items in their timeline", fid,
                      len(timeline))
-        return self.coop.coiterate(self.gen_friend_timeline(timeline, fid))
+        return self.conductor.coop.coiterate(
+                    self.gen_friend_timeline(timeline, fid))
 
     def gen_friend_timeline(self, timeline, fid):
         for tweet in timeline:
@@ -134,9 +132,5 @@ class TwitterConverter(base.ConverterBase):
 
 
 class TwitterAccount(base.AccountBase):
-  def __init__(self, db, details):
-    self.db = db
-    self.details = details
-
-  def startSync(self, conductor, doc_model):
-    return TwitterProcessor(self, conductor, doc_model).attach()
+  def startSync(self, conductor):
+    return TwitterProcessor(self, conductor).attach()

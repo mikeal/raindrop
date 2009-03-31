@@ -70,6 +70,10 @@ class Rat(object):
 
 
 class AccountBase(Rat):
+  def __init__(self, doc_model, details):
+    self.doc_model = doc_model
+    self.details = details
+
   def reportStatus(self, what, state, why=Rat.UNKNOWN,
                    expectedDuration=Rat.UNKNOWN):
     '''

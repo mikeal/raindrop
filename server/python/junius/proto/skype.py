@@ -5,7 +5,7 @@ Fetch skype contacts and chats.
 import logging
 
 import twisted.python.log
-from twisted.internet import defer, threads, task
+from twisted.internet import defer, threads
 
 from ..proc import base
 
@@ -65,13 +65,10 @@ def simple_convert(str_val, typ):
 
 
 class TwistySkype(object):
-    def __init__(self, account, conductor, doc_model):
+    def __init__(self, account, conductor):
         self.account = account
+        self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
-        self.doc_model = doc_model
-        # use a cooperator to do the work via a generator.
-        # XXX - should we own the cooperator or use our parents?
-        self.coop = task.Cooperator()
         self.skype = Skype4Py.Skype()
 
     def get_docid_for_chat(self, chat):
@@ -104,7 +101,7 @@ class TwistySkype(object):
                         )
             logger.info("skype has finished processing all chats")
 
-        return self.coop.coiterate(gen_chats(chats))
+        return self.conductor.coop.coiterate(gen_chats(chats))
 
     def _cb_got_messages(self, messages, chat):
         logger.debug("chat '%s' has %d message(s) total; looking for new ones",
@@ -114,9 +111,9 @@ class TwistySkype(object):
         # determine which we have seen (note that we obviously could just
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
-        return self.doc_model.db.openView('raindrop!proto!skype', 'seen',
-                                          startkey=[chat.Name],
-                                          endkey=[chat.Name, {}]
+        return self.doc_model.open_view('raindrop!proto!skype', 'seen',
+                                        startkey=[chat.Name],
+                                        endkey=[chat.Name, {}]
                     ).addCallback(self._cb_got_seen, chat, messages
                     )
 
@@ -128,7 +125,7 @@ class TwistySkype(object):
         # *haven't* seen - including the [chat_name, None] entry if applic.
         all_keys = [(chatname, None)]
         all_keys.extend((chatname, mid) for mid in msgs_by_id.keys())
-        seen_chats = set([tuple(row['key']) for row in result])
+        seen_chats = set([tuple(row['key']) for row in result['rows']])
         add_bulk = [] # we bulk-update these at the end!
         remaining = set(all_keys)-set(seen_chats)
         # we could just process the empty list as normal, but the logging of
@@ -141,7 +138,8 @@ class TwistySkype(object):
                     len(remaining))
         logger.debug("we've already seen %d items from this chat",
                      len(seen_chats))
-        return self.coop.coiterate(self.gen_items(chat, remaining, msgs_by_id))
+        return self.conductor.coop.coiterate(
+                    self.gen_items(chat, remaining, msgs_by_id))
 
     def gen_items(self, chat, todo, msgs_by_id):
         tow = []
@@ -218,9 +216,5 @@ class SkypeConverter(base.ConverterBase):
 
 
 class SkypeAccount(base.AccountBase):
-  def __init__(self, db, details):
-    self.db = db
-    self.details = details
-
-  def startSync(self, conductor, doc_model):
-    return TwistySkype(self, conductor, doc_model).attach()
+  def startSync(self, conductor):
+    return TwistySkype(self, conductor).attach()
