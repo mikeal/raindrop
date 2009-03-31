@@ -52,6 +52,33 @@ class Pipeline(object):
                 assert not to_type, 'no xformname must mean no to_type'
                 self.forward_chain[from_type] = None
 
+    def unprocess(self):
+        # A bit of a hack that will suffice until we get better dependency
+        # management.  Determines which doc-types are 'derived', then deletes
+        # them all.
+        def delete_docs(rows, doc_type):
+            docs = []
+            to_del = [(row['id'], row['value']) for row in rows]
+            for id, rev in to_del:
+                docs.append({'_id': id, '_rev': rev, '_deleted': True})
+            logger.info('deleting %d messages of type %r', len(docs), doc_type)
+            return self.doc_model.db.updateDocuments(docs)
+
+        def gen_deleting_docs(doc_types):
+            for t in doc_types:
+                yield self.doc_model.db.openView('raindrop!messages!by',
+                                                 'by_doc_type',
+                                                 key=t,
+                            ).addCallback(delete_docs, t)
+
+        derived = set()
+        for from_type, to_info in self.forward_chain.iteritems():
+            if to_info is not None:
+                to_type, inst = to_info
+                derived.add(to_type)
+        logger.info("deleting documents with types %r", derived)
+        return self.coop.coiterate(gen_deleting_docs(derived))
+
     def start(self):
         return self.coop.coiterate(self.gen_all_documents())
 
