@@ -142,7 +142,7 @@ class TwistySkype(object):
                     self.gen_items(chat, remaining, msgs_by_id))
 
     def gen_items(self, chat, todo, msgs_by_id):
-        tow = []
+        tow = [] # documents to write.
         for _, msgid in todo:
             if msgid is None:
                 # we haven't seen the chat itself - do that.
