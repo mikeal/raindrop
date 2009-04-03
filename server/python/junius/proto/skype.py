@@ -72,10 +72,10 @@ class TwistySkype(object):
         self.skype = Skype4Py.Skype()
 
     def get_docid_for_chat(self, chat):
-        return "skypechat-" + chat.Name.encode('utf8') # hrmph!
+        return chat.Name.encode('utf8') # hrmph!
 
     def get_docid_for_msg(self, msg):
-        return "skypemsg-%s-%d" % (self.account.details['username'], msg._Id)
+        return "%s-%d" % (self.account.details['username'], msg._Id)
 
     def attach(self):
         logger.info("attaching to skype...")
@@ -111,7 +111,7 @@ class TwistySkype(object):
         # determine which we have seen (note that we obviously could just
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
-        return self.doc_model.open_view('raindrop!proto!skype', 'seen',
+        return self.doc_model.open_view('raindrop!proto!seen', 'skype',
                                         startkey=[chat.Name],
                                         endkey=[chat.Name, {}]
                     ).addCallback(self._cb_got_seen, chat, messages
@@ -197,8 +197,9 @@ class SkypeConverter(base.ConverterBase):
     def convert(self, doc):
         # We need to open the 'chat' for this Message.  Clearly this is
         # going to be inefficient...
-        chat_id = "skypechat-" + doc['skype_chatname'].encode('utf8') # hrmph!
-        return self.doc_model.open_document(chat_id
+        proto_id = doc['skype_chatname'].encode('utf8') # hrmph!
+        return self.doc_model.open_document('msg', 'proto/skype-chat',
+                                            proto_id
                         ).addCallback(self.finish_convert, doc)
 
     def finish_convert(self, chat_doc, doc):

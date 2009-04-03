@@ -67,7 +67,7 @@ class ImapClient(imap4.IMAP4Client):
 
   def _examineFolder(self, result, folder_path):
     logger.debug('Looking for messages already fetched for folder %s', folder_path)
-    return self.doc_model.open_view('raindrop!proto!imap', 'seen',
+    return self.doc_model.open_view('raindrop!proto!seen', 'imap',
                              startkey=[folder_path], endkey=[folder_path, {}]
               ).addCallback(self._fetchAndProcess, folder_path)
 
@@ -125,8 +125,8 @@ class ImapClient(imap4.IMAP4Client):
                                }
                   }
     doc['_attachments'] = attachments
-    return self.doc_model.create_raw_document(self.account,
-                                              did, doc, 'proto/imap',
+    return self.doc_model.create_raw_documents(self.account,
+                                              [(did, doc, 'proto/imap')],
                 ).addCallback(self._cb_saved_message)
 
   def _cantGetMessage(self, failure):
@@ -210,7 +210,7 @@ class ImapClientFactory(protocol.ClientFactory):
 class IMAPConverter(base.ConverterBase):
   def convert(self, doc):
     # I need the binary attachment.
-    return self.doc_model.open_document(doc['_id'], attachment="rfc822"
+    return self.doc_model.open_attachment(doc['_id'], "rfc822",
               ).addCallback(self._cb_got_attachment, doc)
 
   def _cb_got_attachment(self, content, doc):

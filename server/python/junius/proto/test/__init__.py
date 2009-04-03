@@ -19,7 +19,9 @@ class TestMessageProvider(object):
             yield self.check_test_message(i)
         if self.bulk_docs:
             yield self.doc_model.create_raw_documents(self.account,
-                                                      self.bulk_docs)
+                                                      self.bulk_docs
+                    ).addCallback(self.saved_bulk_messages, len(self.bulk_docs),
+                    )
 
     def attach(self):
         logger.info("preparing to synch test messages...")
@@ -29,35 +31,19 @@ class TestMessageProvider(object):
 
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
-        return self.doc_model.open_document("test.message.%d" % i,
+        return self.doc_model.open_document("msg", str(i), "proto/test"
                         ).addCallback(self.process_test_message, i)
 
     def process_test_message(self, existing_doc, doc_num):
         if existing_doc is None:
-            doc_type = 'proto/test'
             doc = dict(
               storage_key=doc_num,
               )
-            did = "test.message.%d" % doc_num
-            if doc_num % 2 == 0:
-                logger.info("Queueing test message with ID %d for bulk update",
-                            doc_num)
-                self.bulk_docs.append((did, doc, doc_type))
-                return None # we will get these later...
-            else:
-                logger.info("Creating new test message with ID %d", doc_num)
-                return self.doc_model.create_raw_document(self.account,
-                                                          did, doc, doc_type
-                            ).addCallback(self.saved_message, doc
-                            )
+            self.bulk_docs.append((str(doc_num), doc, 'proto/test'))
         else:
             logger.info("Skipping test message with ID %d - already exists",
                         doc_num)
             # we are done.
-
-    def saved_message(self, result, doc):
-        logger.debug("Finished saving test message %r", result)
-        # done
 
     def saved_bulk_messages(self, result, n):
         logger.debug("Finished saving %d test messages in bulk", n)

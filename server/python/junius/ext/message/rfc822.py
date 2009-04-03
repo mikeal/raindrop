@@ -66,7 +66,7 @@ def doc_from_bytes(b):
 class RFC822Converter(base.ConverterBase):
     def convert(self, doc):
         # I need the binary attachment.
-        return self.doc_model.open_document(doc['_id'], attachment="rfc822"
+        return self.doc_model.open_attachment(doc['_id'], "rfc822",
                   ).addCallback(self._cb_got_attachment, doc)
 
     def _cb_got_attachment(self, body, doc):

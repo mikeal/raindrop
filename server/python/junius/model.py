@@ -1,8 +1,8 @@
 import sys
-import os
 import logging
 import time
-import urllib
+from urllib import urlencode, quote
+import base64
 
 import twisted.web.error
 from twisted.internet import defer
@@ -14,7 +14,6 @@ except ImportError:
     import json # Python 2.6
 
 import paisley
-from couchdb import schema
 from .config import get_config
 
 
@@ -29,7 +28,7 @@ DBs = {}
 
 # XXXX - this relies on couch giving us some kind of 'sequence id'.  For
 # now we use a timestamp, but that obviously sucks in many scenarios.
-if sys.platform=='win32':
+if sys.platform == 'win32':
     # woeful resolution on windows and equal timestamps are bad.
     clock_start = time.time()
     time.clock() # time.clock starts counting from zero the first time its called.
@@ -39,11 +38,19 @@ else:
     get_seq = time.time
 
 
+def encode_proto_id(proto_id):
+    # a 'protocol' gives us a 'blob' used to identify the document; we create
+    # a real docid from that protocol_id; we base64-encode what was given to
+    # us to avoid the possibility of a '!' char, and also to better accomodate
+    # truly binary strings (eg, a pickle or something bizarre)
+    return base64.encodestring(proto_id).replace('\n', '')
+
+
 # from the couchdb package; not sure what makes these names special...
 def _encode_options(options):
     retval = {}
     for name, value in options.items():
-        if name in ('key', 'startkey', 'endkey') \
+        if name in ('key', 'startkey', 'endkey', 'include_docs') \
                 or not isinstance(value, basestring):
             value = json.dumps(value, allow_nan=False, ensure_ascii=False)
         retval[name] = value
@@ -137,16 +144,44 @@ class CouchDB(paisley.CouchDB):
                     ).addCallback(self.parseResult
                     )
 
+    def listDocsBySeq(self, dbName, reverse=False, startKey=0, limit=-1, **kw):
+        """
+        List all documents in a given database by the document's sequence number
+        """
+        # Response:
+        # {"total_rows":1597,"offset":0,"rows":[
+        # {"id":"test","key":1,"value":{"rev":"4104487645"}},
+        # {"id":"skippyhammond","key":2,"value":{"rev":"121469801"}},
+        # ...
+        uri = "/%s/_all_docs_by_seq" % (dbName,)
+        args = {}
+        if reverse:
+            args["reverse"] = "true"
+        if startKey > 0:
+            args["startkey"] = int(startKey)
+        if limit >= 0:
+            args["limit"] = int(limit)
+        # suck the rest of the kwargs in
+        args.update(_encode_options(kw))
+        if args:
+            uri += "?%s" % (urlencode(args),)
+        return self.get(uri
+            ).addCallback(self.parseResult)
+
     # Hack so our new bound methods work.
     def bindToDB(self, dbName):
         super(CouchDB, self).bindToDB(dbName)
         partial = paisley.partial # it works hard to get this!
-        for methname in ["saveAttachment", "updateDocuments"]:
+        for methname in ["saveAttachment", "updateDocuments",
+                         "listDocsBySeq"]:
             method = getattr(self, methname)
             newMethod = partial(method, dbName)
             setattr(self, methname, newMethod)
 
 
+# XXX - get_db should die as a global/singleton - only our DocumentModel
+# instance should care about that.  Sadly, bootstrap.py is a (small; later)
+# problem here...
 def get_db(couchname="local", dbname=_NotSpecified):
     dbinfo = config.couches[couchname]
     if dbname is _NotSpecified:
@@ -162,7 +197,7 @@ def get_db(couchname="local", dbname=_NotSpecified):
     return db
 
 def quote_id(doc_id):
-    return urllib.quote(doc_id, safe="")
+    return quote(doc_id, safe="")
 
 class DocumentModel(object):
     """The layer between 'documents' and the 'database'.  Responsible for
@@ -177,9 +212,25 @@ class DocumentModel(object):
         # DB directly (and to give a consistent 'style').  Is it worth it?
         return self.db.openView(*args, **kwargs)
 
-    def open_document(self, doc_id, **kw):
+    def open_attachment(self, doc_id, attachment, **kw):
+        """Open an attachment for the given docID.  As this is generally done
+        when processing the document itself, so the raw ID of the document
+        itself is known.  For this reason, a docid rather than the parts is
+        used.
+        """
+        return self.db.openDoc(quote_id(doc_id), attachment=attachment, **kw
+                    ).addBoth(self._cb_doc_opened)
+
+    def open_document(self, category, proto_id, ext_type, **kw):
         """Open the specific document, returning None if it doesn't exist"""
-        return self.db.openDoc(quote_id(doc_id), **kw).addBoth(self._cb_doc_opened)
+        docid = '%s!%s!%s' % (category, encode_proto_id(proto_id), ext_type)
+        return self.open_document_by_id(docid, **kw)
+
+    def open_document_by_id(self, doc_id, **kw):
+        """Open a document by the already constructed docid"""
+        logger.debug("attempting to open document %r", doc_id)
+        return self.db.openDoc(quote_id(doc_id), **kw
+                    ).addBoth(self._cb_doc_opened)
 
     def _cb_doc_opened(self, result):
         if isinstance(result, Failure):
@@ -191,7 +242,7 @@ class DocumentModel(object):
 
     def _prepare_raw_doc(self, account, docid, doc, doc_type):
         assert '_id' not in doc, doc # that isn't how you specify the ID.
-        assert '!' not in docid, docid # these chars are special.
+        doc['_id'] = docid
         assert 'raindrop_account' not in doc, doc # we look after that!
         doc['raindrop_account'] = account.details['_id']
 
@@ -202,77 +253,40 @@ class DocumentModel(object):
         doc['raindrop_seq'] = get_seq()
 
     def create_raw_documents(self, account, doc_infos):
-        """A high-performance version of 'create_raw_document', but doesn't
-        support attachments yet."""
+        """Entry-point to create raw documents.  The API reflects that
+        creating multiple documents in a batch is faster; if you want to
+        create a single doc, just put it in a list
+        """
         docs = []
         dids = [] # purely for the log :(
         logger.debug('create_raw_documents preparing %d docs', len(doc_infos))
-        for (docid, doc, doc_type) in doc_infos:
+        for (proto_id, doc, doc_type) in doc_infos:
+            docid = 'msg!%s!%s' % (encode_proto_id(proto_id), doc_type)
             self._prepare_raw_doc(account, docid, doc, doc_type)
-            # in a bulk-update, the ID is in the doc itself.
-            doc['_id'] = docid
+            # XXX - this hardcoding is obviously going to be a problem when
+            # we need to add 'contacts' etc :(
             docs.append(doc)
             dids.append(docid)
+        attachments = self._prepare_attachments(docs)
         logger.debug('create_raw_documents saving docs %s', dids)
         return self.db.updateDocuments(docs
-                    ).addCallback(self._cb_saved_multi_docs,
-                    ).addErrback(self._cb_save_multi_failed,
+                    ).addCallback(self._cb_saved_docs, attachments
                     )
 
-    def _cb_saved_multi_docs(self, result):
-        # result: {'ok': True, 'new_revs': [{'rev': 'xxx', 'id': '...'}, ...]}
-        logger.debug("saved multiple docs with result=%(ok)s", result)
-        return result
+    def _prepare_attachments(self, docs):
+        # called internally when creating a batch of documents. Returns a list
+        # of attachments which should be saved separately.
 
-    def _cb_save_multi_failed(self, failure):
-        logger.error("Failed to save lotsa docs: %s", failure)
-        failure.raiseException()
+        # The intent is that later we can optimize this - if the attachment
+        # is small, we can keep it in the document base64 encoded and save
+        # a http connection.  For now though we just do all attachments
+        # separately.
 
-    def create_raw_document(self, account, docid, doc, doc_type):
-        self._prepare_raw_doc(account, docid, doc, doc_type)
-        # XXX - attachments need more thought - ultimately we need to be able
-        # to 'push' them via a generator or similar to avoid reading them
-        # entirely in memory.  Further, we need some way of the document
-        # knowing if the attachment failed (or vice-versa) given we have
-        # no transactional semantics.
-        # fixup attachments.
-        try:
-            attachments = doc['_attachments']
-            # nuke attachments specified
-            del doc['_attachments']
-        except KeyError:
-            attachments = None
-
-        # save the document.
-        logger.debug('create_raw_document saving doc %r', docid)
-        qid = quote_id(docid)
-        return self.db.saveDoc(doc, docId=qid,
-                    ).addCallback(self._cb_saved_document, 'raw-message', docid
-                    ).addErrback(self._cb_save_failed, 'raw-message', docid
-                    ).addCallback(self._cb_save_attachments, attachments
-                    )
-
-    def _cb_saved_document(self, result, what, ids):
-        logger.debug("Saved %s %s", what, result)
-        # XXX - now what?
-        return result
-
-    def _cb_save_failed(self, failure, what, ids):
-        logger.error("Failed to save %s (%r): %s", what, ids, failure)
-        failure.raiseException()
-
-    def prepare_ext_document(self, rootdocid, doc_type, doc):
-        assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
-        assert 'type' not in doc, doc # we manage this too!
-        assert 'raindrop_seq' not in doc, doc # we look after that!
-        doc['raindrop_seq'] = get_seq()
-        doc['type'] = doc_type
-        doc['_id'] = rootdocid + "!" + doc['type'] # docs ids need more thought...
-
-    def create_ext_documents(self, rootdocid, docs):
-        # Attachments are all done separately.  We could optimize this -
-        # eg, attachments under a certain size could go in the doc itself,
-        # saving a request but costing a base64 encode.
+        # attachment processing still need more thought - ultimately we need
+        # to be able to 'push' them via a generator or similar to avoid
+        # reading them entirely in memory. Further, we need some way of the
+        # document knowing if the attachment failed (or vice-versa) given we
+        # have no transactional semantics.
         all_attachments = []
         for doc in docs:
             assert '_id' in doc # should have called prepare_ext_document!
@@ -281,22 +295,46 @@ class DocumentModel(object):
                 # nuke attachments specified
                 del doc['_attachments']
             except KeyError:
+                # It is important we put 'None' here so the list of
+                # attachments is exactly parallel with the list of docs.
                 all_attachments.append(None)
+        assert len(all_attachments)==len(docs)
+        return all_attachments
 
+    def prepare_ext_document(self, rootdocid, doc_type, doc):
+        """Called by extensions to setup the raindrop maintained attributes
+           of the documents, including the document ID
+        """
+        assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
+        assert 'type' not in doc, doc # we manage this too!
+        assert 'raindrop_seq' not in doc, doc # we look after that!
+        doc['raindrop_seq'] = get_seq()
+        doc['type'] = doc_type
+        doc['_id'] = "msg!" + rootdocid + "!" + doc['type'] # docs ids need more thought...
+
+    def create_ext_documents(self, docs):
+        for doc in docs:
+            assert '_id' in doc # should have called prepare_ext_document!
+        attachments = self._prepare_attachments(docs)
         # save the document.
-        logger.debug('saving %d extension documents for %r', len(docs), rootdocid)
+        logger.debug('saving %d extension documents', len(docs))
         return self.db.updateDocuments(docs,
-                    ).addCallback(self._cb_saved_ext_docs, all_attachments
+                    ).addCallback(self._cb_saved_docs, attachments
                     )
 
-    def _cb_saved_ext_docs(self, result, attachments):
+    def _cb_saved_docs(self, result, attachments):
         # result: {'ok': True, 'new_revs': [{'rev': 'xxx', 'id': '...'}, ...]}
         logger.debug("saved multiple docs with result=%(ok)s", result)
         ds = []
         for dinfo, dattach in zip(result['new_revs'], attachments):
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
-        return defer.DeferredList(ds)
+        def return_orig(ignored_result):
+            return result
+        # XXX - the result set will *not* have the correct _rev if there are
+        # attachments :(
+        return defer.DeferredList(ds
+                    ).addCallback(return_orig)
 
     def _cb_save_attachments(self, saved_doc, attachments):
         if not attachments:
@@ -319,33 +357,20 @@ class DocumentModel(object):
                                    quote_id(name), info['data'],
                                    content_type=info['content_type'],
                                    revision=revision,
-                ).addCallback(self._cb_saved_document, 'attachment', (docid, name)
-                ).addErrback(self._cb_save_failed, 'attachment', (docid, name)
+                ).addCallback(self._cb_saved_attachment, (docid, name)
+                ).addErrback(self._cb_save_failed, (docid, name)
                 ).addCallback(self._cb_save_next_attachment, remaining
                 )
 
-    def get_last_ext_for_document(self, doc_id):
-        """Given a base docid, find the most-recent extension to have run.
-        This will differ from the latest extension in the document chain if
-        the document chain has been 'reset' for any reason (eg, change
-        detected at the source of the message, user adding annotations, etc)
-        """
-        startkey = [doc_id]
-        endkey = [doc_id, {}]
-        return self.open_view('raindrop!messages!workqueue',
-                              'by_doc_extension_sequence',
-                              startkey=startkey, endkey=endkey
-                    ).addCallback(self._cb_des_opened, doc_id)
+    def _cb_saved_attachment(self, result, ids):
+        logger.debug("Saved attachment %s", result)
+        # XXX - now what?
+        return result
 
-    def _cb_des_opened(self, result, doc_id):
-        rows = result['rows']
-        if not rows:
-            ret = None, None
-        else:
-            last = rows[-1]
-            ret = last["value"], last["id"]
-        logger.debug("document '%s' has last-extension of %r", doc_id, ret)
-        return ret
+    def _cb_save_failed(self, failure, ids):
+        logger.error("Failed to save attachment (%r): %s", what, ids, failure)
+        failure.raiseException()
+
 
 _doc_model = None
 

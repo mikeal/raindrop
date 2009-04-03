@@ -25,12 +25,6 @@ import twitter
 
 logger = logging.getLogger(__name__)
 
-TWEET_PROPS = """
-        created_at created_at_in_seconds favorited in_reply_to_screen_name
-        in_reply_to_user_id in_reply_to_status_id truncated
-        source id text relative_created_at user
-""".split()
-
 
 class TwitterProcessor(object):
     def __init__(self, account, conductor):
@@ -52,65 +46,73 @@ class TwitterProcessor(object):
     def attached(self, twit):
         logger.info("attached to twitter - fetching friends")
         self.twit = twit
+
         # build the list of all users we will fetch tweets from.
         return threads.deferToThread(self.twit.GetFriends
                   ).addCallback(self._cb_got_friends)
 
     def _cb_got_friends(self, friends):
-        return self.conductor.coop.coiterate(self.gen_friends_info(friends))
-        
-    def gen_friends_info(self, friends):
-        logger.info("apparently I've %d friends", len(friends))
-        def do_fid(fid):
-            return threads.deferToThread(self.twit.GetUserTimeline, fid
-                                ).addCallback(self.got_friend_timeline, fid
-                                ).addErrback(self.err_friend_timeline, fid
-                                ).addCallback(self.finished_friend
-                                )
+        # Our 'seen' view is a reduce view, so we only get one result per
+        # friend we pass in.  It is probably safe to assume we don't have
+        # too many friends that we can't get them all in one hit...
+        return self.doc_model.open_view('raindrop!proto!seen', 'twitter',
+                                        group=True
+                  ).addCallback(self._cb_got_seen, friends)
 
-        # None means 'me'
-        yield do_fid(None)
+    def _cb_got_seen(self, result, friends):
+        # result -> [{'key': '12449', 'value': 1371372980}, ...]
+        # turn it into a map.
+        rows = result['rows']
+        last_seen_ids = dict((int(r['key']), int(r['value'])) for r in rows)
+        return self.conductor.coop.coiterate(
+                    self.gen_friends_info(friends, last_seen_ids))
+
+    def gen_friends_info(self, friends, last_seen_ids):
+        logger.info("apparently I've %d friends", len(friends))
+        def do_friend(friend):
+            last_this = last_seen_ids.get(friend.id)
+            logger.debug("friend %r (%s) has latest tweet id of %s",
+                         friend.screen_name, friend.id, last_this)
+            return threads.deferToThread(
+                    self.twit.GetUserTimeline, friend.id, since_id=last_this
+                            ).addCallback(self._cb_got_friend_timeline, friend
+                            ).addErrback(self.err_friend_timeline, friend
+                            )
+
+        # None means 'me' - but we don't really want to use 'None'.  This is
+        # the only way I can work out how to get ourselves!
+        me = self.twit.GetUser(self.twit._username)
+        yield do_friend(me)
         for f in friends:
-            yield do_fid(f.screen_name)
+            yield do_friend(f)
 
         logger.debug("Finished friends")
 
-    def finished_friend(self, result):
-        logger.debug("finished friend: %s", result)
+    def err_friend_timeline(self, failure, friend):
+        logger.error("Failed to fetch timeline for '%s': %s",
+                     friend.screen_name, failure)
 
-    def err_friend_timeline(self, failure, fid):
-        logger.error("Failed to fetch timeline for '%s': %s", fid, failure)
-
-    def got_friend_timeline(self, timeline, fid):
-        logger.debug("Friend %r has %d items in their timeline", fid,
-                     len(timeline))
+    def _cb_got_friend_timeline(self, timeline, friend):
         return self.conductor.coop.coiterate(
-                    self.gen_friend_timeline(timeline, fid))
+                    self.gen_friend_timeline(timeline, friend))
 
-    def gen_friend_timeline(self, timeline, fid):
+    def gen_friend_timeline(self, timeline, friend):
         for tweet in timeline:
-            logger.debug("seeing if tweet %r exists", tweet.id)
-            docid = "tweet.%d" % (tweet.id,)
-            yield self.doc_model.open_document(docid,
-                            ).addCallback(self.maybe_process_tweet, docid, tweet)
-
-    def maybe_process_tweet(self, existing_doc, docid, tweet):
-        if existing_doc is None:
+            tid = tweet.id
             # put the 'raw' document object together and save it.
-            logger.info("New tweet '%s...' (%s)", tweet.text[:25], tweet.id)
+            logger.info("New tweet '%s...' (%s)", tweet.text[:25], tid)
             # create the couch document for the tweet itself.
             doc = {}
-            for name in TWEET_PROPS:
+            for name, val in tweet.AsDict().iteritems():
                 val = getattr(tweet, name)
                 # simple hacks - users just become the user ID.
                 if isinstance(val, twitter.User):
                     val = val.id
                 doc['twitter_'+name.lower()] = val
-            return self.doc_model.create_raw_document(
-                            self.account, docid, doc, 'proto/twitter')
-        else:
-            # Must be a seen one.
-            logger.debug("Skipping seen tweet '%s'", tweet.id)
+            # not clear if the user ID is actually needed.
+            proto_id = "%s#%s" % (tweet.user.id, tid)
+            yield self.doc_model.create_raw_documents(
+                            self.account, [(proto_id, doc, 'proto/twitter')])
 
 
 # A 'converter' - takes a proto/twitter as input and creates a
@@ -127,7 +129,9 @@ class TwitterConverter(base.ConverterBase):
                 'body': body,
                 'body_preview': body[:128],
                 'tags': tags,
-                'timestamp': int(doc['twitter_created_at_in_seconds'])
+                # We don't have 'in seconds' seeing we came from AsDict() -
+                # but are 'seconds' usable for a timestamp?
+                #'timestamp': int(doc['twitter_created_at_in_seconds'])
                 }
 
 
