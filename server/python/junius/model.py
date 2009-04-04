@@ -65,10 +65,21 @@ class CouchDB(paisley.CouchDB):
                           ensure_ascii=False).encode('utf-8')
         return self.post(uri, body)
 
-    def openView(self, *args, **kwargs):
+    #def openView(self, *args, **kwargs):
         # paisley doesn't handle encoding options...
-        return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
-                        )
+        #return super(CouchDB, self).openView(*args, **_encode_options(kwargs)
+        #                )
+        # Ack - couch 0.9 view syntax...
+    def openView(self, dbName, docId, viewId, **kwargs):
+        #uri = "/%s/_view/%s/%s" % (dbName, docId, viewId)
+        uri = "/%s/_design/%s/_view/%s" % (dbName, docId, viewId)
+
+        if kwargs:
+            uri += "?%s" % (urlencode(_encode_options(kwargs)),)
+
+        return self.get(uri
+            ).addCallback(self.parseResult)
+        
 
     def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
         # paisley appears to use an old api for attachments?
@@ -217,9 +228,11 @@ class DocumentModel(object):
         when processing the document itself, so the raw ID of the document
         itself is known.  For this reason, a docid rather than the parts is
         used.
+
+        Unlike open_document, this never returns None, but raises an
+        exception if the attachment doesn't exist.
         """
-        return self.db.openDoc(quote_id(doc_id), attachment=attachment, **kw
-                    ).addBoth(self._cb_doc_opened)
+        return self.db.openDoc(quote_id(doc_id), attachment=attachment, **kw)
 
     def open_document(self, category, proto_id, ext_type, **kw):
         """Open the specific document, returning None if it doesn't exist"""
@@ -238,6 +251,10 @@ class DocumentModel(object):
             if result.value.status != '404': # not found
                 result.raiseException()
             result = None # indicate no doc exists.
+            logger.debug("no document of that ID exists")
+        else:
+            logger.debug("opened document %(_id)r at revision %(_rev)s",
+                         result)
         return result
 
     def _prepare_raw_doc(self, account, docid, doc, doc_type):
@@ -323,10 +340,10 @@ class DocumentModel(object):
                     )
 
     def _cb_saved_docs(self, result, attachments):
-        # result: {'ok': True, 'new_revs': [{'rev': 'xxx', 'id': '...'}, ...]}
-        logger.debug("saved multiple docs with result=%(ok)s", result)
+        # result: [{'rev': 'xxx', 'id': '...'}, ...]
+        logger.debug("saved %d documents", len(result))
         ds = []
-        for dinfo, dattach in zip(result['new_revs'], attachments):
+        for dinfo, dattach in zip(result, attachments):
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
         def return_orig(ignored_result):
@@ -368,7 +385,7 @@ class DocumentModel(object):
         return result
 
     def _cb_save_failed(self, failure, ids):
-        logger.error("Failed to save attachment (%r): %s", what, ids, failure)
+        logger.error("Failed to save attachment (%r): %s", ids, failure)
         failure.raiseException()
 
 

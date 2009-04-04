@@ -147,7 +147,8 @@ class Pipeline(object):
             self.queue_finished = True
             return
         if len(rows)==1 and rows[0]['id'] == state_doc['_id']:
-            logger.info("Work queue got to the end!")
+            logger.info("Work queue got to the end (at sequence %(seq)s)",
+                        state_doc)
             self.queue_finished = True
             return
 
@@ -229,13 +230,12 @@ class Pipeline(object):
 
         return self.coop.coiterate(gen_todo())
 
-    def _cb_created_docs(self, result, state_doc):
+    def _cb_created_docs(self, new_revs, state_doc):
         # XXX - note that the _ids in this result can't be trusted if there
         # were attachments :(  fortunately we don't care here...
         # XXXXXXX - *sob* - we do care once we start hitting conflicts in
         # messages ahead of us...
         # XXX - this might not be necessary...
-        new_revs = result['new_revs']
         last_rev = new_revs[-1]
         assert last_rev['id'] == state_doc['_id'], last_rev
         state_doc['_rev'] = last_rev['rev']
