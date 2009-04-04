@@ -214,7 +214,6 @@ class IMAPConverter(base.ConverterBase):
               ).addCallback(self._cb_got_attachment, doc)
 
   def _cb_got_attachment(self, content, doc):
-    assert content, "can't locate attachment for %r" % doc['_id']
     # the 'rfc822' module knows what to do...
     return doc_from_bytes(content)
 
