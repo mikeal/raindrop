@@ -223,6 +223,24 @@ class DocumentModel(object):
     def __init__(self, db):
         self.db = db
 
+    @classmethod
+    def build_docid(cls, category, doc_type, provider_id):
+        """Builds a docid from (category, doc_type, provider_id)
+
+        The exact order of the fields may depend on who can best take
+        advantage of a specific order, so is subject to change in the
+        prototype.  This method gives the code a consistent orderindg
+        regardless of the actual impl."""
+        return "!".join([category, provider_id, doc_type])
+
+    @classmethod
+    def split_docid(cls, docid):
+        """Splits a docid into (category, doc_type, provider_id)
+
+        Is likely to raise ValueError on an 'invalid' docid"""
+        cat, prov_id, doc_type = docid.split("!")
+        return cat, doc_type, prov_id
+
     def open_view(self, *args, **kwargs):
         # A convenience method for completeness so consumers don't hit the
         # DB directly (and to give a consistent 'style').  Is it worth it?
@@ -242,7 +260,7 @@ class DocumentModel(object):
 
     def open_document(self, category, proto_id, ext_type, **kw):
         """Open the specific document, returning None if it doesn't exist"""
-        docid = '%s!%s!%s' % (category, encode_proto_id(proto_id), ext_type)
+        docid = self.build_docid(category, ext_type, encode_proto_id(proto_id))
         return self.open_document_by_id(docid, **kw)
 
     def open_document_by_id(self, doc_id, **kw):
@@ -286,7 +304,7 @@ class DocumentModel(object):
         dids = [] # purely for the log :(
         logger.debug('create_raw_documents preparing %d docs', len(doc_infos))
         for (proto_id, doc, doc_type) in doc_infos:
-            docid = 'msg!%s!%s' % (encode_proto_id(proto_id), doc_type)
+            docid = self.build_docid('msg', doc_type, encode_proto_id(proto_id))
             self._prepare_raw_doc(account, docid, doc, doc_type)
             # XXX - this hardcoding is obviously going to be a problem when
             # we need to add 'contacts' etc :(
@@ -326,7 +344,7 @@ class DocumentModel(object):
         assert len(all_attachments)==len(docs)
         return all_attachments
 
-    def prepare_ext_document(self, rootdocid, doc_type, doc):
+    def prepare_ext_document(self, prov_id, doc_type, doc):
         """Called by extensions to setup the raindrop maintained attributes
            of the documents, including the document ID
         """
@@ -335,7 +353,7 @@ class DocumentModel(object):
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
         doc['type'] = doc_type
-        doc['_id'] = "msg!" + rootdocid + "!" + doc['type'] # docs ids need more thought...
+        doc['_id'] = self.build_docid("msg", doc['type'], prov_id)
 
     def create_ext_documents(self, docs):
         for doc in docs:

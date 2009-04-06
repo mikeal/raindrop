@@ -122,7 +122,6 @@ class Pipeline(object):
                                 include_docs=True,
                         ).addCallback(self._cb_errorq_opened, state_doc)
                 if not self.num_errors_found:
-                    logger.info("No errors remain")
                     break
         return self.coop.coiterate(gen_work())
 
@@ -147,7 +146,7 @@ class Pipeline(object):
     def _cb_got_error_source(self, result, err_doc):
         # build the infos dict used by the sub-generator.
         try:
-            _, proto_id, doc_type = err_doc['_id'].split("!")
+            _, doc_type, proto_id = self.doc_model.split_docid(err_doc['_id'])
         except ValueError:
             logger.warning("skipping malformed ID %(_id)r", err_doc)
             return
@@ -284,7 +283,7 @@ class Pipeline(object):
                 logger.debug("skipping deleted message %r", rid)
                 continue
             try:
-                _, proto_id, doc_type = rid.split("!")
+                _, doc_type, proto_id = self.doc_model.split_docid(rid)
             except ValueError:
                 logger.warning("skipping malformed message ID %r", rid)
                 continue
