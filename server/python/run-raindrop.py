@@ -6,10 +6,10 @@ import logging
 
 from twisted.internet import reactor, defer, task
 
-from junius import model
-from junius import bootstrap
-from junius import pipeline
-from junius.sync import get_conductor
+from raindrop import model
+from raindrop import bootstrap
+from raindrop import pipeline
+from raindrop.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
 
@@ -98,7 +98,7 @@ def show_view(result, parser, options, args):
         for arg in args:
             # don't use open_view as then we'd need to parse the query portion!
             # grrr - just to get the dbname :()
-            from junius.config import get_config
+            from raindrop.config import get_config
             dbinfo = get_config().couches['local']
             dbname = dbinfo['name']
             if arg.startswith("/"):

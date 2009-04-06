@@ -1,12 +1,12 @@
 # this needs to become a 'plugin' mechanism...
 
 _protocol_infos = [
-    ('imap', 'junius.proto.imap', 'IMAPAccount'),
-    ('skype', 'junius.proto.skype', 'SkypeAccount'),
-    ('twitter', 'junius.proto.twitter', 'TwitterAccount'),
+    ('imap', 'raindrop.proto.imap', 'IMAPAccount'),
+    ('skype', 'raindrop.proto.skype', 'SkypeAccount'),
+    ('twitter', 'raindrop.proto.twitter', 'TwitterAccount'),
 ]
 if __debug__:
-    _protocol_infos.append(('test', 'junius.proto.test', 'TestAccount'))
+    _protocol_infos.append(('test', 'raindrop.proto.test', 'TestAccount'))
 
 protocols = {}
 def init_protocols():

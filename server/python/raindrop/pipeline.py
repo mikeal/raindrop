@@ -11,22 +11,22 @@ logger = logging.getLogger(__name__)
 chain = [
     # from_type, to_type, transformer)
     ('proto/test',         'raw/message/rfc822',
-                           'junius.proto.test.TestConverter'),
+                           'raindrop.proto.test.TestConverter'),
     # skype goes directly to 'message' for now...
     ('proto/skype-msg',    'message',
-                           'junius.proto.skype.SkypeConverter'),
+                           'raindrop.proto.skype.SkypeConverter'),
     # skype-chat is 'terminal' for now.
     ('proto/skype-chat', None, None),
     ('proto/imap',         'raw/message/rfc822',
-                           'junius.proto.imap.IMAPConverter'),
+                           'raindrop.proto.imap.IMAPConverter'),
     ('proto/twitter',      'message',
-                           'junius.proto.twitter.TwitterConverter'),
+                           'raindrop.proto.twitter.TwitterConverter'),
     ('raw/message/rfc822', 'raw/message/email',
-                           'junius.ext.message.rfc822.RFC822Converter'),
+                           'raindrop.ext.message.rfc822.RFC822Converter'),
     ('raw/message/email',  'message',
-                           'junius.ext.message.email.EmailConverter'),
+                           'raindrop.ext.message.email.EmailConverter'),
     ('message',            'anno/tags',
-                           'junius.ext.message.message.MessageAnnotator'),
+                           'raindrop.ext.message.message.MessageAnnotator'),
     # anno/tags is 'terminal'
     ('anno/tags', None, None),
 ]

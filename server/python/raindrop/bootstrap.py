@@ -67,8 +67,8 @@ def install_client_files(whateva, options):
         fp = Fingerprinter()
         attachments = design_doc['_attachments'] = {}
         # we cannot go in a zipped egg...
-        junius_root_dir = path_part_nuke(model.__file__, 4)
-        client_dir = os.path.join(junius_root_dir, 'client')
+        root_dir = path_part_nuke(model.__file__, 4)
+        client_dir = os.path.join(root_dir, 'client')
         logger.debug("listing contents of '%s' to look for client files", client_dir)
 
         for filename in os.listdir(client_dir):
