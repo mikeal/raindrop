@@ -12,6 +12,25 @@ from ...proc import base
 
 logger = logging.getLogger(__name__)
 
+
+def _safe_convert_bytes(val, charset):
+    # Convert a byte string to *some* unicode object, ignoring (but logging)
+    # unicode errors we may see in the wild...
+    # TODO: This sucks; we need to mimick what firefox does in such cases...
+    charset = charset or 'ascii'
+    try:
+        ret = val.decode(charset)
+    except UnicodeError, exc:
+        logger.error("Failed to decode mail from %r: %s", charset, exc)
+        # no charset failed to decode as declared - try utf8
+        try:
+            ret = val.decode('utf-8')
+        except UnicodeError, exc:
+            logger.error("Failed to fallback decode mail from utf8: %s", exc)
+            ret = val.decode('utf-8', 'ignore')
+    return ret
+
+
 # an 'rfc822' message stores the unpacked version of the rfc822 stream, a-la
 # the interface provided by the 'email' package.  IOW, we never bother storing
 # the raw stream, just a 'raw' unpacked version of it.
@@ -24,8 +43,13 @@ def doc_from_bytes(b):
     headers = doc['headers'] = {}
     # Given we have no opportunity to introduce an object which can ignore
     # the case of headers, we lowercase the keys
+    # We can see all kinds of stuff in the wild.  It's not uncommon to see
+    # ascii body but a utf8 name encoded in the header.  Its also possible
+    # to see a header encoded the same as the declared content.
+    # Who wins?  We try the content encoding first then fallback to utf.
+    charset = msg.get_charset() or msg.get_content_charset()
     for hn, hv in msg.items():
-        headers[hn.lower()] = hv
+        headers[hn.lower()] = _safe_convert_bytes(hv, charset)
 
     # XXX - technically msg objects are recursive; handling that requires
     # more thought.  For now, assume they are flat.
@@ -46,30 +70,13 @@ def doc_from_bytes(b):
                 i += 1
     else:
         body_bytes = msg.get_payload(decode=True)
-        ct = msg.get_content_charset()
-        body = None
-        if ct is not None:
-            try:
-                body = body_bytes.decode(ct)
-            except UnicodeError, exc:
-                logger.error("Failed to decode mail from %r: %s", ct, exc)
-        if body is None:
-            # no content-type or failed to decode as declared - try utf8
-            try:
-                body = body_bytes.decode('utf8')
-            except UnicodeError, exc:
-                logger.error("Failed to fallback decode mail from utf8: %s", exc)
-                body = body_bytes.decode('utf8', 'ignore')
+        body = _safe_convert_bytes(body_bytes, msg.get_content_charset())
         doc['body'] = body
     return doc
 
+
 class RFC822Converter(base.ConverterBase):
     def convert(self, doc):
-        # I need the binary attachment.
-        return self.doc_model.open_attachment(doc['_id'], "rfc822",
-                  ).addCallback(self._cb_got_attachment, doc)
-
-    def _cb_got_attachment(self, body, doc):
         # a 'rfc822' stores 'headers' as a dict
         headers = doc['headers']
         # for now, 'from' etc are all tuples of [identity_type, identity_id]
