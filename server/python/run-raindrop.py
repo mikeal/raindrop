@@ -59,8 +59,16 @@ def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
         print "Message pipeline has finished..."
-    p = pipeline.Pipeline(model.get_doc_model())
+    p = pipeline.Pipeline(model.get_doc_model(), options)
     return p.start().addCallback(done)
+
+@asynch_command
+def retry_errors(result, parser, options):
+    """Reprocess all conversions which previously resulted in an error."""
+    def done(result):
+        print "Error retry pipeline has finished..."
+    p = pipeline.Pipeline(model.get_doc_model(), options)
+    return p.start_retry_errors().addCallback(done)
 
 @allargs_command
 def show_view(result, parser, options, args):
@@ -122,7 +130,7 @@ def unprocess(result, parser, options):
     def done(result):
         print "unprocess has finished..."
     # XXX - pipeline should probably be a singleton?
-    p = pipeline.Pipeline(model.get_doc_model())
+    p = pipeline.Pipeline(model.get_doc_model(), options)
     return p.unprocess().addCallback(done)
 
 def delete_docs(result, parser, options):
@@ -219,6 +227,11 @@ def main():
     parser.add_option("", "--force", action="store_true",
                       help="Forces some operations which would otherwise not "
                            "be done.")
+
+    parser.add_option("-s", "--stop-on-error", action="store_true",
+                      help="Causes (some) operations which would normally "
+                           "handle an error and continue to stop when an "
+                           "error occurs.")
 
     options, args = parser.parse_args()
 
