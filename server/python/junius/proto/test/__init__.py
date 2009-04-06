@@ -1,6 +1,7 @@
 # This is an implementation of a 'test' protocol.
 import logging
 from twisted.internet import defer, error
+from email.message import Message
 
 logger = logging.getLogger(__name__)
 
@@ -36,8 +37,14 @@ class TestMessageProvider(object):
 
     def process_test_message(self, existing_doc, doc_num):
         if existing_doc is None:
+            # make an attachment for testing purposes.
+            attachments = {"raw-attach" : {"content_type" : 'application/octet-stream',
+                                        "data" : 'test\0blob'
+                                        }
+            }
             doc = dict(
               storage_key=doc_num,
+              _attachments=attachments,
               )
             self.bulk_docs.append((str(doc_num), doc, 'proto/test'))
         else:
@@ -53,20 +60,37 @@ class TestMessageProvider(object):
 # 'raw/message/rfc822' as output.
 class TestConverter(base.ConverterBase):
     def convert(self, doc):
+        # for the sake of testing, we fetch the raw attachment just to compare
+        # its value.
+        return self.doc_model.open_attachment(doc['_id'], "raw-attach",
+                  ).addCallback(self._cb_got_attachment, doc)
+
+    def _cb_got_attachment(self, attach_content, doc):
+        if attach_content != 'test\0blob':
+            raise RuntimeError(attach_content)
+
         me = doc['storage_key']
+        # Use the email package to construct a synthetic rfc822 stream.
+        msg = Message()
         headers = {'from': 'From: from%(storage_key)d@test.com',
                    'subject' : 'This is test document %(storage_key)d',
         }
         for h in headers:
-            headers[h] = headers[h] % doc
+            msg[h] = headers[h] % doc
 
         body = u"Hello, this is test message %(storage_key)d (with extended \xa9haracter!)" % doc
-        # make an attachment for testing purposes.
-        attachments = {"attach1" : {"content_type" : 'application/octet-stream',
-                                    "data" : 'test\0blob'
-                                    }
-                      }
-        new_doc = dict(headers=headers, body=body, _attachments=attachments)
+        msg.set_payload(body.encode('utf-8'), 'utf-8')
+        #attachments = {"rfc822" : {"content_type" : 'message',
+        #                           "data" : msg.get_payload(),
+        #                         }
+        #              }
+        new_doc = {}
+        new_doc['body'] = body
+        #new_doc['_attachments'] = attachments
+        new_doc['multipart'] = False
+        new_doc['headers'] = {}
+        for hn, hv in msg.items():
+            new_doc['headers'][hn.lower()] = hv
         return new_doc
 
 
