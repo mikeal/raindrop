@@ -59,7 +59,14 @@ class TestMessageProvider(object):
 # A 'converter' - takes a proto/test as input and creates a
 # 'raw/message/rfc822' as output.
 class TestConverter(base.ConverterBase):
+    num_converted = 0
     def convert(self, doc):
+        # for the sake of testing the error queue, we cause an error on
+        # every 3rd message we process.
+        self.num_converted += 1
+        if self.num_converted % 3 == 0:
+            raise RuntimeError("This is a test failure")
+
         # for the sake of testing, we fetch the raw attachment just to compare
         # its value.
         return self.doc_model.open_attachment(doc['_id'], "raw-attach",
