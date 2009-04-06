@@ -29,15 +29,6 @@ def allargs_command(f):
     return f
 
 
-# NOTE: All global functions with docstrings are 'commands'
-# They must all return a deferred.
-def nuke_db_and_delete_everything_forever(result, parser, options):
-    """Nuke the database AND ALL MESSAGES FOREVER"""
-    return model.nuke_db(
-                ).addCallback(model.fab_db
-                ).addCallback(bootstrap.install_accounts)
-
-
 # XXX - install_accounts should die too, but how to make a safe 'fingerprint'
 # so we can do it implicitly? We could create a hash which doesn't include
 # the password, but then the password changing wouldn't be enough to trigger
@@ -65,10 +56,13 @@ def process(result, parser, options):
 @asynch_command
 def retry_errors(result, parser, options):
     """Reprocess all conversions which previously resulted in an error."""
-    def done(result):
-        print "Error retry pipeline has finished..."
+    def done_errors(result):
+        print "Error retry pipeline has finished - processing work queue..."
+        return result
     p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.start_retry_errors().addCallback(done)
+    return p.start_retry_errors(
+                ).addCallback(done_errors
+                ).addCallback(process, parser, options)
 
 @allargs_command
 def show_view(result, parser, options, args):
