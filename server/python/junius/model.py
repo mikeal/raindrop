@@ -208,7 +208,12 @@ def get_db(couchname="local", dbname=_NotSpecified):
     return db
 
 def quote_id(doc_id):
-    return quote(doc_id, safe="")
+    # A '/' should be impossible now we base64 encode the string given
+    # by an extension - but it doesn't hurt.
+    # Note the '!' character seems to work fine with couch (ie, we use it
+    # unquoted when constructing views), so we allow that for no better
+    # reason than the logs etc are clearer...
+    return quote(doc_id, safe="!")
 
 class DocumentModel(object):
     """The layer between 'documents' and the 'database'.  Responsible for
@@ -232,6 +237,7 @@ class DocumentModel(object):
         Unlike open_document, this never returns None, but raises an
         exception if the attachment doesn't exist.
         """
+        logger.debug("attempting to open attachment %s/%s", doc_id, attachment)
         return self.db.openDoc(quote_id(doc_id), attachment=attachment, **kw)
 
     def open_document(self, category, proto_id, ext_type, **kw):
@@ -258,6 +264,8 @@ class DocumentModel(object):
         return result
 
     def _prepare_raw_doc(self, account, docid, doc, doc_type):
+        assert docid
+        assert doc_type
         assert '_id' not in doc, doc # that isn't how you specify the ID.
         doc['_id'] = docid
         assert 'raindrop_account' not in doc, doc # we look after that!
