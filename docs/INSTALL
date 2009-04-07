@@ -107,14 +107,42 @@ Test everything using the 'test suite' (one day it *will* be a test suite :)
 
 Get *real* messages:
 
-  % run-raindrop.py sync-messages process
+  % run-raindrop.py sync-messages
+  % run-raindrop.py process
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 
 Go to http://127.0.0.1:5984/junius/files/index.xhtml and do autocomplete to do
-searches.
+searches.  If you have many documents, please be patient as the views are
+generated for the first time.
 
 You can edit any of the files in the 'schema' or 'client' directories, and
 when run-raindrop is next started, the changes to these files will be detected
 and they will be sent to the database.  We don't detect the changes while we
-are running though - you must restart.
+are running though, only at startup.
+
+Unprocessing:
+
+To delete all the intermediate messages in the DB, execute:
+
+  % run-raindrop.py unprocess
+
+The next time you execute a 'process' command, all your messages will be
+processed from the start.
+
+
+Error handling:
+
+If there is an error during a 'process' operation (ie, an exception in the
+converter), we will write an 'error document' and continue processing the
+work queue.  We don't make a very loud noise at the end when this happens -
+you need to notice it in the log output as it is running.  At any time you
+can execute:
+
+  % run-raindrop.py retry-errors
+
+To re-process those messages - but this will generally result in exactly the
+same error unless the converter has been fixed to deal with the condition
+causing the error.  Alternatively, execute 'unprocess' to force reprocessing
+of all messages, not only those which previously caused an error.
+
