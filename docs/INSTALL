@@ -1,41 +1,148 @@
+Late Breaking News/Known Problems
+=================================
+
+* Error handling is poor.  I'm trying to get a handle on the best way to
+  manage errors in a twisted environment before adding too much handling
+  which may end up inappropriate.
+
 Installation Steps
+==================
 
-Have Python 2.5 or later installed.
-
- If not 2.6: 
-    install setup_tools
-    easy_install simplejson
+Have Python 2.6 or later installed.
 
  Prereqs:
     easy_install couchdb (0.5 or later)
 
-Install couchdb trunk
+Install couchdb trunk.  This currently means you need to google for
+instructions that work only on Linux - Windows doesn't work.  If you want to
+work on Windows you must install Couch on a Linux box and point your windows
+~/.raindrop file at the server.
 
-Pull asuth's version of gocept-imapapi:
-  hg clone http://clicky.visophyte.org/cgi-bin/hgwebdir.cgi/asuth/gocept-imapapi/
-  cd gocept-imapapi
-  python setup.py develop
+Install twisted.
 
-install junius:
+Install 'paisley' from launchpad.
+
+Either install junius:
   cd junius/server/python/junius
   python setup.py develop
+*or* just add it to your PYTHONPATH
+  set PYTHONPATH=c:\src\path\to\junius\server\python
 
-Configure IMAP account w/ some data in it, and edit bootstrap.py to point to it.
+install modules required for 'protocols' - note that these are technically
+optional - if the modules aren't installed a warning will be generated and
+the protocol will simply be disabled
 
-With Couchdb running:
+* imap - PyOpenSSL (link?)
+* skype - Skype4Py (link?)
+* twitter - python-twitter (link?)
 
-Setup the tables:
-  python bootstrap.py
+configure raindrop:
+  * edit ~/.raindrop
 
-Go to 
-to check that the tables are setup
+  * if your 'local' couchdb isn't on localhost, add a section along the lines of:
+        [couch-local]
+        host=hostname
+        port=port
 
-Load the mail:
-  python getmail.py (loads IMAP data)
+  * Add imap accounts along the lines of
+        [account-some-account-name] # the 'account-' prefix is important!
+        kind=imap
+        host=imap.gmail.com
+        port=993
+        username=username@gmail.com
+        password=topsecret
+        ssl=True
+
+  * Add a 'test' account - for the 'test suite' - along the lines of:
+        [account-test]
+        kind=test
+        username=test # not used, but we die without it!
+        num_test_docs=1 # this defaults to 5 - but 1 is useful sometimes!
+
+** NOTE: if you edit this file, you must run 'run-raindrop.py install-accounts'
+to get the new data into the raindrop database (the accounts are automatically
+updated if the database is created, but we don't detect when the accounts
+change)
+
+
+With the couchdb server running....
+
+Setup the database and upload views and other content:
+
+  % run-raindrop.py
+
+you should see output similar to:
+
+  INFO:model:created new database
+  INFO:junius.bootstrap:Adding account 'test'
+  INFO:junius.bootstrap:client files are different - updating doc
+  INFO:junius.bootstrap:design doc '_design/raindrop!accounts!all' has changed - updating
+  ...
+  Nothing left to do - terminating.  
+
+
+Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
+setup
+
+Test everything using the 'test suite' (one day it *will* be a test suite :)
+
+  % run-raindrop.py -p test sync-messages process
+
+  THEN repeat the above - sorry about that - the first run didn't quite
+  do everything it was supposed to.
+
+  % run-raindrop.py -p test sync-messages process
+
+  Note the '-p' says to only load the 'test' protocol; without it we
+  will attempt to load all protocols (eg, imap, skype, twitter, etc).
+  But further note that we don't attempt a protocol - even the 'test' 
+  protocol - until we have an account of that 'type' set up.
+
+  Add '-l debug' to the above command-line for debug log messages.  This
+  can get quite verbose; you can also say -l log.name=debug to set a specific
+  log to debug.
+
+  See --help for more.
+
+
+Get *real* messages:
+
+  % run-raindrop.py sync-messages
+  % run-raindrop.py process
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 
-Go to http://127.0.0.1:5984/junius/files/index.xhtml
+Go to http://127.0.0.1:5984/junius/files/index.xhtml and do autocomplete to do
+searches.  If you have many documents, please be patient as the views are
+generated for the first time.
 
-and do autocomplete to do searches.
+You can edit any of the files in the 'schema' or 'client' directories, and
+when run-raindrop is next started, the changes to these files will be detected
+and they will be sent to the database.  We don't detect the changes while we
+are running though, only at startup.
+
+Unprocessing:
+
+To delete all the intermediate messages in the DB, execute:
+
+  % run-raindrop.py unprocess
+
+The next time you execute a 'process' command, all your messages will be
+processed from the start.
+
+
+Error handling:
+
+If there is an error during a 'process' operation (ie, an exception in the
+converter), we will write an 'error document' and continue processing the
+work queue.  We don't make a very loud noise at the end when this happens -
+you need to notice it in the log output as it is running.  At any time you
+can execute:
+
+  % run-raindrop.py retry-errors
+
+To re-process those messages - but this will generally result in exactly the
+same error unless the converter has been fixed to deal with the condition
+causing the error.  Alternatively, execute 'unprocess' to force reprocessing
+of all messages, not only those which previously caused an error.
 

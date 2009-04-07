@@ -38,14 +38,11 @@ var GlodaConversationProto = {
     return topnodes;
   },
   get subject() {
-    return this.messages[0].subject();
+    return this.messages[0]['subject'];
   },
 };
 
 var GlodaMessageProto = {
-  subject: function() {
-    return this.headers["Subject"];
-  },
   _bodyTextHelper: function(aPart) {
     var result = "";
     if (aPart.parts) {
@@ -58,10 +55,12 @@ var GlodaMessageProto = {
   },
   // something scary happens when these are getters in terms of putting things back
   bodyText: function() {
-    return this._bodyTextHelper(this.bodyPart);
+    return this['body']
+    // return this._bodyTextHelper(this.bodyPart);
   },
   bodySnippet: function() {
-    return this.bodyText().substring(0, 128);
+    return this['body_preview'].substring(0, 128);
+    // return this.bodyText().substring(0, 128);
   },
   _rawSetDefault: function(aKey, aDefaultValue) {
     var raw = this.__proto__;
@@ -122,6 +121,7 @@ GlodaConvQuery.prototype = {
     var viewName = aConstraint.view;
     delete aConstraint.view;
     aConstraint["success"] = this.wrappedProcessResults;
+    console.log("executing view", viewName);
     Gloda.dbMessages.view(viewName, aConstraint);
   },
   /**
@@ -164,8 +164,23 @@ GlodaConvQuery.prototype = {
     this.callbackThis = aCallbackThis;
 
     var dis = this;
-    Gloda.dbMessages.view("by_conversation/by_conversation", {
-      keys: aConversationIds, include_docs: true,
+    Gloda.dbMessages.view("raindrop!messages!by/by_conversation", {
+      keys: aConversationIds,
+      success: function(result) {
+        dis.processConversationIDsFetch(result);
+      }
+    });
+  },
+  processConversationIDsFetch: function(result) {
+    // we receive the list of conversations with the value being the ID of
+    // the document holding the message itself.  Get all listed messages.
+    var msg_ids = [];
+    var rows = result.rows, iRow, row, contact_id;
+    for (iRow = 0; iRow < rows.length; iRow++) {
+      msg_ids.push(rows[iRow].value);
+    }
+    var dis = this;
+    Gloda.dbMessages.allDocs({ keys: msg_ids, include_docs: true,
       success: function(result) {
         dis.processConversationFetch(result);
       }
@@ -196,12 +211,14 @@ GlodaConvQuery.prototype = {
         conversation.oldest = message.timestamp;
       if (conversation.newest < message.timestamp)
         conversation.newest = message.timestamp;
+      /**********
       for (var iContactId = 0; iContactId < message.involves_contact_ids.length;
            iContactId++) {
         contact_id = message.involves_contact_ids[iContactId];
         conversation.involves_contact_ids[contact_id] = true;
         seenContactIds[contact_id] = true;
       }
+      ******/
     }
 
     console.log("seenContactIds", seenContactIds);
@@ -255,9 +272,9 @@ GlodaConvQuery.prototype = {
         raw_message.__proto__ = GlodaMessageProto;
         var message = {__proto__: raw_message};
         message.from = contacts[message.from_contact_id];
-        message.to = mapContactList(message.to_contact_ids);
-        message.cc = mapContactList(message.cc_contact_ids);
-        message.involves = mapContactList(message.involves_contact_ids);
+        message.to = "fix me!!" // mapContactList(message.to_contact_ids);
+        message.cc = "fix me too!!" // mapContactList(message.cc_contact_ids);
+        message.involves = "fix me 3!!!" // mapContactList(message.involves_contact_ids);
         
         wrapped_messages.push(message);
       }
@@ -274,8 +291,8 @@ GlodaConvQuery.prototype = {
 var MAX_TIMESTAMP = 4000000000;
 
 var Gloda = {
-  dbContacts: $.couch.db("contacts"),
-  dbMessages: $.couch.db("messages"),
+  dbContacts: $.couch.db("raindrop"),
+  dbMessages: $.couch.db("raindrop"),
 
   _init: function () {
 
@@ -295,8 +312,8 @@ var Gloda = {
     if (aTagNames && aTagNames.length) {
       constraints = constraints.concat(aTagNames.map(function (tagName) {
         return {
-          view: "by_tags/by_tags",
-          startkey: [tagName, 0], endkey: [tagName, MAX_TIMESTAMP]
+          view: "raindrop!conversations!by/by_tags",
+          key: tagName,
         };
       }, this));
     }

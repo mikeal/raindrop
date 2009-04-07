@@ -12,7 +12,25 @@
 
 (function($) {
   $.couch = $.couch || {};
-  $.fn.extend($.couch, {
+  $.extend($.couch, {
+
+    activeTasks: function(options) {
+      options = options || {};
+      $.ajax({
+        type: "GET", url: "/_active_tasks", dataType: "json",
+        complete: function(req) {
+          var resp = $.httpData(req, "json");
+          if (req.status == 200) {
+            if (options.success) options.success(resp);
+          } else  if (options.error) {
+            options.error(req.status, resp.error, resp.reason);
+          } else {
+            alert("Active task status could not be retrieved: " +
+              resp.reason);
+          }
+        }
+      });
+    },
 
     allDbs: function(options) {
       options = options || {};
@@ -33,8 +51,23 @@
     },
 
     config: function(options, section, option, value) {
+      options = options || {};
+      var url = "/_config/";
+      if (section) {
+        url += encodeURIComponent(section) + "/";
+        if (option) {
+          url += encodeURIComponent(option);
+        }
+      }
+      if (value === undefined) {
+        var method = "GET";
+      } else {
+        var method = "PUT";
+        var data = toJSON(value);
+      }
       $.ajax({
-        type: "GET", url: "/_config/",
+        type: method, url: url, contentType: "application/json",
+        dataType: "json", data: toJSON(value), processData: false,
         complete: function(req) {
           var resp = $.httpData(req, "json");
           if (req.status == 200) {
@@ -42,8 +75,8 @@
           } else if (options.error) {
             options.error(req.status, resp.error, resp.reason);
           } else {
-            alert("An error occurred retrieving the server configuration: " +
-              resp.reason);
+            alert("An error occurred retrieving/updating the server " +
+              "configuration: " + resp.reason);
           }
         }
       });
@@ -76,7 +109,7 @@
           options = options || {};
           $.ajax({
             type: "PUT", url: this.uri, contentType: "application/json",
-            dataType: "json", data: "", processData: false, 
+            dataType: "json", data: "", processData: false,
             complete: function(req) {
               var resp = $.httpData(req, "json");
               if (req.status == 201) {
@@ -159,9 +192,42 @@
             }
           });
         },
-        openDoc: function(docId, options) {
+        allDesignDocs: function(options) {
           options = options || {};
-          $.ajax({
+          this.allDocs($.extend({startkey:"_design", endkey:"_design0"}, options));
+        },
+        allApps: function(options) {
+          options = options || {};
+          var self = this;
+          if (options.eachApp) {
+            this.allDesignDocs({
+              success: function(resp) {
+                $.each(resp.rows, function() {
+                  self.openDoc(this.id, {
+                    success: function(ddoc) {
+                      var index, appPath, appName = ddoc._id.split('/');
+                      appName.shift();
+                      appName = appName.join('/');
+                      index = ddoc.couchapp && ddoc.couchapp.index;
+                      if (index) {
+                        appPath = ['', name, ddoc._id, index].join('/');
+                      } else if (ddoc._attachments && ddoc._attachments["index.html"]) {
+                        appPath = ['', name, ddoc._id, "index.html"].join('/');
+                      }
+                      if (appPath) options.eachApp(appName, appPath, ddoc);
+                    }
+                  });
+                });
+              }
+            });            
+          } else {
+            alert("please provide an eachApp function for allApps()");
+          }
+        },
+        openDoc: function(docId, options, ajaxOptions) {
+          options = options || {};
+          ajaxOptions = ajaxOptions || {};
+          $.ajax($.extend({
             type: "GET",
             url: this.uri + encodeURIComponent(docId) + encodeOptions(options),
             dataType: "json",
@@ -175,7 +241,7 @@
                 alert("The document could not be retrieved: " + resp.reason);
               }
             }
-          });
+          }, ajaxOptions));
         },
         saveDoc: function(doc, options) {
           options = options || {};
@@ -235,7 +301,7 @@
             body.reduce = reduceFun;
           }
           $.ajax({
-            type: "POST", url: this.uri + "_slow_view" + encodeOptions(options),
+            type: "POST", url: this.uri + "_temp_view" + encodeOptions(options),
             contentType: "application/json",
             data: toJSON(body), dataType: "json",
             complete: function(req) {
@@ -252,10 +318,10 @@
         },
         view: function(name, options) {
           options = options || {};
+          name = name.split('/');
           if (options.keys) {
             $.ajax({
-              type: "POST",
-              url: this.uri + "_view/" + name + encodeOptions(options),
+              type: "POST", url: this.uri + "_design/" + name[0] + "/_view/" + name[1] + encodeOptions(options),
               contentType: "application/json",
               data: toJSON({keys: options.keys}), dataType: "json",
               complete: function(req) {
@@ -265,14 +331,14 @@
                 } else if (options.error) {
                   options.error(req.status, resp.error, resp.reason);
                 } else {
-                  alert("An error occurred accessing the view: " + resp.reason);
+                  alert("An error occurred accessing the view '" + name + "': " + resp.reason);
                 }
               }
             });
             return;
           }
           $.ajax({
-            type: "GET", url: this.uri + "_view/" + name + encodeOptions(options),
+            type: "GET", url: this.uri + "_design/" + name[0] + "/_view/" + name[1] + encodeOptions(options),
             dataType: "json",
             complete: function(req) {
               var resp = $.httpData(req, "json");
@@ -281,7 +347,7 @@
               } else if (options.error) {
                 options.error(req.status, resp.error, resp.reason);
               } else {
-                alert("An error occurred accessing the view: " + resp.reason);
+                alert("An error occurred accessing the view '" + name + "': " + resp.reason);
               }
             }
           });
