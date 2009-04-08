@@ -7,6 +7,7 @@ import base64
 import twisted.web.error
 from twisted.internet import defer
 from twisted.python.failure import Failure
+from twisted.internet.task import coiterate
 
 try:
     import simplejson as json
@@ -155,7 +156,7 @@ class CouchDB(paisley.CouchDB):
                     ).addCallback(self.parseResult
                     )
 
-    def listDocsBySeq(self, dbName, reverse=False, startKey=0, limit=-1, **kw):
+    def listDocsBySeq(self, dbName, **kw):
         """
         List all documents in a given database by the document's sequence number
         """
@@ -165,15 +166,8 @@ class CouchDB(paisley.CouchDB):
         # {"id":"skippyhammond","key":2,"value":{"rev":"121469801"}},
         # ...
         uri = "/%s/_all_docs_by_seq" % (dbName,)
-        args = {}
-        if reverse:
-            args["reverse"] = "true"
-        if startKey > 0:
-            args["startkey"] = int(startKey)
-        if limit >= 0:
-            args["limit"] = int(limit)
-        # suck the rest of the kwargs in
-        args.update(_encode_options(kw))
+        # suck the kwargs in
+        args = _encode_options(kw)
         if args:
             uri += "?%s" % (urlencode(args),)
         return self.get(uri
@@ -188,6 +182,22 @@ class CouchDB(paisley.CouchDB):
             method = getattr(self, methname)
             newMethod = partial(method, dbName)
             setattr(self, methname, newMethod)
+
+    # *sob* - base class has no 'endkey' - plus I've renamed the param from
+    # 'startKey' to 'startkey' so the same param is used with the other
+    # functions which take **kw...
+    def listDoc(self, dbName, **kw):
+        """
+        List all documents in a given database.
+        """
+        # Responses: {u'rows': [{u'_rev': -1825937535, u'_id': u'mydoc'}],
+        # u'view': u'_all_docs'}, 404 Object Not Found
+        uri = "/%s/_all_docs" % (dbName,)
+        args = _encode_options(kw)
+        if args:
+            uri += "?%s" % (urlencode(args),)
+        return self.get(uri
+            ).addCallback(self.parseResult)
 
 
 # XXX - get_db should die as a global/singleton - only our DocumentModel
@@ -222,6 +232,8 @@ class DocumentModel(object):
     """
     def __init__(self, db):
         self.db = db
+        self._important_views = None # views we update periodically
+        self._docs_since_view_update = 0
 
     @classmethod
     def build_docid(cls, category, doc_type, provider_id):
@@ -368,10 +380,15 @@ class DocumentModel(object):
     def _cb_saved_docs(self, result, attachments):
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
         logger.debug("saved %d documents", len(result))
+        self._docs_since_view_update += len(result)
         ds = []
         for dinfo, dattach in zip(result, attachments):
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
+        if self._docs_since_view_update > 50:
+            ds.append(self._update_important_views())
+            self._docs_since_view_update = 0
+
         def return_orig(ignored_result):
             return result
         # XXX - the result set will *not* have the correct _rev if there are
@@ -413,6 +430,36 @@ class DocumentModel(object):
     def _cb_save_failed(self, failure, ids):
         logger.error("Failed to save attachment (%r): %s", ids, failure)
         failure.raiseException()
+
+    def _update_important_views(self):
+        # We periodically update all our important views.
+        # This is a hacky implementation - we should use something like
+        # reactor.callLater() so we are updating the views in the "background"
+        # to avoid blocking the protocols.  But for now we block them cos we
+        # suck
+        if not self._important_views:
+            # these keys come from jquery.couch.js
+            return self.db.listDoc(startkey="_design", endkey="_design0",
+                                   include_docs=True,
+                                   ).addCallback(self._do_update_views)
+        return self._do_update_views(None)
+
+    def _do_update_views(self, result):
+        if result is not None:
+            self._important_views = []
+            for row in result['rows']:
+                for view_name in row['doc']['views']:
+                    doc_id = row['id'][len('_design/'):]
+                    self._important_views.append((doc_id, view_name))
+
+        def gen_work():
+            for did, vn in self._important_views:
+                logger.debug("updating view %s/%s", did, vn)
+                # limit=0 updates without giving us rows.
+                yield self.open_view(did, vn, limit=0)
+                logger.debug("updated view %s/%s", did, vn)
+
+        return coiterate(gen_work())
 
 
 _doc_model = None
