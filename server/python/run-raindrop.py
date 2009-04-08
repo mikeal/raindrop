@@ -84,10 +84,8 @@ def show_view(result, parser, options, args):
 
     will fetch the first 5 results from the URL
 
-        http://[dbhost]/[dbname]/_view/my_design_doc/my_view?limit=5
+        http://[dbhost]/[dbname]/_design/my_design_doc/_view/my_view?limit=5
 
-    (XXX - todo - couch 0.9 changes the above URL - adjust this docstring
-    accordingly...)
     """
     from pprint import pprint
     def print_view(result, view_name):
@@ -108,7 +106,7 @@ def show_view(result, parser, options, args):
                     doc, rest = arg.split("/")
                 except ValueError:
                     parser.error("View name must be in the form design_doc_name/view")
-                uri = "/%s/_view/%s/%s" % (dbname, doc, rest)
+                uri = "/%s/_design/%s/_view/%s" % (dbname, doc, rest)
             db = model.get_db()
             yield db.get(uri
                 ).addCallback(db.parseResult
