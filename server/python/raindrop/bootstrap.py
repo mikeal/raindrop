@@ -64,6 +64,43 @@ def install_client_files(whateva, options):
         return {} # return an empty doc.
 
     def _maybe_update_doc(design_doc):
+        def _insert_file(path, couch_path, attachments, fp):
+            f = open(path, 'rb')
+            ct = mimetypes.guess_type(path)[0]
+            if ct is None and sys.platform=="win32":
+                # A very simplistic check in the windows registry.
+                import _winreg
+                try:
+                    k = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
+                                        os.path.splitext(path)[1])
+                    ct = _winreg.QueryValueEx(k, "Content Type")[0]
+                except EnvironmentError:
+                    pass
+            assert ct, "can't guess the content type for '%s'" % filename
+            data = f.read()
+            fp.get_finger(path).update(data)
+            attachments[couch_path] = {
+                'content_type': ct,
+                'data': base64.b64encode(data)
+            }
+            f.close()
+
+        def _check_dir(client_dir, couch_path, attachments, fp):
+            for filename in os.listdir(client_dir):
+                path = os.path.join(client_dir, filename)
+                # Insert files if they do not start with a dot or
+                # end in a ~, those are probably temp editor files. 
+                if os.path.isfile(path) and \
+                   not filename.startswith(".") and \
+                   not filename.endswith("~"):
+                    _insert_file(path, couch_path + filename, attachments, fp)
+                elif os.path.isdir(path):
+                    new_couch_path = filename + "/"
+                    if couch_path:
+                        new_couch_path = couch_path + new_couch_path
+                    _check_dir(path, new_couch_path, attachments, fp)
+                logger.debug("filename '%s'", filename)
+
         fp = Fingerprinter()
         attachments = design_doc['_attachments'] = {}
         # we cannot go in a zipped egg...
@@ -71,29 +108,9 @@ def install_client_files(whateva, options):
         client_dir = os.path.join(root_dir, 'client')
         logger.debug("listing contents of '%s' to look for client files", client_dir)
 
-        for filename in os.listdir(client_dir):
-            path = os.path.join(client_dir, filename)
-            if os.path.isfile(path):
-                f = open(path, 'rb')
-                ct = mimetypes.guess_type(filename)[0]
-                if ct is None and sys.platform=="win32":
-                    # A very simplistic check in the windows registry.
-                    import _winreg
-                    try:
-                        k = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
-                                            os.path.splitext(filename)[1])
-                        ct = _winreg.QueryValueEx(k, "Content Type")[0]
-                    except EnvironmentError:
-                        pass
-                assert ct, "can't guess the content type for '%s'" % filename
-                data = f.read()
-                fp.get_finger(filename).update(data)
-                attachments[filename] = {
-                    'content_type': ct,
-                    'data': base64.b64encode(data)
-                }
-                f.close()
-            logger.debug("filename '%s' (%s)", filename, ct)
+        # recursively go through directories, adding files.
+        _check_dir(client_dir, "", attachments, fp)
+
         new_prints = fp.get_prints()
         if options.force or design_doc.get('fingerprints') != new_prints:
             logger.info("client files are different - updating doc")
@@ -107,6 +124,67 @@ def install_client_files(whateva, options):
     defrd.addCallback(_maybe_update_doc)
     return defrd
 
+
+def update_apps(whateva):
+    """Updates the app config file using the latest app docs in the couch.
+       Should be run after a UI app/extension is added or removed from the couch.
+    """
+
+    print "update_apps"
+
+    db = get_db()
+
+    def _open_not_exists(failure, *args, **kw):
+        # If no files document, then error out immediately.
+        failure.trap(twisted.web.error.Error)
+        failure.raiseException()
+
+    def _load_config(doc):
+        # load app config from couch
+        dfd = db.openView("raindrop!uiext!all", "all")
+        dfd.addErrback(_open_not_exists)
+        dfd.addCallback(_insert_config, doc)
+        return dfd
+
+    def _insert_config(view_results, doc):
+        # we cannot go in a zipped egg...
+        root_dir = path_part_nuke(model.__file__, 4)
+        config_path = os.path.join(root_dir, 'client') + "/config.js"
+
+        # load config.js skeleton
+        f = open(config_path, 'rb')
+        data = f.read()
+        f.close()
+
+
+        #Inject the config into the config.js
+        config = ""
+        config += ",".join(
+           ["'%s': '%s'" % (
+              item["key"].replace("'", "\\'"), 
+              item["value"].replace("'", "\\'")
+           ) for item in view_results["rows"]]
+        )
+
+        for item in view_results["rows"]:
+            prefix = item["key"]
+            # get path put pull off any fragment ID or query string
+            path = item["value"].split("#")[0].split("?")[0]
+
+        data = data.replace('/*INSERT CONFIG HERE*/', config)
+
+        # save config.js in the files.
+        doc["_attachments"]["config.js"] = {
+            'content_type': "application/x-javascript; charset=UTF-8",
+            'data': base64.b64encode(data)
+        }
+
+        return db.saveDoc(doc, FILES_DOC)
+
+    defrd = db.openDoc(FILES_DOC)
+    defrd.addErrback(_open_not_exists)
+    defrd.addCallback(_load_config)
+    return defrd
 
 def install_accounts(whateva):
     db = get_db()

@@ -270,6 +270,7 @@ def main():
     # Check if the files on the filesystem need updating.
     d.addCallback(bootstrap.install_client_files, options)
     d.addCallback(bootstrap.install_views, options)
+    d.addCallback(bootstrap.update_apps)
 
     # Now process the args specified.
     for i, arg in enumerate(args):

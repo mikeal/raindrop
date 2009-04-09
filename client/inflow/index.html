@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>raindrop</title>
+  <script src="http://127.0.0.1:5984/raindrop/files/config.js" charset="utf-8"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    dojo.addOnLoad(function() {
+
+    });
+  </script>
+  <style type="text/css" media="screen, print">
+    #stories { list-style: none; padding: 0px; margin: 0px; }
+    .story  { margin: 1.6ex 0px; padding: 0px; max-width: 80ex; }
+
+    .topic { position: relative; }
+    div.photo { position: absolute; left: 0px; width: 50px; height: 50px; }
+    .close { position: absolute; right: 0px; text-decoration: none; font-size: x-small; font-weight: bold; visibility: hidden; padding: 1ex; }
+    .close:before { content: "["; }
+    .close:after { content: "]"; }
+    .story:hover .close { visibility: visible; color: GrayText; }
+    .close:hover { color: WindowText; }
+
+    .tools { position: absolute; right: 0px; font-size: x-small; visibility: hidden; }
+    .story:hover .tools { visibility: visible; }
+    .message { max-width: 70ex; margin-left: 50px; padding-left: 1em; }
+
+    div.photo { vertical-align: top; background-color: #efefef; border: 1px dashed gray;}
+    img.photo { width: 48px; height: 48px; }
+    .message { }
+
+    .from { text-decoration: none; font-weight: bold; }
+    .medium { font-size: small; }
+    .subject { font-weight: bold; }
+    .content , .timestamp { margin: 0.5ex 0px; }
+    .content { overflow: hidden; font-size: small; height: 6.3ex; font-size-adjust: 0.5; color: #333; }
+    .timestamp { color: GrayText; font-size: x-small; }
+
+
+    .reply { background-color: #f8f8f8; margin-left: 22px; position: relative; padding: 2px; margin-bottom: 1ex; }
+    .reply div.photo { width: 26px; height: 26px; left: 2px; }
+    .reply div.photo img.photo { width: 24px; height: 24px; }
+    .reply .message { margin-left: 26px; }
+    .reply .message .meta { font-size: small; }
+    .reply .message .meta .medium { font-size: x-small; }
+    .reply .message .content .subject { display: none; }
+
+    .reply.response input { visibility: hidden; }
+    .reply.response:hover input { visibility: visible; }
+
+  </style>
+</head>
+<body>
+
+  <ol id="stories">
+    <li class="story">
+      <div class="topic">
+        <a href="" class="close">X</a>
+        <div class="photo"><img class="photo" src="" /></div>
+        <div class="message">
+          <div class="header">
+            <span class="from"><a class="from" href="">Bryan Clark</a></span>
+            <span class="medium">&lt;clarkbw@gmail.com&gt;</span>
+          </div>
+          <div class="content">
+            <span class="subject">Subject of the message</span>
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Mauris elit mi, fermentum ac, ornare eu, pulvinar vel, mi. Duis rhoncus, leo eu ultrices tincidunt, orci neque pellentesque ligula, sit amet sollicitudin erat turpis id purus. Nunc semper neque. Integer ligula libero, fermentum ut, feugiat id, viverra at, sapien. Nullam pulvinar urna vitae arcu. Ut vitae urna ut dui imperdiet mattis. Sed ut justo eget justo iaculis consectetuer. Vestibulum ac nunc at velit rutrum consequat. Pellentesque imperdiet. Nullam eros leo, molestie vitae, pellentesque id, pharetra vel, magna. Phasellus non nisl vitae turpis tristique interdum. In hac habitasse platea dictumst. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris dictum, orci vel condimentum molestie, neque erat tincidunt ante, quis aliquet magna nibh et ante. Quisque ornare, diam non malesuada tincidunt, ligula lectus pellentesque elit, in faucibus nisi leo eu nulla. Etiam luctus
+          </div>
+          <div class="tools">
+            <a href="">reply</a> <a href="">forward</a>
+          </div>
+          <div class="timestamp">
+            about an hour ago
+          </div>
+        </div>
+      </div>
+    </li>
+
+    <li class="story">
+      <div class="topic">
+        <a href="" class="close">X</a>
+        <div class="photo"><img class="photo" src="" /></div>
+        <div class="message">
+          <div class="meta">
+            <span class="from"><a class="from" href="">David Ascher</a></span>
+            <span class="medium">&lt;davida@mozilla.org&gt;</span>
+          </div>
+          <div class="content">
+            <span class="subject">Subject of the message</span>
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Mauris elit mi, fermentum ac, ornare eu, pulvinar vel, mi. Duis rhoncus, leo eu ultrices tincidunt, orci neque pellentesque ligula, sit amet sollicitudin erat turpis id purus. Nunc semper neque. Integer ligula libero, fermentum ut, feugiat id, viverra at, sapien. Nullam pulvinar urna vitae arcu. Ut vitae urna ut dui imperdiet mattis. Sed ut justo eget justo iaculis consectetuer. Vestibulum ac nunc at velit rutrum consequat. Pellentesque imperdiet. Nullam eros leo, molestie vitae, pellentesque id, pharetra vel, magna. Phasellus non nisl vitae turpis tristique interdum. In hac habitasse platea dictumst. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris dictum, orci vel condimentum molestie, neque erat tincidunt ante, quis aliquet magna nibh et ante. Quisque ornare, diam non malesuada tincidunt, ligula lectus pellentesque elit, in faucibus nisi leo eu nulla. Etiam luctus
+          </div>
+
+          <div class="timestamp">
+            about 2 hours ago
+          </div>
+        </div>
+      </div>
+      <div class="reply">
+        <div class="photo"><img class="photo" src="" /></div>
+        <div class="message">
+          <div class="meta">
+            <span class="from"><a class="from" href="">David Ascher</a></span>
+            <span class="medium">&lt;davida@mozilla.org&gt;</span>
+          </div>
+          <div class="content">
+            <span class="subject">Subject of the message</span>
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Mauris elit mi, fermentum ac, ornare eu, pulvinar vel, mi. Duis rhoncus, leo eu ultrices tincidunt, orci neque pellentesque ligula, sit amet sollicitudin erat turpis id purus. Nunc semper neque. Integer ligula libero, fermentum ut, feugiat id, viverra at, sapien. Nullam pulvinar urna vitae arcu. Ut vitae urna ut dui imperdiet mattis. Sed ut justo eget justo iaculis consectetuer. Vestibulum ac nunc at velit rutrum consequat. Pellentesque imperdiet. Nullam eros leo, molestie vitae, pellentesque id, pharetra vel, magna. Phasellus non nisl vitae turpis tristique interdum. In hac habitasse platea dictumst. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris dictum, orci vel condimentum molestie, neque erat tincidunt ante, quis aliquet magna nibh et ante. Quisque ornare, diam non malesuada tincidunt, ligula lectus pellentesque elit, in faucibus nisi leo eu nulla. Etiam luctus
+          </div>
+
+          <div class="timestamp">
+            about 2 hours ago
+          </div>
+        </div>
+      </div>
+      <div class="reply">
+        <div class="photo"><img class="photo" src="" /></div>
+        <div class="message">
+          <div class="meta">
+            <span class="from"><a class="from" href="">David Ascher</a></span>
+            <span class="medium">&lt;davida@mozilla.org&gt;</span>
+          </div>
+          <div class="content">
+            <span class="subject">Subject of the message</span>
+Lorem ipsum dolor sit amet, consectetuer adipiscing elit. Mauris elit mi, fermentum ac, ornare eu, pulvinar vel, mi. Duis rhoncus, leo eu ultrices tincidunt, orci neque pellentesque ligula, sit amet sollicitudin erat turpis id purus. Nunc semper neque. Integer ligula libero, fermentum ut, feugiat id, viverra at, sapien. Nullam pulvinar urna vitae arcu. Ut vitae urna ut dui imperdiet mattis. Sed ut justo eget justo iaculis consectetuer. Vestibulum ac nunc at velit rutrum consequat. Pellentesque imperdiet. Nullam eros leo, molestie vitae, pellentesque id, pharetra vel, magna. Phasellus non nisl vitae turpis tristique interdum. In hac habitasse platea dictumst. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Mauris dictum, orci vel condimentum molestie, neque erat tincidunt ante, quis aliquet magna nibh et ante. Quisque ornare, diam non malesuada tincidunt, ligula lectus pellentesque elit, in faucibus nisi leo eu nulla. Etiam luctus
+          </div>
+          <div class="timestamp">
+            about 2 hours ago
+          </div>
+        </div>
+      </div>
+      <div class="reply response">
+        <div class="photo you"><img class="photo you" src="" /></div>
+        <div class="message">
+          <form>
+            <input style="float:right;" type="submit" value="Reply All"/>
+            <textarea style="width:80%;height:22px;"></textarea>
+          </form>
+        </div>
+      </div>
+    </li>
+  </ol>
+
+</body>
+</html>

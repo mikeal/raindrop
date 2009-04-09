@@ -3,5 +3,6 @@ syntax:regexp
 \.egg-info
 \.pyc
 \.swp
+\.DS_Store
 ^server/python/build/
 ^nbproject/
