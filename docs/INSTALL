@@ -8,38 +8,46 @@ Late Breaking News/Known Problems
 Installation Steps
 ==================
 
-Have Python 2.6 or later installed.
+Install Python 2.6 or later (note that Python 3 is not yet supported).
 
- Prereqs:
-    easy_install couchdb (0.5 or later)
-
-Install couchdb trunk.  This currently means you need to google for
+Install couchdb 0.9.  This currently means you need to google for
 instructions that work only on Linux - Windows doesn't work.  If you want to
 work on Windows you must install Couch on a Linux box and point your windows
-~/.raindrop file at the server.
+~/.raindrop file at the server.  On Mac, you can use the MacPorts version.
+
+Install Python setuptools.
+
+Install the couchdb-python bindings (0.5 or later)
+  easy_install couchdb 
 
 Install twisted.
 
 Install 'paisley' from launchpad.
+  easy_install paisley
 
-Either install junius:
-  cd junius/server/python/junius
+Either install raindrop:
+  cd raindrop/server/python
   python setup.py develop
 *or* just add it to your PYTHONPATH
-  set PYTHONPATH=c:\src\path\to\junius\server\python
+  set PYTHONPATH=c:\src\path\to\raindrop\server\python
 
 install modules required for 'protocols' - note that these are technically
 optional - if the modules aren't installed a warning will be generated and
 the protocol will simply be disabled
 
-* imap - PyOpenSSL (link?)
-* skype - Skype4Py (link?)
-* twitter - python-twitter (link?)
+imap over SSL: PyOpenSSL (link?)
+
+skype: Skype4Py (link?)
+  easy_install Skype4Py
+
+twitter: python-twitter (link?)
+  easy_install python-twitter
 
 configure raindrop:
   * edit ~/.raindrop
 
-  * if your 'local' couchdb isn't on localhost, add a section along the lines of:
+  * if your 'local' couchdb isn't on localhost, add a section along the lines
+    of:
         [couch-local]
         host=hostname
         port=port
@@ -112,7 +120,7 @@ Get *real* messages:
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 
-Go to http://127.0.0.1:5984/junius/files/index.xhtml and do autocomplete to do
+Go to http://127.0.0.1:5984/raindrop/files/index.xhtml and do autocomplete to do
 searches.  If you have many documents, please be patient as the views are
 generated for the first time.
 
