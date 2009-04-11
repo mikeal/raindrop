@@ -1,0 +1,19 @@
+<div class="Message ${type}">
+  <a href="#" class="close">${i18n.closeIcon}</a>
+  <div class="photo"><img class="photo" src="${userPhotoUrl}" /></div>
+  <div class="message">
+    <div class="header">
+      <span class="from"><a class="from" href="#">${fromName}</a></span>
+      <span class="medium">&lt;${fromId}&gt;</span>
+    </div>
+    <div class="content">
+      <span class="subject">${subject}</span> ${message}
+    </div>
+    <div class="tools">
+      <a href="#">${i18n.reply}</a> <a href="#">${i18n.forward}</a>
+    </div>
+    <div class="timestamp">
+      ${timeDisplay}
+    </div>
+  </div>
+</div>

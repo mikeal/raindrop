@@ -49,13 +49,20 @@ dojo.provide("couch");
     dojo.xhr(type, options, (options.postData || options.putData));
   }
 
+  var encodeExceptions = {
+    error: 1,
+    success: 1,
+    postData: 1,
+    putData: 1
+  };
+
   // Convert a options object to an url query string.
   // ex: {key:'value',key2:'value2'} becomes '?key="value"&key2="value2"'
   function encodeOptions(options) {
     var buf = []
     if (typeof(options) == "object" && options !== null) {
       for (var name in options) {
-        if (name == "error" || name == "success") continue;
+        if (encodeExceptions[name]) continue;
         var value = options[name];
         // keys will result in a POST, so we don't need them in our GET part
         if (name == "keys") continue;
@@ -195,7 +202,7 @@ couch = {
         view: function(name, options, extensions) {
           if (options.keys) {
             options = dojo.delegate(options || {});
-            options.postData = {keys: options.keys};            
+            options.postData = dojo.toJson({keys: options.keys});            
             _call("POST", this.uri + "_design/" + name + encodeOptions(options), options);
           } else {
             var beforeSuccess;

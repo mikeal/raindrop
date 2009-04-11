@@ -1,0 +1,54 @@
+.QuickCompose {
+  position: relative;
+  max-width: 80ex;
+  margin: 1.6ex 0px;
+  padding: 0.5em 0;
+  border-bottom: 1px dotted gray;
+  background-color: #f8f8f8;
+}
+
+.QuickCompose div.photo {
+  position: absolute;
+  left: 2px;
+  width: 26px;
+  height: 26px;
+  vertical-align: top;
+  background-color: #efefef;
+  border: 1px dashed gray;
+ }
+ 
+.QuickCompose div.photo img.photo {
+  width: 24px;
+  height: 24px;
+ }
+ 
+.QuickCompose .message {
+  margin-left: 26px;
+  padding-left: 1em;
+ }
+ 
+.QuickCompose .message .meta {
+  font-size: small;
+ }
+ 
+.QuickCompose .message .meta .medium {
+  font-size: x-small;
+ }
+ 
+.QuickCompose .message .content .subject {
+  display: none;
+ }
+
+.QuickCompose input {
+  float: right;
+  visibility: hidden;
+ }
+ 
+.QuickCompose:hover input {
+  visibility: visible;
+ }
+
+.QuickCompose textarea {
+  width:80%;
+  height:22px;
+ }

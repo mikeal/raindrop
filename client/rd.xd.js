@@ -1,10 +1,10 @@
 //xdomain loading wrapper. Can be inserted by a build process, but manually doing it for now.
 window[(typeof (djConfig)!="undefined"&&djConfig.scopeMap&&djConfig.scopeMap[0][1])||"dojo"]._xdResourceLoaded(function(dojo, dijit, dojox){
   return {
-  depends:[["provide","raindrop"], ["require","couch"]],defineResource:function(dojo, dijit, dojox){
+  depends:[["provide","rd"], ["require","couch"]],defineResource:function(dojo, dijit, dojox){
 
 //Main module definition
-dojo.provide("raindrop");
+dojo.provide("rd");
 
 dojo.require("couch");
 
@@ -12,7 +12,18 @@ dojo.require("couch");
 This file provides some basic environment services running in raindrop.
 */
 
-raindrop = {
+dojo.mixin(rd, {
+  ready: dojo.addOnLoad,
+
+  escapeHtml: function(text) {
+    return text && text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  },
+
+  convertLines: function(text) {
+    //Converts line returns to BR tags
+    return text && text.replace(/\n/g, "<br>");  
+  },
+
   onDocClick: function(evt) {
     //summary: Handles doc clicks to see if we need to use a register protocol.
     var node = evt.target;
@@ -86,11 +97,11 @@ raindrop = {
       });
     }
   }
-}
+});
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.
-  dojo.connect(document.documentElement, "onclick", raindrop, "onDocClick");
+  dojo.connect(document.documentElement, "onclick", rd, "onDocClick");
 });
 
 

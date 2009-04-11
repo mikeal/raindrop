@@ -1,0 +1,7 @@
+@import url("Message.css");
+
+.Story {
+  max-width: 80ex;
+  margin: 1.6ex 0px;
+  padding: 0px;
+}

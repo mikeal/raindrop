@@ -1,0 +1,118 @@
+.Message {
+  position: relative;
+}
+
+.Message div.photo {
+  position: absolute;
+  left: 0px;
+  width: 50px;
+  height: 50px;
+  vertical-align: top;
+  background-color: #efefef;
+  border: 1px dashed gray;
+}
+
+.Message .close {
+  position: absolute;
+  right: 0px;
+  text-decoration: none;
+  font-size: x-small;
+  font-weight: bold;
+  visibility: hidden;
+  padding: 1ex;
+}
+
+.Message:hover .close {
+  visibility: visible;
+  color: GrayText;
+}
+
+.Message .close:hover {
+  color: WindowText;
+}
+
+.Message .tools {
+  position: absolute;
+  right: 0px;
+  font-size: x-small;
+  visibility: hidden;
+}
+
+.Message:hover .tools {
+  visibility: visible;
+}
+.Message .message {
+  max-width: 70ex;
+  margin-left: 50px;
+  padding-left: 1em;
+}
+
+.Message img.photo {
+  width: 48px;
+  height: 48px;
+}
+
+.Message .from {
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.Message .medium {
+  font-size: small;
+}
+
+.Message .subject {
+  font-weight: bold;
+}
+
+.Message .content , .timestamp {
+  margin: 0.5ex 0px;
+}
+
+.Message .content {
+  overflow: hidden;
+  font-size: small;
+  font-size-adjust: 0.5;
+  color: #333;
+}
+
+.Message .timestamp {
+  color: GrayText;
+  font-size: x-small;
+}
+
+/* "reply" type of messages */
+.Message.reply {
+  position: relative;
+  padding: 2px;
+  margin-bottom: 1ex;
+  margin-left: 22px;
+  background-color: #f8f8f8;
+}
+
+.Message.reply div.photo {
+  width: 26px;
+  height: 26px;
+  left: 2px;
+}
+
+.Message.reply div.photo img.photo {
+  width: 24px;
+  height: 24px;
+}
+
+.Message.reply .message {
+  margin-left: 26px;
+}
+
+.Message.reply .message .meta {
+  font-size: small;
+}
+
+.Message.reply .message .meta .medium {
+  font-size: x-small;
+}
+
+.Message.reply .message .content .subject {
+  display: none;
+}

@@ -12,11 +12,13 @@
   }
 
   djConfig = {
-    require: ["raindrop", "couch", "dojox.io.proxy.xip"],
+    debugAtAllCosts: true, //comment  this out for faster loading.
+    require: ["rd", "couch", "dojo.parser" /*"dojox.io.proxy.xip"*/],
+    parseOnLoad: true,
     baseUrl: "./",
-    couchUrl: "http://127.0.0.1:5984",
+    couchUrl: prefix.split("/", 3).join("/"),
     //iframeProxyUrl: "http://127.0.0.1:5984/raindrop/files/xip_server.html",
-    
+
     //If we only support postMessage browsers, then don't need client URL
     //This makes the assumption the app always includes xip_client.html in the
     //same directory as any app page that uses the couchdb API.
@@ -24,9 +26,16 @@
     modulePaths: {
       /*INSERT CONFIG HERE*/
       //"dojox.io.proxy.xip": prefix + "/xip",
-      "raindrop": prefix + "/raindrop",
-      "couch": prefix + "/couch"
-    }
+      "rd": prefix + "/rd",
+      "couch": prefix + "/couch",
+      "rdw": prefix  + "/rdw"
+    },
+    
+    scopeMap: [
+      ["dojo", "rd"],
+      ["dijit", "rdw"],
+      ["dojox", "rdx"]
+    ]
   };
   
   //TODO: just doing this here in JS because my python fu is weak.
@@ -37,7 +46,7 @@
   //will not give us the full picture.
   var parts = location.href.split("/");
   var frameworkNames = {
-    "raindrop": 1,
+    "rd": 1,
     "couch": 1,
     //"dojox.io.proxy.xip": 1
   };

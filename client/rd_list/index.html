@@ -4,21 +4,21 @@
 <head>
   <script src="http://127.0.0.1:5984/raindrop/files/config.js" charset="utf-8"></script>
   <script type="text/javascript" charset="utf-8">
-    dojo.addOnLoad(function(){
+    rd.addOnLoad(function(){
       //http://127.0.0.1:5984/raindrop/_design/raindrop!apps!all/_view/all?limit=11
       couch.db("raindrop").view("raindrop!apps!all/_view/all", {
         include_docs: true,
         group : false,
-        success: dojo.hitch(this, function(json) {
+        success: rd.hitch(this, function(json) {
           var html = "";
-          dojo.forEach(json.rows, function(row) {
+          rd.forEach(json.rows, function(row) {
             var doc = row.doc;
             if (doc._id != "app!app/rd_list") {
               html += '<li><a href="' + doc.location + '">' + doc.name + '</a></li>';
             }
           });
 
-          dojo.place(html, dojo.query("ul")[0], "only");
+          rd.place(html, rd.query("ul")[0], "only");
         })
       });
     });

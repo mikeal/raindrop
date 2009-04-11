@@ -130,8 +130,6 @@ def update_apps(whateva):
        Should be run after a UI app/extension is added or removed from the couch.
     """
 
-    print "update_apps"
-
     db = get_db()
 
     def _open_not_exists(failure, *args, **kw):
