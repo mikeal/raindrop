@@ -99,6 +99,30 @@ class AccountBase(Rat):
     '''
     pass
 
+
 class ConverterBase(object):
+    """A generic converter with possibly multiple dependencies"""
     def __init__(self, doc_model):
-       self.doc_model = doc_model
+      self.doc_model = doc_model
+  
+    def convert(self, docs):
+      raise NotImplementedError(self)
+
+
+class SimpleConverterBase(ConverterBase):
+  """A converter with exactly 1 source dependency"""
+  def convert(self, docs):
+    assert len(self.sources)==1, "not a simple coonverter!"
+    if not docs:
+      # source doc doesn't exist.
+      return None
+    doc = docs[0]
+    my_type = self.sources[0][1]
+    if doc['type'] != my_type:
+      logger.debug('simple converter skipping doc_type of %r (expected %r)',
+                   doc['type'], my_type)
+      return None
+    return self.simple_convert(doc)
+
+  def simple_convert(self, doc):
+    raise NotImplementedError(self)

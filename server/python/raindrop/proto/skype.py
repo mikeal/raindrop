@@ -193,8 +193,12 @@ class TwistySkype(object):
 # A 'converter' - takes a proto/skype-msg as input and creates a
 # 'message' as output (some other intermediate step might end up more
 # appopriate)
-class SkypeConverter(base.ConverterBase):
-    def convert(self, doc):
+class SkypeConverter(base.SimpleConverterBase):
+    target_type = 'msg', 'message'
+    sources = [
+        ('msg', 'proto/skype-msg'),
+    ]
+    def simple_convert(self, doc):
         # We need to open the 'chat' for this Message.  Clearly this is
         # going to be inefficient...
         proto_id = doc['skype_chatname'].encode('utf8') # hrmph!

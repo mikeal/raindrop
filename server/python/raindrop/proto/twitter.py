@@ -118,9 +118,11 @@ class TwitterProcessor(object):
 # A 'converter' - takes a proto/twitter as input and creates a
 # 'message' as output (some other intermediate step might end up more
 # appropriate)
-class TwitterConverter(base.ConverterBase):
+class TwitterConverter(base.SimpleConverterBase):
+    target_type = 'msg', 'message'
+    sources = [('msg', 'proto/twitter')]
     re_tags = re.compile(r'#(\w+)')    
-    def convert(self, doc):
+    def simple_convert(self, doc):
         # for now, if a 'proto' can detect tags, it writes them directly
         # to a 'tags' attribute.
         body = doc['twitter_text']

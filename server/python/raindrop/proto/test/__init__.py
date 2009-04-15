@@ -58,9 +58,14 @@ class TestMessageProvider(object):
 
 # A 'converter' - takes a proto/test as input and creates a
 # 'raw/message/rfc822' as output.
-class TestConverter(base.ConverterBase):
+class TestConverter(base.SimpleConverterBase):
+    target_type = "msg", "raw/message/rfc822"
+    sources = [
+        ('msg', 'proto/test'),
+    ]
+
     num_converted = 0
-    def convert(self, doc):
+    def simple_convert(self, doc):
         # for the sake of testing the error queue, we cause an error on
         # every 3rd message we process.
         self.num_converted += 1

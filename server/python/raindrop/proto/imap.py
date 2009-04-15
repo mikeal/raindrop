@@ -207,8 +207,11 @@ class ImapClientFactory(protocol.ClientFactory):
 
 # A 'converter' - takes a proto/imap as input and creates a
 # 'raw/message/rfc822' as output
-class IMAPConverter(base.ConverterBase):
-  def convert(self, doc):
+class IMAPConverter(base.SimpleConverterBase):
+  target_type = 'msg', 'raw/message/rfc822'
+  sources = [('msg', 'proto/imap')]
+
+  def simple_convert(self, doc):
     # I need the binary attachment.
     return self.doc_model.open_attachment(doc['_id'], "rfc822",
               ).addCallback(self._cb_got_attachment, doc)

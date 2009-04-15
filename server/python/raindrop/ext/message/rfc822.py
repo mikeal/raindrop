@@ -89,8 +89,10 @@ def doc_from_bytes(b):
     return doc
 
 
-class RFC822Converter(base.ConverterBase):
-    def convert(self, doc):
+class RFC822Converter(base.SimpleConverterBase):
+    target_type = 'msg', 'raw/message/email'
+    sources = [('msg', 'raw/message/rfc822')]
+    def simple_convert(self, doc):
         # a 'rfc822' stores 'headers' as a dict
         headers = doc['headers']
         # for now, 'from' etc are all tuples of [identity_type, identity_id]

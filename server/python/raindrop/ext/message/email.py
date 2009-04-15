@@ -5,8 +5,10 @@ logger = logging.getLogger(__name__)
 
 from ...proc import base
 
-class EmailConverter(base.ConverterBase):
-    def convert(self, doc):
+class EmailConverter(base.SimpleConverterBase):
+    target_type = 'msg', 'message'
+    sources = [('msg', 'raw/message/email')]
+    def simple_convert(self, doc):
         # for now, the email repr has all we need.
         ret = doc.copy()
         for n in ret.keys():
