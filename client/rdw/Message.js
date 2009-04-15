@@ -22,7 +22,13 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.userPhotoUrl = rd.escapeHtml("");
     // XXX: theese are a couple hacks to get the UI looking more like we want
     this.fromName = rd.escapeHtml(this.doc.from[1].split("<")[0]);
-    this.fromId = rd.escapeHtml(this.doc.from[1].match(/<(.+)>/)[1].toLowerCase());
+    
+    this.fromId = this.doc.from[1];
+    var matches = this.doc.from[1].match(/<(.+)>/);
+    if(matches && matches[1]) {
+      this.fromId = matches[1].toLowerCase();
+    }
+
     this.subject = rd.escapeHtml(this.doc.subject.replace(/^Re:/,''));
     this.message = rd.escapeHtml(this.doc.body_preview);
     this.time = 0;
