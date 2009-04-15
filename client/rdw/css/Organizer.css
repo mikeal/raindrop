@@ -1,3 +1,26 @@
 .Organizer {
-  border: 1px dotted black;
+  position: relative;
+  margin: 1.6ex 0.5em;
+  border: 1px solid gray;
+  color: gray;
+}
+
+.Organizer:hover {
+  border: 1px solid black;
+}
+
+.Organizer ol {
+  list-style: none;
+  padding: 0.5em;
+  margin: 0px;
+}
+
+.Organizer a {
+  font-weight: bold;
+  text-decoration: none;
+  color: gray;
+}
+
+.Organizer:hover a {
+  color: #44617E;
 }

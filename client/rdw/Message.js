@@ -11,6 +11,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
   doc: {},
 
   templatePath: dojo.moduleUrl("rdw.templates", "Message.html"),
+
+  blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
   
   postMixInProperties: function() {
     //summary: dijit lifecycle method
@@ -19,7 +21,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //Set the properties for this widget based on doc
     //properties.
     //TODO: some of these need more info from backend.
-    this.userPhotoUrl = rd.escapeHtml("");
+    this.userPicUrl = this.blankImgUrl;
     // XXX: theese are a couple hacks to get the UI looking more like we want
     this.fromName = rd.escapeHtml(this.doc.from[1].split("<")[0]);
     

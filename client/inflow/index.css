@@ -12,13 +12,13 @@
 #column1 {
   max-width: 40em;
   min-width: 10em;
+  z-index: 10px;
 }
 
 #column2 {
   position: absolute;
   top: 0;
   right: 0;
-  z-index: -1;
   width: 10em;
   min-height: 40ex;
 }

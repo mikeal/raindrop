@@ -12,5 +12,17 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
+  },
+  
+  onClick: function(evt) {
+    //summary: handles click delegation when clicking on list of links.
+    var target = evt.target;
+    if (target.href) {
+      target = target.href.split("#")[1];
+      if (target) {
+        dojo.publish("rd-nav-" + target);
+        dojo.stopEvent(evt);
+      }
+    }
   }
 });
