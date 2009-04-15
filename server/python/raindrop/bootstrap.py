@@ -76,7 +76,7 @@ def install_client_files(whateva, options):
                     ct = _winreg.QueryValueEx(k, "Content Type")[0]
                 except EnvironmentError:
                     pass
-            assert ct, "can't guess the content type for '%s'" % filename
+            assert ct, "can't guess the content type for '%s'" % path
             data = f.read()
             fp.get_finger(path).update(data)
             attachments[couch_path] = {
