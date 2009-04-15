@@ -1,0 +1,24 @@
+@import url("../rdw/css/QuickCompose.css");
+@import url("../rdw/css/Search.css");
+@import url("../rdw/css/Stories.css");
+@import url("../rdw/css/Organizer.css");
+
+#content {
+  position: relative;
+  min-width: 25em;
+  max-width: 50em;
+}
+
+#column1 {
+  max-width: 40em;
+  min-width: 10em;
+}
+
+#column2 {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: -1;
+  width: 10em;
+  min-height: 40ex;
+}

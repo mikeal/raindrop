@@ -3,15 +3,16 @@
 <head>
   <title>raindrop</title>
   
-  <link type="text/css" rel=stylesheet href="/raindrop/files/rdw/css/QuickCompose.css">
-  <link type="text/css" rel=stylesheet href="/raindrop/files/rdw/css/Stories.css">
+  <link type="text/css" rel=stylesheet href="index.css">
 
   <script src="http://127.0.0.1:5984/raindrop/files/config.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
-    rd.require("rdw.Stories");
     rd.require("rdw.QuickCompose");
-
+    rd.require("rdw.Search");
+    rd.require("rdw.Stories");
+    rd.require("rdw.Organizer");
+ 
     rd.addOnLoad(function() {
       couch.db("raindrop").view("raindrop!messages!by/_view/by_doc_type", {
         keys: ["message"],
@@ -27,13 +28,21 @@
           //Add a Stories widget to the page.
           new rdw.Stories({
             docs: docs
-          }, rd.create("div", null, rd.body()));
+          }, rd.create("div", null, rd.byId("column1")));
         }
       });
     });
   </script>
 </head>
 <body>
-  <div rdType="rdw.QuickCompose"></div>
+  <div id="content">
+    <div id="column1">
+      <div rdType="rdw.QuickCompose"></div>
+    </div>
+    <div id="column2">
+      <div rdType="rdw.Search"></div>
+      <div rdType="rdw.Organizer"></div>
+    </div>
+  </div>
 </body>
 </html>

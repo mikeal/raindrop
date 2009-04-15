@@ -200,10 +200,13 @@ couch = {
           _call("POST", this.uri + "_slow_view" + encodeOptions(options), options);
         },
         view: function(name, options, extensions) {
+          if (dojo.config.useApiStub) {
+            name = name.replace(/!/g, "/") + ".json";
+          }
           if (options.keys) {
             options = dojo.delegate(options || {});
             options.postData = dojo.toJson({keys: options.keys});            
-            _call("POST", this.uri + "_design/" + name + encodeOptions(options), options);
+            _call(dojo.config.useApiStub ? "GET" : "POST", this.uri + "_design/" + name + encodeOptions(options), options);
           } else {
             var beforeSuccess;
             if(extensions) {

@@ -38,6 +38,15 @@
     ]
   };
   
+  //If using API stubs, then adjust couch path.
+  var query = location.search;
+  if (query && query.indexOf("apistub=1") != -1) {
+    djConfig.couchUrl += "/raindrop/files/apistub";
+    djConfig.useApiStub = true;
+  }
+  
+  
+  
   //TODO: just doing this here in JS because my python fu is weak.
   //Need to split off the html file name from the application paths.
   //Also need to strip off domain if it matches the page we are currently
