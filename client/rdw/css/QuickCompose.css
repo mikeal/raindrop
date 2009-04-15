@@ -3,8 +3,6 @@
   max-width: 80ex;
   margin: 1.6ex 0.5em;
   padding: 0.5em 0;
-  border-bottom: 1px dotted gray;
-  background-color: #f8f8f8;
 }
 
 .QuickCompose div.photo {
@@ -34,14 +32,15 @@
  }
  
 .QuickCompose input {
-  visibility: hidden;
+  /* eventually we'll use some real styling so this is more of a subtle button
+    instead of the very visible OS button that it is now */
+  letter-spacing: 0.2ex;
+  font-weight: bold;
  }
  
-.QuickCompose:hover input {
-  visibility: visible;
- }
-
 .QuickCompose textarea {
+  border: 1px inset #44617E;
   width:80%;
   height:100%;
+  -moz-border-radius: 3px;
  }

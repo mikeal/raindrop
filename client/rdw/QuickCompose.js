@@ -11,5 +11,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     this.inherited("postMixInProperties", arguments);
 
     this.userPicUrl = this.blankImgUrl;
+  },
+  onSubmit: function(e) {
+    if ( this.textarea.value == "") {
+      this.textarea.focus();
+    }
+    dojo.stopEvent(e);
   }
 });

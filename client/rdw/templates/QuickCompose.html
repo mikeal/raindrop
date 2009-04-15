@@ -1,8 +1,8 @@
 <div class="QuickCompose">
   <div class="photo you"><img class="photo you" src="${userPicUrl}" /></div>
   <div class="compose">
-    <form>
-      <textarea></textarea>
+    <form dojoAttachEvent="onsubmit:onSubmit">
+      <textarea dojoAttachPoint="textarea"></textarea>
       <input type="submit" value="${i18n.send}"/>
     </form>
   </div>
