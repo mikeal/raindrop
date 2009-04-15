@@ -186,6 +186,7 @@ class CouchDB(paisley.CouchDB):
     # *sob* - base class has no 'endkey' - plus I've renamed the param from
     # 'startKey' to 'startkey' so the same param is used with the other
     # functions which take **kw...
+    # AND support for keys/POST
     def listDoc(self, dbName, **kw):
         """
         List all documents in a given database.
@@ -193,10 +194,19 @@ class CouchDB(paisley.CouchDB):
         # Responses: {u'rows': [{u'_rev': -1825937535, u'_id': u'mydoc'}],
         # u'view': u'_all_docs'}, 404 Object Not Found
         uri = "/%s/_all_docs" % (dbName,)
-        args = _encode_options(kw)
+        opts = kw.copy()
+        if 'keys' in opts:
+            requester = self.post
+            body_ob = {'keys': opts.pop('keys')}
+            body = json.dumps(body_ob, allow_nan=False, ensure_ascii=False)
+            xtra = (body,)
+        else:
+            requester = self.get
+            xtra = ()
+        args = _encode_options(opts)
         if args:
             uri += "?%s" % (urlencode(args),)
-        return self.get(uri
+        return requester(uri, *xtra
             ).addCallback(self.parseResult)
 
 
