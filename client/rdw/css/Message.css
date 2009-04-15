@@ -20,15 +20,17 @@
   font-weight: bold;
   visibility: hidden;
   padding: 1ex;
+  color: GrayText;
+  opacity: 0.5;
 }
 
 .Message:hover .close {
   visibility: visible;
-  color: GrayText;
 }
 
 .Message .close:hover {
   color: WindowText;
+  opacity: 1.0;
 }
 
 .Message .tools {
@@ -36,6 +38,16 @@
   right: 0px;
   font-size: x-small;
   visibility: hidden;
+}
+
+.Message .tools a {
+  color: GrayText;
+  opacity: 0.5;
+}
+
+.Message .tools:hover a {
+  color: #0066dd;
+  opacity: 1;
 }
 
 .Message:hover .tools {
@@ -55,13 +67,16 @@
 .Message .from {
   text-decoration: none;
   font-weight: bold;
+  color: #44617E;
 }
 
 .Message .medium {
   font-size: small;
+  color: #617B95;
 }
 
 .Message .subject {
+  padding-right: 1em;
   font-weight: bold;
 }
 

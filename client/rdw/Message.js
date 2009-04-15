@@ -20,9 +20,10 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //properties.
     //TODO: some of these need more info from backend.
     this.userPhotoUrl = rd.escapeHtml("");
-    this.fromName = rd.escapeHtml("");
-    this.fromId = rd.escapeHtml(this.doc.from[1]);
-    this.subject = rd.escapeHtml(this.doc.subject);
+    // XXX: theese are a couple hacks to get the UI looking more like we want
+    this.fromName = rd.escapeHtml(this.doc.from[1].split("<")[0]);
+    this.fromId = rd.escapeHtml(this.doc.from[1].match(/<(.+)>/)[1].toLowerCase());
+    this.subject = rd.escapeHtml(this.doc.subject.replace(/^Re:/,''));
     this.message = rd.escapeHtml(this.doc.body_preview);
     this.time = 0;
     this.timeDisplay = rd.escapeHtml("some time ago");

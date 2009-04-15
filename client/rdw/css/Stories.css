@@ -1,8 +1,9 @@
 @import url("Story.css");
 
 .Stories {
+  display: inline-block;
   list-style: none;
-  padding: 0px;
+  padding: 0.5em;
   margin: 0px;
 }
 
