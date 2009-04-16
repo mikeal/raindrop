@@ -82,9 +82,9 @@ Setup the database and upload views and other content:
 you should see output similar to:
 
   INFO:model:created new database
-  INFO:junius.bootstrap:Adding account 'test'
-  INFO:junius.bootstrap:client files are different - updating doc
-  INFO:junius.bootstrap:design doc '_design/raindrop!accounts!all' has changed - updating
+  INFO:raindrop.bootstrap:Adding account 'test'
+  INFO:raindrop.bootstrap:client files are different - updating doc
+  INFO:raindrop.bootstrap:design doc '_design/raindrop!accounts!all' has changed - updating
   ...
   Nothing left to do - terminating.  
 
