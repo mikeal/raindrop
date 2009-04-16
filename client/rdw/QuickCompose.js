@@ -1,6 +1,7 @@
 dojo.provide("rdw.QuickCompose");
 
 dojo.require("dojo.io.script");
+dojo.require("dojo.html");
 dojo.require("couch");
 dojo.require("rdw._Base");
 
@@ -14,6 +15,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     this.inherited("postMixInProperties", arguments);
 
     this.userPicUrl = this.blankImgUrl;
+    
+    this.yourName = "Your Name";
+    this.yourAddress = "you@example.com";
   },
 
   postCreate: function() {
@@ -36,13 +40,20 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             load: dojo.hitch(this, function(response) {
                 if (response.profile_image_url) {
                   this.picture.src = response.profile_image_url;
+                  dojo.html.set(this.name, response.name);
                 }
             })
             //Don't worry about errors, just will not show pic.
           });
+          dojo.html.set(this.address, "twitter.com/" + this.twitterId);
         }
       })
     });
+  },
+
+  onFocusTextArea: function(evt) {
+    //summary: expand the text area from it's simple entry space
+    dojo.style(this.textarea, "height", "12ex");
   },
 
   onSubmit: function(evt) {

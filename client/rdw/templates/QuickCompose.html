@@ -1,8 +1,12 @@
 <div class="QuickCompose">
   <div class="photo you"><img dojoAttachPoint="picture" class="photo you" src="${userPicUrl}" /></div>
   <div class="compose">
-    <form dojoAttachEvent="onsubmit:onSubmit">
-      <textarea dojoAttachPoint="textarea"></textarea>
+    <div class="info you"> <!-- in the future we could make this a combobox chooser -->
+      <span dojoAttachPoint="name" class="name you"></span>
+      <span dojoAttachPoint="address" class="medium you"></span>
+    </div>
+    <form dojoAttachEvent="onsubmit: onSubmit">
+      <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textarea"></textarea>
       <input type="submit" value="${i18n.send}"/>
     </form>
   </div>
