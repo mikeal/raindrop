@@ -3,6 +3,10 @@
 @import url("../rdw/css/Stories.css");
 @import url("../rdw/css/Organizer.css");
 
+* {
+  font:100%/normal verdana,geneva,sans-serif;
+}
+
 #content {
   position: relative;
   min-width: 25em;

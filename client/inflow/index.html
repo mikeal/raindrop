@@ -16,7 +16,7 @@
     rd.addOnLoad(function() {
       couch.db("raindrop").view("raindrop!messages!by/_view/by_doc_type", {
         keys: ["message"],
-        limit: 100,
+        limit: 30,
         include_docs: true,
         group : false,
         success: function(json) {

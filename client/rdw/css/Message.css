@@ -80,6 +80,10 @@
   font-weight: bold;
 }
 
+.Message .subject:empty {
+  padding-right: 0px;
+}
+
 .Message .content , .timestamp {
   margin: 0.5ex 0px;
 }
