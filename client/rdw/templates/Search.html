@@ -1,6 +1,12 @@
-<div class="Search">
+<div class="Search" dojoAttachPoint="search">
     <form>
-      <textarea></textarea>
+      <input dojoAttachEvent="onfocus: focusSearchInput,onblur: blurSearchInput" type="text"/>
     </form>
-    <span class="searchIcon">[?]</span>
+    <ol dojoAttachEvent="onclick: onClick">
+      <li><a href="#recent">recent search</a></li>
+      <li><a href="#recent">recent search</a></li>
+      <li><a href="#recent">recent search</a></li>
+      <!-- limit to 3 -->
+      <!-- eventually we'll want a /see all/ link -->
+    </ol>
 </div>

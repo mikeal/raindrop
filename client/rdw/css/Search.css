@@ -1,35 +1,51 @@
 .Search {
   position: relative;
   margin: 1.6ex 0.5em;
-  border: 1px solid gray;
+  opacity: 0.3;
 }
 
-.Search:hover {
-  border: 1px solid black;
+.Search:hover,
+.searchInputFocused {
+  opacity: 1.0;
 }
 
-.Search .searchIcon {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  color: GrayText;
+.Search:hover > form > input,
+.searchInputFocused > form > input {
+  border-color: #44617E;
+  -moz-border-radius: 3px;
 }
 
-.Search:hover .searchIcon {
-  color: inherit;
+.Search > form {
+  margin: 0px;
+  padding: 0px;
 }
 
-.Search form {
-  margin-right: 1em;
-}
-
-.Search textarea {
+.Search > form > input {
   width: 100%;
-  height: 100%;
-  border: 0;
-  color: GrayText;
+  border: 1px solid gray;
+  background-image: url('chrome://global/skin/icons/Search-glass.png');
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+  background-color: transparent;
+  background-position: 97% center;
 }
 
-.Search:hover textarea {
-  color: inherit;
+.Search ol {
+  list-style: none;
+  padding: 0px;
+  margin: 0.5em 0px;
+}
+
+.Search > ol > li {
+  padding: 0.1em;
+}
+
+.Search > ol > li > a  {
+  font-size: x-small;
+  text-decoration: none;
+  color: #44617E;
+}
+
+.Search > ol > li > a:hover {
+  text-decoration: underline;
 }
