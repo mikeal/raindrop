@@ -1,26 +1,40 @@
 .Organizer {
   position: relative;
   margin: 1.6ex 0.5em;
-  border: 1px solid gray;
-  color: gray;
+  opacity: 0.3;
 }
 
 .Organizer:hover {
-  border: 1px solid black;
+  opacity: 1.0;
+}
+
+.Organizer:hover ol {
+  border-color: #44617E;
+  -moz-border-radius: 3px;
 }
 
 .Organizer ol {
   list-style: none;
-  padding: 0.5em;
+  padding: 0px;
   margin: 0px;
+  border: 1px solid gray;
 }
 
-.Organizer a {
-  font-weight: bold;
+.Organizer > ol > li {
+  padding: 0.5em;
+}
+
+.Organizer > ol > li:hover {
+  background-color: #f9f9f9;
+}
+
+.Organizer > ol > li > a {
   text-decoration: none;
-  color: gray;
-}
-
-.Organizer:hover a {
+  background-color: transparent;
   color: #44617E;
 }
+
+.Organizer > ol > li > a[href*=home] {
+  font-weight: bold;
+}
+

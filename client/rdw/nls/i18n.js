@@ -3,5 +3,6 @@
   reply: "reply",
   forward: "forward",
   send: "send",
-  home: "Home"
+  home: "Home",
+  sent: "Sent"
 })
