@@ -201,7 +201,7 @@ couch = {
         },
         view: function(name, options, extensions) {
           if (dojo.config.useApiStub) {
-            name = name.replace(/!/g, "/") + ".json";
+            name = name.replace(/!/g, "/") + ".js";
           }
           if (options.keys) {
             options = dojo.delegate(options || {});
