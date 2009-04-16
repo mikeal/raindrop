@@ -40,6 +40,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             load: dojo.hitch(this, function(response) {
                 if (response.profile_image_url) {
                   this.picture.src = response.profile_image_url;
+                }
+                if (response.name) {
                   dojo.html.set(this.name, response.name);
                 }
             })
