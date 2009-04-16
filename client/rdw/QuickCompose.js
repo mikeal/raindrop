@@ -45,10 +45,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     });
   },
 
-  onSubmit: function(e) {
+  onSubmit: function(evt) {
+    //summary: focus the text area if send is pressed w/ nothing to send
     if ( this.textarea.value == "") {
       this.textarea.focus();
     }
-    dojo.stopEvent(e);
+    dojo.stopEvent(evt);
   }
 });
