@@ -15,8 +15,32 @@ This file provides some basic environment services running in raindrop.
 dojo.mixin(rd, {
   ready: dojo.addOnLoad,
 
-  escapeHtml: function(text) {
-    return text && text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  html: function(/*String*/html, /*DOMNode?*/refNode, /*String?*/position) {
+    //summary: converts html string to a DOM node or DocumentFragment. Optionally
+    //places that node/fragment relative refNode. "position" values are same as
+    //dojo.place: "first" and "last" indicate positions as children of refNode,
+    //"replace" replaces refNode, "only" replaces all children.  "before" and "last"
+    //indicate sibling positions to refNode. position defaults to "last" if not specified.
+    html = dojo._toDom(html);
+    if (refNode) {
+      return dojo.place(html, refNode, position);
+    } else {
+      return html;
+    }
+  },
+
+  escapeHtml: function(/*String*/html, /*DOMNode?*/refNode, /*String?*/position) {
+    //summary: escapes HTML string so it is safe to embed in the DOM. Optionally
+    //places that HTML relative refNode. "position" values are same as
+    //dojo.place: "first" and "last" indicate positions as children of refNode,
+    //"replace" replaces refNode, "only" replaces all children.  "before" and "last"
+    //indicate sibling positions to refNode. position defaults to "last" if not specified.
+    html = html && html.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (refNode) {
+      return rd.html(html, refNode, position);
+    } else {
+      return html;
+    }
   },
 
   convertLines: function(text) {

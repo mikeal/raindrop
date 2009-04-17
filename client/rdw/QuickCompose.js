@@ -1,7 +1,6 @@
 dojo.provide("rdw.QuickCompose");
 
 dojo.require("dojo.io.script");
-dojo.require("dojo.html");
 dojo.require("couch");
 dojo.require("rdw._Base");
 
@@ -32,7 +31,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             this.twitterId = row.key;
           }
         }));
-        
+
         if (this.twitterId) {
           dojo.io.script.get({
             url: "http://twitter.com/users/show/" + this.twitterId + ".json",
@@ -42,12 +41,12 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
                   this.picture.src = response.profile_image_url;
                 }
                 if (response.name) {
-                  dojo.html.set(this.name, response.name);
+                  rd.escapeHtml(response.name, this.name);
                 }
             })
             //Don't worry about errors, just will not show pic.
           });
-          dojo.html.set(this.address, "twitter.com/" + this.twitterId);
+          rd.escapeHtml("twitter.com/" + this.twitterId, this.address);
         }
       })
     });

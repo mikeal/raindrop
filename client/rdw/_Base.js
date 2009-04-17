@@ -1,5 +1,6 @@
 dojo.provide("rdw._Base");
 dojo.require("dijit.dijit");
+dojo.require("rd");
 
 dojo.requireLocalization("rdw", "i18n");
 
