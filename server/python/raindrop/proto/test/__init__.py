@@ -7,6 +7,10 @@ logger = logging.getLogger(__name__)
 
 from ...proc import base
 
+# May be set to True or False by the test suite, or remains None for
+# "normal" behaviour
+next_convert_fails = None
+
 class TestMessageProvider(object):
     def __init__(self, account, conductor):
         self.account = account
@@ -69,7 +73,8 @@ class TestConverter(base.SimpleConverterBase):
         # for the sake of testing the error queue, we cause an error on
         # every 3rd message we process.
         self.num_converted += 1
-        if self.num_converted % 3 == 0:
+        if next_convert_fails or \
+           (next_convert_fails is None and self.num_converted % 3 == 0):
             raise RuntimeError("This is a test failure")
 
         # for the sake of testing, we fetch the raw attachment just to compare
