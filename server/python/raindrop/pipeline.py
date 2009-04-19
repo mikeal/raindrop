@@ -118,7 +118,8 @@ class Pipeline(object):
         return self.coop.coiterate(gen_deleting_docs(derived))
 
     def start(self):
-        return self.coop.coiterate(self.gen_wq_tasks())
+        gen = generate_work_queue(self.doc_model, self.gen_transition_tasks)
+        return self.coop.coiterate(gen)
 
     def start_retry_errors(self):
         """Attempt to re-process all messages for which our previous
@@ -160,84 +161,14 @@ class Pipeline(object):
         return coop.coiterate(self.gen_transition_tasks(
                                         source['_id'], source['_rev']))
 
-    def gen_wq_tasks(self):
-        """generate deferreds which will determine where our processing is up
-        to and walk us through the _all_docs_by_seq view from that point,
-        creating and saving new docs as it goes. When the generator finishes
-        the queue is empty."""
-        # first open our 'state' document
-        def _cb_update_state_doc(result, d):
-            if result is not None:
-                assert d['_id'] == result['_id'], result
-                d.update(result)
-            # else no doc exists - the '_id' remains in the default though.
-
-        state_doc = {'_id': 'workqueue!msg',
-                     'type': u"core/workqueue",
-                     'seq': 0}
-        yield self.doc_model.open_document_by_id(state_doc['_id'],
-                    ).addCallback(_cb_update_state_doc, state_doc)
-
-        logger.info("Work queue starting with sequence ID %d",
-                    state_doc['seq'])
-
-        logger.debug('opening by_seq view for work queue...')
-        num_per_batch = 1000 # no docs are fetched, just meta-data about them.
-        self.queue_finished = False
-        while not self.queue_finished:
-            start_seq = state_doc['seq']
-            state_doc['num_processed'] = 0
-            yield self.doc_model.db.listDocsBySeq(limit=num_per_batch,
-                                                  startkey=state_doc['seq'],
-                                                  include_docs=True,
-                        ).addCallback(self._cb_by_seq_opened, state_doc)
-            logger.info("finished processing to sequence %(seq)r - "
-                        "%(num_processed)d processed", state_doc)
-            if state_doc['num_processed']:
-                logger.debug("flushing state doc at end of run...")
-                # API mis-match here - the state doc isn't an 'extension'
-                # doc - but create_ext_documents is the easy option...
-                def update_rev(docs):
-                    state_doc['_rev'] = docs[0]['rev']
-                del state_doc['num_processed']
-                yield self.doc_model.create_ext_documents([state_doc]
-                            ).addCallback(update_rev)
-            else:
-                logger.debug("no need to flush state doc")
-
-    def _cb_by_seq_opened(self, result, state_doc):
-        rows = result['rows']
-        logger.debug('work queue has %d items to check.', len(rows))
-        if not rows:
-            # no rows left.  There is no guarantee our state doc will be
-            # the last one...
-            logger.info("work queue ran out of rows...")
-            # either way, we are done!
-            self.queue_finished = True
-            return
-
-        state_doc['seq'] = rows[-1]['key']
-        # I *think* that if we share the same cooperator as the task itself,
-        # we risk having the next chunk of sequence IDs processed before we
-        # are done here.
-        # OTOH, I'm not sure about that.....
-        # As we are really only using a coiterator as a handy way of managing
-        # twisted loops, using our own should be ok though.
-        coop = task.Cooperator()
-        return coop.coiterate(self._gen_tasks_from_seq_rows(rows, state_doc))
-
-    def _gen_tasks_from_seq_rows(self, rows, state_doc):
-        for row in rows:
-            did = row['id']
-            src_rev = row['value']['rev']
-            for task in self.gen_transition_tasks(did, src_rev):
-                state_doc['num_processed'] += 1
-                yield task
-
-    def gen_transition_tasks(self, src_id, src_rev):
+    def gen_transition_tasks(self, src_id, src_rev,
+                             # caller can supply this dict if they care...
+                             caller_ret={'num_processed': 0}):
         # A generator which checks if each of its 'targets' (ie, the extension
         # which depends on this document) is up-to-date wrt this document's
         # revision.
+        logger.debug("generating transition tasks for %r (rev=%s)", src_id,
+                     src_rev)
 
         dm = self.doc_model
         # For each target we need to determine if the doc exists, and if so,
@@ -259,12 +190,14 @@ class Pipeline(object):
             assert target_cat==doc_cat, (target_cat, doc_cat)
             target_id = dm.build_docid(target_cat, target_type, proto_id)
             cvtr = converters[(doc_cat, doc_type), target_info]
+            logger.debug('looking for existing document %r', target_id)
             yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
                                key=target_id
                     ).addCallback(self._cb_check_existing_doc, cvtr,
-                                  proto_id, src_id, src_rev)
+                                  proto_id, src_id, src_rev, caller_ret)
 
-    def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev):
+    def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev,
+                               caller_ret):
         rows = result['rows']
         if len(rows)==0:
             # no target exists at all - needs to be executed...
@@ -279,6 +212,7 @@ class Pipeline(object):
 
         if not need_target:
             return None # nothing to do.
+        caller_ret['num_processed'] += 1
         return self.make_document(cvtr, proto_id)
 
     def make_document(self, cvtr, proto_id):
@@ -334,6 +268,13 @@ class Pipeline(object):
             # and patch the 'type' attribute to reflect its really an error.
             new_doc['type'] = 'core/error/msg'
         else:
+            if result is None:
+                # most likely the converter found an 'error' record in place
+                # of its dependency.  We can safely skip this now - once the
+                # error is corrected we will get another chance...
+                logger.debug("converter declined to create a document")
+                return
+
             new_doc = result
             self.doc_model.prepare_ext_document(proto_id, dest_type, new_doc)
             logger.debug("converter returned new document type %r for %r: %r",
@@ -343,3 +284,76 @@ class Pipeline(object):
         # check if we are up-to-date wrt our 'children'...
         new_doc['raindrop_sources'] = [(s['_id'], s['_rev']) for s in sources]
         return self.doc_model.create_ext_documents([new_doc])
+
+def generate_work_queue(doc_model, transition_gen_factory):
+    """generate deferreds which will determine where our processing is up
+    to and walk us through the _all_docs_by_seq view from that point,
+    creating and saving new docs as it goes. When the generator finishes
+    the queue is empty."""
+    def _cb_update_state_doc(result, d):
+        if result is not None:
+            assert d['_id'] == result['_id'], result
+            d.update(result)
+        # else no doc exists - the '_id' remains in the default though.
+
+    def _cb_by_seq_opened(result, state_doc, convert_result):
+        rows = result['rows']
+        logger.debug('work queue has %d items to check.', len(rows))
+        if not rows:
+            # no rows left.  There is no guarantee our state doc will be
+            # the last one...
+            logger.info("work queue ran out of rows...")
+            # either way, we are done!
+            state_doc['finished'] = True
+            return
+
+        state_doc['seq'] = rows[-1]['key']
+        # I *think* that if we share the same cooperator as the task itself,
+        # we risk having the next chunk of sequence IDs processed before we
+        # are done here.
+        # OTOH, I'm not sure about that.....
+        # As we are really only using a coiterator as a handy way of managing
+        # twisted loops, using our own should be ok though.
+        coop = task.Cooperator()
+        return coop.coiterate(_gen_tasks_from_seq_rows(rows, convert_result))
+
+    def _gen_tasks_from_seq_rows(rows, convert_result):
+        for row in rows:
+            did = row['id']
+            src_rev = row['value']['rev']
+            for task in transition_gen_factory(did, src_rev, convert_result):
+                yield task
+
+    # first open our 'state' document
+    state_doc = {'_id': 'workqueue!msg',
+                 'type': u"core/workqueue",
+                 'seq': 0}
+    yield doc_model.open_document_by_id(state_doc['_id'],
+                ).addCallback(_cb_update_state_doc, state_doc)
+
+    logger.info("Work queue starting with sequence ID %d",
+                state_doc['seq'])
+
+    logger.debug('opening by_seq view for work queue...')
+    num_per_batch = 1000 # no docs are fetched, just meta-data about them.
+    convert_result = {}
+    while 'finished' not in state_doc:
+        start_seq = state_doc['seq']
+        convert_result['num_processed'] = 0
+        yield doc_model.db.listDocsBySeq(limit=num_per_batch,
+                                              startkey=state_doc['seq'],
+                    ).addCallback(_cb_by_seq_opened, state_doc, convert_result)
+        num_proc = convert_result['num_processed']
+        logger.info("finished processing to sequence %r - %d processed",
+                    state_doc['seq'], num_proc)
+        if num_proc:
+            logger.debug("flushing state doc at end of run...")
+            # API mis-match here - the state doc isn't an 'extension'
+            # doc - but create_ext_documents is the easy option...
+            def update_rev(docs):
+                state_doc['_rev'] = docs[0]['rev']
+            assert 'finished' not in state_doc
+            yield doc_model.create_ext_documents([state_doc]
+                        ).addCallback(update_rev)
+        else:
+            logger.debug("no need to flush state doc")
