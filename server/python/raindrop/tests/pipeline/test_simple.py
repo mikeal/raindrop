@@ -28,8 +28,8 @@ class TestPipeline(TestPipelineBase):
         def open_target(whateva):
             return dm.open_document('msg', '0', 'raw/message/rfc822')
 
-        def check_target_last(last_by_seq, doc):
-            self.failUnlessEqual(last_by_seq['id'], doc['_id'])
+        def check_target_last(lasts_by_seq, doc):
+            self.failUnlessEqual(lasts_by_seq[0]['id'], doc['_id'])
             return doc
 
         def check_target(doc):
@@ -52,9 +52,9 @@ class TestPipeline(TestPipelineBase):
         # processed is a noop.
         dm = get_doc_model()
 
-        def check_target_same(last, target_b4):
+        def check_target_same(lasts, target_b4):
             # Re-processing should not have modified the target in any way.
-            self.failUnlessEqual(last['doc'], target_b4)
+            self.failUnlessEqual(lasts[0]['doc'], target_b4)
 
         def check_nothing_done(whateva, target_b4):
             return self.get_last_by_seq(
@@ -77,12 +77,23 @@ class TestPipeline(TestPipelineBase):
 
     def test_two_steps(self):
         # Test taking a raw message two steps along its pipeline.
-        def check_last_doc(last):
-            self.failUnless(last['id'].endswith("!raw/message/email"), last)
+        def check_last_doc(lasts):
+            self.failUnless(lasts[0]['id'].endswith("!raw/message/email"), lasts)
 
         return self.test_one_step(
                 ).addCallback(self.process_doc
                 ).addCallback(lambda whateva: self.get_last_by_seq()
+                ).addCallback(check_last_doc
+                )
+
+    def test_all_steps(self):
+        def check_last_doc(lasts):
+            self.failUnlessEqual(lasts[0]['id'], 'workqueue!msg')
+            self.failUnless(lasts[1]['id'].endswith("!aggr/tags"), lasts)
+
+        test_proto.next_convert_fails = False
+        return self.get_pipeline().start(
+                ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_last_doc
                 )
 
@@ -95,8 +106,8 @@ class TestErrors(TestPipelineBase):
         def open_target(whateva):
             return dm.open_document('msg', '0', 'raw/message/rfc822')
 
-        def check_target_last(last_by_seq, doc):
-            self.failUnlessEqual(last_by_seq['id'], doc['_id'])
+        def check_target_last(lasts_by_seq, doc):
+            self.failUnlessEqual(lasts_by_seq[0]['id'], doc['_id'])
             self.failUnlessEqual(doc['type'], 'core/error/msg')
             self.failUnless('This is a test failure' in doc['error_details'],
                             doc['error_details'])
@@ -123,8 +134,8 @@ class TestErrors(TestPipelineBase):
         def open_target(whateva):
             return dm.open_document('msg', '0', 'raw/message/rfc822')
 
-        def check_target_last(last_by_seq, doc):
-            self.failUnlessEqual(last_by_seq['id'], doc['_id'])
+        def check_target_last(lasts_by_seq, doc):
+            self.failUnlessEqual(lasts_by_seq[0]['id'], doc['_id'])
             return doc
 
         def check_target(doc):
@@ -142,4 +153,17 @@ class TestErrors(TestPipelineBase):
                 ).addCallback(start_retry
                 ).addCallback(open_target
                 ).addCallback(check_target
+                )
+
+    def test_all_steps(self):
+        # We test the right thing happens running a 'full' pipeline
+        # when our test converter throws an error.
+        def check_last_doc(lasts):
+            self.failUnlessEqual(lasts[0]['id'], 'workqueue!msg')
+            self.failUnlessEqual(lasts[1]['doc']['type'], 'core/error/msg')
+
+        test_proto.next_convert_fails = True
+        return self.get_pipeline().start(
+                ).addCallback(lambda whateva: self.get_last_by_seq(2)
+                ).addCallback(check_last_doc
                 )
