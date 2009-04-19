@@ -4,6 +4,7 @@ form to their most useful form.
 import sys
 from twisted.internet import defer, task
 from twisted.python.failure import Failure
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,24 @@ def find_converters_in_module(mod_name):
         if isinstance(ob, type) and issubclass(ob, base.ConverterBase):
             yield ob
 
+def load_converters(doc_model):
+    for mod_name in extension_modules:
+        for cvtr in find_converters_in_module(mod_name):
+            assert cvtr.target_type, cvtr # must have a target type
+            # Is the target-type valid
+            assert isinstance(cvtr.target_type, tuple) and \
+                   len(cvtr.target_type)==2, cvtr
+            inst = cvtr(doc_model)
+            for sid in cvtr.sources:
+                depends.setdefault(sid, []).append(cvtr.target_type)
+                cvtr_key = sid, cvtr.target_type
+                if cvtr_key in converters:
+                    other = converters[cvtr_key]
+                    msg = "Message transition %r->%r is registered by both %r and %r"
+                    logger.warn(msg, sid, cvtr.target_type, cvtr, other)
+                    continue
+                converters[cvtr_key] = inst
+
 
 class Pipeline(object):
     def __init__(self, doc_model, options):
@@ -54,22 +73,8 @@ class Pipeline(object):
         # use a cooperator to do the work via a generator.
         # XXX - should we own the cooperator or use our parents?
         self.coop = task.Cooperator()
-        for mod_name in extension_modules:
-            for cvtr in find_converters_in_module(mod_name):
-                assert cvtr.target_type, cvtr # must have a target type
-                # Is the target-type valid
-                assert isinstance(cvtr.target_type, tuple) and \
-                       len(cvtr.target_type)==2, cvtr
-                inst = cvtr(self.doc_model)
-                for sid in cvtr.sources:
-                    depends.setdefault(sid, []).append(cvtr.target_type)
-                    cvtr_key = sid, cvtr.target_type
-                    if cvtr_key in converters:
-                        other = converters[cvtr_key]
-                        msg = "Message transition %r->%r is registered by both %r and %r"
-                        logger.warn(msg, sid, cvtr.target_type, cvtr, other)
-                        continue
-                    converters[cvtr_key] = inst
+        if not converters:
+            load_converters(doc_model)
 
     def unprocess(self):
         # A bit of a hack that will suffice until we get better dependency
@@ -122,59 +127,38 @@ class Pipeline(object):
         # We need to re-process this item from all its sources.  Once the new
         # item is in-place the normal mechanisms will do the right thing
         def gen_work():
+            state_doc = {'raindrop_seq': 0}
             while True:
+                start_seq = state_doc['raindrop_seq']
+                # error docs are quite small - fetch 50 at a time...
                 yield self.doc_model.open_view(
-                                'raindrop!messages!by', 'by_doc_type',
-                                key='core/error/msg',
-                                limit=100,
+                                'raindrop!proto!workqueue', 'errors',
+                                startkey=state_doc['raindrop_seq'],
+                                limit=50,
                         ).addCallback(self._cb_errorq_opened, state_doc)
-                if not self.num_errors_found:
+                if start_seq == state_doc['raindrop_seq']:
                     break
         return self.coop.coiterate(gen_work())
 
     def _cb_errorq_opened(self, result, state_doc):
         def gen_work():
             for row in result['rows']:
-                self.num_errors_found += 1
-                err_doc = row['doc']
-                logger.debug("processing error document %(_id)r", err_doc)
-                # Open original source docs
-                source_infos = err_doc['raindrop_sources']
-                source_ids = [s[0] for s in source_infos[0]]
-                yield self.doc_model.open_document_by_id(source_id
-                        ).addCallback(self._cb_got_error_source, err_doc)
+                logger.debug("processing error document %r", row['id'])
+                # Open *any* of the original source docs and re-process.
+                sources = row['value']
+                yield self.doc_model.open_document_by_id(sources[0][0]
+                        ).addCallback(self._cb_got_error_source)
                 state_doc['raindrop_seq'] = row['key']
 
         # XXX - see below - should we reuse self.coop, or is that unsafe?
         coop = task.Cooperator()
         return coop.coiterate(gen_work())
 
-    def _cb_got_error_source(self, result, err_doc):
-        # build the infos dict used by the sub-generator.
-        try:
-            _, doc_type, proto_id = self.doc_model.split_docid(err_doc['_id'])
-        except ValueError:
-            logger.warning("skipping malformed ID %(_id)r", err_doc)
-            return
-
-        infos = {proto_id: [result]}
-        # Although we only have 1 item to process, the queue is setup to
-        # handle many, so we need to use a generator
-        def gen_my_doc():
-            new_docs = []
-            for whateva in self.gen_work_tasks(infos, new_docs):
-                yield whateva
-            # should only be 1 new doc, and even on error there should be a
-            # new error doc.
-            assert len(new_docs)==1, new_docs
-            # either way, we are writing the new record replacing the one
-            # we have.
-            new_docs[0]['_rev'] = err_doc['_rev']
-            yield self.doc_model.create_ext_documents(new_docs)
-
+    def _cb_got_error_source(self, source):
         # XXX - see below - should we reuse self.coop, or is that unsafe?
         coop = task.Cooperator()
-        return coop.coiterate(gen_my_doc())
+        return coop.coiterate(self.gen_transition_tasks(
+                                        source['_id'], source['_rev']))
 
     def gen_wq_tasks(self):
         """generate deferreds which will determine where our processing is up
@@ -189,7 +173,7 @@ class Pipeline(object):
             # else no doc exists - the '_id' remains in the default though.
 
         state_doc = {'_id': 'workqueue!msg',
-                     'doc_type': u"core/workqueue",
+                     'type': u"core/workqueue",
                      'seq': 0}
         yield self.doc_model.open_document_by_id(state_doc['_id'],
                     ).addCallback(_cb_update_state_doc, state_doc)
@@ -200,19 +184,26 @@ class Pipeline(object):
         logger.debug('opening by_seq view for work queue...')
         num_per_batch = 1000 # no docs are fetched, just meta-data about them.
         self.queue_finished = False
-        start_seq = state_doc['seq']
         while not self.queue_finished:
+            start_seq = state_doc['seq']
+            state_doc['num_processed'] = 0
             yield self.doc_model.db.listDocsBySeq(limit=num_per_batch,
                                                   startkey=state_doc['seq'],
                                                   include_docs=True,
                         ).addCallback(self._cb_by_seq_opened, state_doc)
-        if start_seq != state_doc['seq']:
-            logger.debug("flushing state doc at end of run...")
-            # API mis-match here - the state doc isn't an 'extension'
-            # doc - but create_ext_documents is the easy option...
-            yield self.doc_model.create_ext_documents([state_doc])
-        else:
-            logger.debug("no need to flush state doc")
+            logger.info("finished processing to sequence %(seq)r - "
+                        "%(num_processed)d processed", state_doc)
+            if state_doc['num_processed']:
+                logger.debug("flushing state doc at end of run...")
+                # API mis-match here - the state doc isn't an 'extension'
+                # doc - but create_ext_documents is the easy option...
+                def update_rev(docs):
+                    state_doc['_rev'] = docs[0]['rev']
+                del state_doc['num_processed']
+                yield self.doc_model.create_ext_documents([state_doc]
+                            ).addCallback(update_rev)
+            else:
+                logger.debug("no need to flush state doc")
 
     def _cb_by_seq_opened(self, result, state_doc):
         rows = result['rows']
@@ -233,38 +224,45 @@ class Pipeline(object):
         # As we are really only using a coiterator as a handy way of managing
         # twisted loops, using our own should be ok though.
         coop = task.Cooperator()
-        return coop.coiterate(self.gen_work_tasks(rows))
+        return coop.coiterate(self._gen_tasks_from_seq_rows(rows, state_doc))
 
-    def gen_work_tasks(self, rows):
-        # A generator which checks if each of its dependencies is up-to-date
-        # wrt this document's revision.
-        # For each dep we need to determine if the doc exists, and if so,
-        # if our revision number is in the 'raindrop_sources' attribute.
-        # If it is, the target is up-to-date wrt us, so all is good.
-        dm = self.doc_model
+    def _gen_tasks_from_seq_rows(self, rows, state_doc):
         for row in rows:
             did = row['id']
             src_rev = row['value']['rev']
-            try:
-                doc_cat, doc_type, proto_id = dm.split_docid(did)
-            except ValueError:
-                logger.warning("skipping malformed ID %r", did)
-                continue
-    
-            targets = depends.get((doc_cat, doc_type))
-            if not targets:
-                logger.info("Don't know how to transform a %r", doc_type)
-                continue
+            for task in self.gen_transition_tasks(did, src_rev):
+                state_doc['num_processed'] += 1
+                yield task
 
-            for target_info in targets:
-                target_cat, target_type = target_info
-                assert target_cat==doc_cat, (target_cat, doc_cat)
-                target_id = dm.build_docid(target_cat, target_type, proto_id)
-                cvtr = converters[(doc_cat, doc_type), target_info]
-                yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
-                                   key=target_id
-                        ).addCallback(self._cb_check_existing_doc, cvtr,
-                                      proto_id, did, src_rev)
+    def gen_transition_tasks(self, src_id, src_rev):
+        # A generator which checks if each of its 'targets' (ie, the extension
+        # which depends on this document) is up-to-date wrt this document's
+        # revision.
+
+        dm = self.doc_model
+        # For each target we need to determine if the doc exists, and if so,
+        # if our revision number is in the 'raindrop_sources' attribute.
+        # If it is, the target is up-to-date wrt us, so all is good.
+        try:
+            doc_cat, doc_type, proto_id = dm.split_docid(src_id)
+        except ValueError:
+            logger.warning("skipping malformed ID %r", src_id)
+            return
+
+        targets = depends.get((doc_cat, doc_type))
+        if not targets:
+            logger.debug("documents of type %r need no processing", doc_type)
+            return
+
+        for target_info in targets:
+            target_cat, target_type = target_info
+            assert target_cat==doc_cat, (target_cat, doc_cat)
+            target_id = dm.build_docid(target_cat, target_type, proto_id)
+            cvtr = converters[(doc_cat, doc_type), target_info]
+            yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
+                               key=target_id
+                    ).addCallback(self._cb_check_existing_doc, cvtr,
+                                  proto_id, src_id, src_rev)
 
     def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev):
         rows = result['rows']
