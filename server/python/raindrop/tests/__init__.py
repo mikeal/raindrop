@@ -39,7 +39,17 @@ class TestCaseWithDB(TestCase):
         dbinfo = config.couches['local']
         # then blindly nuke it.
         db = get_db('local', None)
-        def _nuke_failed(failure, *args, **kwargs):
+        def _nuke_failed(failure, retries_left):
+            # worm around a bug on windows in couch 0.9:
+            # https://issues.apache.org/jira/browse/COUCHDB-326
+            # We just need to wait a little and try again...
+            if failure.value.status == '500' and retries_left:
+                import time;time.sleep(0.1)
+                return db.deleteDB(dbinfo['name']
+                    ).addCallbacks(_nuked_ok, _nuke_failed,
+                                   errbackArgs=retries_left-1
+                    )
+
             if failure.value.status != '404':
                 failure.raiseException()
 
@@ -49,7 +59,7 @@ class TestCaseWithDB(TestCase):
         # This needs more thought - not every test will want the user's
         # accounts (indeed, I expect they will *not* want user's account...)
         return db.deleteDB(dbinfo['name']
-                ).addCallbacks(_nuked_ok, _nuke_failed
+                ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
                 ).addCallback(bootstrap.install_accounts
                 ).addCallback(bootstrap.install_client_files, FakeOptions()
@@ -60,13 +70,13 @@ class TestCaseWithDB(TestCase):
         self.prepare_config()
         return self.prepare_test_db()
 
-    def get_last_by_seq(self):
+    def get_last_by_seq(self, n=1):
         def extract_row(result):
             rows = result['rows']
-            assert len(rows)==1
-            return rows[0]
+            assert len(rows)==n
+            return rows
 
-        return get_doc_model().db.listDocsBySeq(limit=1,
+        return get_doc_model().db.listDocsBySeq(limit=n,
                                                 descending=True,
                                                 include_docs=True
                 ).addCallback(extract_row
