@@ -43,6 +43,17 @@ dojo.mixin(rd, {
     }
   },
 
+  //Shortcut methods for dojo.publish and subscribe. rd.pub more aesthetically pleasing
+  //than dojo.publish because it does not force the parameters to be in an array,
+  //but rather as variable number of arguments to rd.pub.
+  //Base on plugd versions of the code: http://code.google.com/p/plugd/source/browse/trunk/base.js
+  sub: dojo.subscribe,
+  unsub: dojo.unsubscribe,
+  pub: function(){
+    var a = d._toArray(arguments);
+    return dojo.publish(a.shift(), a);
+  },
+  
   convertLines: function(text) {
     //Converts line returns to BR tags
     return text && text.replace(/\n/g, "<br>");  
