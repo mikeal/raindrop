@@ -27,6 +27,9 @@ logger = logging.getLogger('model')
 
 DBs = {}
 
+class DocumentSaveError(Exception):
+    pass
+
 # XXXX - this relies on couch giving us some kind of 'sequence id'.  For
 # now we use a timestamp, but that obviously sucks in many scenarios.
 if sys.platform == 'win32':
@@ -393,6 +396,9 @@ class DocumentModel(object):
         self._docs_since_view_update += len(result)
         ds = []
         for dinfo, dattach in zip(result, attachments):
+            if 'error' in dinfo:
+                raise DocumentSaveError(dinfo)
+
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
         if self._docs_since_view_update > 50:
