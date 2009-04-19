@@ -21,7 +21,11 @@ from ..proc import base
 
 # So for now we are going with the blocking twitter package used via
 # deferToThread for all blocking operations...
-import twitter
+# twitter raises deprecation warnings in 2.6 - suppress them for now.
+import warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import twitter
 
 logger = logging.getLogger(__name__)
 
