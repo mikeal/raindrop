@@ -64,7 +64,23 @@ class MessageImportanceAggregator(base.ConverterBase):
     # depend on this contact.
     # eg, when anno/flags for contact 'Mark' changes, which messages are
     # impacted and get this aggregator re-executed?
+    # XXX - note the below is just an indication of how we might implement
+    # the required 'indirection'...
     indirection_views = {
         ('contact', 'anno/flags') : 'raindrop!something!blah',
     }
     target_type = 'msg', 'aggr/flags'
+
+    # This is almost certainly too simple :)
+    def convert(self, docs):
+        ret = {}
+        for doc in docs:
+            if doc['type'] == 'core/error/msg':
+                return None # an error...
+            ret.update(doc)
+        for k in ret.keys():
+            if k.startswith('_') or k.startswith('raindrop'):
+                del ret[k]
+        del ret['type']
+        
+        return ret
