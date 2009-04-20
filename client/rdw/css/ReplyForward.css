@@ -1,0 +1,26 @@
+.QuickCompose.reply div.photo,
+.QuickCompose.forward div.photo {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  vertical-align: top;
+  background-color: #efefef;
+}
+
+.QuickCompose.reply div.photo img.photo,
+.QuickCompose.forward div.photo img.photo {
+  width: 24px;
+  height: 24px;
+}
+
+.QuickCompose.reply .info .name,
+.QuickCompose.forward .info .name {
+  font-size: smaller;
+}
+
+.QuickCompose.reply input,
+.QuickCompose.forward input {
+  font-size: smaller;
+  font-weight: normal;
+  letter-spacing: 0.1ex;
+}

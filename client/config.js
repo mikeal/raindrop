@@ -22,15 +22,19 @@
     //If we only support postMessage browsers, then don't need client URL
     //This makes the assumption the app always includes xip_client.html in the
     //same directory as any app page that uses the couchdb API.
-    xipClientUrl: "./xip_client.html",
+    //xipClientUrl: "./xip_client.html",
     modulePaths: {
-      /*INSERT CONFIG HERE*/
+      /*INSERT PATHS HERE*/
       //"dojox.io.proxy.xip": prefix + "/xip",
       "rd": prefix + "/rd",
       "couch": prefix + "/couch",
       "rdw": prefix  + "/rdw"
     },
     
+    rd: {
+      /*INSERT SUBS HERE*/
+    },
+
     scopeMap: [
       ["dojo", "rd"],
       ["dijit", "rdw"],
@@ -59,7 +63,7 @@
     "couch": 1,
     //"dojox.io.proxy.xip": 1
   };
-  
+
   for (var param in djConfig.modulePaths) {
     var value = djConfig.modulePaths[param];
     

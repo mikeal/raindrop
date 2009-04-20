@@ -54,5 +54,18 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.inherited("postCreate", arguments);
     
     
+  },
+
+  onToolClick: function(evt) {
+    //summary: handles clicks for tool actions. Uses event
+    //delegation to publish the right action.
+    var href = evt.target.href;
+    if (href && (href = href.split("#")[1])) {
+      rd.pub("rdw.Message-" + href, {
+        node: this.toolDisplay,
+        doc: this.doc
+      });
+      evt.preventDefault();
+    }
   }
 });

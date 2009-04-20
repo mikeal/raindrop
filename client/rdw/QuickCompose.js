@@ -17,6 +17,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     
     this.yourName = "Your Name";
     this.yourAddress = "you@example.com";
+    
+    this.sendButtonText = this.i18n.send;
   },
 
   postCreate: function() {

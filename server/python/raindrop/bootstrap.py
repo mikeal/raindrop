@@ -206,39 +206,67 @@ def update_apps(whateva):
         failure.trap(twisted.web.error.Error)
         failure.raiseException()
 
-    def _load_config(doc):
-        # load app config from couch
-        dfd = db.openView("raindrop!uiext!all", "all")
-        dfd.addErrback(_open_not_exists)
-        dfd.addCallback(_insert_config, doc)
-        return dfd
+    def _insert_paths(view_results, replacements):
+        # Convert couch config value for module paths
+        # to a JS string to be used in config.js
+        module_paths = ""
+        
+        # TODO: this needs more work/reformatting
+        # but need a real use case first.
+        # module_paths += ",".join(
+        #    ["'%s': '%s'" % (
+        #       item["key"].replace("'", "\\'"), 
+        #       item["value"].replace("'", "\\'")
+        #    ) for item in view_results["rows"]]
+        # )
 
-    def _insert_config(view_results, doc):
+        replacements["module_paths"] = module_paths
+        
+        dfd = db.openView("raindrop!uiext!subs", "all")
+        dfd.addErrback(_open_not_exists)
+        dfd.addCallback(_insert_extensions, replacements)
+        return dfd        
+
+    def _insert_extensions(view_results, replacements):
+        # Pull out all the subscriptions
+        subs = "subs: ["
+        for item in view_results["rows"]:
+            # each row has a key that in an array of objects.
+            for sub in item["key"]:
+                # sub is an object. Get the keys and
+                # add it to the text output.
+                for key in sub.keys():
+                  subs += "{'%s': '%s'}," % (
+                      key.replace("'", "\\'"),
+                      sub[key].replace("'", "\\'")
+                  )
+
+        # TODO: if my python fu was greater, probably could do this with some
+        # fancy list joins, but falling back to removing trailing comma here.
+        subs = re.sub(",$", "", subs)
+        subs += "],"
+
+        replacements["subs"] = subs
+
+        defrd = db.openDoc(FILES_DOC)
+        defrd.addErrback(_open_not_exists)
+        defrd.addCallback(_save_config, replacements)
+        return defrd        
+
+    def _save_config(doc, replacements):
+        # Find config.js skeleton on disk   
         # we cannot go in a zipped egg...
         root_dir = path_part_nuke(model.__file__, 4)
-        config_path = os.path.join(root_dir, 'client') + "/config.js"
+        config_path = os.path.join(root_dir, "client") + "/config.js"
 
         # load config.js skeleton
         f = open(config_path, 'rb')
         data = f.read()
         f.close()
 
-
-        #Inject the config into the config.js
-        config = ""
-        config += ",".join(
-           ["'%s': '%s'" % (
-              item["key"].replace("'", "\\'"), 
-              item["value"].replace("'", "\\'")
-           ) for item in view_results["rows"]]
-        )
-
-        for item in view_results["rows"]:
-            prefix = item["key"]
-            # get path put pull off any fragment ID or query string
-            path = item["value"].split("#")[0].split("?")[0]
-
-        data = data.replace('/*INSERT CONFIG HERE*/', config)
+        # update config.js contents with couch data
+        data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
+        data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
 
         # save config.js in the files.
         doc["_attachments"]["config.js"] = {
@@ -248,10 +276,11 @@ def update_apps(whateva):
 
         return db.saveDoc(doc, FILES_DOC)
 
-    defrd = db.openDoc(FILES_DOC)
-    defrd.addErrback(_open_not_exists)
-    defrd.addCallback(_load_config)
-    return defrd
+    replacements = {}
+    dfd = db.openView("raindrop!ui!paths", "all")
+    dfd.addErrback(_open_not_exists)
+    dfd.addCallback(_insert_paths, replacements)
+    return dfd
 
 def install_accounts(whateva):
     db = get_db()
