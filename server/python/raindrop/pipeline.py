@@ -159,9 +159,10 @@ class Pipeline(object):
         # XXX - see below - should we reuse self.coop, or is that unsafe?
         coop = task.Cooperator()
         return coop.coiterate(self.gen_transition_tasks(
-                                        source['_id'], source['_rev']))
+                                        source['_id'], source['_rev'],
+                                        force=True))
 
-    def gen_transition_tasks(self, src_id, src_rev,
+    def gen_transition_tasks(self, src_id, src_rev, force=False,
                              # caller can supply this dict if they care...
                              caller_ret={'num_processed': 0}):
         # A generator which checks if each of its 'targets' (ie, the extension
@@ -192,41 +193,45 @@ class Pipeline(object):
             cvtr = converters[(doc_cat, doc_type), target_info]
             logger.debug('looking for existing document %r', target_id)
             yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
-                               key=target_id
+                            key=target_id
                     ).addCallback(self._cb_check_existing_doc, cvtr,
-                                  proto_id, src_id, src_rev, caller_ret)
+                                  proto_id, src_id, src_rev, force,
+                                  caller_ret)
 
     def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev,
-                               caller_ret):
+                               force, caller_ret):
         rows = result['rows']
         if len(rows)==0:
             # no target exists at all - needs to be executed...
             need_target = True
+            target_rev = None
         else:
             assert len(rows)==1, rows # what does more than 1 mean?
-            all_sources = rows[0]['value']
+            val = rows[0]['value']
+            target_rev, all_sources = val
             look = [src_id, src_rev]
-            need_target = look not in all_sources
+            need_target = force or look not in all_sources
             logger.debug("need target=%s (looked for %r in %r)", need_target,
                          look, all_sources)
 
         if not need_target:
             return None # nothing to do.
-        caller_ret['num_processed'] += 1
-        return self.make_document(cvtr, proto_id)
+        return self._make_document(cvtr, proto_id, target_rev, caller_ret)
 
-    def make_document(self, cvtr, proto_id):
+    def _make_document(self, cvtr, proto_id, target_rev, caller_ret):
         # OK - need to create this new type - locate all dependents in the
         # DB - this will presumably include the document which triggered
         # the process...
+        caller_ret['num_processed'] += 1
         all_deps = []
         dm = self.doc_model
         for src_cat, src_type in cvtr.sources:
             all_deps.append(dm.build_docid(src_cat, src_type, proto_id))
         return dm.db.listDoc(keys=all_deps, include_docs=True,
-                    ).addCallback(self._cb_do_conversion, cvtr, proto_id)
+                    ).addCallback(self._cb_do_conversion, cvtr, proto_id,
+                                  target_rev)
 
-    def _cb_do_conversion(self, result, cvtr, proto_id):
+    def _cb_do_conversion(self, result, cvtr, proto_id, target_rev):
         sources = []
         for r in result['rows']:
             if 'error' in r:
@@ -247,9 +252,10 @@ class Pipeline(object):
             return None
         return defer.maybeDeferred(cvtr.convert, sources
                         ).addBoth(self._cb_converted_or_not,
-                                  cvtr, sources, proto_id)
+                                  cvtr, sources, proto_id, target_rev)
 
-    def _cb_converted_or_not(self, result, target_ext, sources, proto_id):
+    def _cb_converted_or_not(self, result, target_ext, sources, proto_id,
+                             target_rev):
         # This is both a callBack and an errBack.  If a converter fails to
         # create a document, we can't just fail, or no later messages in the
         # DB will ever get processed!
@@ -283,13 +289,16 @@ class Pipeline(object):
         # redundant as it could be deduced.  But we need the revision to
         # check if we are up-to-date wrt our 'children'...
         new_doc['raindrop_sources'] = [(s['_id'], s['_rev']) for s in sources]
+        if target_rev is not None:
+            new_doc['_rev'] = target_rev
         return self.doc_model.create_ext_documents([new_doc])
 
 def generate_work_queue(doc_model, transition_gen_factory):
     """generate deferreds which will determine where our processing is up
-    to and walk us through the _all_docs_by_seq view from that point,
-    creating and saving new docs as it goes. When the generator finishes
-    the queue is empty."""
+    to and walk us through the _all_docs_by_seq view from that point.  This
+    generator itself determines the source documents to process, then passes
+    each of those documents through another new generator, which actually
+    calls the extensions and saves the docs."""
     def _cb_update_state_doc(result, d):
         if result is not None:
             assert d['_id'] == result['_id'], result
@@ -321,7 +330,8 @@ def generate_work_queue(doc_model, transition_gen_factory):
         for row in rows:
             did = row['id']
             src_rev = row['value']['rev']
-            for task in transition_gen_factory(did, src_rev, convert_result):
+            for task in transition_gen_factory(did, src_rev,
+                                               caller_ret=convert_result):
                 yield task
 
     # first open our 'state' document
