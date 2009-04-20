@@ -202,15 +202,13 @@ class SkypeConverter(base.SimpleConverterBase):
         # We need to open the 'chat' for this Message.  Clearly this is
         # going to be inefficient...
         proto_id = doc['skype_chatname'].encode('utf8') # hrmph!
-        return self.doc_model.open_document('msg', 'proto/skype-chat',
-                                            proto_id
+        return self.doc_model.open_document('msg', proto_id,
+                                            'proto/skype-chat'
                         ).addCallback(self.finish_convert, doc)
 
     def finish_convert(self, chat_doc, doc):
-        if chat_doc is None:
-            subject = "<failed to fetch skype chat!>"
-        else:
-            subject = chat_doc['skype_friendlyname']
+        assert chat_doc is not None, "failed to fetch skype chat!"
+        subject = chat_doc['skype_friendlyname']
         return {'from': ['skype', doc['skype_from_handle']],
                 'subject': subject,
                 'body': doc['skype_body'],
