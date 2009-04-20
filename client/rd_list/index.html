@@ -2,6 +2,30 @@
 
 <html>
 <head>
+  <style type="text/css">
+    h1 {
+      letter-spacing: 0.2ex;
+    }
+    ul {
+      display: inline-block;
+      margin: 0px;
+      padding: 0px;
+      min-width: 20ex;
+      list-style: none;
+      outline: 1px solid gray;
+    }
+    ul > li {
+    }
+    ul > li > a {
+      display: block;
+      padding: 2ex;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    ul > li > a:hover {
+      background-color: #f9f9f9;
+    }
+  </style>
   <script src="http://127.0.0.1:5984/raindrop/files/config.js" charset="utf-8"></script>
   <script type="text/javascript" charset="utf-8">
     rd.addOnLoad(function(){
@@ -26,7 +50,7 @@
 </head>
 
 <body>
-  <h1>Raindrop app listing</h1>
+  <h1>raindrop</h1>
   <ul></ul>
 </body>
 </html>
