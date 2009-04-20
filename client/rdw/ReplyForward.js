@@ -2,7 +2,7 @@ dojo.provide("rdw.ReplyForward");
 
 dojo.require("rdw.ReplyForward");
 
-dojo.declare("rdw.QuickCompose", [rdw.QuickCompose], {
+dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   //Valid replyTypes: "reply" and "forward"
   replyType: "reply",
 
@@ -25,7 +25,7 @@ dojo.declare("rdw.QuickCompose", [rdw.QuickCompose], {
   var makeWidget = function(/*String*/type, /*Object*/topicData) {
       //Right now, not doing anything with topicData.doc, but
       //it should be used to pull out context for the message.
-      new rdw.QuickCompose({
+      new rdw.ReplyForward({
         replyType: type
       }, topicData.node);
   };
