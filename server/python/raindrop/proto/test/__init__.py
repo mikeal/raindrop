@@ -110,6 +110,16 @@ class TestConverter(base.SimpleConverterBase):
             new_doc['headers'][hn.lower()] = hv
         return new_doc
 
+# A 'converter' - takes a proto/test as input and creates a
+# 'anno/flags' as output.
+class TestFlagsConverter(base.SimpleConverterBase):
+    target_type = "msg", "anno/flags"
+    sources = [
+        ('msg', 'proto/test'),
+    ]
+    def simple_convert(self, doc):
+        return {'seen': False}
+
 
 class TestAccount(base.AccountBase):
   def startSync(self, conductor):
