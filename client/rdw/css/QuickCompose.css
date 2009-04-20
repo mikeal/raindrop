@@ -30,13 +30,19 @@
   width: 31em;
 }
 
+.QuickCompose .info {
+  color: #666666;
+}
+
 .QuickCompose .info .name {
+  font-family: Arial Black, Gadget, sans-serif;
   font-weight: bold;
+  letter-spacing: 0.15em;
 }
 
 .QuickCompose .info .medium {
-  font-size: small;
-  color: GrayText;
+  font-family: Lucida Console, Monaco, monospace;
+  font-size: x-small;
 }
 
 .QuickCompose form {
@@ -55,7 +61,7 @@
 }
  
 .QuickCompose textarea {
-  border: 1px inset #44617E;
+  border: 1px solid #AFAFAF;
   width:80%;
   height: 3ex;
   padding: 0.4ex;
