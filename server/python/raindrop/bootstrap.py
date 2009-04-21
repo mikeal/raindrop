@@ -64,7 +64,7 @@ def install_client_files(whateva, options):
             failure.raiseException()
         return {} # return an empty doc.
 
-    def _maybe_update_doc(design_doc):
+    def _maybe_update_doc(design_doc, doc_name):
         def _insert_file(path, couch_path, attachments, fp):
             f = open(path, 'rb')
             ct = mimetypes.guess_type(path)[0]
@@ -93,7 +93,8 @@ def install_client_files(whateva, options):
                 # end in a ~, those are probably temp editor files. 
                 if os.path.isfile(path) and \
                    not filename.startswith(".") and \
-                   not filename.endswith("~"):
+                   not filename.endswith("~") and \
+                   not filename.endswith(".zip"):
                     _insert_file(path, couch_path + filename, attachments, fp)
                 elif os.path.isdir(path):
                     new_couch_path = filename + "/"
@@ -106,7 +107,7 @@ def install_client_files(whateva, options):
         attachments = design_doc['_attachments'] = {}
         # we cannot go in a zipped egg...
         root_dir = path_part_nuke(model.__file__, 4)
-        client_dir = os.path.join(root_dir, 'client')
+        client_dir = os.path.join(root_dir, 'client/' + doc_name)
         logger.debug("listing contents of '%s' to look for client files", client_dir)
 
         # recursively go through directories, adding files.
@@ -116,15 +117,30 @@ def install_client_files(whateva, options):
         if options.force or design_doc.get('fingerprints') != new_prints:
             logger.info("client files are different - updating doc")
             design_doc['fingerprints'] = new_prints
-            return d.saveDoc(design_doc, FILES_DOC)
+            return d.saveDoc(design_doc, doc_name)
         logger.debug("client files are identical - not updating doc")
         return None
 
-    defrd = d.openDoc(FILES_DOC)
-    defrd.addCallbacks(_opened_ok, _open_not_exists)
-    defrd.addCallback(_maybe_update_doc)
-    return defrd
-           
+    dl = []
+    # we cannot go in a zipped egg...
+    root_dir = path_part_nuke(model.__file__, 4)
+    client_dir = os.path.join(root_dir, 'client')
+    files = os.listdir(client_dir)
+    
+    # find all the directories in the client dir
+    # and create docs with attachments for each dir.
+    for f in files:
+        fq_child = os.path.join(client_dir, f)
+        print "File: ", fq_child
+        if os.path.isdir(fq_child):
+            print "DIR: ", f
+            dfd = d.openDoc(f)
+            dfd.addCallbacks(_opened_ok, _open_not_exists)
+            dfd.addCallback(_maybe_update_doc, f)
+            dl.append(dfd)
+            
+    return defer.DeferredList(dl)
+
 
 def insert_default_docs(whateva, options):
     """
@@ -257,7 +273,7 @@ def update_apps(whateva):
         # Find config.js skeleton on disk   
         # we cannot go in a zipped egg...
         root_dir = path_part_nuke(model.__file__, 4)
-        config_path = os.path.join(root_dir, "client") + "/config.js"
+        config_path = os.path.join(root_dir, "client/files/config.js")
 
         # load config.js skeleton
         f = open(config_path, 'rb')

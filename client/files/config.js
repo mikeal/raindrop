@@ -45,7 +45,7 @@
   //If using API stubs, then adjust couch path.
   var query = location.search;
   if (query && query.indexOf("apistub=1") != -1) {
-    djConfig.couchUrl += "/raindrop/files/apistub";
+    djConfig.couchUrl += "/raindrop/apistub";
     djConfig.useApiStub = true;
   }
   
