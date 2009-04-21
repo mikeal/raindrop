@@ -5,11 +5,15 @@ Setup the CouchDB server so that it is fully usable and what not.
 '''
 import sys
 import re, json
+import zipfile
 import twisted.web.error
 from twisted.internet import defer
 import os, os.path, mimetypes, base64, pprint
 import model
 import hashlib
+
+import shutil, zipfile
+from cStringIO import StringIO
 
 from .config import get_config
 from .model import get_db
@@ -46,6 +50,43 @@ class Fingerprinter:
     def get_prints(self):
         return dict((n,h.hexdigest()) for (n, h) in self.fs_hashes.iteritems())
 
+# Utility function to extract files from a zip.
+# taken from: http://code.activestate.com/recipes/465649/
+def extract( filename, dir ):
+    zf = zipfile.ZipFile( filename )
+    namelist = zf.namelist()
+    dirlist = filter( lambda x: x.endswith( '/' ), namelist )
+    filelist = filter( lambda x: not x.endswith( '/' ), namelist )
+    # make base
+    pushd = os.getcwd()
+    if not os.path.isdir( dir ):
+        os.mkdir( dir )
+    os.chdir( dir )
+    # create directory structure
+    dirlist.sort()
+    for dirs in dirlist:
+        dirs = dirs.split( '/' )
+        prefix = ''
+        for dir in dirs:
+            dirname = os.path.join( prefix, dir )
+            if dir and not os.path.isdir( dirname ):
+                os.mkdir( dirname )
+            prefix = dirname
+    # extract files
+    for fn in filelist:
+        try:
+            out = open( fn, 'wb' )
+            buffer = StringIO( zf.read( fn ))
+            buflen = 2 ** 20
+            datum = buffer.read( buflen )
+            while datum:
+                out.write( datum )
+                datum = buffer.read( buflen )
+            out.close()
+        finally:
+            print fn
+    os.chdir( pushd )
+
 
 def install_client_files(whateva, options):
     '''
@@ -64,45 +105,46 @@ def install_client_files(whateva, options):
             failure.raiseException()
         return {} # return an empty doc.
 
-    def _maybe_update_doc(design_doc, doc_name):
-        def _insert_file(path, couch_path, attachments, fp):
-            f = open(path, 'rb')
-            ct = mimetypes.guess_type(path)[0]
-            if ct is None and sys.platform=="win32":
-                # A very simplistic check in the windows registry.
-                import _winreg
-                try:
-                    k = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
-                                        os.path.splitext(path)[1])
-                    ct = _winreg.QueryValueEx(k, "Content Type")[0]
-                except EnvironmentError:
-                    pass
+    def _insert_file(path, couch_path, attachments, fp, ignore_unknowns):
+        f = open(path, 'rb')
+        ct = mimetypes.guess_type(path)[0]
+        if ct is None and sys.platform=="win32":
+            # A very simplistic check in the windows registry.
+            import _winreg
+            try:
+                k = _winreg.OpenKey(_winreg.HKEY_CLASSES_ROOT,
+                                    os.path.splitext(path)[1])
+                ct = _winreg.QueryValueEx(k, "Content Type")[0]
+            except EnvironmentError:
+                pass
+        if not ct and not ignore_unknowns:
             assert ct, "can't guess the content type for '%s'" % path
-            data = f.read()
-            fp.get_finger(path).update(data)
-            attachments[couch_path] = {
-                'content_type': ct,
-                'data': base64.b64encode(data)
-            }
-            f.close()
+        data = f.read()
+        fp.get_finger(path).update(data)
+        attachments[couch_path] = {
+            'content_type': ct,
+            'data': base64.b64encode(data)
+        }
+        f.close()
 
-        def _check_dir(client_dir, couch_path, attachments, fp):
-            for filename in os.listdir(client_dir):
-                path = os.path.join(client_dir, filename)
-                # Insert files if they do not start with a dot or
-                # end in a ~, those are probably temp editor files. 
-                if os.path.isfile(path) and \
-                   not filename.startswith(".") and \
-                   not filename.endswith("~") and \
-                   not filename.endswith(".zip"):
-                    _insert_file(path, couch_path + filename, attachments, fp)
-                elif os.path.isdir(path):
-                    new_couch_path = filename + "/"
-                    if couch_path:
-                        new_couch_path = couch_path + new_couch_path
-                    _check_dir(path, new_couch_path, attachments, fp)
-                logger.debug("filename '%s'", filename)
+    def _check_dir(client_dir, couch_path, attachments, fp, ignore_unknowns):
+        for filename in os.listdir(client_dir):
+            path = os.path.join(client_dir, filename)
+            # Insert files if they do not start with a dot or
+            # end in a ~, those are probably temp editor files. 
+            if os.path.isfile(path) and \
+               not filename.startswith(".") and \
+               not filename.endswith("~") and \
+               not filename.endswith(".zip"):
+                _insert_file(path, couch_path + filename, attachments, fp, ignore_unknowns)
+            elif os.path.isdir(path):
+                new_couch_path = filename + "/"
+                if couch_path:
+                    new_couch_path = couch_path + new_couch_path
+                _check_dir(path, new_couch_path, attachments, fp, ignore_unknowns)
+            logger.debug("filename '%s'", filename)
 
+    def _maybe_update_doc(design_doc, doc_name):
         fp = Fingerprinter()
         attachments = design_doc['_attachments'] = {}
         # we cannot go in a zipped egg...
@@ -111,7 +153,7 @@ def install_client_files(whateva, options):
         logger.debug("listing contents of '%s' to look for client files", client_dir)
 
         # recursively go through directories, adding files.
-        _check_dir(client_dir, "", attachments, fp)
+        _check_dir(client_dir, "", attachments, fp, False)
 
         new_prints = fp.get_prints()
         if options.force or design_doc.get('fingerprints') != new_prints:
@@ -131,14 +173,54 @@ def install_client_files(whateva, options):
     # and create docs with attachments for each dir.
     for f in files:
         fq_child = os.path.join(client_dir, f)
-        print "File: ", fq_child
         if os.path.isdir(fq_child):
-            print "DIR: ", f
             dfd = d.openDoc(f)
             dfd.addCallbacks(_opened_ok, _open_not_exists)
             dfd.addCallback(_maybe_update_doc, f)
             dl.append(dfd)
-            
+
+    # Unpack dojo and install it if necessary. Only do the work if the
+    # zip file has changed since the last time dojo was installed, or
+    # if there is no dojo couch doc.
+    def _maybe_update_dojo(design_doc):
+        fp = Fingerprinter()
+
+        # we cannot go in a zipped egg...
+        root_dir = path_part_nuke(model.__file__, 4)
+        client_dir = os.path.join(root_dir, 'client')
+        zip_path = os.path.join(client_dir, 'dojo.zip')
+
+        f = open(zip_path, 'rb')
+        data = f.read()
+        fp.get_finger(zip_path).update(data)
+        f.close()
+
+        new_prints = fp.get_prints()
+        if options.force or design_doc.get('fingerprints') != new_prints:
+            dojo_dir = os.path.join(client_dir, "dojo")
+
+            # unpack dojo
+            extract(zip_path, client_dir)
+
+            # insert attachments into couch doc
+            attachments = design_doc['_attachments'] = {}
+            _check_dir(dojo_dir, "", attachments, Fingerprinter(), True)
+
+            # remove the unzipped dojo directory.
+            shutil.rmtree(dojo_dir)
+
+            # save couch doc
+            design_doc['fingerprints'] = new_prints
+            return d.saveDoc(design_doc, "dojo")
+        else:
+            return None
+
+    #Add the dojo doc checking to the deferred list.
+    dfd = d.openDoc("dojo")
+    dfd.addCallbacks(_opened_ok, _open_not_exists)
+    dfd.addCallback(_maybe_update_dojo)
+    dl.append(dfd)
+
     return defer.DeferredList(dl)
 
 

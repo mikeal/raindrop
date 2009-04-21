@@ -11,6 +11,8 @@
     i--;
   }
 
+  var dojoPrefix = prefix.replace(/\/files$/, "/dojo");
+
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.
     require: ["rd", "couch", "dojo.parser" /*"dojox.io.proxy.xip"*/],
@@ -26,6 +28,10 @@
     modulePaths: {
       /*INSERT PATHS HERE*/
       //"dojox.io.proxy.xip": prefix + "/xip",
+      "dojo": dojoPrefix + "/dojo",
+      "dijit": dojoPrefix + "/dijit",
+      "dojox": dojoPrefix + "/dojox",
+
       "rd": prefix + "/rd",
       "couch": prefix + "/couch",
       "rdw": prefix  + "/rdw"
@@ -59,6 +65,9 @@
   //will not give us the full picture.
   var parts = location.href.split("/");
   var frameworkNames = {
+    "dojo": 1,
+    "dijit": 1,
+    "dojox": 1,
     "rd": 1,
     "couch": 1,
     //"dojox.io.proxy.xip": 1
@@ -84,5 +93,5 @@
     djConfig.modulePaths[param] = value;
   }
   
-  document.write('<script src="http://ajax.googleapis.com/ajax/libs/dojo/1.3.0/dojo/dojo.xd.js.uncompressed.js"></script>');
+  document.write('<script src="' + dojoPrefix + '/dojo/dojo.xd.js.uncompressed.js"></script>');
 })();
