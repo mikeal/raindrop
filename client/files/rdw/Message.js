@@ -1,5 +1,7 @@
 dojo.provide("rdw.Message");
+
 dojo.require("rdw._Base");
+dojo.require("rdw.gravatar");
 
 dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
@@ -20,9 +22,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     
     //Set the properties for this widget based on doc
     //properties.
-    //TODO: some of these need more info from backend.
-    this.userPicUrl = this.blankImgUrl;
-    // XXX: theese are a couple hacks to get the UI looking more like we want
+    //TODO: some of these need more info from backend.    
+    // XXX: these are a couple hacks to get the UI looking more like we want
     this.fromName = this.doc.from[1];
     try {
       var pieces = this.doc.from[1].split("<");
@@ -47,6 +48,12 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.message = rd.escapeHtml(this.doc.body_preview);
     this.time = 0;
     this.timeDisplay = rd.escapeHtml("some time ago");
+    
+    this.userPicUrl = this.blankImgUrl;
+    //If the fromId has an @ in it, try to use a gravatar for it.
+    if (this.fromId && this.fromId.indexOf("@") != -1) {
+      this.userPicUrl = rdw.gravatar.get(this.fromId);
+    }
   },
 
   postCreate: function() {
