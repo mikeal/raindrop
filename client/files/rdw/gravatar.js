@@ -14,7 +14,7 @@ dojo.require("dojox.encoding.digests.MD5");
       if (!digest) {
         digest = this._store[email] = digests.MD5(email, digests.outputTypes.Hex);
       }
-      return "http://www.gravatar.com/avatar/" + digest;
+      return "http://www.gravatar.com/avatar/" + digest + ".jpg?d=wavatar&s=48";
     }
   };
 
