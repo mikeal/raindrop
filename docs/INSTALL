@@ -120,9 +120,8 @@ Get *real* messages:
 
 (reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
 
-Go to http://127.0.0.1:5984/raindrop/files/index.xhtml and do autocomplete to do
-searches.  If you have many documents, please be patient as the views are
-generated for the first time.
+Finally, go to http://127.0.0.1:5984/raindrop/files/rd_list/index.html to access
+the Inflow application and other available applications.
 
 You can edit any of the files in the 'schema' or 'client' directories, and
 when run-raindrop is next started, the changes to these files will be detected
