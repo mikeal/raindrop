@@ -126,7 +126,7 @@ class ImapClient(imap4.IMAP4Client):
                   }
     doc['_attachments'] = attachments
     return self.doc_model.create_raw_documents(self.account,
-                                              [(did, doc, 'proto/imap')],
+                                            [('msg', 'proto/imap', did, doc)],
                 ).addCallback(self._cb_saved_message)
 
   def _cantGetMessage(self, failure):

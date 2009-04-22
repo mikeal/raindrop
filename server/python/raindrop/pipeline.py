@@ -262,7 +262,7 @@ class Pipeline(object):
         # So we write a "dummy" record - it has the same docid that the real
         # document would have - but the 'type' attribute in the document
         # reflects it is actually an error marker.
-        dest_type = target_ext.target_type[1]
+        dest_cat, dest_type = target_ext.target_type
         if isinstance(result, Failure):
             logger.warn("Failed to convert a document: %s", result)
             if self.options.stop_on_error:
@@ -270,7 +270,8 @@ class Pipeline(object):
                 result.raiseException()
             # and make a dummy doc.
             new_doc = {'error_details': unicode(result)}
-            self.doc_model.prepare_ext_document(proto_id, dest_type, new_doc)
+            self.doc_model.prepare_ext_document(dest_cat, dest_type, proto_id,
+                                                new_doc)
             # and patch the 'type' attribute to reflect its really an error.
             new_doc['type'] = 'core/error/msg'
         else:
@@ -282,7 +283,8 @@ class Pipeline(object):
                 return
 
             new_doc = result
-            self.doc_model.prepare_ext_document(proto_id, dest_type, new_doc)
+            self.doc_model.prepare_ext_document(dest_cat, dest_type, proto_id,
+                                                new_doc)
             logger.debug("converter returned new document type %r for %r: %r",
                          dest_type, proto_id, new_doc['_id'])
         # In theory, the source ID of each doc that contributed is
