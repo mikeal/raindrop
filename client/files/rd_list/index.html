@@ -37,7 +37,7 @@
           var html = "";
           rd.forEach(json.rows, function(row) {
             var doc = row.doc;
-            if (doc._id != "app!app/rd_list") {
+            if (doc._id != "ui!rd_list") {
               html += '<li><a href="' + doc.location + '">' + doc.name + '</a></li>';
             }
           });
