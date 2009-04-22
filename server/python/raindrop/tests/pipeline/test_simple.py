@@ -3,7 +3,7 @@
 from twisted.internet import task, defer
 
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
-from raindrop.model import get_doc_model, encode_proto_id
+from raindrop.model import get_doc_model
 from raindrop.proto import test as test_proto
 from raindrop import pipeline
 
