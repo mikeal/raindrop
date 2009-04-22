@@ -42,7 +42,7 @@ else:
     get_seq = time.time
 
 
-def encode_proto_id(proto_id):
+def encode_provider_id(proto_id):
     # a 'protocol' gives us a 'blob' used to identify the document; we create
     # a real docid from that protocol_id; we base64-encode what was given to
     # us to avoid the possibility of a '!' char, and also to better accomodate
@@ -285,7 +285,7 @@ class DocumentModel(object):
 
     def open_document(self, category, proto_id, ext_type, **kw):
         """Open the specific document, returning None if it doesn't exist"""
-        docid = self.build_docid(category, ext_type, encode_proto_id(proto_id))
+        docid = self.build_docid(category, ext_type, encode_provider_id(proto_id))
         return self.open_document_by_id(docid, **kw)
 
     def open_document_by_id(self, doc_id, **kw):
@@ -306,16 +306,18 @@ class DocumentModel(object):
                          result)
         return result
 
-    def _prepare_raw_doc(self, account, docid, doc, doc_type):
-        assert docid
-        assert doc_type
+    def _prepare_raw_doc(self, account, doc, doc_cat, doc_type, provid):
+        docid = self.build_docid(doc_cat, doc_type, encode_provider_id(provid))
         assert '_id' not in doc, doc # that isn't how you specify the ID.
         doc['_id'] = docid
         assert 'raindrop_account' not in doc, doc # we look after that!
         doc['raindrop_account'] = account.details['_id']
-
-        assert 'type' not in doc, doc # we look after that!
-        doc['type'] = doc_type
+        for (attr, val) in [
+                        ('type', doc_type),
+                        ('raindrop_category', doc_cat),
+                        ]:
+            assert attr not in doc, (doc, attr) # we look after that!
+            doc[attr] = val
 
         assert 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
@@ -326,17 +328,12 @@ class DocumentModel(object):
         create a single doc, just put it in a list
         """
         docs = []
-        dids = [] # purely for the log :(
         logger.debug('create_raw_documents preparing %d docs', len(doc_infos))
-        for (proto_id, doc, doc_type) in doc_infos:
-            docid = self.build_docid('msg', doc_type, encode_proto_id(proto_id))
-            self._prepare_raw_doc(account, docid, doc, doc_type)
-            # XXX - this hardcoding is obviously going to be a problem when
-            # we need to add 'contacts' etc :(
+        for (cat, doc_type, provid, doc) in doc_infos:
+            self._prepare_raw_doc(account, doc, cat, doc_type, provid)
             docs.append(doc)
-            dids.append(docid)
         attachments = self._prepare_attachments(docs)
-        logger.debug('create_raw_documents saving docs %s', dids)
+        logger.debug('create_raw_documents saving %d docs', len(docs))
         return self.db.updateDocuments(docs
                     ).addCallback(self._cb_saved_docs, attachments
                     )
@@ -369,16 +366,20 @@ class DocumentModel(object):
         assert len(all_attachments)==len(docs)
         return all_attachments
 
-    def prepare_ext_document(self, prov_id, doc_type, doc):
+    def prepare_ext_document(self, doc_cat, doc_type, enc_prov_id, doc):
         """Called by extensions to setup the raindrop maintained attributes
            of the documents, including the document ID
         """
         assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
         assert 'type' not in doc, doc # we manage this too!
         assert 'raindrop_seq' not in doc, doc # we look after that!
+        doc['_id'] = self.build_docid(doc_cat, doc_type, enc_prov_id)
         doc['raindrop_seq'] = get_seq()
-        doc['type'] = doc_type
-        doc['_id'] = self.build_docid("msg", doc['type'], prov_id)
+        # just 'type' might not be good - XXX - consider making 'type' a tuple
+        # of (doc_cat, doc_type) - for now we store the category in a separate
+        # field...
+        doc['type'] = doc_type 
+        doc['raindrop_category'] = doc_cat
 
     def create_ext_documents(self, docs):
         for doc in docs:

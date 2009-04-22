@@ -6,6 +6,9 @@ import pygraphviz as pgv
 from raindrop import pipeline
 from raindrop.model import get_doc_model
 
+import logging
+logging.basicConfig() # so we can see errors in the pipeline loader.
+
 pipeline.load_converters(get_doc_model())
 
 G=pgv.AGraph()

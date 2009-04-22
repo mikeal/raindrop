@@ -50,7 +50,7 @@ class TestMessageProvider(object):
               storage_key=doc_num,
               _attachments=attachments,
               )
-            self.bulk_docs.append((str(doc_num), doc, 'proto/test'))
+            self.bulk_docs.append(('msg', 'proto/test', str(doc_num), doc))
         else:
             logger.info("Skipping test message with ID %d - already exists",
                         doc_num)

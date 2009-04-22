@@ -407,7 +407,7 @@ def install_accounts(whateva):
     d = defer.Deferred()
 
     for acct_name, acct_info in config.accounts.iteritems():
-        acct_id = acct_info['_id']
+        acct_id = "account!" + acct_info['_id']
         logger.info("Adding account '%s'", acct_id)
         d.addCallback(_open_doc, acct_id)
         d.addCallbacks(_opened_ok, _open_not_exists, errbackArgs=(acct_id,))
