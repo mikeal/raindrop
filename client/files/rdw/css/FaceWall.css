@@ -1,0 +1,17 @@
+.FaceWall {
+  list-style: none;
+  padding: 0;
+}
+
+.FaceWall li {
+  display: inline-block;
+}
+
+.FaceWall a {
+  display: block;
+  border: 0;
+}
+
+.FaceWall a img {
+  border: 0;
+}

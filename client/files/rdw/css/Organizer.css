@@ -1,11 +1,5 @@
 .Organizer {
   position: relative;
-  margin: 1.6ex 0.5em;
-  opacity: 0.3;
-}
-
-.Organizer:hover {
-  opacity: 1.0;
 }
 
 .Organizer:hover ol {

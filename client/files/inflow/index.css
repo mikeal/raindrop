@@ -2,6 +2,7 @@
 @import url("../rdw/css/Search.css");
 @import url("../rdw/css/Stories.css");
 @import url("../rdw/css/Organizer.css");
+@import url("../rdw/css/FaceWall.css");
 
 * {
   font:100%/normal verdana,geneva,sans-serif;
@@ -25,4 +26,26 @@
   right: 0;
   width: 10em;
   min-height: 40ex;
+}
+
+/* Specific style overrides for this app */
+
+.Search,
+.Organizer,
+.FaceWall {
+  margin: 1.6ex 0.5em;
+  opacity: 0.3;
+}
+
+.Search:hover,
+.searchInputFocused,
+.Organizer:hover,
+.FaceWall:hover {
+  opacity: 1.0;
+}
+
+.Search:hover > form > input,
+.searchInputFocused > form > input {
+  border-color: #44617E;
+  -moz-border-radius: 3px;
 }

@@ -158,7 +158,8 @@ dojo.mixin(rd, {
   },
 
   onDocClick: function(evt) {
-    //summary: Handles doc clicks to see if we need to use a register protocol.
+    //summary: Handles doc clicks to see if we need to
+    //use rd.pub to send out a protocol- topic.
     var node = evt.target;
     var href = node.href;
     
@@ -182,52 +183,8 @@ dojo.mixin(rd, {
         
         dojo.stopEvent(evt);
 
-        this.routeProtocol(protocol, value);
+        rd.pub("protocol-" + procotol, value);
       }
-    }
-  },
-  
-  routeProtocol: function(/*String*/protocol, /*String*/value) {
-    //summary: Handles loading of the protocols and routing the call to the right handler.
-    //Fetch the protocols
-    if (!this.protocols) {
-      this.protocols = {};
-      couch.db("extensions").view("all/protocol", {
-        include_docs: true,
-        group : false,
-        success: dojo.hitch(this, function(json) {
-          dojo.forEach(json.rows, function(row) {
-            var val = row.value;
-            this.protocols[val.protocol] = {
-              handler: val.handler
-            };
-          }, this);
-          this.callProtocol(protocol, value);
-        })
-      });
-    } else {
-      this.callProtocol(protocol, value);
-    }
-  },
-
-  callProtocol: function(/*String*/protocol, /*String*/value) {
-    //summary: Choose the right protocol extension to process the value.
-    protocol = this.protocols[protocol];
-    if (protocol) {
-      //Get the module to load. Assumption is anything but the last .part
-      //is the module name. The last .part is the method to call on the module.
-      var module = protocol.handler.split(".");
-      module.pop();
-
-      //Dynamically load protocol handler on demand. If already loaded,
-      //the code in the dojo.addOnLoad will execute immediately.
-      dojo["require"](module.join("."));
-      dojo.addOnLoad(function() {
-        var handler = dojo.getObject(protocol.handler);
-        if (handler) {
-          handler(value);
-        }
-      });
     }
   }
 });

@@ -1,18 +1,5 @@
 .Search {
   position: relative;
-  margin: 1.6ex 0.5em;
-  opacity: 0.3;
-}
-
-.Search:hover,
-.searchInputFocused {
-  opacity: 1.0;
-}
-
-.Search:hover > form > input,
-.searchInputFocused > form > input {
-  border-color: #44617E;
-  -moz-border-radius: 3px;
 }
 
 .Search > form {
