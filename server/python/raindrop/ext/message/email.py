@@ -7,7 +7,7 @@ from ...proc import base
 
 class EmailConverter(base.SimpleConverterBase):
     target_type = 'msg', 'message'
-    sources = [('msg', 'raw/message/email')]
+    sources = [('msg', 'raw/message/email/mailing-list-extracted')]
     def simple_convert(self, doc):
         # for now, the email repr has all we need.
         ret = doc.copy()

@@ -20,6 +20,7 @@ extension_modules = [
     'raindrop.proto.twitter',
     'raindrop.ext.message.rfc822',
     'raindrop.ext.message.email',
+    'raindrop.ext.message.mailinglist',
     'raindrop.ext.message.message',
 ]
 
