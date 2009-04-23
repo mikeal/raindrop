@@ -6,3 +6,4 @@ syntax:regexp
 \.DS_Store
 ^server/python/build/
 ^nbproject/
+^pipeline.svg$
