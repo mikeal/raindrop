@@ -2,10 +2,13 @@
 '''
 Fetch skype contacts and chats.
 '''
+import os
 import logging
+import tempfile
 
 import twisted.python.log
 from twisted.internet import defer, threads
+from twisted.python.failure import Failure
 
 from ..proc import base
 
@@ -110,9 +113,9 @@ class TwistySkype(object):
 
     def attach(self):
         logger.info("attaching to skype...")
-        d = threads.deferToThread(self.skype.Attach)
-        d.addCallback(self.attached)
-        return d
+        return threads.deferToThread(self.skype.Attach
+                    ).addCallback(self.attached
+                    )
 
     def attached(self, status):
         logger.info("attached to skype - getting chats")
@@ -229,47 +232,28 @@ class TwistySkype(object):
     def _cb_got_friends(self, friends):
         logger.debug("skype has %d friends(s) total", len(friends))
 
-        def gen_friends():
-            for friend in friends:
-                # make a 'deferred list' to fetch each property one at a time.
-                ds = [threads.deferToThread(friend._Property, p)
-                      for p, _ in USER_PROPS]
-                yield defer.DeferredList(ds
-                            ).addCallback(self._cb_got_friend_props, friend)
-                
-            logger.info("skype has finished processing all friends")
-
-        return self.conductor.coop.coiterate(gen_friends())
-
-    def _cb_got_friend_props(self, results, friend):
-        def check_identity(doc, friend, friend_raw):
+        def check_identity(doc, friend):
             fhandle = friend._Handle
-            if doc is None or doc['raw'] != friend_raw:
-                new_doc = {}
-                if doc is not None:
-                    new_doc['_rev'] = doc['_rev']
-                new_doc['raw'] = friend_raw
-                
-                # *sob* - these identity ids kinda suck.
-                new_doc['identity_id'] = friend_raw['identity_id'] = \
-                                    ['skype', fhandle]
+            # See if we have an existing contact - if so, update it.
+            if doc is None:
+                new_doc = {'identity_id': ['skype', fhandle],
+                           'skype_id': fhandle,
+                          }
                 dinfos = [('id', 'skype', fhandle, new_doc)]
                 logger.info('creating new doc for contact %r', fhandle)
                 return self.doc_model.create_raw_documents(self.account, dinfos)
             else:
                 logger.debug('existing contact %r is up to date', fhandle)
+                return None
 
-        logger.debug("got friend properties for %s", friend._Handle)
-        raw = {}
-        for (name, typ), (ok, val) in zip(USER_PROPS, results):
-            if ok:
-                raw['skype_'+name.lower()] = simple_convert(val, typ)
-        raw['skype_id'] = friend._Handle
-
-        # See if we have an existing contact - if so, update it.
-        return self.doc_model.open_document('id', friend._Handle, 'skype'
-                    ).addCallback(check_identity, friend, raw
+        def gen_friend_checks():
+            for friend in friends:
+                yield self.doc_model.open_document('id', friend._Handle, 'skype'
+                    ).addCallback(check_identity, friend,
                     )
+            logger.info("skype has finished processing all friends")
+
+        return self.conductor.coop.coiterate(gen_friend_checks())
 
 
 # A 'converter' - takes a proto/skype-msg as input and creates a
@@ -303,14 +287,79 @@ class SkypeConverter(base.SimpleConverterBase):
 class SkypeRawConverter(base.SimpleConverterBase):
     target_type = 'id', 'skype/raw'
     sources = [('id', 'skype')]
+
+    def __init__(self, *args, **kw):
+        super(SkypeRawConverter, self).__init__(*args, **kw)
+        self.skype = Skype4Py.Skype()
+        self.attached = False
+
+    def _get_skype(self):
+        if self.attached:
+            return self.skype
+        def return_skype(result):
+            self.attached = True
+            return self.skype
+        return threads.deferToThread(self.skype.Attach
+                    ).addCallback(return_skype
+                    )
+
+    def _fetch_user_info(self, skype, doc):
+        # Called in a thread so we can block...
+        proto, iid = doc['identity_id']
+        assert proto=='skype'
+        user = skype.User(iid)
+        props = {}
+        for name, typ in USER_PROPS:
+            val = user._Property(name)
+            props['skype_'+name.lower()] = simple_convert(val, typ)
+
+        # XXX - this sucks - the ID things needs more thought - does it
+        # really need to be carried forward?
+        props['identity_id'] = doc['identity_id']
+
+        # Avatars...
+        # for now just attempt to get one avatar for this user...
+        avfname = tempfile.mktemp(".jpg", "raindrop-skype-avatar")
+        try:
+            try:
+                user.SaveAvatarToFile(avfname)
+                # apparently the avatar was saved...
+                with open(avfname, "rb") as f:
+                    data = f.read()
+            finally:
+                # apparently skype still creates a 0-byte file when there
+                # are no avatars...
+                try:
+                    os.unlink(avfname)
+                except os.error, why:
+                    logger.warning('failed to remove avatar file %r: %s',
+                                   filename, why)
+            logger.debug("got an avatar for %r", iid)
+            # the literal '1' reflects the 1-based indexing of skype..
+            attachments = {'avatar1' :
+                                {'content_type': 'image/jpeg',
+                                 'data': data,
+                                }
+                           }
+            props['_attachments'] = attachments
+        except Skype4Py.errors.ISkypeError, why:
+            # apparently:
+            # invalid 'avatar' index: [Errno 114] GET Invalid avatar
+            # no avatar at all: [Errno 122] GET Unable to load avatar
+            if why[0] in (114, 122):
+                logger.debug("friend %r has no avatar (%s)", iid, why)
+            else:
+                raise
+        return props
+
     def simple_convert(self, doc):
-        # here is a cheat - if the identity was created by our skype
-        # processor, it will have written a 'raw' dict - this means we don't
-        # need to revisit skype to get the details.  (If no 'raw' field
-        # existed, then this was probably introduced by the front-end, where
-        # all they know is the ID)
-        assert 'raw' in doc, "Sorry front-end, you can't do that yet!"
-        return doc['raw'].copy()
+        def fetch(skype):
+            return threads.deferToThread(self._fetch_user_info, skype, doc
+                                         )
+
+        return defer.maybeDeferred(self._get_skype
+                ).addCallback(fetch
+                )
 
 
 # The intent of this class is a 'union' of the useful fields we might want...
@@ -319,15 +368,15 @@ class SkypeBakedConverter(base.SimpleConverterBase):
     sources = [('id', 'skype/raw')]
     def simple_convert(self, doc):
         ret = {
-            'name' : doc['skype_displayname'],
-            'nickname' : doc['skype_id'],
+            'name' : doc['skype_displayname'] or doc['skype_fullname'],
+            'nickname' : doc['identity_id'][1],
             'url' : doc['skype_homepage'],
-            # image is interesting... - skype lets us save it to a file.
-            # I wonder if we can get away with a relative URL pointing to
-            # our user's attachment?
         }
-        # XXX - this sucks - the ID things needs more thought - does it
-        # really need to be carried forward?
+
+        if '_attachments' in doc:
+            assert 'avatar1' in doc['_attachments'], doc
+            ret['image'] = '/%s/avatar1' % self.doc_model.quote_id(doc['_id'])
+
         ret['identity_id'] = doc['identity_id']
         return ret
 
