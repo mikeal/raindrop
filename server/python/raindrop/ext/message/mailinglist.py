@@ -3,6 +3,16 @@
 # that contains information about the mailing list to which the message
 # was sent, if any.
 
+# We extract mailing list info from RFC 2369 headers, which look like this:
+#
+#  Mailing-List: list raindrop-core@googlegroups.com;
+#      contact raindrop-core+owner@googlegroups.com
+#  List-Id: <raindrop-core.googlegroups.com>
+#  List-Post: <mailto:raindrop-core@googlegroups.com>
+#  List-Help: <mailto:raindrop-core+help@googlegroups.com>
+#  List-Unsubscribe: <http://googlegroups.com/group/raindrop-core/subscribe>,
+#      <mailto:raindrop-core+unsubscribe@googlegroups.com>
+
 # XXX This should be a plugin that extends the message/email extension,
 # like the evite and skype plugins described in Life Cycle of a Message 2 -
 # Documents and States
@@ -30,5 +40,18 @@ class MailingListExtractor(base.SimpleConverterBase):
             if n.startswith('_') or n.startswith('raindrop'):
                 del ret[n]
         del ret['type']
+
+        #if (there isn't a a List-Id header...)
+        #    return ret
+
+        # The JavaScript version; FIXME: convert this to Python.
+        #var parts = doc.headers["List-Id"].match(/([\W\w]*)\s*<(.+)>.*/);
+        #var values = {
+        #  "List-Id" : doc.headers["List-Id"],
+        #  "id" : parts[2],
+        #  "name" : parts[1]
+        #};
+        #for each (var headerId in ["List-Post","List-Archive","List-Help",
+        #                         "List-Subscribe","List-Unsubscribe"]) {
 
         return ret
