@@ -230,14 +230,6 @@ def get_db(couchname="local", dbname=_NotSpecified):
     DBs[key] = db
     return db
 
-def quote_id(doc_id):
-    # A '/' should be impossible now we base64 encode the string given
-    # by an extension - but it doesn't hurt.
-    # Note the '!' character seems to work fine with couch (ie, we use it
-    # unquoted when constructing views), so we allow that for no better
-    # reason than the logs etc are clearer...
-    return quote(doc_id, safe="!")
-
 class DocumentModel(object):
     """The layer between 'documents' and the 'database'.  Responsible for
        creating the unique ID for each document (other than the raw document),
@@ -266,6 +258,15 @@ class DocumentModel(object):
         cat, prov_id, doc_type = docid.split("!")
         return cat, doc_type, prov_id
 
+    @classmethod
+    def quote_id(cls, doc_id):
+        # A '/' should be impossible now we base64 encode the string given
+        # by an extension - but it doesn't hurt.
+        # Note the '!' character seems to work fine with couch (ie, we use it
+        # unquoted when constructing views), so we allow that for no better
+        # reason than the logs etc are clearer...
+        return quote(doc_id, safe="!")
+
     def open_view(self, *args, **kwargs):
         # A convenience method for completeness so consumers don't hit the
         # DB directly (and to give a consistent 'style').  Is it worth it?
@@ -281,7 +282,7 @@ class DocumentModel(object):
         exception if the attachment doesn't exist.
         """
         logger.debug("attempting to open attachment %s/%s", doc_id, attachment)
-        return self.db.openDoc(quote_id(doc_id), attachment=attachment, **kw)
+        return self.db.openDoc(self.quote_id(doc_id), attachment=attachment, **kw)
 
     def open_document(self, category, proto_id, ext_type, **kw):
         """Open the specific document, returning None if it doesn't exist"""
@@ -291,7 +292,7 @@ class DocumentModel(object):
     def open_document_by_id(self, doc_id, **kw):
         """Open a document by the already constructed docid"""
         logger.debug("attempting to open document %r", doc_id)
-        return self.db.openDoc(quote_id(doc_id), **kw
+        return self.db.openDoc(self.quote_id(doc_id), **kw
                     ).addBoth(self._cb_doc_opened)
 
     def _cb_doc_opened(self, result):
@@ -430,8 +431,8 @@ class DocumentModel(object):
         docid = result['id']
         name, info = remaining.popitem()
         logger.debug('saving attachment %r to doc %r', name, docid)
-        return self.db.saveAttachment(quote_id(docid),
-                                   quote_id(name), info['data'],
+        return self.db.saveAttachment(self.quote_id(docid),
+                                   self.quote_id(name), info['data'],
                                    content_type=info['content_type'],
                                    revision=revision,
                 ).addCallback(self._cb_saved_attachment, (docid, name)
