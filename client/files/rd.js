@@ -1,8 +1,3 @@
-//xdomain loading wrapper. Can be inserted by a build process, but manually doing it for now.
-window[(typeof (djConfig)!="undefined"&&djConfig.scopeMap&&djConfig.scopeMap[0][1])||"dojo"]._xdResourceLoaded(function(dojo, dijit, dojox){
-  return {
-  depends:[["provide","rd"], ["require","couch"]],defineResource:function(dojo, dijit, dojox){
-
 //Main module definition
 dojo.provide("rd");
 
@@ -214,5 +209,3 @@ dojo.addOnLoad(function(){
   dojo.connect(document.documentElement, "onclick", rd, "onDocClick");
 });
 
-
-}}});

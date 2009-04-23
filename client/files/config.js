@@ -68,7 +68,6 @@
     "dojo": 1,
     "dijit": 1,
     "dojox": 1,
-    "rd": 1,
     "couch": 1,
     //"dojox.io.proxy.xip": 1
   };
