@@ -106,6 +106,7 @@ class RFC822Converter(base.SimpleConverterBase):
                'subject': headers['subject'],
                'body': body,
                'body_preview': body[:128], # good enuf for now...
+               'headers': headers,
         }
         try:
             dval = headers['date']
