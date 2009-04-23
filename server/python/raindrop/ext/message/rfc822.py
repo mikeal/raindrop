@@ -108,7 +108,7 @@ class RFC822Converter(base.SimpleConverterBase):
                'body_preview': body[:128], # good enuf for now...
         }
         try:
-            dval = headers['Date']
+            dval = headers['date']
         except KeyError:
             pass
         else:
