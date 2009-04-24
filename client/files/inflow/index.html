@@ -15,23 +15,7 @@
     rd.require("rdw.FaceWall");
  
     rd.addOnLoad(function() {
-      couch.db("raindrop").view("raindrop!messages!by/_view/by_doc_type", {
-        keys: ["message"],
-        limit: 30,
-        include_docs: true,
-        group : false,
-        success: function(json) {
-          //Grab the docs from the returned rows.
-          var docs = rd.map(json.rows, function(row) {
-            return row.doc;
-          });
-
-          //Add a Stories widget to the page.
-          new rdw.Stories({
-            docs: docs
-          }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
-        }
-      });
+      dijit.byId("Organizer").showHome();
 
       couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
         group: true,

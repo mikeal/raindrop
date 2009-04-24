@@ -59,10 +59,12 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
         var docs = rd.map(json.rows, function(row) {
           return row.doc;
         });
-  
+
         // Replace the existing stories widget with a new one
         // containing the messages we just retrieved.
-        dijit.byId("Stories").destroy();
+        var stories = dijit.byId("Stories");
+        if (stories)
+          stories.destroy();
         new rdw.Stories({
           docs: docs
         }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
