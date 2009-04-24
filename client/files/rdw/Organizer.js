@@ -42,7 +42,32 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
       if (target) {
         dojo.publish("rd-nav-" + target);
         dojo.stopEvent(evt);
+        if (target == "home")
+          this.showHome();
       }
     }
+  },
+
+  showHome: function() {
+    couch.db("raindrop").view("raindrop!messages!by/_view/by_doc_type", {
+      keys: ["message"],
+      limit: 30,
+      include_docs: true,
+      group : false,
+      success: function(json) {
+        //Grab the docs from the returned rows.
+        var docs = rd.map(json.rows, function(row) {
+          return row.doc;
+        });
+  
+        // Replace the existing stories widget with a new one
+        // containing the messages we just retrieved.
+        dijit.byId("Stories").destroy();
+        new rdw.Stories({
+          docs: docs
+        }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
+      }
+    });
   }
+
 });

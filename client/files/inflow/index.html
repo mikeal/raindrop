@@ -29,7 +29,7 @@
           //Add a Stories widget to the page.
           new rdw.Stories({
             docs: docs
-          }, rd.create("div", null, rd.byId("column1")));
+          }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
         }
       });
 
@@ -56,6 +56,7 @@
   <div id="content">
     <div id="column1">
       <div rdType="rdw.QuickCompose"></div>
+      <div id="StoriesContainer"></div>
     </div>
     <div id="column2">
       <div rdType="rdw.Search"></div>
