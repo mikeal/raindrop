@@ -69,10 +69,37 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var href = evt.target.href;
     if (href && (href = href.split("#")[1])) {
       rd.pub("rdw.Message-" + href, {
-        node: this.toolDisplay,
+        widget: this,
         doc: this.doc
       });
       evt.preventDefault();
     }
+  },
+
+  addByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
+    //summary: rdw._Base method override for reply/forward widget extensions.
+    this.inherited("addByTopic", arguments);
+
+    //If we have an existing response widget, despose of it
+    //properly, then use the new widget as the response widget.
+    if (this.responseWidget) {
+      this.removeByTopic(widget, topic, topicData);
+      this.responseWidget.destroy();
+    }
+    this.responseWidget = widget;
+
+    //Put the response widget in the toolDisplay
+    widget.placeAt(this.toolDisplay);
+
+    //Hide the reply/forward controls.
+    this.tools.style.display = "none";
+  },
+
+  removeByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
+    //summary: rdw._Base method override for reply/forward widget extensions.
+    this.inherited("removeByTopic", arguments);
+
+    //Show the reply/forward controls.
+    this.tools.style.display = "";
   }
 });

@@ -22,30 +22,12 @@ dojo._listener.getDispatcher = function(){
     // return value comes from original target function
     var r = t && t.apply(this, arguments);
     // make local copy of listener array so it is immutable during processing
-    var lls;
-    //>>includeStart("connectRhino", kwArgs.profileProperties.hostenvType == "rhino");
-    if(!dojo.isRhino){
-    //>>includeEnd("connectRhino");
-      //>>includeStart("connectBrowser", kwArgs.profileProperties.hostenvType != "rhino");
-      lls = [].concat(ls);
-      //>>includeEnd("connectBrowser");
-    //>>includeStart("connectRhino", kwArgs.profileProperties.hostenvType == "rhino");
-    }else{
-      // FIXME: in Rhino, using concat on a sparse Array results in a dense Array.
-      // IOW, if an array A has elements [0, 2, 4], then under Rhino, "concat [].A"
-      // results in [0, 1, 2, 3, 4], where element 1 and 3 have value 'undefined'
-      // "A.slice(0)" has the same behavior.
-      lls = [];
-      for(var i in ls){
-        lls[i] = ls[i];
-      }
-    }
-    //>>includeEnd("connectRhino");
+    var lls = [].concat(ls);
 
     // invoke listeners after target function
     for(var i in lls){
       if(!(i in ap)){
-        //RAINDROP: the if === false test added for raindrop.
+        //RAINDROP change to handle return type.
         if (lls[i].apply(this, arguments) === false){
           break;
         }

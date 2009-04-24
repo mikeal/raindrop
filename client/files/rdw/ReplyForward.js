@@ -15,23 +15,53 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   postCreate: function() {
     //summary: dijit lifecycle method.
     this.inherited("postCreate", arguments);
+
+    //Add an extra class for specific styling
     dojo.addClass(this.domNode, this.replyType);
+
+    //Add in a close button
+    var closeNode = dojo.create("a", {
+      href: "#",
+      class: "close",
+      innerHTML: this.i18n.closeIcon
+    }, this.domNode, "first");
     
+    dojo.connect(closeNode, "onclick", this, "onCloseClick");
+
+    //Tell cooperating widget so this widget is displayed properly.
+    if (this.topic) {
+      this.createdForTopic(this.topic, this.topicData);
+    }
+  },
+
+  onCloseClick: function(evt) {
+    //summary: handles clicks to close icon, destroying this widget.
+
+    //Tell cooperating widget so this widget is displayed properly.
+    if (this.topic) {
+      this.destroyedForTopic(this.topic, this.topicData);
+    }
+
+    this.destroy();
+
+    dojo.stopEvent(evt);
   }
 });
 
 ;(function(){
   //This widget listens for topic messages, so register them now.
-  var makeWidget = function(/*String*/type, /*Object*/topicData) {
+  var makeWidget = function(/*String*/type, /*String*/topic, /*Object*/topicData) {
       //Right now, not doing anything with topicData.doc, but
       //it should be used to pull out context for the message.
       new rdw.ReplyForward({
-        replyType: type
-      }, topicData.node);
+        replyType: type,
+        topic: topic,
+        topicData: topicData
+      });
   };
 
-  rd.sub("rdw.Message-reply", dojo.partial(makeWidget, "reply"));
-  rd.sub("rdw.Message-forward", dojo.partial(makeWidget, "forward"));
+  rd.sub("rdw.Message-reply", dojo.partial(makeWidget, "reply", "rdw.Message-reply"));
+  rd.sub("rdw.Message-forward", dojo.partial(makeWidget, "forward", "rdw.Message-reply"));
 
   rd.loadStyle("rdw.css.ReplyForward");
 })();

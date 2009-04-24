@@ -9,7 +9,7 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="tools" dojoAttachEvent="onclick: onToolClick">
+    <div class="tools" dojoAttachPoint="tools" dojoAttachEvent="onclick: onToolClick">
       <a href="#reply">${i18n.reply}</a> <a href="#forward">${i18n.forward}</a>
     </div>
     <div class="timestamp">
