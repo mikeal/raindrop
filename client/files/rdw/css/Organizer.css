@@ -1,34 +1,34 @@
-.Organizer {
+#Organizer {
   position: relative;
 }
 
-.Organizer:hover ol {
+#Organizer:hover ol {
   border-color: #44617E;
   -moz-border-radius: 3px;
 }
 
-.Organizer ol {
+#Organizer ol {
   list-style: none;
   padding: 0px;
   margin: 0px;
   border: 1px solid gray;
 }
 
-.Organizer > ol > li {
+#Organizer > ol > li {
   padding: 0.5em;
 }
 
-.Organizer > ol > li:hover {
+#Organizer > ol > li:hover {
   background-color: #f9f9f9;
 }
 
-.Organizer > ol > li > a {
+#Organizer > ol > li > a {
   text-decoration: none;
   background-color: transparent;
   color: #44617E;
 }
 
-.Organizer > ol > li > a[href*=home] {
+#Organizer > ol > li > a[href*=home] {
   font-weight: bold;
 }
 

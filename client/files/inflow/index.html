@@ -32,6 +32,23 @@
           }, rd.create("div", null, rd.byId("column1")));
         }
       });
+
+      couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
+        group: true,
+        success: function(json) {
+          //alert(JSON.stringify(json));
+          //alert(json.rows[0].key);
+          //alert(json.rows[0].value);
+          //alert([key for (key in json.rows[0])].join(", "));
+
+          // Add an Organizer widget to the page.
+          dijit.byId("Organizer").destroy();
+          new rdw.Organizer({
+            mailing_lists: json.rows
+          }, rd.create("div", { id: "Organizer" }, rd.byId("OrganizerContainer")));
+        }
+      });
+
     });
   </script>
 </head>
@@ -42,7 +59,9 @@
     </div>
     <div id="column2">
       <div rdType="rdw.Search"></div>
-      <div rdType="rdw.Organizer"></div>
+      <div id="OrganizerContainer">
+        <div id="Organizer" rdType="rdw.Organizer"></div>
+      </div>
       <div rdType="rdw.FaceWall"></div>
     </div>
   </div>
