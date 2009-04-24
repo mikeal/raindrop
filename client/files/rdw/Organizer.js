@@ -49,12 +49,11 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
-    var organizer = this;
     couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
       group: true,
-      success: function(json) {
-        organizer.mailingLists(json.rows);
-      }
+      success: dojo.hitch(this, function(json) {
+        this.mailingLists(json.rows);
+      })
     });
   },
 
