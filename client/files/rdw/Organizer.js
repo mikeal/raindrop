@@ -3,7 +3,34 @@ dojo.require("rdw._Base");
 dojo.require("rdw.MailingList");
 
 dojo.declare("rdw.Organizer", [rdw._Base], {
-  mailing_lists: null,
+  // Mailing lists to which any messages in the datastore belong.
+  // Populated by a view after the widget gets created.
+  _mailingLists: null,
+  mailingLists: function(newVal) {
+    if (!newVal)
+      return this._mailingLists;
+
+    // The rest of this function is the setter.
+
+    this._mailingLists = newVal;
+
+    // Remove existing list items from the presentation.
+    rd.query(".MailingList", this.list).forEach(function(listItem) {
+      rd.destroy(listItem);
+    });
+
+    //Use a document fragment for best performance
+    //and load up each story widget in there.
+    var frag = dojo.doc.createDocumentFragment();
+    dojo.forEach(this._mailingLists, function(doc) {
+      new rdw.MailingList({
+        doc: doc
+      }, dojo.create("div", null, frag));
+    });
+
+    //Inject nodes all at once for best performance.
+    return this.list.appendChild(frag);
+  },
 
   templatePath: dojo.moduleUrl("rdw.templates", "Organizer.html"),
 
@@ -16,19 +43,15 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
-    if (this.mailing_lists) {
-      //Use a document fragment for best performance
-      //and load up each story widget in there.
-      var frag = dojo.doc.createDocumentFragment();
-      dojo.forEach(this.mailing_lists, function(doc) {
-        new rdw.MailingList({
-          doc: doc
-        }, dojo.create("div", null, frag));
-      });
-
-      //Inject nodes all at once for best performance.
-      this.domNode.firstElementChild.appendChild(frag);
-    }
+    // Populate the widget with a list of mailing lists to which any messages
+    // in the datastore belong.
+    var organizer = this;
+    couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
+      group: true,
+      success: function(json) {
+        organizer.mailingLists(json.rows);
+      }
+    });
   },
 
   onClick: function(evt) {
@@ -65,18 +88,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
         new rdw.Stories({
           docs: docs
         }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
-      }
-    });
-  },
-
-  showMailingLists: function() {
-    couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
-      group: true,
-      success: function(json) {
-        dijit.byId("Organizer").destroy();
-        new rdw.Organizer({
-          mailing_lists: json.rows
-        }, rd.create("div", { id: "Organizer" }, rd.byId("OrganizerContainer")));
       }
     });
   }
