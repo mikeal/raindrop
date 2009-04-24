@@ -34,5 +34,5 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     return true;
   },
 
-  templateString: '<ol class="Stories"></ol>'
+  templateString: '<ol id="Stories"></ol>'
 });
