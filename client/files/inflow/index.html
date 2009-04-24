@@ -15,24 +15,9 @@
     rd.require("rdw.FaceWall");
  
     rd.addOnLoad(function() {
-      dijit.byId("Organizer").showHome();
-
-      couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
-        group: true,
-        success: function(json) {
-          //alert(JSON.stringify(json));
-          //alert(json.rows[0].key);
-          //alert(json.rows[0].value);
-          //alert([key for (key in json.rows[0])].join(", "));
-
-          // Add an Organizer widget to the page.
-          dijit.byId("Organizer").destroy();
-          new rdw.Organizer({
-            mailing_lists: json.rows
-          }, rd.create("div", { id: "Organizer" }, rd.byId("OrganizerContainer")));
-        }
-      });
-
+      let organizer = dijit.byId("Organizer");
+      organizer.showHome();
+      organizer.showMailingLists();
     });
   </script>
 </head>

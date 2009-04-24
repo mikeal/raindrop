@@ -70,6 +70,18 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
         }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
       }
     });
+  },
+
+  showMailingLists: function() {
+    couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
+      group: true,
+      success: function(json) {
+        dijit.byId("Organizer").destroy();
+        new rdw.Organizer({
+          mailing_lists: json.rows
+        }, rd.create("div", { id: "Organizer" }, rd.byId("OrganizerContainer")));
+      }
+    });
   }
 
 });
