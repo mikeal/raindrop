@@ -333,7 +333,7 @@ class SkypeRawConverter(base.SimpleConverterBase):
                     os.unlink(avfname)
                 except os.error, why:
                     logger.warning('failed to remove avatar file %r: %s',
-                                   filename, why)
+                                   avfname, why)
             logger.debug("got an avatar for %r", iid)
             # the literal '1' reflects the 1-based indexing of skype..
             attachments = {'avatar1' :
