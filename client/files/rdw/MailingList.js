@@ -18,11 +18,6 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     this.id = this.doc.value.id;
   },
 
-  postCreate: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postCreate", arguments);
-  },
-
   onClick: function(evt) {
     //summary: handles click delegation when clicking on list of links.
     var target = evt.target;

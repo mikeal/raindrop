@@ -34,10 +34,5 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     return true;
   },
 
-  templateString: '<ol class="Stories"></ol>',
-
-  postCreate: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postCreate", arguments);
-  }
+  templateString: '<ol class="Stories"></ol>'
 });
