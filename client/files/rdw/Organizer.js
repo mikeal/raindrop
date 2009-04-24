@@ -14,9 +14,9 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
     this._mailingLists = newVal;
 
-    // Remove existing list items from the presentation.
-    rd.query(".MailingList", this.list).forEach(function(listItem) {
-      rd.destroy(listItem);
+    // Remove existing mailing list widgets from the presentation.
+    rd.query(".MailingList", this.list).forEach(function(mailingList) {
+      rd.destroy(mailingList);
     });
 
     //Use a document fragment for best performance
@@ -29,7 +29,11 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     });
 
     //Inject nodes all at once for best performance.
-    return this.list.appendChild(frag);
+    this.list.appendChild(frag);
+
+    // Return anything to suppress JavaScript strict warnings about the function
+    // not always returning a value.
+    return true;
   },
 
   templatePath: dojo.moduleUrl("rdw.templates", "Organizer.html"),
@@ -42,6 +46,8 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
+
+    this.showHome();
 
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
@@ -80,14 +86,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
           return row.doc;
         });
 
-        // Replace the existing stories widget with a new one
-        // containing the messages we just retrieved.
-        var stories = dijit.byId("Stories");
-        if (stories)
-          stories.destroy();
-        new rdw.Stories({
-          docs: docs
-        }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
+        dijit.byId("Stories").docs(docs);
       }
     });
   }

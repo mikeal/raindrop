@@ -3,20 +3,24 @@ dojo.require("rdw._Base");
 dojo.require("rdw.Story");
 
 dojo.declare("rdw.Stories", [rdw._Base], {
-  //Warning: this is a prototype property: be sure to
-  //set it per instance.
-  docs: [],
+  _docs: null,
+  docs: function(newVal) {
+    if (!newVal)
+      return this._docs;
 
-  templateString: '<ol class="Stories"></ol>',
+    // The rest of this function is the setter.
 
-  postCreate: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postCreate", arguments);
-    
+    this._docs = newVal;
+
+    // Remove existing message widgets from the presentation.
+    rd.query(".Message", this.domNode).forEach(function(message) {
+      rd.destroy(message);
+    });
+
     //Use a document fragment for best performance
     //and load up each story widget in there.
     var frag = dojo.doc.createDocumentFragment();
-    dojo.forEach(this.docs, function(doc){
+    dojo.forEach(this._docs, function(doc) {
       new rdw.Story({
         doc: doc
       }, dojo.create("div", null, frag));
@@ -24,5 +28,16 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
     //Inject nodes all at once for best performance.
     this.domNode.appendChild(frag);    
+
+    // Return anything to suppress JavaScript strict warnings about the function
+    // not always returning a value.
+    return true;
+  },
+
+  templateString: '<ol class="Stories"></ol>',
+
+  postCreate: function() {
+    //summary: dijit lifecycle method
+    this.inherited("postCreate", arguments);
   }
 });

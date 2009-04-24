@@ -13,18 +13,15 @@
     rd.require("rdw.Stories");
     rd.require("rdw.Organizer");
     rd.require("rdw.FaceWall");
- 
-    rd.addOnLoad(function() {
-      var organizer = dijit.byId("Organizer");
-      organizer.showHome();
-    });
   </script>
 </head>
 <body>
   <div id="content">
     <div id="column1">
       <div rdType="rdw.QuickCompose"></div>
-      <div id="StoriesContainer"></div>
+      <div id="StoriesContainer">
+        <div id="Stories" rdType="rdw.Stories"></div>
+      </div>
     </div>
     <div id="column2">
       <div rdType="rdw.Search"></div>

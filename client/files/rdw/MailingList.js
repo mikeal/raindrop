@@ -48,12 +48,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
           return row.doc;
         });
 
-        // Replace the existing stories widget with a new one
-        // containing the messages from the mailing list.
-        dijit.byId("Stories").destroy();
-        new rdw.Stories({
-          docs: docs
-        }, rd.create("div", { id: "Stories" }, rd.byId("StoriesContainer")));
+        dijit.byId("Stories").docs(docs);
       }
     });
   }
