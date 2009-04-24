@@ -10,8 +10,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     if (!newVal)
       return this._mailingLists;
 
-    // The rest of this function is the setter.
-
     this._mailingLists = newVal;
 
     // Remove existing mailing list widgets from the presentation.

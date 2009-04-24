@@ -3,12 +3,11 @@ dojo.require("rdw._Base");
 dojo.require("rdw.Story");
 
 dojo.declare("rdw.Stories", [rdw._Base], {
+  // The documents to display in the stories widget.
   _docs: null,
   docs: function(newVal) {
     if (!newVal)
       return this._docs;
-
-    // The rest of this function is the setter.
 
     this._docs = newVal;
 
