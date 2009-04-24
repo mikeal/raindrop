@@ -17,9 +17,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     this.inherited("postCreate", arguments);
 
     if (this.mailing_lists) {
-      //for each (var mailing_list in this.mailing_lists) {
-      //  alert([key for (key in mailing_list.value)].join(", "));
-
       //Use a document fragment for best performance
       //and load up each story widget in there.
       var frag = dojo.doc.createDocumentFragment();
