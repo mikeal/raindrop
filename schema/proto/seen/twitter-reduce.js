@@ -1,10 +1,3 @@
-function(keys, values)
-{
-    // we just need the largest ID we've ever seen.
-    // *sob* - where is max()?
-    ret = 0;
-    for each (var v in values)
-        if (v > ret)
-            ret = v;
-    return ret;
+function(keys, values) {
+  return values.length ? Math.max.apply(Math, values) : 0;
 }
