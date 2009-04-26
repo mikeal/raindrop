@@ -1,5 +1,5 @@
 # The raindrop test suite...
-
+import os
 from twisted.trial import unittest
 
 from raindrop.config import get_config
@@ -7,8 +7,31 @@ from raindrop.model import get_db, fab_db, get_doc_model
 from raindrop import bootstrap
 from raindrop import sync
 
+# all this logging stuff is misplaced...
 import logging
-logging.basicConfig() # this is misplaced...
+logging.basicConfig()
+if 'RAINDROP_LOG_LEVELS' in os.environ:
+    # duplicated from run-raindrop...
+    for val in os.environ['RAINDROP_LOG_LEVELS'].split(';'):
+        try:
+            name, level = val.split("=", 1)
+        except ValueError:
+            name = None
+            level = val
+        # convert a level name to a value.
+        try:
+            level = int(getattr(logging, level.upper()))
+        except (ValueError, AttributeError):
+            # not a level name from the logging module - maybe a literal.
+            try:
+                level = int(level)
+            except ValueError:
+                init_errors.append(
+                    "Invalid log-level '%s' ignored" % (val,))
+                continue
+        l = logging.getLogger(name)
+        l.setLevel(level)
+    
 
 class FakeOptions:
     # XXX - we might need run-raindrop to share its options...
@@ -62,9 +85,12 @@ class TestCaseWithDB(TestCase):
                 ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
                 ).addCallback(bootstrap.install_accounts
-                ).addCallback(bootstrap.install_client_files, FakeOptions()
+                # client files are expensive (particularly dojo) and not
+                # necessary yet...
+                #).addCallback(bootstrap.install_client_files, FakeOptions()
+                #).addCallback(bootstrap.update_apps
                 ).addCallback(bootstrap.install_views, FakeOptions()
-                ).addCallback(bootstrap.update_apps)
+                )
 
     def setUp(self):
         self.prepare_config()
