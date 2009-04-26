@@ -1,0 +1,28 @@
+Notes about what we need to refactor in the python backend:
+
+Front-end visible changes:
+--------------------------
+
+* document['type'] should become a tuple of category, type; 
+  document['raindrop_category'] should die.
+  Better: consider a triple of ['raindrop', cat, type] - canonical test for
+  'our' document becomes "doc['type'].length==3 && doc['type'][0]=='raindrop'"?
+  XXX - may not be visible if only views are used???
+
+* All type strings need rethinking - there was an early goal to have a kind 
+  of 'sub-class' relationship (eg, "message" was a subclass of "message/raw")
+  but that never eventuated.
+  XXX - may not be visible if only views are used???
+
+View-only visible changes:
+--------------------------
+
+These are changes which are only 'externally' visible as far as views; in 
+other words, changes which are not externally visible if every view works as
+expected...
+
+
+Internally visible changes:
+---------------------------
+
+These changes don't affect the front-end.
