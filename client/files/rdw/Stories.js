@@ -46,7 +46,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         startkey: startkey,
         endkey: endkey,
         include_docs: true,
-        group: false,
         error: dojo.hitch(this, function(json) {
           this.gotOne();
         }),
