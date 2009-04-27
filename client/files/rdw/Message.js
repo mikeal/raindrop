@@ -51,6 +51,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.message = rd.hyperlink.add(rd.escapeHtml(this.doc.body_preview));
     if(this.doc.from[0] == "twitter") {
       this.message = rd.hyperlink.addTwitterUsers(this.message);
+      this.message = rd.hyperlink.addTwitterTags(this.message);
     }
 
     this._id = this.doc._id;
