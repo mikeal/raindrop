@@ -99,6 +99,10 @@
   margin-bottom: 0.5ex;
 }
 
+.Message > .message > .content > a {
+  color: #44617E;
+}
+
 .Message > .message > .timestamp {
   font-size: x-small;
   font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
