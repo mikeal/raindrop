@@ -52,6 +52,7 @@ class TwitterProcessor(object):
             if isinstance(val, twitter.User):
                 val = val.screen_name
             ret['twitter_'+name.lower()] = val
+        ret['twitter_created_at_in_seconds'] = tweet.GetCreatedAtInSeconds()
         return ret
         
     def attach(self):
@@ -164,9 +165,9 @@ class TwitterConverter(base.SimpleConverterBase):
                 'body': body,
                 'body_preview': body[:128],
                 'tags': tags,
-                # We don't have 'in seconds' seeing we came from AsDict() -
-                # but are 'seconds' usable for a timestamp?
-                #'timestamp': int(doc['twitter_created_at_in_seconds'])
+                # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 
+                # to fake having this property that doesn't come with AsDict
+                'timestamp': doc['twitter_created_at_in_seconds']
                 }
 
 # Twitter identities...
