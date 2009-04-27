@@ -26,6 +26,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //properties.
     //TODO: some of these need more info from backend.    
     // XXX: these are a couple hacks to get the UI looking more like we want
+    
+    var isTwitter = this.doc.from[0] == "twitter";
+
     this.fromName = this.doc.from[1];
     try {
       var pieces = this.doc.from[1].split("<");
@@ -47,7 +50,12 @@ dojo.declare("rdw.Message", [rdw._Base], {
       this.subject = rd.escapeHtml(this.doc.subject.replace(/^Re:/,''));
     } catch(ignore_empty_subjects) { }
 
-    this.message = rd.hyperlink.add(rd.escapeHtml(this.doc.body_preview));
+    //TODO: make message transforms extensionized.
+    this.message = isTwitter ? this.doc.body : this.doc.body_preview;
+    this.message = rd.hyperlink.add(rd.escapeHtml(this.message));
+    if(isTwitter) {
+      this.message = rd.hyperlink.addTwitterUsers(this.message);
+    }
 
     this._id = this.doc._id;
 
