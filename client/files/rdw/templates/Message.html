@@ -1,11 +1,11 @@
 <div class="Message ${type}">
   <a href="#" class="close">${i18n.closeIcon}</a>
-  <div class="photo"><img class="photo" src="${userPicUrl}" /></div>
+  <div class="photo"><img class="photo" dojoAttachPoint="userPicNode" src="${userPicUrl}" /></div>
   <div class="message">
     <div class="header">
       <span class="from">
         <!-- XXX this is a hack to help in debugging, don't keep this! -->
-        <a target="_blank" class="from" href="http://localhost:5984/_utils/document.html?raindrop/${_id}">${fromName}</a>
+        <a target="_blank" class="from" dojoAttachPoint="fromNameNode" href="http://localhost:5984/_utils/document.html?raindrop/${_id}">${fromName}</a>
         </span>
       <span class="medium">${fromId}</span>
     </div>

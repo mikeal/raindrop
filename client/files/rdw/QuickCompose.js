@@ -1,8 +1,8 @@
 dojo.provide("rdw.QuickCompose");
 
-dojo.require("dojo.io.script");
 dojo.require("couch");
 dojo.require("rdw._Base");
+dojo.require("rd.twitter");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "QuickCompose.html"),
@@ -35,19 +35,16 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         }));
 
         if (this.twitterId) {
-          dojo.io.script.get({
-            url: "http://twitter.com/users/show/" + this.twitterId + ".json",
-            callbackParamName: "callback",
-            load: dojo.hitch(this, function(response) {
-                if (response.profile_image_url) {
-                  this.picture.src = response.profile_image_url;
-                }
-                if (response.name) {
-                  rd.escapeHtml(response.name, this.name);
-                }
-            })
-            //Don't worry about errors, just will not show pic.
-          });
+          rd.twitter.user(this.twitterId, dojo.hitch(this, function(user) {
+              if (user.profile_image_url) {
+                this.picture.src = user.profile_image_url;
+              }
+              if (user.name) {
+                rd.escapeHtml(user.name, this.name);
+              }
+              //Don't worry about errors, just will not show pic.
+          }));
+
           rd.escapeHtml("twitter.com/" + this.twitterId, this.address);
         }
       })
