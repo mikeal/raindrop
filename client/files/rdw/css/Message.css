@@ -90,21 +90,31 @@
   padding-right: 0px;
 }
 
-.Message .content , .timestamp {
-  margin: 0.5ex 0px;
-}
-
-.Message .content {
+.Message > .message > .content {
   overflow: hidden;
   font-size: small;
   font-family: Verdana, Verdana, Geneva, sans-serif;
+  line-height: 1.3em;
   color: #333;
+  margin-bottom: 0.5ex;
 }
 
-.Message .timestamp {
-  color: GrayText;
+.Message > .message > .timestamp {
   font-size: x-small;
   font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
+}
+
+.Message > .message > .timestamp > span {
+  text-transform: lowercase;
+  color: GrayText;
+}
+
+.Message > .message > .timestamp > .additional {
+  font-style: italic;
+}
+
+.Message > .message > .timestamp > .additional:before {
+  content: " - ";
 }
 
 /* "reply" type of messages */
