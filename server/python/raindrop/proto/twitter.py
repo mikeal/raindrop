@@ -84,7 +84,7 @@ class TwitterProcessor(object):
         # result -> [{'key': '12449', 'value': 1371372980}, ...]
         # turn it into a map.
         rows = result['rows']
-        last_seen_ids = dict((int(r['key']), int(r['value'])) for r in rows)
+        last_seen_ids = dict((r['key'], int(r['value'])) for r in rows)
         return self.conductor.coop.coiterate(
                     self.gen_friends_info(friends, last_seen_ids))
 
@@ -108,7 +108,7 @@ class TwitterProcessor(object):
                         )
         
         def do_friend_tweets(friend):
-            last_this = last_seen_ids.get(friend.id)
+            last_this = last_seen_ids.get(friend.screen_name)
             logger.debug("friend %r (%s) has latest tweet id of %s",
                          friend.screen_name, friend.id, last_this)
             return threads.deferToThread(
@@ -161,10 +161,13 @@ class TwitterConverter(base.SimpleConverterBase):
         # to a 'tags' attribute.
         body = doc['twitter_text']
         tags = self.re_tags.findall(body)
+        conversation_id = doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
         return {'from': ['twitter', doc['twitter_user']],
                 'body': body,
                 'body_preview': body[:128],
                 'tags': tags,
+                'conversation_id' : str(conversation_id),
+                'header_message_id': str(doc['twitter_id']),
                 # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 
                 # to fake having this property that doesn't come with AsDict
                 'timestamp': doc['twitter_created_at_in_seconds']
