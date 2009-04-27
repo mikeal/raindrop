@@ -14,6 +14,16 @@ Front-end visible changes:
   but that never eventuated.
   XXX - may not be visible if only views are used???
 
+* Document IDs:
+
+  - The base64 encoded part is unique per provider, but this will break when
+    2 providers may share the same per-provider part.  identities all start 
+    with 'id/{prov_id}/identity and there are already clashes there, which the
+    identity worker hacks around - see IdentitySpawnerWQ.get_prov_id()
+
+  - Consider: letting the protocol provide an object, and we do the json
+    dump before the base64??
+
 View-only visible changes:
 --------------------------
 
