@@ -2,6 +2,9 @@
 
 .Story {
   max-width: 80ex;
-  margin: 1.6ex 0px;
+  margin: 0px 0px 1.5em 0px;
   padding: 0px;
+}
+.Story:last-child {
+  margin-bottom: 0px;
 }
