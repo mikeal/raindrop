@@ -212,7 +212,7 @@ class RFC822Converter(base.SimpleConverterBase):
                'subject': headers['subject'],
                'body': body,
                'header_message_id': headers['message-id'],
-               'body_preview': body[:128], # good enuf for now...
+               'body_preview': body[:140],
                'headers': headers,
         }
         try:

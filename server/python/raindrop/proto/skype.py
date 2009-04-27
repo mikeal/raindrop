@@ -278,7 +278,7 @@ class SkypeConverter(base.SimpleConverterBase):
         return {'from': ['skype', doc['skype_from_handle']],
                 'subject': subject,
                 'body': doc['skype_body'],
-                'body_preview': doc['skype_body'][:128],
+                'body_preview': doc['skype_body'][:140],
                 'conversation_id': doc['skype_chatname'],
                 'timestamp': doc['skype_timestamp'], # skype's works ok here?
                 }

@@ -164,7 +164,7 @@ class TwitterConverter(base.SimpleConverterBase):
         conversation_id = doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
         return {'from': ['twitter', doc['twitter_user']],
                 'body': body,
-                'body_preview': body[:128],
+                'body_preview': body[:140],
                 'tags': tags,
                 'conversation_id' : str(conversation_id),
                 'header_message_id': str(doc['twitter_id']),
