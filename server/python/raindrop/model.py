@@ -78,12 +78,20 @@ class CouchDB(paisley.CouchDB):
         #uri = "/%s/_view/%s/%s" % (dbName, docId, viewId)
         uri = "/%s/_design/%s/_view/%s" % (dbName, docId, viewId)
 
-        if kwargs:
-            uri += "?%s" % (urlencode(_encode_options(kwargs)),)
-
-        return self.get(uri
+        opts = kwargs.copy()
+        if 'keys' in opts:
+            requester = self.post
+            body_ob = {'keys': opts.pop('keys')}
+            body = json.dumps(body_ob, allow_nan=False, ensure_ascii=False)
+            xtra = (body,)
+        else:
+            requester = self.get
+            xtra = ()
+        args = _encode_options(opts)
+        if args:
+            uri += "?%s" % (urlencode(args),)
+        return requester(uri, *xtra
             ).addCallback(self.parseResult)
-        
 
     def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
         # paisley appears to use an old api for attachments?
@@ -241,13 +249,15 @@ class DocumentModel(object):
         self._docs_since_view_update = 0
 
     @classmethod
-    def build_docid(cls, category, doc_type, provider_id):
+    def build_docid(cls, category, doc_type, provider_id, prov_encoded=True):
         """Builds a docid from (category, doc_type, provider_id)
 
         The exact order of the fields may depend on who can best take
         advantage of a specific order, so is subject to change in the
         prototype.  This method gives the code a consistent orderindg
         regardless of the actual impl."""
+        if not prov_encoded:
+            provider_id = encode_provider_id(provider_id)
         return "!".join([category, provider_id, doc_type])
 
     @classmethod
@@ -309,18 +319,32 @@ class DocumentModel(object):
 
     def _prepare_raw_doc(self, account, doc, doc_cat, doc_type, provid):
         docid = self.build_docid(doc_cat, doc_type, encode_provider_id(provid))
-        assert '_id' not in doc, doc # that isn't how you specify the ID.
-        doc['_id'] = docid
-        assert 'raindrop_account' not in doc, doc # we look after that!
-        doc['raindrop_account'] = account.details['_id']
+        # practicality beats purity - we may need to update a raw doc,
+        # in which case they better give us the _rev...
+        is_update = '_id' in doc
+        if is_update:
+            assert '_rev' in doc, doc
+        else:
+            doc['_id'] = docid
+            assert 'raindrop_account' not in doc, doc # we look after that!
+        # We don't actually *use* this best I can tell, and this function
+        # ends up being called to create 'identity' docs, which don't belong
+        # to an account anyway...
+        if account is not None:
+            doc['raindrop_account'] = account.details['_id']
+
         for (attr, val) in [
                         ('type', doc_type),
                         ('raindrop_category', doc_cat),
                         ]:
-            assert attr not in doc, (doc, attr) # we look after that!
-            doc[attr] = val
+            if is_update:
+                # But you can't change the basic 'type' etc on update...
+                assert doc[attr]==val, doc
+            else:
+                assert attr not in doc, (doc, attr) # we look after that!
+                doc[attr] = val
 
-        assert 'raindrop_seq' not in doc, doc # we look after that!
+        assert is_update or 'raindrop_seq' not in doc, doc # we look after that!
         doc['raindrop_seq'] = get_seq()
 
     def create_raw_documents(self, account, doc_infos):
@@ -372,8 +396,8 @@ class DocumentModel(object):
            of the documents, including the document ID
         """
         assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
-        assert 'type' not in doc, doc # we manage this too!
-        assert 'raindrop_seq' not in doc, doc # we look after that!
+        assert 'type' not in doc, doc # we manage this
+        assert 'raindrop_seq' not in doc, doc # we manage this
         doc['_id'] = self.build_docid(doc_cat, doc_type, enc_prov_id)
         doc['raindrop_seq'] = get_seq()
         # just 'type' might not be good - XXX - consider making 'type' a tuple
@@ -384,7 +408,7 @@ class DocumentModel(object):
 
     def create_ext_documents(self, docs):
         for doc in docs:
-            assert '_id' in doc # should have called prepare_ext_document!
+            assert '_id' in doc, doc # should have called prepare_ext_document!
         attachments = self._prepare_attachments(docs)
         # save the document.
         logger.debug('saving %d extension documents', len(docs))
