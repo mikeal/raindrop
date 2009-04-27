@@ -73,10 +73,9 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
   showHome: function() {
     couch.db("raindrop").view("raindrop!messages!by/_view/by_timestamp", {
-      limit: 300,
+      limit: 30,
       include_docs: false, // the timestamp view includes conversation ids in the value
       descending: true,
-      group : false,
       success: function(json) {
         dijit.byId("Stories").docs(json.rows);
       }
