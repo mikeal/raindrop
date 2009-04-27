@@ -32,3 +32,8 @@
   font-weight: bold;
 }
 
+
+#Organizer > ol > li.MailingList > a {
+  font-size: small;
+  color: green;
+}

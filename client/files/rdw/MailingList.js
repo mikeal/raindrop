@@ -12,7 +12,8 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     this.inherited("postMixInProperties", arguments);
 
     this.id = this.doc.value.id;
-    this.name = this.doc.value.name || this.doc.value.id;
+    this.name = this.doc.value.id.split(".")[0];
+    this.title = this.doc.value.name || '';
   },
 
   onClick: function(evt) {
@@ -33,7 +34,6 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
       keys: [id],
       limit: 30,
       include_docs: true,
-      group : false,
       success: function(json) {
         dijit.byId("Stories").docs(json.rows);
       }
