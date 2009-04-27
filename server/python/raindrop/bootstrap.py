@@ -74,17 +74,15 @@ def extract( filename, dir ):
             prefix = dirname
     # extract files
     for fn in filelist:
-        try:
-            out = open( fn, 'wb' )
-            buffer = StringIO( zf.read( fn ))
-            buflen = 2 ** 20
+        out = open( fn, 'wb' )
+        buffer = StringIO( zf.read( fn ))
+        buflen = 2 ** 20
+        datum = buffer.read( buflen )
+        while datum:
+            out.write( datum )
             datum = buffer.read( buflen )
-            while datum:
-                out.write( datum )
-                datum = buffer.read( buflen )
-            out.close()
-        finally:
-            print fn
+        out.close()
+        logger.debug('extracted %r', fn)
     os.chdir( pushd )
 
 
@@ -197,6 +195,7 @@ def install_client_files(whateva, options):
 
         new_prints = fp.get_prints()
         if options.force or design_doc.get('fingerprints') != new_prints:
+            logger.info("updating dojo...")
             dojo_dir = os.path.join(client_dir, "dojo")
 
             # unpack dojo
@@ -299,11 +298,6 @@ def update_apps(whateva):
 
     db = get_db()
 
-    def _open_not_exists(failure, *args, **kw):
-        # If no files document, then error out immediately.
-        failure.trap(twisted.web.error.Error)
-        failure.raiseException()
-
     def _insert_paths(view_results, replacements):
         # Convert couch config value for module paths
         # to a JS string to be used in config.js
@@ -320,10 +314,8 @@ def update_apps(whateva):
 
         replacements["module_paths"] = module_paths
         
-        dfd = db.openView("raindrop!uiext!subs", "all")
-        dfd.addErrback(_open_not_exists)
-        dfd.addCallback(_insert_extensions, replacements)
-        return dfd        
+        return db.openView("raindrop!uiext!subs", "all"
+                    ).addCallback(_insert_extensions, replacements)
 
     def _insert_extensions(view_results, replacements):
         # Pull out all the subscriptions
@@ -346,10 +338,9 @@ def update_apps(whateva):
 
         replacements["subs"] = subs
 
-        defrd = db.openDoc(FILES_DOC)
-        defrd.addErrback(_open_not_exists)
-        defrd.addCallback(_save_config, replacements)
-        return defrd        
+        return db.openDoc(FILES_DOC
+                    ).addCallback(_save_config, replacements
+                    )
 
     def _save_config(doc, replacements):
         # Find config.js skeleton on disk   
@@ -375,10 +366,9 @@ def update_apps(whateva):
         return db.saveDoc(doc, FILES_DOC)
 
     replacements = {}
-    dfd = db.openView("raindrop!ui!paths", "all")
-    dfd.addErrback(_open_not_exists)
-    dfd.addCallback(_insert_paths, replacements)
-    return dfd
+    return db.openView("raindrop!ui!paths", "all"
+                ).addCallback(_insert_paths, replacements
+                )
 
 def install_accounts(whateva):
     db = get_db()
