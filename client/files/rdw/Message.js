@@ -2,6 +2,7 @@ dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
 dojo.require("rdw.gravatar");
+dojo.require("rd.friendly");
 
 dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
@@ -46,8 +47,17 @@ dojo.declare("rdw.Message", [rdw._Base], {
     } catch(ignore_empty_subjects) { }
 
     this.message = rd.escapeHtml(this.doc.body_preview);
-    this.time = 0;
-    this.timeDisplay = rd.escapeHtml("some time ago");
+
+    this._id = this.doc._id;
+
+    this.time = this.doc.timestamp;
+
+    /* XXX this timestamp needs a lot more thought to show the right kind of 
+       time info and we probably also want to some standard the hCard formatting */
+    var fTime = rd.friendly.timestamp(this.doc.timestamp);
+    this.utcTime = fTime["utc"];
+    this.friendlyTime = fTime["friendly"];
+    this.additionalTime = fTime["additional"];
     
     this.userPicUrl = this.blankImgUrl;
     //If the fromId has an @ in it, try to use a gravatar for it.
