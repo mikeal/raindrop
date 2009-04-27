@@ -7,12 +7,18 @@ from ...proc import base
 
 class EmailConverter(base.SimpleConverterBase):
     target_type = 'msg', 'message'
-    sources = [('msg', 'raw/message/email/mailing-list-extracted')]
-    def simple_convert(self, doc):
-        # for now, the email repr has all we need.
-        ret = doc.copy()
-        for n in ret.keys():
-            if n.startswith('_') or n.startswith('raindrop'):
-                del ret[n]
-        del ret['type']
+    sources = [
+        ('msg', 'raw/message/email'),
+        ('msg', 'raw/message/email/mailing-list-extracted'),
+        ('msg', 'message/email-in-conversation'),
+        ]
+    def convert(self, docs):
+        ret = {}
+        for doc in docs:
+            tmp = doc.copy()
+            for n in tmp.keys():
+                if n.startswith('_') or n.startswith('raindrop'):
+                    del tmp[n]
+            del tmp['type']
+            ret.update(tmp)
         return ret

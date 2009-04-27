@@ -1,7 +1,7 @@
+// emits conversation ids by id, so we can look up all messages in a conversation
+
 function(doc) {
-  if (doc.type=='anno/tags' && doc.conversation_id) {
-    var id = doc._id;
-    var [msg, pid, doc_type] = id.split('!', 2);
-    emit(doc.conversation_id, msg + "!" + pid + "!message");
+  if (doc.type == 'message' && doc.conversation_id) {
+    emit(doc.conversation_id, null);
   }
 }

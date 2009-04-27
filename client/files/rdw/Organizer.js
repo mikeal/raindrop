@@ -72,18 +72,13 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   },
 
   showHome: function() {
-    couch.db("raindrop").view("raindrop!messages!by/_view/by_doc_type", {
-      keys: ["message"],
-      limit: 30,
-      include_docs: true,
+    couch.db("raindrop").view("raindrop!messages!by/_view/by_timestamp", {
+      limit: 300,
+      include_docs: false, // the timestamp view includes conversation ids in the value
+      descending: true,
       group : false,
       success: function(json) {
-        //Grab the docs from the returned rows.
-        var docs = rd.map(json.rows, function(row) {
-          return row.doc;
-        });
-
-        dijit.byId("Stories").docs(docs);
+        dijit.byId("Stories").docs(json.rows);
       }
     });
   }

@@ -39,19 +39,10 @@ from ...proc import base
 
 class MailingListExtractor(base.SimpleConverterBase):
     target_type = 'msg', 'raw/message/email/mailing-list-extracted'
-    sources = [('msg', 'raw/message/email')]
-    def simple_convert(self, doc):
-        ret = doc.copy()
-
-        # email.py does this, and we have to do it too, or else
-        # DocumentModel::prepare_ext_document throws an exception when it finds
-        # these keys in the document, even though it says the requirement
-        # for _id to be absent from the document is because it "manage[s] IDs
-        # for all but 'raw' docs," and this is a "raw" doc as far as I can tell.
-        for n in ret.keys():
-            if n.startswith('_') or n.startswith('raindrop'):
-                del ret[n]
-        del ret['type']
+    sources = [('msg', 'raw/message/rfc822')]
+    def simple_convert(self, orig_doc):
+        doc = orig_doc.copy()
+        ret = {}
 
         if 'list-id' not in doc['headers']:
             return ret

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def decode_header_part(value, fallback_charset='latin-1'):
     assert isinstance(value, tuple)
-    rawval = unquote(value[0])
+    rawval = value[0]
     charset = value[1] or fallback_charset
     try:
         # hrm - 'replace' isn't necessary for latin-1 - it never fails?
@@ -36,6 +36,104 @@ def _safe_convert_header(val):
     parts = decode_header(val)
     return u"".join(decode_header_part(part) for part in parts)
 
+def extract_message_id(message_id_string, acceptNonDelimitedReferences):
+  # this is a port of my fix for bug 466796, the comments should be ported
+  #  too if we keep this logic...
+  whitespaceEndedAt = None
+  firstMessageIdChar = None
+  foundLessThan = False
+  message_len = len(message_id_string)
+  i = 0
+  while i < message_len:
+    char = message_id_string[i]
+    # do nothing on whitespace
+    if char in r' \r\n\t':
+      pass
+    else:
+      if char == '<':
+        i += 1 # skip over the '<'
+        firstMessageIdChar = i
+        foundLessThan = True
+        break
+      if whitespaceEndedAt is None:
+        whitespaceEndedAt = i
+    i += 1
+
+  # if we hit a '<', keep going until we hit a '>' or the end
+  if foundLessThan:
+    while i < message_len:
+      char = message_id_string[i]
+      if char == '>':
+        # it's valid, update reference, making sure to stop before the '>'
+        return [message_id_string[firstMessageIdChar:i],
+            message_id_string[i+1:]]
+      i += 1
+
+  # if we are at the end of the string, we found some non-whitespace,
+  #  and the caller requested that we accept non-delimited whitespace,
+  #  give them that as their reference.  (otherwise, leave it empty)
+  if acceptNonDelimitedReferences and whitespaceEndedAt:
+    return [message_id_string[whitespaceEndedAt:], '']
+  return [None, '']
+
+def extract_message_ids(message_id_string):
+  references = []
+  while message_id_string:
+    ref, message_id_string = extract_message_id(message_id_string,
+                                                not references)
+    if ref:
+      references.append(ref)
+  return references
+
+def extract_message_id(message_id_string, acceptNonDelimitedReferences):
+  # this is a port of my fix for bug 466796, the comments should be ported
+  #  too if we keep this logic...
+  whitespaceEndedAt = None
+  firstMessageIdChar = None
+  foundLessThan = False
+  message_len = len(message_id_string)
+  i = 0
+  while i < message_len:
+    char = message_id_string[i]
+    # do nothing on whitespace
+    if char in r' \r\n\t':
+      pass
+    else:
+      if char == '<':
+        i += 1 # skip over the '<'
+        firstMessageIdChar = i
+        foundLessThan = True
+        break
+      if whitespaceEndedAt is None:
+        whitespaceEndedAt = i
+    i += 1
+
+  # if we hit a '<', keep going until we hit a '>' or the end
+  if foundLessThan:
+    while i < message_len:
+      char = message_id_string[i]
+      if char == '>':
+        # it's valid, update reference, making sure to stop before the '>'
+        return [message_id_string[firstMessageIdChar:i],
+            message_id_string[i+1:]]
+      i += 1
+
+  # if we are at the end of the string, we found some non-whitespace,
+  #  and the caller requested that we accept non-delimited whitespace,
+  #  give them that as their reference.  (otherwise, leave it empty)
+  if acceptNonDelimitedReferences and whitespaceEndedAt:
+    return [message_id_string[whitespaceEndedAt:], '']
+  return [None, '']
+
+def extract_message_ids(message_id_string):
+  references = []
+  while message_id_string:
+    ref, message_id_string = extract_message_id(message_id_string,
+                                                not references)
+    if ref:
+      references.append(ref)
+  return references
+
 
 # an 'rfc822' message stores the unpacked version of the rfc822 stream, a-la
 # the interface provided by the 'email' package.  IOW, we never bother storing
@@ -51,6 +149,14 @@ def doc_from_bytes(b):
     # the case of headers, we lowercase the keys
     for hn, hv in msg.items():
         headers[hn.lower()] = _safe_convert_header(hv)
+        # email.utils.unquote will do bad things to references headers (stripping
+        # initial and trailing <>'s, so we don't want to use it for the
+        # references header-- but other fields seem ok.  We split the references
+        # into a list here because why not.
+        if hn.lower() == 'references':
+            headers[hn.lower()] = extract_message_ids(hv)
+        else:
+            headers[hn.lower()] = unquote(headers[hn.lower()])
 
     # XXX - technically msg objects are recursive; handling that requires
     # more thought.  For now, assume they are flat.
@@ -105,6 +211,7 @@ class RFC822Converter(base.SimpleConverterBase):
         ret = {'from': ['email', headers['from']],
                'subject': headers['subject'],
                'body': body,
+               'header_message_id': headers['message-id'],
                'body_preview': body[:128], # good enuf for now...
                'headers': headers,
         }

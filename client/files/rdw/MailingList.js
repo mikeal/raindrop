@@ -35,12 +35,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
       include_docs: true,
       group : false,
       success: function(json) {
-        //Grab the docs from the returned rows.
-        var docs = rd.map(json.rows, function(row) {
-          return row.doc;
-        });
-
-        dijit.byId("Stories").docs(docs);
+        dijit.byId("Stories").docs(json.rows);
       }
     });
   }

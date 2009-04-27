@@ -22,6 +22,7 @@ extension_modules = [
     'raindrop.ext.message.email',
     'raindrop.ext.message.mailinglist',
     'raindrop.ext.message.message',
+    'raindrop.ext.message.convos',
 ]
 
 # A dict of converter instances, keyed by (src_info, dest_info)
