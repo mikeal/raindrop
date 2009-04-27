@@ -3,6 +3,7 @@ dojo.provide("rdw.Message");
 dojo.require("rdw._Base");
 dojo.require("rdw.gravatar");
 dojo.require("rd.friendly");
+dojo.require("rd.hyperlink");
 
 dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
@@ -46,7 +47,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
       this.subject = rd.escapeHtml(this.doc.subject.replace(/^Re:/,''));
     } catch(ignore_empty_subjects) { }
 
-    this.message = rd.escapeHtml(this.doc.body_preview);
+    this.message = rd.hyperlink.add(rd.escapeHtml(this.doc.body_preview));
 
     this._id = this.doc._id;
 
