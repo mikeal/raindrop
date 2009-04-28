@@ -57,11 +57,8 @@ class Config(object):
         account_name = section_name[len(ACCOUNT_PREFIX):]
         acct = self.accounts[account_name] = \
                     self.dictifySection(section_name, None, account_name)
-        if 'id' in acct:
-          acct['_id'] = acct['id']
-          del acct['id']
-        else:
-          acct['_id'] = acct['username']
+        if 'id' not in acct:
+          acct['id'] = acct['username']
 
     self.local_couch = self.couches['local']
     self.remote_couch = self.couches.get('remote') # may be None

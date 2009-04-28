@@ -375,8 +375,8 @@ def install_accounts(whateva):
     config = get_config()
 
     def _opened_ok(doc):
-        logger.info("account '%(_id)s' already exists, will be updating existing account",
-                    doc)
+        logger.info("account '%(_id)s' already exists at revision %(_rev)s"
+                    " - updating", doc)
         return doc
 
     def _open_not_exists(failure, doc_id, *args, **kw):
@@ -397,7 +397,7 @@ def install_accounts(whateva):
     d = defer.Deferred()
 
     for acct_name, acct_info in config.accounts.iteritems():
-        acct_id = "account!" + acct_info['_id']
+        acct_id = "account!" + acct_info['id']
         logger.info("Adding account '%s'", acct_id)
         d.addCallback(_open_doc, acct_id)
         d.addCallbacks(_opened_ok, _open_not_exists, errbackArgs=(acct_id,))
