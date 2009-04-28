@@ -44,8 +44,8 @@ class ConversationConverter(base.SimpleConverterBase):
     references = header_message_ids[:]
     # see if the self-message already exists...
     header_message_ids.append(self_header_message_id)
-    logger.debug("Looking at header_message_id: ", header_message_ids)
-    logger.debug("  References: ", '\n\t'.join(references))
+    logger.debug("header_message_id: %s ", header_message_ids)
+    logger.debug("references: %s", '\n\t'.join(references))
     return defer.DeferredList([self.doc_model.open_view('raindrop!messages!by',
                                     'by_header_message_id',
                                     include_docs=True,
@@ -60,7 +60,8 @@ class ConversationConverter(base.SimpleConverterBase):
     headers = doc['headers']
     self_header_message_id = doc['headers']['message-id']
     timestamp = doc['timestamp']
-    logger.debug("Message from:", headers['from'], " subject: ", headers['subject'])
+    logger.debug("headers['from']: %s", headers['from'])
+    logger.debug("headers['subject']: %s", headers['subject'])
 
     for row in results[0][1]['rows']:
       hid = row['key']
@@ -72,10 +73,10 @@ class ConversationConverter(base.SimpleConverterBase):
 
     if conversation_id is None:
       # we need to allocate a conversation_id...
-      logger.debug("CREATING conversation_id", self_header_message_id)
+      logger.debug("CREATING conversation_id %s", self_header_message_id)
       conversation_id = self_header_message_id
     else:
-      logger.debug("FOUND EXISTING CONVERSATION!!", self_header_message_id, row['key'], "CONVERSATION_ID", conversation_id)
+      logger.debug("FOUND CONVERSATION header_message_id %s in row['key'] %s with conversation_id %s", self_header_message_id, row['key'], conversation_id)
 
     # create dudes who are missing
     if unseen:
@@ -93,7 +94,7 @@ class ConversationConverter(base.SimpleConverterBase):
         self.doc_model.prepare_ext_document('msg', 'ghost',
                                             encode_provider_id(header_message_id),
                                             ndoc)
-        logger.debug("Creating ghost for header id: ", header_message_id, "id:", ndoc['_id'])
+        logger.debug("Creating ghost for header_message_id: %s with id %s ", header_message_id, ndoc['_id'])
         ndocs.append(ndoc)
 
       return self.doc_model.create_ext_documents(ndocs
