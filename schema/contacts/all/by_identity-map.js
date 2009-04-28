@@ -1,7 +1,9 @@
 function(doc) {
-  if (doc.type == "contact") {
-    for each (var identity in doc.identities) {
-      emit([identity.kind, identity.value], doc);
+  // A doc type of 'contacts' is what holds the relationship from our
+  // identity back to the contact...
+  if (doc.type == "contacts") {
+    for each (var [contact_id, rel] in doc.contacts) {
+      emit(doc.identity_id, [contact_id, rel])
     }
   }
 }
