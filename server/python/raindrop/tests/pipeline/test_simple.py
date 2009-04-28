@@ -7,6 +7,9 @@ from raindrop.model import get_doc_model
 from raindrop.proto import test as test_proto
 from raindrop import pipeline
 
+import logging
+logger = logging.getLogger(__name__)
+
 class TestPipelineBase(TestCaseWithTestDB):
     def get_pipeline(self):
         opts = FakeOptions()
@@ -14,15 +17,26 @@ class TestPipelineBase(TestCaseWithTestDB):
         return pipeline.Pipeline(dm, opts)
 
     def process_doc(self, doc):
+        doc_model = get_doc_model()
+        if not pipeline.converters: # XXX - *sob* - misplaced...
+            pipeline.load_extensions(doc_model)
+        
         coop = task.Cooperator()
-        pl = self.get_pipeline()
-        return coop.coiterate(
-                    pl.gen_transition_tasks(doc['_id'], doc['_rev']))
+        wq = pipeline.MessageTransformerWQ(doc_model, **FakeOptions().__dict__)
+        def fake_workqueue():
+            for task in wq.generate_tasks(doc['_id'], doc['_rev']):
+                yield task.addCallback(wq.consume)
+        def log_done(whateva):
+            logger.info('process_doc done')
+
+        logger.info('process_doc starting')
+        return coop.coiterate(fake_workqueue()
+                    ).addCallback(log_done)
 
 class TestPipeline(TestPipelineBase):
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
-        test_proto.next_convert_fails = False
+        test_proto.test_next_convert_fails = False
 
         def check_targets_last(lasts_by_seq, target_types):
             docs = [row['doc'] for row in lasts_by_seq]
@@ -95,8 +109,8 @@ class TestPipeline(TestPipelineBase):
             self.failUnlessEqual(lasts[0]['id'], 'workqueue!msg')
             self.failUnless(lasts[1]['id'].endswith("!aggr/tags"), lasts)
 
-        test_proto.next_convert_fails = False
-        return self.get_pipeline().start(
+        test_proto.test_next_convert_fails = False
+        return self.get_pipeline().start('workqueue!msg'
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_last_doc
                 )
@@ -105,7 +119,7 @@ class TestErrors(TestPipelineBase):
     def test_error_stub(self):
         # Test that when a converter fails an appropriate error record is
         # written
-        test_proto.next_convert_fails = True
+        test_proto.test_next_convert_fails = True
 
         def check_target_last(lasts):
             # The current pipeline means that the 'raw/message/email' is an
@@ -131,8 +145,9 @@ class TestErrors(TestPipelineBase):
             expected = set(('anno/flags', 'raw/message/rfc822'))
             self.failUnlessEqual(got, expected)
 
-        def start_retry(whateva):
-            test_proto.next_convert_fails = False
+        def start_retry(result):
+            test_proto.test_next_convert_fails = False
+            logger.info('starting retry for %r', result)
             return self.get_pipeline().start_retry_errors()
 
         return self.test_error_stub(
@@ -146,7 +161,7 @@ class TestErrors(TestPipelineBase):
         # when our test converter throws an error.
         def check_last_doc(lasts):
             # The tail of the DB should be as below:
-            expected = set(['core/workqueue', 'aggr/flags',
+            expected = set(['workqueue!msg', 'aggr/flags',
                             'anno/flags', 'core/error/msg', 'proto/test'])
             # Note the 'core/error/msg' is the failing conversion (ie, the
             # error stub for the rfc822 message), and no 'email' record exists
@@ -155,8 +170,8 @@ class TestErrors(TestPipelineBase):
             got = set(l['doc']['type'] for l in lasts)
             self.failUnlessEqual(got, expected)
 
-        test_proto.next_convert_fails = True
-        return self.get_pipeline().start(
+        test_proto.test_next_convert_fails = True
+        return self.get_pipeline().start('workqueue!msg'
                 ).addCallback(lambda whateva: self.get_last_by_seq(5)
                 ).addCallback(check_last_doc
                 )

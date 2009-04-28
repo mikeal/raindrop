@@ -237,10 +237,9 @@ class TwistySkype(object):
             # See if we have an existing contact - if so, update it.
             if doc is None:
                 new_doc = {'identity_id': ['skype', fhandle],
-                           'skype_id': fhandle,
                           }
                 dinfos = [('id', 'skype', fhandle, new_doc)]
-                logger.info('creating new doc for contact %r', fhandle)
+                logger.info('creating new doc for %r', fhandle)
                 return self.doc_model.create_raw_documents(self.account, dinfos)
             else:
                 logger.debug('existing contact %r is up to date', fhandle)
@@ -294,6 +293,7 @@ class SkypeRawConverter(base.SimpleConverterBase):
         self.attached = False
 
     def _get_skype(self):
+        # *sob* - this is painful as attach may block for a very long time :(
         if self.attached:
             return self.skype
         def return_skype(result):
@@ -353,14 +353,15 @@ class SkypeRawConverter(base.SimpleConverterBase):
         return props
 
     def simple_convert(self, doc):
+        def return_props(ret, props):
+            return props
+
         def fetch(skype):
-            return threads.deferToThread(self._fetch_user_info, skype, doc
-                                         )
+            return threads.deferToThread(self._fetch_user_info, skype, doc)
 
         return defer.maybeDeferred(self._get_skype
                 ).addCallback(fetch
                 )
-
 
 # The intent of this class is a 'union' of the useful fields we might want...
 class SkypeBakedConverter(base.SimpleConverterBase):
@@ -379,6 +380,38 @@ class SkypeBakedConverter(base.SimpleConverterBase):
 
         ret['identity_id'] = doc['identity_id']
         return ret
+
+# An 'identity spawner' skype/raw as input and creates a number of identities.
+class SkypeIdentitySpawner(base.IdentitySpawnerBase):
+    source_type = 'id', 'skype/raw'
+    def get_identity_rels(self, src_doc):
+        return [r for r in self._gen_em(src_doc)]
+
+    def _gen_em(self, props):
+        # the primary 'skype' one first...
+        yield props['identity_id'], None
+        v = props.get('skype_homepage')
+        if v:
+            yield ('url', v.rstrip('/')), 'homepage'
+        v = props.get('skype_phone_home')
+        if v:
+            yield ('phone', v), 'home'
+        v = props.get('skype_phone_mobile')
+        if v:
+            yield ('phone', v), 'mobile'
+        v = props.get('skype_phone_office')
+        if v:
+            yield ('phone', v), 'office'
+        # skype-out contacts seem a little strange - they don't have
+        # any phone numbers - but their ID is the phone-number!  Skype
+        # displays the number as a 'home' number...
+        if props.get('skype_onlinestatus')=='SKYPEOUT':
+            yield ('phone', props['identity_id'][1]), 'home'
+
+    def get_default_contact_props(self, src_doc):
+        return {
+            'name': src_doc['skype_displayname'] or src_doc['skype_fullname'],
+        }
 
 
 class SkypeAccount(base.AccountBase):

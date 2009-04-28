@@ -213,6 +213,25 @@ class TwitterBakedConverter(base.SimpleConverterBase):
         return ret
 
 
+# An 'identity spawner' twitter/raw as input and creates a number of identities.
+class TwitterIdentitySpawner(base.IdentitySpawnerBase):
+    source_type = 'id', 'twitter/raw'
+    def get_identity_rels(self, src_doc):
+        return [r for r in self._gen_em(src_doc)]
+
+    def _gen_em(self, props):
+        # the primary 'twitter' one first...
+        yield props['twitter_screen_name'], None
+        v = props.get('twitter_url')
+        if v:
+            yield ('url', v.rstrip('/')), 'homepage'
+
+    def get_default_contact_props(self, src_doc):
+        return {
+            'name': src_doc['twitter_name'] or src_doc['twitter_screen_name']
+        }
+
+
 class TwitterAccount(base.AccountBase):
   def startSync(self, conductor):
     return TwitterProcessor(self, conductor).attach()

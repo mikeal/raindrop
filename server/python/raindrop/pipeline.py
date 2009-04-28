@@ -2,6 +2,8 @@
 form to their most useful form.
 """
 import sys
+import uuid
+
 from twisted.internet import defer, task
 from twisted.python.failure import Failure
 
@@ -37,8 +39,15 @@ converters = {}
 #}
 depends = {}
 
+# A list of extensions which 'spawn' new documents, optionally based on the
+# existance of some other document.
+# Keyed by 'source_type' (which may be None), and each elt is a list of
+# extension instances
+# XXX - for now limited to 'identity spawners'...
+spawners = {}
 
-def find_converters_in_module(mod_name):
+
+def find_exts_in_module(mod_name, base_class):
     try:
         __import__(mod_name)
         mod = sys.modules[mod_name]
@@ -46,12 +55,12 @@ def find_converters_in_module(mod_name):
         logger.exception("Failed to load extension %r", mod_name)
         return
     for ob in mod.__dict__.itervalues():
-        if isinstance(ob, type) and issubclass(ob, base.ConverterBase):
+        if isinstance(ob, type) and issubclass(ob, base_class):
             yield ob
 
-def load_converters(doc_model):
+def load_extensions(doc_model):
     for mod_name in extension_modules:
-        for cvtr in find_converters_in_module(mod_name):
+        for cvtr in find_exts_in_module(mod_name, base.ConverterBase):
             assert cvtr.target_type, cvtr # must have a target type
             # Is the target-type valid
             assert isinstance(cvtr.target_type, tuple) and \
@@ -66,6 +75,10 @@ def load_converters(doc_model):
                     logger.warn(msg, sid, cvtr.target_type, cvtr, other)
                     continue
                 converters[cvtr_key] = inst
+        for ext in find_exts_in_module(mod_name, base.IdentitySpawnerBase):
+            assert ext.source_type, ext # must have a source type.
+            inst = ext(doc_model)
+            spawners.setdefault(ext.source_type, []).append(inst)
 
 
 class Pipeline(object):
@@ -76,7 +89,11 @@ class Pipeline(object):
         # XXX - should we own the cooperator or use our parents?
         self.coop = task.Cooperator()
         if not converters:
-            load_converters(doc_model)
+            load_extensions(doc_model)
+            assert converters # this can't be good!
+
+    def get_wq_factories(self):
+        return MessageTransformerWQ, IdentitySpawnerWQ
 
     def unprocess(self):
         # A bit of a hack that will suffice until we get better dependency
@@ -108,7 +125,9 @@ class Pipeline(object):
             # and our work-queue docs - they aren't seen by the view, so
             # just delete them by ID.
             docs = []
-            for rid in ('workqueue!msg',):
+            # XXX - need a list of queues...
+            del_types = [f.queue_state_doc_id for f in self.get_wq_factories()]
+            for rid in del_types:
                 yield self.doc_model.open_document_by_id(rid
                         ).addCallback(delete_a_doc, rid)
 
@@ -119,9 +138,18 @@ class Pipeline(object):
         derived.add(('msg', 'core/error/msg'))
         return self.coop.coiterate(gen_deleting_docs(derived))
 
-    def start(self):
-        gen = generate_work_queue(self.doc_model, self.gen_transition_tasks)
-        return self.coop.coiterate(gen)
+    def gen_work_queue(self, queue_factory):
+        wq = queue_factory(self.doc_model, self.options.__dict__)
+        return generate_work_queue(self.doc_model, wq)
+
+    def start(self, queue_types=None):
+        if not queue_types:
+            facs = self.get_wq_factories()
+        else:
+            facs = [f for f in self.get_wq_factories()
+                    if f.queue_state_doc_id in queue_types]
+        return defer.DeferredList(
+            [self.coop.coiterate(self.gen_work_queue(f)) for f in facs])
 
     def start_retry_errors(self):
         """Attempt to re-process all messages for which our previous
@@ -131,14 +159,16 @@ class Pipeline(object):
         # item is in-place the normal mechanisms will do the right thing
         def gen_work():
             state_doc = {'raindrop_seq': 0}
+            wq = MessageTransformerWQ(self.doc_model)
             while True:
                 start_seq = state_doc['raindrop_seq']
-                # error docs are quite small - fetch 50 at a time...
+                # no 'include_docs' so results are small; fetch 500 at a time.
                 yield self.doc_model.open_view(
                                 'raindrop!proto!workqueue', 'errors',
                                 startkey=state_doc['raindrop_seq'],
-                                limit=50,
-                        ).addCallback(self._cb_errorq_opened, state_doc)
+                                limit=500,
+                        ).addCallback(self._cb_errorq_opened, state_doc
+                        )
                 if start_seq == state_doc['raindrop_seq']:
                     break
         return self.coop.coiterate(gen_work())
@@ -160,16 +190,46 @@ class Pipeline(object):
     def _cb_got_error_source(self, source):
         # XXX - see below - should we reuse self.coop, or is that unsafe?
         coop = task.Cooperator()
-        return coop.coiterate(self.gen_transition_tasks(
-                                        source['_id'], source['_rev'],
-                                        force=True))
+        wq = MessageTransformerWQ(self.doc_model, self.options.__dict__)
+        gen = wq.generate_tasks(source['_id'], source['_rev'], force=True)
 
-    def gen_transition_tasks(self, src_id, src_rev, force=False,
-                             # caller can supply this dict if they care...
-                             caller_ret={'num_processed': 0}):
+        def fake_workqueue():
+            for task in gen:
+                yield task.addCallback(wq.consume)
+        return coop.coiterate(fake_workqueue())
+
+class WorkQueue:
+    # These WorkQueues are very much still a thought-in-progress.
+    # In particular, abstracting of dependency management and error
+    # handling remains to be done.
+    queue_state_doc_id = None
+    def __init__(self, doc_model, options={}):
+        self.doc_model = doc_model
+        self.options = options
+
+    def generate_tasks(self, src_id, src_rev):
         # A generator which checks if each of its 'targets' (ie, the extension
         # which depends on this document) is up-to-date wrt this document's
         # revision.
+        raise NotImplementedError(self)
+
+    def consume(self, result):
+        raise NotImplementedError(self)
+
+class MessageTransformerWQ(WorkQueue):
+    """A queue which uses 'transformers' to create 'related' documents based
+    on our DAG.
+    """
+    queue_state_doc_id = 'workqueue!msg'
+    def consume(self, new_doc):
+        logger.debug("consuming object of type %s", type(new_doc))
+        def return_num(result):
+            return len(result)
+        if new_doc is not None:
+            return self.doc_model.create_ext_documents([new_doc]
+                        ).addCallback(return_num)
+
+    def generate_tasks(self, src_id, src_rev, force=False):
         logger.debug("generating transition tasks for %r (rev=%s)", src_id,
                      src_rev)
 
@@ -180,7 +240,7 @@ class Pipeline(object):
         try:
             doc_cat, doc_type, proto_id = dm.split_docid(src_id)
         except ValueError:
-            logger.warning("skipping malformed ID %r", src_id)
+            logger.info("skipping document %r", src_id)
             return
 
         targets = depends.get((doc_cat, doc_type))
@@ -197,11 +257,11 @@ class Pipeline(object):
             yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
                             key=target_id
                     ).addCallback(self._cb_check_existing_doc, cvtr,
-                                  proto_id, src_id, src_rev, force,
-                                  caller_ret)
+                                  proto_id, src_id, src_rev, force
+                    )
 
     def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev,
-                               force, caller_ret):
+                               force):
         rows = result['rows']
         if len(rows)==0:
             # no target exists at all - needs to be executed...
@@ -218,13 +278,12 @@ class Pipeline(object):
 
         if not need_target:
             return None # nothing to do.
-        return self._make_document(cvtr, proto_id, target_rev, caller_ret)
+        return self._make_document(cvtr, proto_id, target_rev)
 
-    def _make_document(self, cvtr, proto_id, target_rev, caller_ret):
+    def _make_document(self, cvtr, proto_id, target_rev):
         # OK - need to create this new type - locate all dependents in the
         # DB - this will presumably include the document which triggered
         # the process...
-        caller_ret['num_processed'] += 1
         all_deps = []
         dm = self.doc_model
         for src_cat, src_type in cvtr.sources:
@@ -267,7 +326,7 @@ class Pipeline(object):
         dest_cat, dest_type = target_ext.target_type
         if isinstance(result, Failure):
             logger.warn("Failed to convert a document: %s", result)
-            if self.options.stop_on_error:
+            if self.options.get('stop_on_error', False):
                 logger.info("--stop-on-error specified - re-throwing error")
                 result.raiseException()
             # and make a dummy doc.
@@ -295,21 +354,196 @@ class Pipeline(object):
         new_doc['raindrop_sources'] = [(s['_id'], s['_rev']) for s in sources]
         if target_rev is not None:
             new_doc['_rev'] = target_rev
-        return self.doc_model.create_ext_documents([new_doc])
+        return new_doc
+    
 
-def generate_work_queue(doc_model, transition_gen_factory):
+
+class IdentitySpawnerWQ(WorkQueue):
+    """For examining types of documents and running extensions which can
+    create new identity records.
+
+    Basic contact management is also done by this extension; once we have
+    been given a list of (identity_id, relationship_name) tuples see if we can
+    find a contact ID associated with any of them, and create a new 'default'
+    contact if not. Then ensure each of the identities is associated with the
+    contact.
+    """
+    queue_state_doc_id = 'workqueue!identities'
+
+    # It sucks we need to join these here; the doc_model should do
+    # that - so we abstract that away...
+    @classmethod
+    def get_prov_id(cls, identity_id):
+        return '/'.join(identity_id)
+
+    def consume(self, new_docs):
+        logger.debug("consuming %d new docs", len(new_docs))
+        def return_num(result):
+            return len(new_docs)
+        if new_docs:
+            #prepare = self.doc_model.prepare_ext_document
+            #just_docs = []
+            #for dcat, ddoctype, dprovid, doc in new_docs:
+            #    prepare(dcat, ddoctype, dprovid, doc)
+            #    just_docs.append(doc)
+            return self.doc_model.create_raw_documents(None, new_docs
+                        ).addCallback(return_num)
+
+    def generate_tasks(self, src_id, src_rev, force=False):
+        logger.debug("generating transition tasks for %r (rev=%s)", src_id,
+                     src_rev)
+
+        dm = self.doc_model
+        # For each target we need to determine if the doc exists, and if so,
+        # if our revision number is in the 'raindrop_sources' attribute.
+        # If it is, the target is up-to-date wrt us, so all is good.
+        try:
+            doc_cat, doc_type, proto_id = dm.split_docid(src_id)
+        except ValueError:
+            logger.info("skipping document %r", src_id)
+            return
+
+        my_spawners = spawners.get((doc_cat, doc_type))
+        if not my_spawners:
+            logger.debug("documents of type %r have no spawners", doc_type)
+            return
+
+        # open the source doc then let-em at it...
+        yield self.doc_model.open_document_by_id(src_id
+                    ).addCallback(self.get_id_rels, my_spawners
+                    )
+
+    def get_id_rels(self, src_doc, my_spawners):
+        new_docs = []
+        def return_docs(whateva):
+            return new_docs
+        def gen_work():
+            for spawner in my_spawners:
+                # each of our spawners returns a simple list if identities
+                idrels = spawner.get_identity_rels(src_doc)
+                # Find contacts associated with *any* of the identities and use the
+                # first we find - hence the requirement the 'primary' identity be
+                # the first, so if a contact is associated with that, we use
+                # it
+                identities = [i[0] for i in idrels]
+                yield self.doc_model.open_view('raindrop!contacts!all',
+                                               'by_identity',
+                                               keys=identities, limit=1,
+                                               include_docs=True,
+                    ).addCallback(self._check_contact_view, src_doc, new_docs,
+                                  spawner, idrels,
+                    )
+
+        coop = task.Cooperator()
+        return coop.coiterate(gen_work()
+                    ).addCallback(return_docs
+                    )
+
+    def _check_contact_view(self, result, src_doc, new_docs, spawner, idrels):
+        rows = result['rows']
+        if not rows:
+            # None of the identities matched a contact, so we create a new
+            # contact for this skype user.
+            # we can't use a 'natural key' for a contact....
+            contact_provid = str(uuid.uuid4())
+            cdoc = {
+                'contact_id': contact_provid,
+            }
+            def_props = spawner.get_default_contact_props(src_doc)
+            assert 'name' in def_props, def_props # give us a name at least!
+            cdoc.update(def_props)
+            new_docs.append(('id', 'contact', contact_provid, cdoc))
+            logger.debug("Will create new contact %r", contact_provid)
+            contact_id = contact_provid
+        else:
+            row = rows[0]
+            contact_id = row['value'][0]
+            logger.debug("Found existing contact %r", contact_id)
+
+        # We know the contact to use and the list of identity relationships.
+        # The relationship to the contact is stored next to the identity - so
+        # open the document listing the relationships of the identities to
+        # contacts, and create or update them as necessary...
+        doc_model = self.doc_model
+        keys = []
+        infos = []
+        for iid, rel in idrels:
+            prov_id = self.get_prov_id(iid)
+            # the identity itself.
+            did = doc_model.build_docid('id', iid[0], prov_id,
+                                        prov_encoded=False)
+            keys.append(did)
+            # the identity/contact relationships doc.
+            did = doc_model.build_docid('id', 'contacts', prov_id,
+                                        prov_encoded=False)
+            keys.append(did)
+    
+        return doc_model.db.listDoc(keys=keys, include_docs=True,
+                ).addCallback(self._got_identities, new_docs, contact_id, idrels
+                )
+
+    def _got_identities(self, result, new_docs, contact_id, idrels):
+        doc_model = self.doc_model
+        rows = result['rows']
+        # we expect a row for every key, even those which failed.
+        assert len(rows)==len(idrels)*2
+        def row_exists(r):
+            return 'error' not in r and 'deleted' not in r['value']
+
+        for i, (iid, rel) in enumerate(idrels):
+            id_row = rows[i*2]
+            rel_row = rows[i*2+1]
+            prov_id = self.get_prov_id(iid)
+            # The ID row is easy - just create it if it doesn't exist.
+            if not row_exists(id_row):
+                id_doc = {
+                    'identity_id': iid,
+                }
+                new_docs.append(('id', iid[0], prov_id, id_doc))
+            # The 'relationship' row should exist as we either (a) wrote a new
+            # one above or (b) found and used an existing one...
+            new_rel = (contact_id, rel)
+            if not row_exists(rel_row):
+                # need to create a new ID doc...
+                new_rel_doc = {
+                    'identity_id': iid,
+                    'contacts': [new_rel],
+                }
+            else:
+                existing = rel_row['doc'].get('contacts', [])
+                logger.debug("looking for %r in %s", contact_id, existing)
+                for cid, existing_rel in existing:
+                    if cid == contact_id:
+                        new_rel_doc = None
+                        break # yay
+                else:
+                    # not found - we need to re-write this doc.
+                    new_rel_doc = rel_row['doc'].copy()
+                    new_rel_doc['contacts'] = existing + [new_rel]
+            if new_rel_doc is not None:
+                new_docs.append(('id', 'contacts', prov_id, new_rel_doc))
+
+
+def generate_work_queue(doc_model, wq):
     """generate deferreds which will determine where our processing is up
     to and walk us through the _all_docs_by_seq view from that point.  This
     generator itself determines the source documents to process, then passes
     each of those documents through another new generator, which actually
-    calls the extensions and saves the docs."""
+    calls the extensions.  The result from the extension is then passed to
+    the consumer (a callable) which does whatever necessary.
+    
+    In the common case the generator_factory will yield documents and
+    the consumer will save them.
+    """
+    hacky_state = {}
+
     def _cb_update_state_doc(result, d):
         if result is not None:
             assert d['_id'] == result['_id'], result
             d.update(result)
         # else no doc exists - the '_id' remains in the default though.
 
-    def _cb_by_seq_opened(result, state_doc, convert_result):
+    def _cb_by_seq_opened(result, state_doc):
         rows = result['rows']
         logger.debug('work queue has %d items to check.', len(rows))
         if not rows:
@@ -328,38 +562,48 @@ def generate_work_queue(doc_model, transition_gen_factory):
         # As we are really only using a coiterator as a handy way of managing
         # twisted loops, using our own should be ok though.
         coop = task.Cooperator()
-        return coop.coiterate(_gen_tasks_from_seq_rows(rows, convert_result))
+        return coop.coiterate(_gen_tasks_from_seq_rows(rows))
 
-    def _gen_tasks_from_seq_rows(rows, convert_result):
+    def record_work(num):
+        hacky_state['num_processed'] += 1
+        
+    def _gen_tasks_from_seq_rows(rows):
         for row in rows:
+            if 'error' in row:
+                # This is usually a simple 'not found' error; it doesn't
+                # mean an 'error record'
+                logger.debug('skipping document %(key)s - %(error)s', row)
+                continue
+            if 'deleted' in row['value']:
+                logger.debug('skipping document %s - deleted', row['key'])
+                continue
             did = row['id']
             src_rev = row['value']['rev']
-            for task in transition_gen_factory(did, src_rev,
-                                               caller_ret=convert_result):
-                yield task
+            for task in wq.generate_tasks(did, src_rev):
+                yield task.addCallback(wq.consume
+                        ).addCallback(record_work)
 
     # first open our 'state' document
-    state_doc = {'_id': 'workqueue!msg',
-                 'type': u"core/workqueue",
+    state_doc = {'_id': wq.queue_state_doc_id,
+                 'type': wq.queue_state_doc_id,
                  'seq': 0}
     yield doc_model.open_document_by_id(state_doc['_id'],
                 ).addCallback(_cb_update_state_doc, state_doc)
 
-    logger.info("Work queue starting with sequence ID %d",
-                state_doc['seq'])
+    logger.info("Work queue %r starting with sequence ID %d",
+                wq.queue_state_doc_id, state_doc['seq'])
 
     logger.debug('opening by_seq view for work queue...')
     num_per_batch = 1000 # no docs are fetched, just meta-data about them.
-    convert_result = {}
     while 'finished' not in state_doc:
+        hacky_state['num_processed'] = 0
         start_seq = state_doc['seq']
-        convert_result['num_processed'] = 0
         yield doc_model.db.listDocsBySeq(limit=num_per_batch,
                                               startkey=state_doc['seq'],
-                    ).addCallback(_cb_by_seq_opened, state_doc, convert_result)
-        num_proc = convert_result['num_processed']
-        logger.info("finished processing to sequence %r - %d processed",
-                    state_doc['seq'], num_proc)
+                    ).addCallback(_cb_by_seq_opened, state_doc)
+        num_proc = hacky_state['num_processed']
+        logger.info("finished processing %r to %r - %d processed",
+                    wq.queue_state_doc_id, state_doc['seq'], num_proc)
         if num_proc:
             logger.debug("flushing state doc at end of run...")
             # API mis-match here - the state doc isn't an 'extension'

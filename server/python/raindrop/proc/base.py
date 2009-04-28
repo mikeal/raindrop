@@ -99,9 +99,62 @@ class AccountBase(Rat):
     '''
     pass
 
+class SpawnerBase(object):
+    """A generic spawner with optionally a dependent input document type.
+
+    A spawner makes new 'types' of documents spring into life.  They may
+    have no input dependency (in which case documents are created out of
+    'thin air' - eg, mapi/skype/twitter messages.)  They may list a doc type
+    as a dependency, in which case the spawner looks at documents of its
+    source type and uses that to have new docs spring into life.  For example,
+    a Spawner may look at a raw skype user and create identity records for
+    the user's phone-numbers, etc.
+
+    The spawner is responsible for managing all conflicts etc from records
+    it created in the past.
+  
+    XXX - the above is 'tdb' - in practice we are now specialized into an 'identity
+    spawner' - but the intent is that we redefine the 'generic' spawner, and
+    the thing which does the identity specific thing is a subclass and
+    provides its own 'extension point'. IOW, the pipeline should not be aware
+    anything is 'identity' specific - but for now it is... """
+    # Attributes we expect our sub-classes to override.
+    source_type = None
+    # See above - this is really just a 'placeholder' for an interface we
+    # are yet to define, and which will provide its own extension points.
+
+
+class IdentitySpawnerBase(SpawnerBase):
+    def __init__(self, doc_model):
+        self.doc_model = doc_model
+  
+    def get_identity_rels(self, source_doc):
+        """Returns a sequence of (identity_id, rel_name) tuples.
+
+        For example, something which can detect phone numbers may emit
+        [(('phone', '+1234566098'), 'home)]
+        """
+        raise NotImplementedError(self)
+
+    def get_default_contact_props(self, source_doc):
+        """Returns a dictionary with suitable default properties for a new
+        contact should we need to create one.  A 'name' field must be
+        supplied.
+        """
+        raise NotImplementedError(self)
+
 
 class ConverterBase(object):
-    """A generic converter with possibly multiple dependencies"""
+    """A generic converter with possibly multiple dependencies.
+    
+    A converter always returns a single new document, which can be considered
+    a 'transformation' of the input messages.  The output document is always
+    directly related to the input documents, so as a result, the Converter
+    doesn't specify the document IDs, deal with conflicts, etc.
+    """
+    # Attributes we expect our sub-classes to override.
+    sources = None # a sequence of source types.
+    target_type = None # the target type.
     def __init__(self, doc_model):
       self.doc_model = doc_model
   

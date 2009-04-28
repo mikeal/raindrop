@@ -4,8 +4,10 @@ from twisted.trial import unittest
 
 from raindrop.config import get_config
 from raindrop.model import get_db, fab_db, get_doc_model
+from raindrop.proto import test as test_proto
 from raindrop import bootstrap
 from raindrop import sync
+
 
 # all this logging stuff is misplaced...
 import logging
@@ -32,7 +34,6 @@ if 'RAINDROP_LOG_LEVELS' in os.environ:
         l = logging.getLogger(name)
         l.setLevel(level)
     
-
 class FakeOptions:
     # XXX - we might need run-raindrop to share its options...
     stop_on_error = False
@@ -108,6 +109,25 @@ class TestCaseWithDB(TestCase):
                 ).addCallback(extract_row
                 )
 
+    def failUnlessView(self, did, vid, expect, **kw):
+        # Expect is a list of (key, value) tuples.  couch always returns
+        # sorted keys, so we can just sort the expected items.
+        def check_result(result):
+            sexpect = sorted(expect)
+            ex_keys = [i[0] for i in sexpect]
+            got_keys = [r['key'] for r in result['rows']]
+            self.failUnlessEqual(got_keys, ex_keys)
+            ex_vals = [i[1] for i in sexpect]
+            got_vals = [r['value'] for r in result['rows']]
+            self.failUnlessEqual(got_vals, ex_vals)
+
+        return get_doc_model().open_view(did, vid, **kw
+                    ).addCallback(check_result
+                    )
+
+    def deferFailUnlessView(self, result, *args, **kw):
+        return self.failUnlessView(*args, **kw)
+
 
 class TestCaseWithTestDB(TestCaseWithDB):
     """A test case that is setup to work with a temp database pre-populated
@@ -117,12 +137,18 @@ class TestCaseWithTestDB(TestCaseWithDB):
         acct = config.accounts['test'] = {}
         acct['kind'] = 'test'
         acct['username'] = 'test'
-        acct['num_test_docs'] = 1
+        acct['num_test_docs'] = 0 # ignored!
+        test_proto.test_num_test_docs = 0 # incremented later..
         acct['_id'] = 'test'
+
+    def deferMakeAnotherTestMessage(self, _):
+        # We need to reach into the impl to trick the test protocol
+        test_proto.test_num_test_docs += 1
+        sync._conductor = None # hack away the singleton...        
+        return sync.get_conductor(FakeOptions()).sync()
 
     def setUp(self):
         # After setting up, populate our test DB with the raw messages.
-        sync._conductor = None # hack away the singleton...
         return super(TestCaseWithTestDB, self).setUp(
-                ).addCallback(sync.get_conductor(FakeOptions()).sync
+                ).addCallback(self.deferMakeAnotherTestMessage
                 )
