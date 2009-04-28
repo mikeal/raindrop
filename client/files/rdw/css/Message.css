@@ -130,6 +130,10 @@
   background-color: #f8f8f8;
 }
 
+.Message.reply > .close {
+  display: none;
+}
+
 .Message.reply div.photo {
   width: 26px;
   height: 26px;
