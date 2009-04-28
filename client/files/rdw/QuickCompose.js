@@ -2,7 +2,7 @@ dojo.provide("rdw.QuickCompose");
 
 dojo.require("couch");
 dojo.require("rdw._Base");
-dojo.require("rd.twitter");
+dojo.require("rd.identity");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "QuickCompose.html"),
@@ -35,9 +35,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         }));
 
         if (this.twitterId) {
-          rd.twitter.user(this.twitterId, dojo.hitch(this, function(user) {
-              if (user.profile_image_url) {
-                this.picture.src = user.profile_image_url;
+          rd.identity.get("twitter", this.twitterId, dojo.hitch(this, function(user) {
+              if (user.image) {
+                this.picture.src = user.image;
               }
               if (user.name) {
                 rd.escapeHtml(user.name, this.name);

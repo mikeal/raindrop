@@ -1,6 +1,7 @@
 dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
+dojo.require("rd.identity");
 dojo.require("rdw.gravatar");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
@@ -77,15 +78,16 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.inherited("postCreate", arguments);
 
     //If twitter user, get their profile pic.
-    if(this.doc.from[0] == "twitter") {
-      rd.twitter.user(this.doc.from[1], dojo.hitch(this, function(user) {
-          if (user.profile_image_url) {
-            this.userPicNode.src = user.profile_image_url;
-          }
-          if (user.name) {
-            this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
-          }
-          //Don't worry about errors, just will not show pic.
+    var from = this.doc.from;
+    if (from[0] == "twitter") {
+      rd.identity.get(from[0], from[1], dojo.hitch(this, function(user) {
+        if (user.image) {
+          this.userPicNode.src = user.image;
+        }
+        if (user.name) {
+          this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
+        }
+        //Don't worry about errors, just will not show pic.
       }));
     }
   },
