@@ -92,7 +92,7 @@ class TestCaseWithTestDB(TestCaseWithDB):
         acct['kind'] = 'test'
         acct['username'] = 'test'
         acct['num_test_docs'] = 1
-        acct['_id'] = 'test'
+        acct['id'] = 'test'
 
     def setUp(self):
         # After setting up, populate our test DB with the raw messages.
