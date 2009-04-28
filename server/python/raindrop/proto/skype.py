@@ -118,12 +118,15 @@ class TwistySkype(object):
                     )
 
     def attached(self, status):
+        def get_friends_and_me():
+            return (self.skype.CurrentUser,) + self.skype.Friends
+
         logger.info("attached to skype - getting chats")
         return defer.DeferredList([
             threads.deferToThread(self.skype._GetChats
                     ).addCallback(self._cb_got_chats
                     ),
-            threads.deferToThread(self.skype._GetFriends
+            threads.deferToThread(get_friends_and_me
                     ).addCallback(self._cb_got_friends
                     ),
             ])
@@ -238,7 +241,10 @@ class TwistySkype(object):
             if doc is None:
                 new_doc = {'identity_id': ['skype', fhandle],
                           }
-                dinfos = [('id', 'skype', fhandle, new_doc)]
+                # XXX - needs refactoring so each protocol doesn't know this,
+                # the 'provider_id' is currently a hack of 'proto/id'
+                prov_id = 'skype/%s' % fhandle
+                dinfos = [('id', 'skype', prov_id, new_doc)]
                 logger.info('creating new doc for %r', fhandle)
                 return self.doc_model.create_raw_documents(self.account, dinfos)
             else:
@@ -247,7 +253,8 @@ class TwistySkype(object):
 
         def gen_friend_checks():
             for friend in friends:
-                yield self.doc_model.open_document('id', friend._Handle, 'skype'
+                prov_id = 'skype/%s' % friend._Handle
+                yield self.doc_model.open_document('id', prov_id, 'skype'
                     ).addCallback(check_identity, friend,
                     )
             logger.info("skype has finished processing all friends")
@@ -393,6 +400,13 @@ class SkypeIdentitySpawner(base.IdentitySpawnerBase):
         v = props.get('skype_homepage')
         if v:
             yield ('url', v.rstrip('/')), 'homepage'
+        # NOTE: These 'phone' identities are only marginally useful now as
+        # although skype seems to help convert it to the +... format, it
+        # doesn't normalize the rest of it.
+        # may want to normalize to something like "remove everything not a
+        # number except the leading + and an embedded 'x' for extension".
+        # Optionally, if we wind up storing an unnormalized one for display
+        # purposes just nuke all non-numbers.
         v = props.get('skype_phone_home')
         if v:
             yield ('phone', v), 'home'
