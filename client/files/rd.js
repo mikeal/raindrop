@@ -41,6 +41,16 @@ dojo._listener.getDispatcher = function(){
 dojo.mixin(rd, {
   ready: dojo.addOnLoad,
 
+  reduce: function(/*Array*/ a, /*Function*/ f, /*Object*/ z, /*Object?*/ o){
+			// summary: repeatedly applies a binary function to an array from left
+			//	to right using a seed value as a starting point; returns the final
+			//	value. (Taken from dojox.lang.functional.fold.foldl)
+			o = o || dojo.global;
+			var i, n;
+			for(i = 0, n = a.length; i < n; z = f.call(o, z, a[i], i, a), ++i);
+			return z;	// Object
+		},
+
   html: function(/*String*/html, /*DOMNode?*/refNode, /*String?*/position) {
     //summary: converts html string to a DOM node or DocumentFragment. Optionally
     //places that node/fragment relative refNode. "position" values are same as

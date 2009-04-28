@@ -2,11 +2,11 @@ dojo.provide("rdw.FaceWall");
 
 dojo.require("rdw._Base");
 dojo.require("dojo.string");
+dojo.require("rdw.identity");
 
 dojo.declare("rdw.FaceWall", [rdw._Base], {
-  //Warning: this is a prototype property: be sure to
-  //set it per instance.
-  docs: [],
+  //Max number of faces to show.
+  count: 30,
 
   templateString: '<ul class="FaceWall"></ul>',
 
@@ -14,27 +14,30 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
 
   postCreate: function() {
     //summary: dijit lifecycle method
-    couch.db("raindrop").view("raindrop!identities!by/_view/by_image", {
-      limit: 30,
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        //Grab the docs from the returned rows.
-        var html = "";
-        this.docs = rd.map(json.rows, dojo.hitch(this, function(row) {
-          var doc = row.doc;
-          
-          html += dojo.string.substitute(this.faceTemplateString, {
-            url: "#rd:" + doc.identity_id[0] + ":" + doc.identity_id[1],
-            title: rd.escapeHtml(doc.name),
-            imgUrl: doc.image
-          });
-          
-          return doc;
-        }));
 
-        dojo.place(html, this.domNode);
-      })
-    });
+    rd.identity.all("twitter", dojo.hitch(this, function(/*Object*/users){
+        var html = ""; 
+        var count = 0;
 
+        for (var id in users) {
+          var doc = users[id];
+          if (typeof id == "string" && doc.image) {
+            //Generate HTML for user
+            html += dojo.string.substitute(this.faceTemplateString, {
+              url: "#rd:" + doc.identity_id[0] + ":" + doc.identity_id[1],
+              title: rd.escapeHtml(doc.name),
+              imgUrl: doc.image
+            });
+
+            if ((count += 1) == this.count) {
+              break;
+            }
+          }
+        }
+
+        if(html){
+          dojo.place(html, this.domNode);
+        }
+    }));
   }
 });

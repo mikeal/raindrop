@@ -6,17 +6,68 @@ dojo.require("couch");
 rd.identity = {
   _loaded: false,
   _onloads: [],
+  error: null,
 
-  get: function(/*String*/service, /*String*/userId, /*Function*/callback, /*Function?*/errback){
+  all: function(/*String|Array*/services, /*Function*/callback, /*Function?*/errback) {
+    //summary: returns all the identities for a given set of services.
+    //If more than one service is requested, the results will be merged,
+    //into an object indexed by user IDs. So, if there is the same user ID
+    //across services, only one will be returned, with twitter favored over
+    //other services.
+
+    //Save off the callback if we have not loaded our contacts yet.
+    if(!this._loaded){
+      this._onloads.push(dojo.hitch(this, "all", services, callback, errback));
+      return;
+    }
+
+    //Do not bother with the rest if we had an error loading the identities.
+    if (this.error) {
+      return errback && errback(this.error, services);
+    }
+
+    if(!(services instanceof Array)) {
+      services = [services];
+    }
+
+    var userStores = rd.map(services, function(service){
+      return dojo.getObject(service, true, this);
+    }, this);
+
+    var empty = {};
+    var ret = userStores[0];
+    if(userStores.length > 1) {
+      //Combine all the store objects into one object.
+      ret = rd.reduce(userStores, function(result, obj){
+        for (var prop in obj) {
+          //Avoid props from other code that modifies prototypes.
+          if(!(prop in empty)) {
+            if (!(prop in result) || obj[prop].identity_id[0] == "twitter") {
+              result[prop] = obj[prop];
+            }
+          }
+        }
+      }, {});
+    }
+
+    callback(ret);
+  },
+
+  get: function(/*String*/service, /*String*/userId, /*Function*/callback, /*Function?*/errback) {
     //summary: fetches an ID based on the service. Tries to use couch info, but for certain services
     //falls back to using the service API.
     //TODO: maybe ask the couch store for ID doc before going to service API, since
     //we only ask for N number of identities on startup.
-    
+
     //Save off the callback if we have not loaded our contacts yet.
     if(!this._loaded){
       this._onloads.push(dojo.hitch(this, "get", service, userId, callback, errback));
       return;
+    }
+    
+    //Do not bother with the rest if we had an error loading the identities.
+    if (this.error) {
+      return errback && errback(this.error, userId);
     }
 
     var service = dojo.getObject(service, true, this);
@@ -75,6 +126,12 @@ dojo.addOnLoad(function(){
         });
 
         id._loaded = true;
+        dojo.forEach(id._onloads, function(callback){
+          callback();
+        });
+      },
+      error: function(err) {
+        this.error = err;
         dojo.forEach(id._onloads, function(callback){
           callback();
         });
