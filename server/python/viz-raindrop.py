@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # It took me all of a day to get graphviz working on Windows at all - so
 # a smarter tool to customize output filenames etc can wait.
 
