@@ -410,17 +410,22 @@ class IdentitySpawnerWQ(WorkQueue):
 
         # open the source doc then let-em at it...
         yield self.doc_model.open_document_by_id(src_id
-                    ).addCallback(self.get_id_rels, my_spawners
+                    ).addCallback(self.get_id_rels, doc_type, my_spawners
                     )
 
-    def get_id_rels(self, src_doc, my_spawners):
+    def get_id_rels(self, src_doc, exp_type, my_spawners):
         new_docs = []
         def return_docs(whateva):
             return new_docs
         def gen_work():
             for spawner in my_spawners:
-                # each of our spawners returns a simple list if identities
+                # each of our spawners returns a simple list of identities
                 idrels = spawner.get_identity_rels(src_doc)
+                if __debug__: # check the extension is sane...
+                    for iid, rel in idrels:
+                        assert isinstance(iid, (tuple, list)) and len(iid)==2,\
+                               repr(iid)
+                        assert rel is None or isinstance(rel, basestring), repr(rel)
                 # Find contacts associated with *any* of the identities and use the
                 # first we find - hence the requirement the 'primary' identity be
                 # the first, so if a contact is associated with that, we use
@@ -434,6 +439,11 @@ class IdentitySpawnerWQ(WorkQueue):
                                   spawner, idrels,
                     )
 
+        if src_doc.get('type') != exp_type:
+            # probably an error record...
+            logger.info("skipping doc %r - unexpected type of %s",
+                         src_doc['_id'], src_doc.get('type'))
+            return new_docs
         coop = task.Cooperator()
         return coop.coiterate(gen_work()
                     ).addCallback(return_docs
@@ -491,6 +501,8 @@ class IdentitySpawnerWQ(WorkQueue):
             return 'error' not in r and 'deleted' not in r['value']
 
         for i, (iid, rel) in enumerate(idrels):
+            assert isinstance(iid, (tuple, list)) and len(iid)==2, repr(iid)
+            assert rel is None or isinstance(rel, basestring), repr(rel)
             id_row = rows[i*2]
             rel_row = rows[i*2+1]
             prov_id = self.get_prov_id(iid)
@@ -509,6 +521,8 @@ class IdentitySpawnerWQ(WorkQueue):
                     'identity_id': iid,
                     'contacts': [new_rel],
                 }
+                logger.debug("new relationship (new doc) from %r -> %r", iid,
+                             contact_id)
             else:
                 existing = rel_row['doc'].get('contacts', [])
                 logger.debug("looking for %r in %s", contact_id, existing)
@@ -520,6 +534,8 @@ class IdentitySpawnerWQ(WorkQueue):
                     # not found - we need to re-write this doc.
                     new_rel_doc = rel_row['doc'].copy()
                     new_rel_doc['contacts'] = existing + [new_rel]
+                    logger.debug("new relationship (update) from %r -> %r",
+                                 iid, contact_id)
             if new_rel_doc is not None:
                 new_docs.append(('id', 'contacts', prov_id, new_rel_doc))
 
