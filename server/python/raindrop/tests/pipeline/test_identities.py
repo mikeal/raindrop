@@ -37,6 +37,24 @@ class TestIDPipelineBase(TestCaseWithTestDB):
 class TestIDPipeline(TestIDPipelineBase):
     # Test extracting identities and contacts test protocol messages
     # work as expected.
+    def deferVerifyCounts(self, _, contact_count, identity_count):
+        def verify(results):
+            self.failUnlessEqual(len(results), 2)
+            (c_ok, c_ret), (i_ok, i_ret) = results
+            self.failUnless(c_ok)
+            self.failUnlessEqual(len(c_ret['rows']), contact_count, repr(c_ret))
+            self.failUnless(i_ok)
+            self.failUnlessEqual(len(i_ret['rows']), identity_count, repr(i_ret))
+            
+        return defer.DeferredList([
+            get_doc_model().open_view('raindrop!messages!by',
+                                      'by_doc_type',
+                                      key="contact"),
+            get_doc_model().open_view('raindrop!messages!by',
+                                      'by_doc_type',
+                                      key="test_identity")
+            ]).addCallback(verify)
+
     def test_one_testmsg(self):
         # When processing a single test message we end up with 2 identies
         # both associated with the same contact
@@ -109,6 +127,7 @@ class TestIDPipeline(TestIDPipelineBase):
                 ).addCallback(lambda _: open_doc('msg', '1', 'proto/test')
                 ).addCallback(self.process_doc
                 ).addCallback(determine_contact_id,
+                ).addCallback(self.deferVerifyCounts, 1, 3
                 )
 
     def test_one_testmsg_unique(self):
