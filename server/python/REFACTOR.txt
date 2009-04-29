@@ -36,3 +36,5 @@ Internally visible changes:
 ---------------------------
 
 These changes don't affect the front-end.
+
+create_raw_docs, create_ext_docs, and the whole 'doc info' tuple thing isn't working.  Consider just a 'fill_doc' function to manage the IDs etc.
