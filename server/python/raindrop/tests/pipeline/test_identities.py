@@ -68,7 +68,7 @@ class TestIDPipeline(TestIDPipelineBase):
             ]
             # and 'by_id' is the exact inverse.
             ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!by',
+            return self.failUnlessView('raindrop!identities!all',
                                        'by_contact',
                                        expect=ex_bycontact,
                         ).addCallback(self.deferFailUnlessView,
@@ -77,7 +77,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                       )
 
         def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!by',
+            return get_doc_model().open_view('raindrop!identities!all',
                                              'by_contact', limit=1
                         ).addCallback(extract_and_test
                         )
@@ -106,7 +106,7 @@ class TestIDPipeline(TestIDPipelineBase):
             ]
             # and 'by_id' is the exact inverse.
             ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!by',
+            return self.failUnlessView('raindrop!identities!all',
                                        'by_contact',
                                         expect=ex_bycontact,
                         ).addCallback(self.deferFailUnlessView,
@@ -115,7 +115,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                       )
 
         def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!by',
+            return get_doc_model().open_view('raindrop!identities!all',
                                              'by_contact', limit=1,
                         ).addCallback(extract_and_test
                         )
@@ -159,7 +159,7 @@ class TestIDPipeline(TestIDPipelineBase):
                         ]
             # and 'by_id' is the exact inverse.
             ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!by',
+            return self.failUnlessView('raindrop!identities!all',
                                        'by_contact',
                                         expect=ex_bycontact,
                         ).addCallback(self.deferFailUnlessView,
@@ -168,7 +168,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                       )
 
         def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!by',
+            return get_doc_model().open_view('raindrop!identities!all',
                                              'by_contact', limit=3
                         ).addCallback(extract_and_test
                         )
