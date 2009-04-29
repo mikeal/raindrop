@@ -371,7 +371,8 @@ class IdentitySpawnerWQ(WorkQueue):
     queue_state_doc_id = 'workqueue!identities'
 
     # It sucks we need to join these here; the doc_model should do
-    # that - so we abstract that away...
+    # that - so we abstract that away...(poorly - skype and twitter now
+    # also duplicate this...)
     @classmethod
     def get_prov_id(cls, identity_id):
         return '/'.join(identity_id)
@@ -381,11 +382,6 @@ class IdentitySpawnerWQ(WorkQueue):
         def return_num(result):
             return len(new_docs)
         if new_docs:
-            #prepare = self.doc_model.prepare_ext_document
-            #just_docs = []
-            #for dcat, ddoctype, dprovid, doc in new_docs:
-            #    prepare(dcat, ddoctype, dprovid, doc)
-            #    just_docs.append(doc)
             return self.doc_model.create_raw_documents(None, new_docs
                         ).addCallback(return_num)
 
@@ -581,6 +577,8 @@ def generate_work_queue(doc_model, wq):
         return coop.coiterate(_gen_tasks_from_seq_rows(rows))
 
     def record_work(num):
+        # *sob* - sometimes 'num' is None - but it doesn't really matter
+        # as all we care about was 'did we do *something*'...
         hacky_state['num_processed'] += 1
         
     def _gen_tasks_from_seq_rows(rows):
