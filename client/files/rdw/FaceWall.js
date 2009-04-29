@@ -2,7 +2,7 @@ dojo.provide("rdw.FaceWall");
 
 dojo.require("rdw._Base");
 dojo.require("dojo.string");
-dojo.require("rdw.identity");
+dojo.require("rd.identity");
 
 dojo.declare("rdw.FaceWall", [rdw._Base], {
   //Max number of faces to show.
