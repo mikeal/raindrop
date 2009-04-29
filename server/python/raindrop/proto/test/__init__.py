@@ -9,7 +9,10 @@ from ...proc import base
 
 # May be set to True or False by the test suite, or remains None for
 # "normal" behaviour
-next_convert_fails = None
+test_next_convert_fails = None
+test_emit_common_identities = False
+# overrides the config option.
+test_num_test_docs = None
 
 class TestMessageProvider(object):
     def __init__(self, account, conductor):
@@ -18,7 +21,10 @@ class TestMessageProvider(object):
         self.conductor = conductor
 
     def sync_generator(self):
-        num_docs = int(self.account.details.get('num_test_docs', 5))
+        if test_num_test_docs is not None:
+            num_docs = test_num_test_docs
+        else:
+            num_docs = int(self.account.details.get('num_test_docs', 5))
         logger.info("Creating %d test documents", num_docs)
         for i in xrange(num_docs):
             yield self.check_test_message(i)
@@ -73,8 +79,8 @@ class TestConverter(base.SimpleConverterBase):
         # for the sake of testing the error queue, we cause an error on
         # every 3rd message we process.
         self.num_converted += 1
-        if next_convert_fails or \
-           (next_convert_fails is None and self.num_converted % 3 == 0):
+        if test_next_convert_fails or \
+           (test_next_convert_fails is None and self.num_converted % 3 == 0):
             raise RuntimeError("This is a test failure")
 
         # for the sake of testing, we fetch the raw attachment just to compare
@@ -119,6 +125,27 @@ class TestFlagsConverter(base.SimpleConverterBase):
     ]
     def simple_convert(self, doc):
         return {'seen': False}
+
+# An 'identity spawner' takes proto/test as input and creates a few test
+# identities.
+class TestIdentitySpawner(base.IdentitySpawnerBase):
+    source_type = 'msg', 'proto/test'
+    def get_identity_rels(self, source_doc):
+        assert source_doc['type'] == self.source_type[1], source_doc
+        # We want every 'test message' to result in 2 identities - one
+        # unique to the message and one common across all.
+        myid = str(source_doc['storage_key'])
+        # invent relationships called 'public' and 'personal'...
+        ret = [
+            (('test_identity', myid), 'personal'),
+        ]
+        if test_emit_common_identities:
+            ret.append((('test_identity', 'common'), 'public'))
+        return ret
+
+    def get_default_contact_props(self, source_doc):
+        myid = str(source_doc['storage_key'])
+        return {'name' : 'test contact ' + myid}
 
 
 class TestAccount(base.AccountBase):

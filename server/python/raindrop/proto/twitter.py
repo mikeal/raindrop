@@ -92,18 +92,25 @@ class TwitterProcessor(object):
         logger.info("apparently I've %d friends", len(friends))
         def check_identity(doc, friend):
             friend_raw = self.user_to_raw(friend)
+            friend_raw['identity_id'] = ['twitter', friend.screen_name]
+            # Add the identity_id as our 'raw' record has it...
             if doc is None or doc['raw'] != friend_raw:
+                logger.info("Need to update twitter user %s",
+                            friend.screen_name)
                 new_doc = {}
                 if doc is not None:
                     new_doc['_rev'] = doc['_rev']
                 new_doc['raw'] = friend_raw
-                new_doc['identity_id'] = friend_raw['identity_id'] = \
-                                            ['twitter', friend.screen_name]
-                dinfos = [('id', 'twitter', friend.screen_name, new_doc)]
+                new_doc['identity_id'] = friend_raw['identity_id']
+                # XXX - needs refactoring so each protocol doesn't know this,
+                # the 'provider_id' is currently a hack of 'proto/id'
+                prov_id = 'twitter/' + friend.screen_name
+                dinfos = [('id', 'twitter', prov_id, new_doc)]
                 return self.doc_model.create_raw_documents(self.account, dinfos)
 
         def do_friend_identity(friend):
-            return self.doc_model.open_document('id', friend.screen_name, 'twitter'
+            prov_id = 'twitter/' + friend.screen_name # *sob*
+            return self.doc_model.open_document('id', prov_id, 'twitter'
                         ).addCallback(check_identity, friend
                         )
         
@@ -183,9 +190,10 @@ class TwitterRawConverter(base.SimpleConverterBase):
         # here is a cheat - if the identity was created by our twitter
         # processor, it will have written a 'raw' dict - this means we don't
         # need to revisit twitter to get the details.  (If no 'raw' field
-        # existed, then this was probably introduced by the front-end, where
-        # all they know is the ID)
-        assert 'raw' in doc, "Sorry front-end, you can't do that yet!"
+        # existed, then this was probably introduced by the front-end or
+        # some other 'identity scraper') where all they know is the ID)
+        # Eg: very soon that will include us, as we detect @tags
+        assert 'raw' in doc, doc #"Sorry front-end, you can't do that yet!"
         return doc['raw'].copy()
 
 
@@ -211,6 +219,25 @@ class TwitterBakedConverter(base.SimpleConverterBase):
             except KeyError:
                 pass
         return ret
+
+
+# An 'identity spawner' twitter/raw as input and creates a number of identities.
+class TwitterIdentitySpawner(base.IdentitySpawnerBase):
+    source_type = 'id', 'twitter/raw'
+    def get_identity_rels(self, src_doc):
+        return [r for r in self._gen_em(src_doc)]
+
+    def _gen_em(self, props):
+        # the primary 'twitter' one first...
+        yield ('twitter', props['twitter_screen_name']), None
+        v = props.get('twitter_url')
+        if v:
+            yield ('url', v.rstrip('/')), 'homepage'
+
+    def get_default_contact_props(self, src_doc):
+        return {
+            'name': src_doc['twitter_name'] or src_doc['twitter_screen_name']
+        }
 
 
 class TwitterAccount(base.AccountBase):
