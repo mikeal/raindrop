@@ -113,7 +113,7 @@ dojo.addOnLoad(function(){
     //not just the ones with pictures.
     var id = rd.identity;
 
-    couch.db("raindrop").view("raindrop!identities!by/_view/by_image", {
+    couch.db("raindrop").view("raindrop!identities!all/_view/all", {
       limit: 100,
       include_docs: true,
       success: function(json) {
