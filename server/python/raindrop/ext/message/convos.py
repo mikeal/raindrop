@@ -39,11 +39,20 @@ class ConversationConverter(base.SimpleConverterBase):
         doc.update(row['doc'])
     headers = doc['headers']
     self_header_message_id = headers['message-id']
-    header_message_ids = doc['headers'].get('references', [doc['headers'].get('in-reply-to', '')])
+
+    if 'references' in headers:
+      header_message_ids = headers['references']
+    elif 'in-reply-to' in headers:
+      header_message_ids = [headers['in-reply-to']]
+    else:
+      header_message_ids = []
     # save off the list of referenced messages
     references = header_message_ids[:]
     # see if the self-message already exists...
-    header_message_ids.append(self_header_message_id)
+    if self_header_message_id:
+      header_message_ids.append(self_header_message_id)
+    else:
+      raise ValueError, "empty message id!"
     logger.debug("header_message_id: %s ", header_message_ids)
     logger.debug("references: %s", '\n\t'.join(references))
     return defer.DeferredList([self.doc_model.open_view('raindrop!messages!by',
@@ -59,6 +68,8 @@ class ConversationConverter(base.SimpleConverterBase):
     unseen = set(header_message_ids)
     headers = doc['headers']
     self_header_message_id = doc['headers']['message-id']
+    # remove ourselves from the unseen list
+    unseen.remove(self_header_message_id)
     timestamp = doc['timestamp']
     logger.debug("headers['from']: %s", headers['from'])
     logger.debug("headers['subject']: %s", headers['subject'])
@@ -73,8 +84,8 @@ class ConversationConverter(base.SimpleConverterBase):
 
     if conversation_id is None:
       # we need to allocate a conversation_id...
-      logger.debug("CREATING conversation_id %s", self_header_message_id)
-      conversation_id = self_header_message_id
+      logger.debug("CREATING conversation_id %s", header_message_ids[0])
+      conversation_id = header_message_ids[0]
     else:
       logger.debug("FOUND CONVERSATION header_message_id %s in row['key'] %s with conversation_id %s", self_header_message_id, row['key'], conversation_id)
 

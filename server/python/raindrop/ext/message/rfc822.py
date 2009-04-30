@@ -171,10 +171,10 @@ def doc_from_bytes(b):
                 name = attach.get_filename()
                 if not name:
                     name = "subpart %d" % i
+                    i += 1
                 attachments[name] = {'content_type': attach.get_content_type(),
                                      'data': attach.get_payload(decode=True),
                                      }
-                i += 1
     else:
         body_bytes = msg.get_payload(decode=True)
         # Convert the bytes to *some* unicode object, ignoring (but logging)
@@ -194,6 +194,35 @@ def doc_from_bytes(b):
         doc['body'] = body
     return doc
 
+def extract_preview(body):
+    lines = body.split('\n')
+    # get rid of blank lines
+    lines = [line.strip() for line in lines if line.strip()]
+    preview_lines = []
+    
+    # we're going to identify 
+    for i in range(len(lines)-1, -1, -1):
+        line = lines[i]
+        if not line.startswith('>') and line.endswith(':') and lines[i+1].startswith('>'):
+            continue
+        preview_lines.insert(0, line)
+        
+    for (i, line) in enumerate(lines):
+        if not line.startswith('>') and line.endswith(':') and \
+            i+1 < len(lines)-1 and lines[i+1].startswith('>'):
+            continue
+        preview_lines.append(line)
+    trimmed_preview_lines = []
+    for (i, line) in enumerate(preview_lines):
+        if line.startswith('>'):
+            if trimmed_preview_lines and trimmed_preview_lines[-1] != '[...]':
+                trimmed_preview_lines.append('[...]')
+        else:
+            trimmed_preview_lines.append(line)
+    if trimmed_preview_lines[0] == '[...]':
+        trimmed_preview_lines = trimmed_preview_lines[1:]
+    preview_body = '\n'.join(trimmed_preview_lines)
+    return preview_body[:140]
 
 class RFC822Converter(base.SimpleConverterBase):
     target_type = 'msg', 'raw/message/email'
@@ -207,12 +236,14 @@ class RFC822Converter(base.SimpleConverterBase):
             body = doc['body']
         except KeyError:
             assert doc['multipart']
+            # look at attachments, iterate over parts, and look for text parts
+            # (also figure out what to do w/ attachments)
             body = 'This is a multipart message - todo - find the body!'
         ret = {'from': ['email', headers['from']],
                'subject': headers['subject'],
                'body': body,
                'header_message_id': headers['message-id'],
-               'body_preview': body[:140],
+               'body_preview': extract_preview(body),
                'headers': headers,
         }
         try:
