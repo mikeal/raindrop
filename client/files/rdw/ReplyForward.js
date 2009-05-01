@@ -22,7 +22,7 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     //Add in a close button
     var closeNode = dojo.create("a", {
       href: "#",
-      class: "close",
+      "class": "close",
       innerHTML: this.i18n.closeIcon
     }, this.domNode, "first");
     
