@@ -24,6 +24,12 @@ Front-end visible changes:
   - Consider: letting the protocol provide an object, and we do the json
     dump before the base64??
 
+  - drop 'contact_id' and 'identity_id, instead stick with 'provider_id' or 
+    something used by *all* docs.  That will allow for a single view to map 
+    from the provider ID for an object map to an object.  
+    (eg, contact guid -> contact record, etc)
+  
+
 View-only visible changes:
 --------------------------
 
