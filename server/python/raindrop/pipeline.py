@@ -20,6 +20,7 @@ extension_modules = [
     'raindrop.proto.skype',
     'raindrop.proto.imap',
     'raindrop.proto.twitter',
+    'raindrop.ext.identity',
     'raindrop.ext.message.rfc822',
     'raindrop.ext.message.email',
     'raindrop.ext.message.mailinglist',
@@ -228,6 +229,7 @@ class MessageTransformerWQ(WorkQueue):
         if new_doc is not None:
             return self.doc_model.create_ext_documents([new_doc]
                         ).addCallback(return_num)
+        return 0
 
     def generate_tasks(self, src_id, src_rev, force=False):
         logger.debug("generating transition tasks for %r (rev=%s)", src_id,
@@ -384,6 +386,7 @@ class IdentitySpawnerWQ(WorkQueue):
         if new_docs:
             return self.doc_model.create_raw_documents(None, new_docs
                         ).addCallback(return_num)
+        return 0
 
     def generate_tasks(self, src_id, src_rev, force=False):
         logger.debug("generating transition tasks for %r (rev=%s)", src_id,
@@ -577,9 +580,7 @@ def generate_work_queue(doc_model, wq):
         return coop.coiterate(_gen_tasks_from_seq_rows(rows))
 
     def record_work(num):
-        # *sob* - sometimes 'num' is None - but it doesn't really matter
-        # as all we care about was 'did we do *something*'...
-        hacky_state['num_processed'] += 1
+        hacky_state['num_processed'] += num
         
     def _gen_tasks_from_seq_rows(rows):
         for row in rows:
