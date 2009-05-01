@@ -96,7 +96,7 @@ class CouchDB(paisley.CouchDB):
     def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
         # paisley appears to use an old api for attachments?
         if attachment:
-            uri = "/%s/%s/%s" % (dbName, docId, attachment)
+            uri = "/%s/%s/%s" % (dbName, docId, quote(attachment))
             return  self.get(uri)
         return super(CouchDB, self).openDoc(dbName, docId, revision, full)
 

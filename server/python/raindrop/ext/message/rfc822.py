@@ -227,23 +227,31 @@ def extract_preview(body):
 class RFC822Converter(base.SimpleConverterBase):
     target_type = 'msg', 'raw/message/email'
     sources = [('msg', 'raw/message/rfc822')]
+    parts = []
     def simple_convert(self, doc):
         # a 'rfc822' stores 'headers' as a dict
         headers = doc['headers']
         # for now, 'from' etc are all tuples of [identity_type, identity_id]
-        # XXX - todo - find one of the multi-part bits to use as the body.
+        callbacks = []
         try:
             body = doc['body']
         except KeyError:
+            body = ''
             assert doc['multipart']
-            # look at attachments, iterate over parts, and look for text parts
-            # (also figure out what to do w/ attachments)
-            body = 'This is a multipart message - todo - find the body!'
+            attachments = doc['_attachments']
+            names = attachments.keys()
+            names.sort()
+            for name in attachments.keys():
+                attachment = attachments[name]
+                if attachment['content_type'] == 'text/plain':
+                    deferred = self.doc_model.open_attachment(doc['_id'], name).\
+                        addCallback(self._gotAttachment).\
+                        addErrback(self._didntgetAttachment)
+                    callbacks.append(deferred)
         ret = {'from': ['email', headers['from']],
                'subject': headers['subject'],
                'body': body,
                'header_message_id': headers['message-id'],
-               'body_preview': extract_preview(body),
                'headers': headers,
         }
         try:
@@ -253,4 +261,21 @@ class RFC822Converter(base.SimpleConverterBase):
         else:
             if dval:
                 ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+
+        return defer.DeferredList(callbacks).addCallback(
+            self._gotAttachments, doc, ret)
+
+
+    def _didntgetAttachment(self, error):
+        print "Error getting attachment", error
+        raise ValueError, 'attachmentproblem'
+    
+    def _gotAttachment(self, content, *args):
+        self.parts.append(content)
+  
+    def _gotAttachments(self, results, doc, ret):
+        body = '\n'.join(self.parts)
+        ret['body'] = ret['body'] + body
+        ret['body_preview'] = extract_preview(ret['body'])
         return ret
+
