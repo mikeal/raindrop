@@ -222,12 +222,12 @@ def extract_preview(body):
     if trimmed_preview_lines[0] == '[...]':
         trimmed_preview_lines = trimmed_preview_lines[1:]
     preview_body = '\n'.join(trimmed_preview_lines)
-    return preview_body[:140]
+    return preview_body[:140] + (preview_body[140:] and '...') # cute trick
 
 class RFC822Converter(base.SimpleConverterBase):
     target_type = 'msg', 'raw/message/email'
     sources = [('msg', 'raw/message/rfc822')]
-    parts = []
+    parts = {}
     def simple_convert(self, doc):
         # a 'rfc822' stores 'headers' as a dict
         headers = doc['headers']
@@ -245,7 +245,7 @@ class RFC822Converter(base.SimpleConverterBase):
                 attachment = attachments[name]
                 if attachment['content_type'] == 'text/plain':
                     deferred = self.doc_model.open_attachment(doc['_id'], name).\
-                        addCallback(self._gotAttachment).\
+                        addCallback(self._gotAttachment, name).\
                         addErrback(self._didntgetAttachment)
                     callbacks.append(deferred)
         ret = {'from': ['email', headers['from']],
@@ -270,12 +270,22 @@ class RFC822Converter(base.SimpleConverterBase):
         print "Error getting attachment", error
         raise ValueError, 'attachmentproblem'
     
-    def _gotAttachment(self, content, *args):
-        self.parts.append(content)
+    def _gotAttachment(self, content, name, *args):
+        self.parts[name] = content
   
     def _gotAttachments(self, results, doc, ret):
-        body = '\n'.join(self.parts)
+        part_names = self.parts.keys()
+        part_names.sort(part_sorter)
+        sorted_parts = []
+        for part_name in part_names:
+            sorted_parts.append(self.parts[part_name])
+        body = '\n'.join(sorted_parts)
         ret['body'] = ret['body'] + body
         ret['body_preview'] = extract_preview(ret['body'])
         return ret
 
+def part_number(partname):
+    return int(partname.split(' ', 1)[1])
+
+def part_sorter(a, b):
+    return cmp(part_number(a), part_number(b))
