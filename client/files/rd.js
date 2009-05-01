@@ -161,7 +161,7 @@ dojo.mixin(rd, {
       if (href && href.indexOf("rd:") == 0) {
         //Have a valid rd: protocol link.
         href = href.split(":");
-        var protocol = href[1];
+        var proto = href[1];
 
         //Strip off rd: and protocol: for the final
         //value to pass to protocol handler.
@@ -170,7 +170,7 @@ dojo.mixin(rd, {
         
         dojo.stopEvent(evt);
 
-        rd.pub("protocol-" + procotol, value);
+        rd.pub("protocol-" + proto, value);
       }
     }
   }

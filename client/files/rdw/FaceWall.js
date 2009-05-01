@@ -33,7 +33,7 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
         for (var i = 0, contact; contact = contacts[i]; i++) {
           //TODO: may not have enough contacts with an image.
           //Find image for the contact.
-          var imageUrl = this.defaultImageUrl;
+          var imageUrl = null;
           for (var j = 0, idty; idty = contact.identities[j]; j++) {
             if (idty.image) {
               imageUrl = idty.image;
@@ -41,12 +41,15 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
             }
           }
 
-          //Generate the HTML for this contact.
-          html += dojo.string.substitute(this.faceTemplateString, {
-            url: "#rd:contact:" + contact.contact_id,
-            title: rd.escapeHtml(contact.name),
-            imgUrl: imageUrl
-          });
+          //Generate the HTML for this contact. Skip contacts without
+          //and image.
+          if (imageUrl) {
+            html += dojo.string.substitute(this.faceTemplateString, {
+              url: "#rd:contact:" + contact.contact_id,
+              title: rd.escapeHtml(contact.name),
+              imgUrl: imageUrl
+            });
+          }
         }
 
         if(html){
