@@ -5,7 +5,7 @@ from ..proc import base
 def do_simple_id_convert(doc):
     return {
         'name' : doc['identity_id'][1],
-        'identity_id': ['identity_id'],
+        'identity_id': doc['identity_id'],
     }
 
     
