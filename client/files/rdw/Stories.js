@@ -54,7 +54,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           // find all of the documents corresponding to each.
           conversation = this.conv_ids_map[convid];
           dojo.forEach(json2.rows, dojo.hitch(this, function(conversation, row) {
-              var [msg, pid, doc_type] = row.id.split('!', 3);
               conversation.push(row.doc);
             }, conversation));
           this.gotOne();

@@ -13,11 +13,11 @@ dojo.provide("couch");
     //Used as the callback for XHR calls. Figure out what options method to call.
     var options = ioArgs.args;
     if (response instanceof Error) {
-      if (options.error) {
+      if (dojo.isFunction(options.error)) {
         var xhr = ioArgs.xhr;
         options.error(xhr.status, xhr.statusText, xhr.responseText);
       } else {
-        alert("An error occurred retrieving the list of all databases: " + response);
+        alert("An error occurred talking with the couch: " + response);
       }
     } else {
       if (options.beforeSuccess){

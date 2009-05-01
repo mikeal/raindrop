@@ -2,139 +2,152 @@ dojo.provide("rd.identity");
 
 dojo.require("dojo.io.script");
 dojo.require("couch");
+dojo.require("rd._api");
 
-rd.identity = {
-  _loaded: false,
-  _onloads: [],
-  error: null,
+//TODO: have try/catches on callbacks commented out so errors show up early and
+//have stack traces. However, for release code, want to make sure one callback
+//failure does not stop the system from running. Maybe consider a custom event
+//solution a la http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/
+//to allow the callbacks to error out but allow our code to still keep working.
 
-  all: function(/*String|Array*/services, /*Function*/callback, /*Function?*/errback) {
-    //summary: returns all the identities for a given set of services.
-    //If more than one service is requested, the results will be merged,
-    //into an object indexed by user IDs. So, if there is the same user ID
-    //across services, only one will be returned, with twitter favored over
-    //other services.
+rd.identity = dojo.delegate(rd._api);
 
-    //Save off the callback if we have not loaded our contacts yet.
-    if(!this._loaded){
-      this._onloads.push(dojo.hitch(this, "all", services, callback, errback));
-      return;
+dojo.mixin(rd.identity, {
+  get: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
+    //summary: fetches an identity based on an identity ID. It accepts either one
+    //identityId or an array of identityIds to fetch.
+    //Tries to use couch info, but for certain services
+    //falls back to using the service API associated with the identity.
+
+    //Figure out if we have all the identities we need.
+    var ids = this._get(identityId);
+    var isSingle = (typeof identityId[0] == "string");
+
+    if (!ids.missing) {
+      callback(isSingle ? ids.found[0] : ids.found);
+    } else {
+      this._loaded = false;
+      this.get(ids.missing, function(found) {
+        if (ids.found) {
+          found = ids.found.concat(found);
+        }
+        callback(isSingle ? found[0] : found);
+      }, errback);
     }
+  },
 
-    //Do not bother with the rest if we had an error loading the identities.
-    if (this.error) {
-      return errback && errback(this.error, services);
+  _get: function(/*Array*/identityId) {
+    //summary: private method that figures out what identities are already
+    //loaded and which ones are missing. identityId can be one ID or an array
+    //of IDs.
+    var missing = [], found = [];
+    if (typeof identityId[0] == "string") {
+      identityId = [identityId];
     }
-
-    if(!(services instanceof Array)) {
-      services = [services];
+    
+    for (var i = 0, id; id = identityId[i]; i++) {
+      var temp = this._idty(id);
+      temp ? found.push(temp) : missing.push(id);
     }
+ 
+    return {
+      found: found.length ? found : null,
+      missing: missing.length ? missing: null      
+    }
+  },
 
-    var userStores = rd.map(services, function(service){
-      return dojo.getObject(service, true, this);
-    }, this);
+  _load: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
+    //summary: pulls a few identity records from the couch, starting
+    //with the requested one, to hopefully limit how many times we hit
+    //the couch.
+    couch.db("raindrop").view("raindrop!identities!all/_view/all", {
+      keys: typeof identityId[0] == "string" ? [identityId] : identityId,
+      include_docs: true,
+      success: dojo.hitch(this, function(json) {
+        //Save off identity docs in our store for all the identities.
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          var doc = row.doc;
 
-    var empty = {};
-    var ret = userStores[0];
-    if(userStores.length > 1) {
-      //Combine all the store objects into one object.
-      ret = rd.reduce(userStores, function(result, obj){
-        for (var prop in obj) {
-          //Avoid props from other code that modifies prototypes.
-          if(!(prop in empty)) {
-            if (!(prop in result) || obj[prop].identity_id[0] == "twitter") {
-              result[prop] = obj[prop];
+          //Add the document to the store for that service.
+          var svc = dojo.getObject(doc.identity_id[0], true, this);
+          var uId = doc.identity_id[1];
+          if (!svc[uId]) {
+            svc[uId] = doc;
+          }
+        }
+
+        //See if we have the requested identities.
+        var idtys = this._get(identityId);
+        if (idtys.missing) {
+          if (idtys.missing.length == 1 && this["_" + idtys.missing[0][0] + "Fetch"]) {
+            this["_" + idtys.missing[0][0] + "Fetch"](idtys.missing[0], callback, errback);
+            return;
+          } else {
+            //TODO: may want to rethink this later.
+            //Create a dummy identities. This area normally hit
+            //by the test_identity which seems malformed, but
+            //we might want to account for phantom identities?
+            for (var i = 0, idty; idty = idtys.missing[i]; i++) {
+              idtys.missing[i] = dojo.getObject(idty[0], true, this)[idty[1]] = {
+                identity_id: idty,
+                type: "identity"
+              }
             }
           }
         }
-      }, {});
-    }
 
-    callback(ret);
+        this._onload();
+      }),
+      error: dojo.hitch(this, function(err) {
+        this.error = err;
+        this._onload();
+      })
+    });
   },
 
-  get: function(/*String*/service, /*String*/userId, /*Function*/callback, /*Function?*/errback) {
-    //summary: fetches an ID based on the service. Tries to use couch info, but for certain services
-    //falls back to using the service API.
-    //TODO: maybe ask the couch store for ID doc before going to service API, since
-    //we only ask for N number of identities on startup.
+  _idty: function(/*Array*/identityId) {
+    //summary: private helper function for getting an identity from a service store.
+    return dojo.getObject(identityId[0], true, this)[identityId[1]];    
+  },
 
-    //Save off the callback if we have not loaded our contacts yet.
-    if(!this._loaded){
-      this._onloads.push(dojo.hitch(this, "get", service, userId, callback, errback));
-      return;
-    }
-    
-    //Do not bother with the rest if we had an error loading the identities.
-    if (this.error) {
-      return errback && errback(this.error, userId);
-    }
-
-    var service = dojo.getObject(service, true, this);
-    var user = service[userId];
-    if (user) {
-      callback(user);
-    } else if (service == "twitter") {
-      dojo.io.script.get({
-        url: "http://twitter.com/users/show/" + userId + ".json",
-        callbackParamName: "callback",
-        handle: dojo.hitch(this, function(data) {
-            //TODO: need to handle errors, and throttle error requests
-            //so error user does not make a bunch of error calls.
-            if(data instanceof Error) {
-              if (errback) {
-                errback(data, userId);
-              }
-            } else {
-              //Normalize twitter data to our IDs.
-              var doc = {
-                identity_id: [
-                  "twitter",
-                  data.twitter_screen_name
-                ],
-                name: data.twitter_name,
-                nickname: data.twitter_screen_name,
-                url: data.twitter_url,
-                image: data.twitter_profile_image_url
-              }
-
-              //Save in our store and do callback.
-              user = service[userId] = doc;
-              callback(user);
+  _twitterFetch: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
+    //summary: fetches identity information from twitter API. Should not be
+    //used directly by code outside of this module -- prefer the standard get()
+    //interface on this module.
+    dojo.io.script.get({
+      url: "http://twitter.com/users/show/" + identityId[1] + ".json",
+      callbackParamName: "callback",
+      handle: dojo.hitch(this, function(data) {
+          //TODO: need to handle errors, and throttle error requests
+          //so error does not cascade more error calls.
+          if(data instanceof Error) {
+            if (errback) {
+              errback(data, identityId);
             }
-        })
-      });      
-    }
-  }
-};
+          } else {
+            //Normalize twitter data to our data type.
+            var doc = {
+              identity_id: [
+                "twitter",
+                data.twitter_screen_name
+              ],
+              name: data.twitter_name,
+              nickname: data.twitter_screen_name,
+              url: data.twitter_url,
+              image: data.twitter_profile_image_url
+            }
 
-dojo.addOnLoad(function(){
-    //TODO: may want to make this use a view that just gets all the identies,
-    //not just the ones with pictures.
-    var id = rd.identity;
+            //Save in our store and do callback.
+            var idty = dojo.getObject(identityId[0], true, this)[identityId[1]] = doc;
 
-    couch.db("raindrop").view("raindrop!identities!all/_view/all", {
-      limit: 100,
-      include_docs: true,
-      success: function(json) {
-        this.docs = rd.forEach(json.rows, function(row) {
-          var doc = row.doc;
-          
-          //Add the document to the store for that service.
-          var service = dojo.getObject(doc.identity_id[0], true, id);
-          service[doc.identity_id[1]] = doc;
-        });
-
-        id._loaded = true;
-        dojo.forEach(id._onloads, function(callback){
-          callback();
-        });
-      },
-      error: function(err) {
-        this.error = err;
-        dojo.forEach(id._onloads, function(callback){
-          callback();
-        });
-      }
+            //TODO: save this info back to the couch?
+            callback([idty]);
+          }
+          this._onload();
+      })
     });
+  }
 });
+
+rd.identity._protectPublic();
+

@@ -137,6 +137,7 @@ class Pipeline(object):
             derived.add(dest_info)
         # error records are always 'derived'
         derived.add(('msg', 'core/error/msg'))
+        derived.add(('msg', 'ghost'))
         return self.coop.coiterate(gen_deleting_docs(derived))
 
     def gen_work_queue(self, queue_factory):

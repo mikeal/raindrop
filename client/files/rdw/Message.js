@@ -44,9 +44,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     } catch(ignore) { }
 
     this.subject = null;
-    try {
-      this.subject = rd.escapeHtml(this.doc.subject.replace(/^Re:/,''));
-    } catch(ignore_empty_subjects) { }
+    this.subject = rd.escapeHtml(this.doc.subject ?
+                                this.doc.subject.replace(/^Re:/,'') : "");
 
     //TODO: make message transforms extensionized.
     this.message = rd.hyperlink.add(rd.escapeHtml(this.doc.body_preview));
@@ -80,7 +79,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //If twitter user, get their profile pic.
     var from = this.doc.from;
     if (from[0] == "twitter") {
-      rd.identity.get(from[0], from[1], dojo.hitch(this, function(user) {
+      rd.identity.get(from, dojo.hitch(this, function(user) {
         if (user.image) {
           this.userPicNode.src = user.image;
         }
@@ -88,7 +87,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
           this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
         }
         //Don't worry about errors, just will not show pic.
-      }));
+      }), function(err){console.error(err)});
     }
   },
 

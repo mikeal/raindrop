@@ -35,7 +35,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         }));
 
         if (this.twitterId) {
-          rd.identity.get("twitter", this.twitterId, dojo.hitch(this, function(user) {
+          rd.identity.get(["twitter", this.twitterId], dojo.hitch(this, function(user) {
               if (user.image) {
                 this.picture.src = user.image;
               }

@@ -16,14 +16,14 @@ dojo.declare("rdw.Story", [rdw._Base], {
     var first = true;
     // Sort by date
     
-    console.log("in Story postCreate", this.msgs);
+    //console.log("in Story postCreate", this.msgs);
     this.msgs.sort(function (a,b) {return a.timestamp > b.timestamp });
-    for each (msg in this.msgs) {
+    for (var i = 0, msg; msg = this.msgs[i]; i++) {
       new rdw.Message({
         doc: msg,
         type: first ? "" : "reply"
       }, dojo.create("div", null, this.domNode));
       first = false;
-    }
+    };
   }
 });
