@@ -233,24 +233,8 @@ class RFC822Converter(base.SimpleConverterBase):
         headers = doc['headers']
         # for now, 'from' etc are all tuples of [identity_type, identity_id]
         callbacks = []
-        try:
-            body = doc['body']
-        except KeyError:
-            body = ''
-            assert doc['multipart']
-            attachments = doc['_attachments']
-            names = attachments.keys()
-            names.sort()
-            for name in attachments.keys():
-                attachment = attachments[name]
-                if attachment['content_type'] == 'text/plain':
-                    deferred = self.doc_model.open_attachment(doc['_id'], name).\
-                        addCallback(self._gotAttachment, name).\
-                        addErrback(self._didntgetAttachment)
-                    callbacks.append(deferred)
         ret = {'from': ['email', headers['from']],
                'subject': headers['subject'],
-               'body': body,
                'header_message_id': headers['message-id'],
                'headers': headers,
         }
@@ -261,6 +245,24 @@ class RFC822Converter(base.SimpleConverterBase):
         else:
             if dval:
                 ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+
+        # body handling
+        try:
+            # if it's not a multipart, it's easy
+            ret['body'] = doc['body']
+        except KeyError:
+            # it better be multipart
+            assert doc['multipart']
+            ret['body'] = '' # we'll get back to this in _gotAttachments
+            attachments = doc['_attachments']
+            for name in attachments.keys():
+                if attachments[name]['content_type'] == 'text/plain':
+                    deferred = self.doc_model.open_attachment(doc['_id'], name).\
+                        addCallback(self._gotAttachment, name).\
+                        addErrback(self._didntgetAttachment)
+                    callbacks.append(deferred)
+                # else: we should annotate the object with non-plaintext
+                # attachment information XXX
 
         return defer.DeferredList(callbacks).addCallback(
             self._gotAttachments, doc, ret)
