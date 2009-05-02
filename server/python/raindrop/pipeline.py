@@ -94,111 +94,114 @@ class Pipeline(object):
             assert converters # this can't be good!
 
     def get_wq_factories(self):
+        """Get all the work-queues we know about - later this might be
+        an extension point?
+        """
         return MessageTransformerWQ, IdentitySpawnerWQ
 
+    @defer.inlineCallbacks
     def unprocess(self):
         # A bit of a hack that will suffice until we get better dependency
         # management.  Determines which doc-types are 'derived', then deletes
         # them all.
-        def delete_a_doc(doc, rid):
-            if doc is None:
-                logger.debug("can't delete document %r - it doesn't exist", rid)
-                return None
-            else:
-                logger.info("Deleting document %(_id)r (rev %(_rev)s)", doc)
-                return self.doc_model.db.deleteDoc(doc['_id'], doc['_rev'])
-
-        def delete_docs(result, doc_type):
-            docs = []
-            to_del = [(row['id'], row['value']) for row in result['rows']]
-            for id, rev in to_del:
-                docs.append({'_id': id, '_rev': rev, '_deleted': True})
-            logger.info('deleting %d messages of type %r', len(docs), doc_type)
-            return self.doc_model.db.updateDocuments(docs)
-
-        def gen_deleting_docs(doc_infos):
-            for di in doc_infos:
-                dc, dt = di
-                yield self.doc_model.open_view('raindrop!messages!by',
-                                               'by_doc_type',
-                                               key=dt,
-                            ).addCallback(delete_docs, dt)
-            # and our work-queue docs - they aren't seen by the view, so
-            # just delete them by ID.
-            docs = []
-            # XXX - need a list of queues...
-            del_types = [f.queue_state_doc_id for f in self.get_wq_factories()]
-            for rid in del_types:
-                yield self.doc_model.open_document_by_id(rid
-                        ).addCallback(delete_a_doc, rid)
-
         derived = set()
         for src_info, dest_info in converters.iterkeys():
             derived.add(dest_info)
         # error records are always 'derived'
         derived.add(('msg', 'core/error/msg'))
         derived.add(('msg', 'ghost'))
-        return self.coop.coiterate(gen_deleting_docs(derived))
 
-    def gen_work_queue(self, queue_factory):
-        wq = queue_factory(self.doc_model, self.options.__dict__)
-        return generate_work_queue(self.doc_model, wq)
+        for dc, dt in derived:
+            result = yield self.doc_model.open_view('raindrop!messages!by',
+                                                    'by_doc_type',
+                                                    key=dt)
 
+            docs = []
+            to_del = [(row['id'], row['value']) for row in result['rows']]
+            for id, rev in to_del:
+                docs.append({'_id': id, '_rev': rev, '_deleted': True})
+            logger.info('deleting %d messages of type %r', len(docs), dt)
+            _ = yield self.doc_model.db.updateDocuments(docs)
+            
+        # and our work-queue docs - they aren't seen by the view, so
+        # just delete them by ID.
+        del_types = [f.queue_state_doc_id for f in self.get_wq_factories()]
+        for rid in del_types:
+            doc = yield self.doc_model.open_document_by_id(rid)
+            if doc is None:
+                logger.debug("can't delete document %r - it doesn't exist", rid)
+            else:
+                logger.info("Deleting document %(_id)r (rev %(_rev)s)", doc)
+                _ = yield self.doc_model.db.deleteDoc(doc['_id'], doc['_rev'])
+
+    @defer.inlineCallbacks
     def start(self, queue_types=None):
         if not queue_types:
             facs = self.get_wq_factories()
         else:
             facs = [f for f in self.get_wq_factories()
                     if f.queue_state_doc_id in queue_types]
-        return defer.DeferredList(
-            [self.coop.coiterate(self.gen_work_queue(f)) for f in facs])
 
+        dm = self.doc_model
+        queues = [fac(self.doc_model, self.options.__dict__) for fac in facs]
+        result = yield defer.DeferredList([
+                    prepare_work_queue(dm, q)
+                    for q in queues])
+
+        state_docs = [r[1] for r in result]
+        # We need to make sure they all say they are finished *twice*
+        last_done = False
+        while 1:
+            dl = []
+            for state_doc, q in zip(state_docs, queues):
+                dl.append(process_work_queue(dm, q, state_doc))
+            result = yield defer.DeferredList(dl)
+            all_done = True
+            for state_doc, (result_ok, done) in zip(state_docs, result):
+                assert result_ok, done # I'm guessing 'done' is a failure instance?
+                logger.debug("work-queue %r says finished=%s",
+                             state_doc['_id'], done)
+                all_done = all_done and done
+            if all_done:
+                if last_done:
+                    logger.info("All work-queues have finished")
+                    break
+                last_done = True
+            else:
+                last_done = False
+            logger.debug("One of the queues is still going...")
+
+    @defer.inlineCallbacks
     def start_retry_errors(self):
         """Attempt to re-process all messages for which our previous
         attempt generated an error.
         """
         # We need to re-process this item from all its sources.  Once the new
         # item is in-place the normal mechanisms will do the right thing
-        def gen_work():
-            state_doc = {'raindrop_seq': 0}
-            wq = MessageTransformerWQ(self.doc_model)
-            while True:
-                start_seq = state_doc['raindrop_seq']
-                # no 'include_docs' so results are small; fetch 500 at a time.
-                yield self.doc_model.open_view(
+        state_doc = {'raindrop_seq': 0}
+        wq = MessageTransformerWQ(self.doc_model)
+        while True:
+            num_processed = 0
+            start_seq = state_doc['raindrop_seq']
+            # no 'include_docs' so results are small; fetch 500 at a time.
+            result = yield self.doc_model.open_view(
                                 'raindrop!proto!workqueue', 'errors',
                                 startkey=state_doc['raindrop_seq'],
-                                limit=500,
-                        ).addCallback(self._cb_errorq_opened, state_doc
-                        )
-                if start_seq == state_doc['raindrop_seq']:
-                    break
-        return self.coop.coiterate(gen_work())
-
-    def _cb_errorq_opened(self, result, state_doc):
-        def gen_work():
+                                limit=500)
             for row in result['rows']:
                 logger.debug("processing error document %r", row['id'])
                 # Open *any* of the original source docs and re-process.
                 sources = row['value']
-                yield self.doc_model.open_document_by_id(sources[0][0]
-                        ).addCallback(self._cb_got_error_source)
+                source = yield self.doc_model.open_document_by_id(sources[0][0])
+                for task in wq.generate_tasks(source['_id'], source['_rev'],
+                                              force=True):
+                    num = yield task.addCallback(wq.consume)
+                num_processed += num
                 state_doc['raindrop_seq'] = row['key']
 
-        # XXX - see below - should we reuse self.coop, or is that unsafe?
-        coop = task.Cooperator()
-        return coop.coiterate(gen_work())
+            if start_seq == state_doc['raindrop_seq']:
+                break
 
-    def _cb_got_error_source(self, source):
-        # XXX - see below - should we reuse self.coop, or is that unsafe?
-        coop = task.Cooperator()
-        wq = MessageTransformerWQ(self.doc_model, self.options.__dict__)
-        gen = wq.generate_tasks(source['_id'], source['_rev'], force=True)
-
-        def fake_workqueue():
-            for task in gen:
-                yield task.addCallback(wq.consume)
-        return coop.coiterate(fake_workqueue())
 
 class WorkQueue:
     # These WorkQueues are very much still a thought-in-progress.
@@ -540,7 +543,21 @@ class IdentitySpawnerWQ(WorkQueue):
                 new_docs.append(('id', 'contacts', prov_id, new_rel_doc))
 
 
-def generate_work_queue(doc_model, wq):
+@defer.inlineCallbacks
+def prepare_work_queue(doc_model, wq):
+    # first open our 'state' document
+    state_doc = {'_id': wq.queue_state_doc_id,
+                 'type': wq.queue_state_doc_id,
+                 'seq': 0}
+    result = yield doc_model.open_document_by_id(state_doc['_id'])
+
+    if result is not None:
+        assert state_doc['_id'] == result['_id'], result
+        state_doc.update(result)
+    defer.returnValue(state_doc)
+
+@defer.inlineCallbacks
+def process_work_queue(doc_model, wq, state_doc, num_to_process=1000):
     """generate deferreds which will determine where our processing is up
     to and walk us through the _all_docs_by_seq view from that point.  This
     generator itself determines the source documents to process, then passes
@@ -551,83 +568,50 @@ def generate_work_queue(doc_model, wq):
     In the common case the generator_factory will yield documents and
     the consumer will save them.
     """
-    hacky_state = {}
-
-    def _cb_update_state_doc(result, d):
-        if result is not None:
-            assert d['_id'] == result['_id'], result
-            d.update(result)
-        # else no doc exists - the '_id' remains in the default though.
-
-    def _cb_by_seq_opened(result, state_doc):
-        rows = result['rows']
-        logger.debug('work queue has %d items to check.', len(rows))
-        if not rows:
-            # no rows left.  There is no guarantee our state doc will be
-            # the last one...
-            logger.info("work queue ran out of rows...")
-            # either way, we are done!
-            state_doc['finished'] = True
-            return
-
-        state_doc['seq'] = rows[-1]['key']
-        # I *think* that if we share the same cooperator as the task itself,
-        # we risk having the next chunk of sequence IDs processed before we
-        # are done here.
-        # OTOH, I'm not sure about that.....
-        # As we are really only using a coiterator as a handy way of managing
-        # twisted loops, using our own should be ok though.
-        coop = task.Cooperator()
-        return coop.coiterate(_gen_tasks_from_seq_rows(rows))
-
-    def record_work(num):
-        hacky_state['num_processed'] += num
-        
-    def _gen_tasks_from_seq_rows(rows):
-        for row in rows:
-            if 'error' in row:
-                # This is usually a simple 'not found' error; it doesn't
-                # mean an 'error record'
-                logger.debug('skipping document %(key)s - %(error)s', row)
-                continue
-            if 'deleted' in row['value']:
-                logger.debug('skipping document %s - deleted', row['key'])
-                continue
-            did = row['id']
-            src_rev = row['value']['rev']
-            for task in wq.generate_tasks(did, src_rev):
-                yield task.addCallback(wq.consume
-                        ).addCallback(record_work)
-
-    # first open our 'state' document
-    state_doc = {'_id': wq.queue_state_doc_id,
-                 'type': wq.queue_state_doc_id,
-                 'seq': 0}
-    yield doc_model.open_document_by_id(state_doc['_id'],
-                ).addCallback(_cb_update_state_doc, state_doc)
-
-    logger.info("Work queue %r starting with sequence ID %d",
-                wq.queue_state_doc_id, state_doc['seq'])
+    # else no doc exists - the '_id' remains in the default though.
+    logger.debug("Work queue %r starting with sequence ID %d",
+                 wq.queue_state_doc_id, state_doc['seq'])
 
     logger.debug('opening by_seq view for work queue...')
-    num_per_batch = 1000 # no docs are fetched, just meta-data about them.
-    while 'finished' not in state_doc:
-        hacky_state['num_processed'] = 0
-        start_seq = state_doc['seq']
-        yield doc_model.db.listDocsBySeq(limit=num_per_batch,
-                                              startkey=state_doc['seq'],
-                    ).addCallback(_cb_by_seq_opened, state_doc)
-        num_proc = hacky_state['num_processed']
-        logger.info("finished processing %r to %r - %d processed",
-                    wq.queue_state_doc_id, state_doc['seq'], num_proc)
-        if num_proc:
-            logger.debug("flushing state doc at end of run...")
-            # API mis-match here - the state doc isn't an 'extension'
-            # doc - but create_ext_documents is the easy option...
-            def update_rev(docs):
-                state_doc['_rev'] = docs[0]['rev']
-            assert 'finished' not in state_doc
-            yield doc_model.create_ext_documents([state_doc]
-                        ).addCallback(update_rev)
-        else:
-            logger.debug("no need to flush state doc")
+
+    num_processed = 0
+    start_seq = state_doc['seq']
+    result = yield doc_model.db.listDocsBySeq(limit=num_to_process,
+                                           startkey=state_doc['seq'])
+    rows = result['rows']
+    logger.debug('work queue has %d items to check.', len(rows))
+    if not rows:
+        # no rows left.
+        logger.debug("work queue ran out of rows...")
+        defer.returnValue(True)
+
+    # Update the state-doc now (it's not saved until we get to the end tho..)
+    state_doc['seq'] = rows[-1]['key']
+    # and process each of the rows...
+    for row in rows:
+        if 'error' in row:
+            # This is usually a simple 'not found' error; it doesn't
+            # mean an 'error record'
+            logger.debug('skipping document %(key)s - %(error)s', row)
+            continue
+        if 'deleted' in row['value']:
+            logger.debug('skipping document %s - deleted', row['key'])
+            continue
+        did = row['id']
+        src_rev = row['value']['rev']
+        for task in wq.generate_tasks(did, src_rev):
+            num = yield task.addCallback(wq.consume)
+            num_processed += num
+
+    logger.info("finished processing %r to %r - %d processed",
+                wq.queue_state_doc_id, state_doc['seq'], num_processed)
+
+    if num_processed:
+        logger.debug("flushing state doc at end of run...")
+        # API mis-match here - the state doc isn't an 'extension'
+        # doc - but create_ext_documents is the easy option...
+        docs = yield doc_model.create_ext_documents([state_doc])
+        state_doc['_rev'] = docs[0]['rev']
+    else:
+        logger.debug("no need to flush state doc")
+    defer.returnValue(False)
