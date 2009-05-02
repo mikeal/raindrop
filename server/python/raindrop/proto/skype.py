@@ -356,7 +356,7 @@ class SkypeRawConverter(base.SimpleConverterBase):
             if why[0] in (114, 122):
                 logger.debug("friend %r has no avatar (%s)", iid, why)
             else:
-                raise
+                logger.warning("Cannot save avatar for skype user %s", iid)
         return props
 
     def simple_convert(self, doc):
