@@ -7,12 +7,6 @@ logger = logging.getLogger(__name__)
 
 from ...proc import base
 
-# *sob* this re still fails to get unicode.
-# | >>> re.compile(r"[^\w]+", re.UNICODE).split(u"\xa9opyright me")
-# | [u'', u'opyright', u'me']
-re_tags = re.compile(r"[^\w]+", re.UNICODE)
-
-
 class MessageAnnotator(base.SimpleConverterBase):
     target_type = 'msg', 'anno/tags'
     # I only consume one type of object.
@@ -20,20 +14,19 @@ class MessageAnnotator(base.SimpleConverterBase):
         ('msg', 'message'),
     ]
     def simple_convert(self, doc):
-        # for now, if a 'proto' couldn't detect tags by itself, all words in
-        # the body become tags.
+        ret = {}
+        # If a proto could detect tags, return them
         try:
-            tags = doc['tags']
+            ret['tags'] = doc['tags']
         except KeyError:
-            bits = re_tags.split(doc['body'])
-            tags = list(set(b.lower() for b in bits if len(b)>3))
+            pass
         # XXX - conversation_id is misplaced here!!!
         conversation_id = doc.get('conversation_id')
         if conversation_id is None:
             conversation_id = doc.get('subject')
-        return {'tags': tags,
-                'conversation_id' : conversation_id,
-                }
+        ret['conversation_id'] = conversation_id
+        return ret
+
 
 class MessageTagAggregator(base.ConverterBase):
     "Aggregate all the tag sources into a final set of tags"
@@ -47,7 +40,7 @@ class MessageTagAggregator(base.ConverterBase):
     def convert(self, docs):
         tags = set()
         for d in docs:
-            for tag in d['tags']:
+            for tag in d.get('tags', []):
                 tags.add(tag)
         return {'tags': list(tags)}
 
