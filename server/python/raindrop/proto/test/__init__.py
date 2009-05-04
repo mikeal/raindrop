@@ -97,6 +97,8 @@ class TestConverter(base.SimpleConverterBase):
         msg = Message()
         headers = {'from': 'From: from%(storage_key)d@test.com',
                    'subject' : 'This is test document %(storage_key)d',
+                   'message-id' : 'TestMessage%(storage_key)d',
+                   'timestamp' : 123456,
         }
         for h in headers:
             msg[h] = headers[h] % doc
@@ -111,7 +113,7 @@ class TestConverter(base.SimpleConverterBase):
         new_doc['body'] = body
         #new_doc['_attachments'] = attachments
         new_doc['multipart'] = False
-        new_doc['headers'] = {}
+        new_doc['headers'] = {}        
         for hn, hv in msg.items():
             new_doc['headers'][hn.lower()] = hv
         return new_doc
