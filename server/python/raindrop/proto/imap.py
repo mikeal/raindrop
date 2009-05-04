@@ -218,7 +218,7 @@ class IMAPConverter(base.SimpleConverterBase):
 
   def _cb_got_attachment(self, content, doc):
     # the 'rfc822' module knows what to do...
-    return doc_from_bytes(content)
+    return doc_from_bytes(doc['_id'], content)
 
 
 class IMAPAccount(base.AccountBase):
