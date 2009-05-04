@@ -103,6 +103,27 @@
   color: #44617E;
 }
 
+/* XXX BEGIN some debug CSS for the inflow */
+.Message:hover > .message > .debug {
+  visibility: visible;
+}
+.Message > .message > .debug {
+  font-size: x-small;
+  line-height: 1em;
+  visibility: hidden;
+}
+.Message > .message > .debug > a {
+  color: #44617E;
+  margin-right: 1em;
+  padding: 0px 0.5em;
+  -moz-border-radius: 0.2em;
+}
+.Message > .message > .debug > a:hover {
+  color: #fff;
+  background-color: #44617E;
+}
+/* XXX END some debug CSS for the inflow */
+
 .Message > .message > .timestamp {
   font-size: x-small;
   font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;

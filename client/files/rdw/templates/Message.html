@@ -4,8 +4,7 @@
   <div class="message">
     <div class="header">
       <span class="from">
-        <!-- XXX this is a hack to help in debugging, don't keep this! -->
-        <a target="_blank" class="from" dojoAttachPoint="fromNameNode" href="/_utils/document.html?raindrop/${_id}">${fromName}</a>
+        <a target="_blank" class="from" dojoAttachPoint="fromNameNode">${fromName}</a>
         </span>
       <span class="medium">${fromId}</span>
     </div>
@@ -20,6 +19,10 @@
       <span class="additional">${additionalTime}</span>
     </div>
     <div class="toolAction" dojoAttachPoint="toolDisplay">
+    </div>
+    <!-- XXX this is a hack to help in debugging, don't keep this! -->
+    <div class="debug" dojoAttachPoint="debugNode">
+      <a target="_blank"href="/_utils/document.html?raindrop/${_id}">${_idName}</a>
     </div>
   </div>
 </div>
