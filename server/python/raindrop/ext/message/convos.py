@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 class ConversationConverter(base.SimpleConverterBase):
   target_type = 'msg', 'message/email-in-conversation'
-  sources = [('msg', 'raw/message/rfc822')]
+  # XXX - api-mismatch :(  we need both the rfc822 version for the headers,
+  # and the message/email version for the timestamp.  It is critical we
+  # put the 'last' one as a source here or we will be called before that
+  # last one exists...
+  sources = [('msg', 'raw/message/email')]
   ghosts_created = {}
   
   def simple_convert(self, doc):
@@ -55,6 +59,7 @@ class ConversationConverter(base.SimpleConverterBase):
       raise ValueError, "empty message id!"
     logger.debug("header_message_id: %s ", header_message_ids)
     logger.debug("references: %s", '\n\t'.join(references))
+    # XXX - the below can now be done in 1 request with 'keys='
     return defer.DeferredList([self.doc_model.open_view('raindrop!messages!by',
                                     'by_header_message_id',
                                     include_docs=True,
@@ -91,10 +96,10 @@ class ConversationConverter(base.SimpleConverterBase):
 
     # create dudes who are missing
     if unseen:
-      missing_messages = []
       ndocs = []
-
       for header_message_id in unseen:
+        # self.ghosts_created is an optimization - we need to check others
+        # if they exist as we may have created them last run...
         if header_message_id in self.ghosts_created:
           # we've already created this particular ghost
           continue
@@ -105,11 +110,27 @@ class ConversationConverter(base.SimpleConverterBase):
         self.doc_model.prepare_ext_document('msg', 'ghost',
                                             encode_provider_id(header_message_id),
                                             ndoc)
-        logger.debug("Creating ghost for header_message_id: %s with id %s ", header_message_id, ndoc['_id'])
         ndocs.append(ndoc)
+      # Now check which of them are actually new ghosts...
+      keys = [d['_id'] for d in ndocs]
+      return self.doc_model.db.listDoc(keys=keys
+                                ).addCallback(self._cb_check_ghosts, ndocs,
+                                              doc, conversation_id, self_message,
+                                              references, timestamp
+                                )
+    # nothing to save - jump to returning the doc.
+    return self._cb_saved_ghosts(None, doc, conversation_id, self_message,
+                                 references, timestamp)
 
-      return self.doc_model.create_ext_documents(ndocs
-        ).addCallback(self._cb_saved_ghosts, doc, conversation_id, self_message, references, timestamp)
+  def _cb_check_ghosts(self, results, cdocs, doc, conversation_id, self_message,
+                       references, timestamp):
+    ndocs = []
+    for row, cdoc in zip(results['rows'], cdocs):
+      if 'error' in row or 'deleted' in row['value']:
+        ndocs.append(cdoc)
+
+    return self.doc_model.create_ext_documents(ndocs
+      ).addCallback(self._cb_saved_ghosts, doc, conversation_id, self_message, references, timestamp)
 
   def _cb_saved_ghosts(self, result, doc, conversation_id, self_message, references, timestamp):
     ret = {'conversation_id': conversation_id,
