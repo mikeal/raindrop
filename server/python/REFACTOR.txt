@@ -3,6 +3,8 @@ Notes about what we need to refactor in the python backend:
 Front-end visible changes:
 --------------------------
 
+* 'timestamp' and all time fields need to use a common format.
+
 * document['type'] should become a tuple of category, type; 
   document['raindrop_category'] should die.
   Better: consider a triple of ['raindrop', cat, type] - canonical test for
@@ -28,7 +30,7 @@ Front-end visible changes:
     something used by *all* docs.  That will allow for a single view to map 
     from the provider ID for an object map to an object.  
     (eg, contact guid -> contact record, etc)
-  
+
 
 View-only visible changes:
 --------------------------
@@ -43,4 +45,11 @@ Internally visible changes:
 
 These changes don't affect the front-end.
 
-create_raw_docs, create_ext_docs, and the whole 'doc info' tuple thing isn't working.  Consider just a 'fill_doc' function to manage the IDs etc.
+create_raw_docs, create_ext_docs, and the whole 'doc info' tuple thing isn't 
+working.  Consider just a 'fill_doc' function to manage the IDs etc.
+
+raw/message/rfc822 makes some attempt to get a 'body' and stores the rest in 
+attachments.  But raw/message/email then reprocesses these attachments 
+looking for text parts to make a more complete body.  We should consider 
+having rfc822 store everything in attachments and all 'text part' handing in 
+the same place.
