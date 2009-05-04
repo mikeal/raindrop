@@ -89,54 +89,54 @@ class ImapClient(imap4.IMAP4Client):
     logger.info("Folder %s has %d messages, %d new", name,
                 len(all_uids), len(remaining))
     def gen_remaining(folder_name, reming):
-      for uid in reming:
-        # XXX - we need something to make this truly unique.
-        did = "%s#%d" % (folder_name, uid)
-        logger.debug("new imap message %r - fetching content", did)
+      left = sorted(list(reming))
+      while left:
+        # do 10 at a time...
+        this = left[:10]
+        left = left[10:]
+        to_fetch = imap4.MessageSet(this[0], this[-1])
         # grr - we have to get the rfc822 body and the flags in separate requests.
-        to_fetch = imap4.MessageSet(uid)
         yield self.fetchMessage(to_fetch, uid=True
-                    ).addCallback(self._cb_got_body, uid, did, folder_name, to_fetch
-                    )
+                      ).addCallback(self._cb_got_body, folder_name, to_fetch
+                      )
+
     return self.conductor.coop.coiterate(gen_remaining(name, remaining))
 
-  def _cb_got_body(self, result, uid, did, folder_name, to_fetch):
-    _, result = result.popitem()
-    content = result['RFC822']
+  def _cb_got_body(self, results, folder_name, to_fetch):
     # grr - get the flags
-    logger.debug("message %r has %d bytes; fetching flags", did, len(content))
+    logger.debug("Got %d messages from %s; fetching flags", len(results),
+                 folder_name)
     return self.fetchFlags(to_fetch, uid=True
-                ).addCallback(self._cb_got_flags, uid, did, folder_name, content
-                ).addErrback(self._cantGetMessage
+                ).addCallback(self._cb_got_flags, results, folder_name,
                 )
 
-  def _cb_got_flags(self, result, uid, did, folder_name, content):
-    logger.debug("flags are %s", result)
-    assert len(result)==1, result
-    _, result = result.popitem()
-    flags = result['FLAGS']
-    # put the 'raw' document object together and save it.
-    doc = dict(
-      storage_key=[folder_name, uid],
-      imap_flags=flags,
-      )
-    attachments = {'rfc822' : {'content_type': 'message',
-                               'data': content,
-                               }
-                  }
-    doc['_attachments'] = attachments
-    return self.doc_model.create_raw_documents(self.account,
-                                            [('msg', 'proto/imap', did, doc)],
-                ).addCallback(self._cb_saved_message)
+  def _cb_got_flags(self, results, msg_results, folder_name):
+    #logger.debug("flags are %s", result)
+    doc_infos = []
+    for seq in results:
+      uid = int(msg_results[seq]['UID'])
+      content = msg_results[seq]['RFC822']
+      flags = results[seq]['FLAGS']
+      assert int(results[seq]['UID']) == uid
+      # XXX - we need something to make this truly unique.
+      did = "%s#%d" % (folder_name, uid)
+      logger.debug("new imap message %r (flags=%s)", did, flags)
+      # put the 'raw' document object together and save it.
+      doc = dict(
+        storage_key=[folder_name, uid],
+        imap_flags=flags,
+        )
+      attachments = {'rfc822' : {'content_type': 'message',
+                                 'data': content,
+                                 }
+                    }
+      doc['_attachments'] = attachments
+      doc_infos.append(('msg', 'proto/imap', did, doc))
+    return self.doc_model.create_raw_documents(self.account, doc_infos
+                ).addCallback(self._cb_saved_messages)
 
-  def _cantGetMessage(self, failure):
-    logger.error("Failed to fetch message: %s", failure)
-
-  def _cb_saved_message(self, result):
+  def _cb_saved_messages(self, result):
     logger.debug("Saved message %s", result)
-
-  def _cantSaveDocument(self, failure):
-    logger.error("Failed to save message: %s", failure)
 
   def _cantExamineFolder(self, failure, name, *args, **kw):
     logger.warning("Failed to examine folder '%s': %s", name, failure)
