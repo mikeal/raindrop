@@ -155,6 +155,11 @@ def extract_message_ids(message_id_string):
       references.append(ref)
   return references
 
+def sanitize_attach_name(name):
+    if not name:
+        return name
+    # hrmph - what are good rules?  I see a space :)
+    return name.split()[0]
 
 # an 'rfc822' message stores the unpacked version of the rfc822 stream, a-la
 # the interface provided by the 'email' package.  IOW, we never bother storing
@@ -193,9 +198,9 @@ def doc_from_bytes(docid, b):
         i = 1
         for attach in msg.walk():
             if not attach.is_multipart():
-                name = attach.get_filename()
+                name = sanitize_attach_name(attach.get_filename())
                 if not name:
-                    name = "subpart %d" % i
+                    name = "subpart-%d" % i
                     i += 1
                 ct = attach.get_content_type()
                 cs = attach.get_charset()
