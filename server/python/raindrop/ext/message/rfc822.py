@@ -6,6 +6,9 @@ import logging
 from email import message_from_string
 from email.utils import mktime_tz, parsedate_tz, unquote
 from email.header import decode_header
+# Although _splitparam() *seems* simple enough to clone here, the comments
+# in the email module implies it may later get much smarter...
+from email.message import _splitparam
 from twisted.internet import defer
 
 from ...proc import base
@@ -27,6 +30,24 @@ def decode_header_part(value, fallback_charset='latin-1'):
                        charset, fallback_charset)
         return unicode(rawval, fallback_charset, errors)
 
+
+def decode_body_part(docid, body_bytes, charset=None):
+    # Convert a 'text/*' encoded byte string to *some* unicode object,
+    # ignoring (but logging) unicode errors we may see in the wild...
+    # TODO: This sucks; we need to mimick what firefox does in such cases...
+    try:
+        body = body_bytes.decode(charset or 'ascii')
+    except UnicodeError, exc:
+        logger.error("Failed to decode body in document %r from %r: %s",
+                     docid, charset, exc)
+        # no charset failed to decode as declared - try utf8
+        try:
+            body = body_bytes.decode('utf-8')
+        except UnicodeError, exc:
+            logger.error("Failed to fallback decode body in document %r"
+                         " from utf8: %s", docid, exc)
+            body = body_bytes.decode('latin-1', 'ignore')
+    return body
 
 def _safe_convert_header(val):
     # decode_header returns a list of tuples with guessed encoding values
@@ -140,7 +161,7 @@ def extract_message_ids(message_id_string):
 # the raw stream, just a 'raw' unpacked version of it.
 # This helper function takes a raw rfc822 string and returns a 'document'
 # suitable for storing as an rfc822 message.
-def doc_from_bytes(b):
+def doc_from_bytes(docid, b):
     msg = message_from_string(b)
     doc = {}
     mp = doc['multipart'] = msg.is_multipart()
@@ -165,6 +186,10 @@ def doc_from_bytes(b):
         # a multi-part message - flatten it here by walking the list, but
         # only looking at the 'leaf' nodes.
         attachments = doc['_attachments'] = {}
+        # attachments have lost their order; this object helps keep the
+        # other and is a convenient place to stash other headers coming
+        # with this part.
+        mi = doc['multipart_info'] = []
         i = 1
         for attach in msg.walk():
             if not attach.is_multipart():
@@ -172,26 +197,24 @@ def doc_from_bytes(b):
                 if not name:
                     name = "subpart %d" % i
                     i += 1
-                attachments[name] = {'content_type': attach.get_content_type(),
+                ct = attach.get_content_type()
+                cs = attach.get_charset()
+                if cs:
+                    ct += "; charset=" + cs
+                attachments[name] = {'content_type': ct,
                                      'data': attach.get_payload(decode=True),
                                      }
+                # Put together info about the attachment.
+                ah = {}
+                for hn, hv in attach.items():
+                    ah[hn.lower()] = _safe_convert_header(hv)
+                # content-type is redundant, but may be helpful...
+                info = {'name': name, 'headers': ah, 'content_type': ct}
+                mi.append(info)
     else:
         body_bytes = msg.get_payload(decode=True)
-        # Convert the bytes to *some* unicode object, ignoring (but logging)
-        # unicode errors we may see in the wild...
-        # TODO: This sucks; we need to mimick what firefox does in such cases...
-        charset = msg.get_content_charset() or 'ascii'
-        try:
-            body = body_bytes.decode(charset)
-        except UnicodeError, exc:
-            logger.error("Failed to decode body from %r: %s", charset, exc)
-            # no charset failed to decode as declared - try utf8
-            try:
-                body = body_bytes.decode('utf-8')
-            except UnicodeError, exc:
-                logger.error("Failed to fallback decode mail from utf8: %s", exc)
-                body = body_bytes.decode('latin-1', 'ignore')
-        doc['body'] = body
+        charset = msg.get_content_charset()
+        doc['body'] = decode_body_part(docid, body_bytes, charset)
     return doc
 
 def extract_preview(body):
@@ -219,7 +242,7 @@ def extract_preview(body):
                 trimmed_preview_lines.append('[...]')
         else:
             trimmed_preview_lines.append(line)
-    if trimmed_preview_lines[0] == '[...]':
+    if trimmed_preview_lines and trimmed_preview_lines[0] == '[...]':
         trimmed_preview_lines = trimmed_preview_lines[1:]
     preview_body = '\n'.join(trimmed_preview_lines)
     return preview_body[:140] + (preview_body[140:] and '...') # cute trick
@@ -227,7 +250,7 @@ def extract_preview(body):
 class RFC822Converter(base.SimpleConverterBase):
     target_type = 'msg', 'raw/message/email'
     sources = [('msg', 'raw/message/rfc822')]
-    parts = {}
+    @defer.inlineCallbacks
     def simple_convert(self, doc):
         # a 'rfc822' stores 'headers' as a dict
         headers = doc['headers']
@@ -253,41 +276,18 @@ class RFC822Converter(base.SimpleConverterBase):
         except KeyError:
             # it better be multipart
             assert doc['multipart']
-            ret['body'] = '' # we'll get back to this in _gotAttachments
-            attachments = doc['_attachments']
-            for name in attachments.keys():
-                if attachments[name]['content_type'] == 'text/plain':
-                    deferred = self.doc_model.open_attachment(doc['_id'], name).\
-                        addCallback(self._gotAttachment, name).\
-                        addErrback(self._didntgetAttachment)
-                    callbacks.append(deferred)
+            parts = []
+            docid = doc['_id']
+            for info in doc['multipart_info']:
+                ct, charset = _splitparam(info['content_type'])
+                if ct == 'text/plain':
+                    name = info['name']
+                    content = yield self.doc_model.open_attachment(docid, name)
+                    parts.append(decode_body_part(docid, content, charset))
+               
                 # else: we should annotate the object with non-plaintext
                 # attachment information XXX
 
-        return defer.DeferredList(callbacks).addCallback(
-            self._gotAttachments, doc, ret)
-
-
-    def _didntgetAttachment(self, error):
-        print "Error getting attachment", error
-        raise ValueError, 'attachmentproblem'
-    
-    def _gotAttachment(self, content, name, *args):
-        self.parts[name] = content
-  
-    def _gotAttachments(self, results, doc, ret):
-        part_names = self.parts.keys()
-        part_names.sort(part_sorter)
-        sorted_parts = []
-        for part_name in part_names:
-            sorted_parts.append(self.parts[part_name])
-        body = '\n'.join(sorted_parts)
-        ret['body'] = ret['body'] + body
+            ret['body'] = '\n'.join(parts)
         ret['body_preview'] = extract_preview(ret['body'])
-        return ret
-
-def part_number(partname):
-    return int(partname.split(' ', 1)[1])
-
-def part_sorter(a, b):
-    return cmp(part_number(a), part_number(b))
+        defer.returnValue(ret)
