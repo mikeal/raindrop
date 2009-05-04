@@ -110,6 +110,8 @@ class Pipeline(object):
         # error records are always 'derived'
         derived.add(('msg', 'core/error/msg'))
         derived.add(('msg', 'ghost'))
+        # our test messages can always go...
+        derived.add(('msg', 'proto/test'))
 
         for dc, dt in derived:
             result = yield self.doc_model.open_view('raindrop!messages!by',
@@ -158,7 +160,8 @@ class Pipeline(object):
             result = yield defer.DeferredList(dl)
             all_done = True
             for state_doc, (result_ok, done) in zip(state_docs, result):
-                assert result_ok, done # I'm guessing 'done' is a failure instance?
+                if not result_ok:
+                    done.raiseException()
                 logger.debug("work-queue %r says finished=%s",
                              state_doc['_id'], done)
                 all_done = all_done and done
@@ -193,9 +196,8 @@ class Pipeline(object):
                 # Open *any* of the original source docs and re-process.
                 sources = row['value']
                 source = yield self.doc_model.open_document_by_id(sources[0][0])
-                for task in wq.generate_tasks(source['_id'], source['_rev'],
-                                              force=True):
-                    num = yield task.addCallback(wq.consume)
+                num = yield wq.process(source['_id'], source['_rev'],
+                                       force=True)
                 num_processed += num
                 state_doc['raindrop_seq'] = row['key']
 
@@ -212,13 +214,9 @@ class WorkQueue:
         self.doc_model = doc_model
         self.options = options
 
-    def generate_tasks(self, src_id, src_rev):
-        # A generator which checks if each of its 'targets' (ie, the extension
-        # which depends on this document) is up-to-date wrt this document's
-        # revision.
-        raise NotImplementedError(self)
-
-    def consume(self, result):
+    @defer.inlineCallbacks
+    def process(self, src_id, src_rev):
+        # A function with processes the a doc in the work-queue doc.
         raise NotImplementedError(self)
 
 class MessageTransformerWQ(WorkQueue):
@@ -226,16 +224,8 @@ class MessageTransformerWQ(WorkQueue):
     on our DAG.
     """
     queue_state_doc_id = 'workqueue!msg'
-    def consume(self, new_doc):
-        logger.debug("consuming object of type %s", type(new_doc))
-        def return_num(result):
-            return len(result)
-        if new_doc is not None:
-            return self.doc_model.create_ext_documents([new_doc]
-                        ).addCallback(return_num)
-        return 0
-
-    def generate_tasks(self, src_id, src_rev, force=False):
+    @defer.inlineCallbacks
+    def process(self, src_id, src_rev, force=False):
         logger.debug("generating transition tasks for %r (rev=%s)", src_id,
                      src_rev)
 
@@ -254,72 +244,69 @@ class MessageTransformerWQ(WorkQueue):
             logger.debug("documents of type %r need no processing", doc_type)
             return
 
+        new_docs = []
         for target_info in targets:
             target_cat, target_type = target_info
             assert target_cat==doc_cat, (target_cat, doc_cat)
             target_id = dm.build_docid(target_cat, target_type, proto_id)
             cvtr = converters[(doc_cat, doc_type), target_info]
             logger.debug('looking for existing document %r', target_id)
-            yield dm.open_view('raindrop!proto!workqueue', 'source_revs',
-                            key=target_id
-                    ).addCallback(self._cb_check_existing_doc, cvtr,
-                                  proto_id, src_id, src_rev, force
-                    )
-
-    def _cb_check_existing_doc(self, result, cvtr, proto_id, src_id, src_rev,
-                               force):
-        rows = result['rows']
-        if len(rows)==0:
-            # no target exists at all - needs to be executed...
-            need_target = True
-            target_rev = None
-        else:
-            assert len(rows)==1, rows # what does more than 1 mean?
-            val = rows[0]['value']
-            target_rev, all_sources = val
-            look = [src_id, src_rev]
-            need_target = force or look not in all_sources
-            logger.debug("need target=%s (looked for %r in %r)", need_target,
-                         look, all_sources)
-
-        if not need_target:
-            return None # nothing to do.
-        return self._make_document(cvtr, proto_id, target_rev)
-
-    def _make_document(self, cvtr, proto_id, target_rev):
-        # OK - need to create this new type - locate all dependents in the
-        # DB - this will presumably include the document which triggered
-        # the process...
-        all_deps = []
-        dm = self.doc_model
-        for src_cat, src_type in cvtr.sources:
-            all_deps.append(dm.build_docid(src_cat, src_type, proto_id))
-        return dm.db.listDoc(keys=all_deps, include_docs=True,
-                    ).addCallback(self._cb_do_conversion, cvtr, proto_id,
-                                  target_rev)
-
-    def _cb_do_conversion(self, result, cvtr, proto_id, target_rev):
-        sources = []
-        for r in result['rows']:
-            if 'error' in r:
-                # This is usually a simple 'not found' error; it doesn't
-                # mean an 'error record'
-                logger.debug('skipping document %(key)s - %(error)s', r)
+            result = yield dm.open_view('raindrop!proto!workqueue',
+                                        'source_revs',
+                                        key=target_id)
+            rows = result['rows']
+            if len(rows)==0:
+                # no target exists at all - needs to be executed...
+                need_target = True
+                target_rev = None
+            else:
+                assert len(rows)==1, rows # what does more than 1 mean?
+                val = rows[0]['value']
+                target_rev, all_sources = val
+                look = [src_id, src_rev]
+                need_target = force or look not in all_sources
+                logger.debug("need target=%s (looked for %r in %r)", need_target,
+                             look, all_sources)
+    
+            if not need_target:
                 continue
-            if 'deleted' in r['value']:
-                logger.debug('skipping document %s - deleted', r['key'])
-                continue
-            sources.append(r['doc'])
 
-        logger.debug("calling %r to create a %s from %d docs", cvtr,
-                     cvtr.target_type, len(sources))
-        if not sources:
-            # no source documents - that's strange but OK - when sources
-            # appear we will get here again...
-            return None
-        return defer.maybeDeferred(cvtr.convert, sources
-                        ).addBoth(self._cb_converted_or_not,
-                                  cvtr, sources, proto_id, target_rev)
+            # OK - need to create this new type - locate all dependents in the
+            # DB - this will presumably include the document which triggered
+            # the process...
+            all_deps = []
+            dm = self.doc_model
+            for src_cat, src_type in cvtr.sources:
+                all_deps.append(dm.build_docid(src_cat, src_type, proto_id))
+            result = yield dm.db.listDoc(keys=all_deps, include_docs=True)
+            sources = []
+            for r in result['rows']:
+                if 'error' in r:
+                    # This is usually a simple 'not found' error; it doesn't
+                    # mean an 'error record'
+                    logger.debug('skipping document %(key)s - %(error)s', r)
+                    continue
+                if 'deleted' in r['value']:
+                    logger.debug('skipping document %s - deleted', r['key'])
+                    continue
+                sources.append(r['doc'])
+    
+            logger.debug("calling %r to create a %s from %d docs", cvtr,
+                         cvtr.target_type, len(sources))
+            if not sources:
+                # no source documents - that's strange but OK - when sources
+                # appear we will get here again...
+                continue
+            new_doc = yield defer.maybeDeferred(cvtr.convert, sources
+                            ).addBoth(self._cb_converted_or_not,
+                                      cvtr, sources, proto_id, target_rev)
+            if new_doc is not None:
+                new_docs.append(new_doc)
+
+        if new_docs:
+            logger.debug("creating %d new docs", len(new_docs))
+            _ = yield self.doc_model.create_ext_documents(new_docs)
+        defer.returnValue(len(new_docs))
 
     def _cb_converted_or_not(self, result, target_ext, sources, proto_id,
                              target_rev):
@@ -331,7 +318,9 @@ class MessageTransformerWQ(WorkQueue):
         # reflects it is actually an error marker.
         dest_cat, dest_type = target_ext.target_type
         if isinstance(result, Failure):
-            logger.warn("Failed to convert a document: %s", result)
+            sids = [s['_id'] for s in sources]
+            logger.warn("Failed to create a %r from %r: %s",
+                        target_ext.target_type, sids, result)
             if self.options.get('stop_on_error', False):
                 logger.info("--stop-on-error specified - re-throwing error")
                 result.raiseException()
@@ -383,16 +372,8 @@ class IdentitySpawnerWQ(WorkQueue):
     def get_prov_id(cls, identity_id):
         return '/'.join(identity_id)
 
-    def consume(self, new_docs):
-        logger.debug("consuming %d new docs", len(new_docs))
-        def return_num(result):
-            return len(new_docs)
-        if new_docs:
-            return self.doc_model.create_raw_documents(None, new_docs
-                        ).addCallback(return_num)
-        return 0
-
-    def generate_tasks(self, src_id, src_rev, force=False):
+    @defer.inlineCallbacks
+    def process(self, src_id, src_rev, force=False):
         logger.debug("generating transition tasks for %r (rev=%s)", src_id,
                      src_rev)
 
@@ -412,45 +393,39 @@ class IdentitySpawnerWQ(WorkQueue):
             return
 
         # open the source doc then let-em at it...
-        yield self.doc_model.open_document_by_id(src_id
-                    ).addCallback(self.get_id_rels, doc_type, my_spawners
-                    )
-
-    def get_id_rels(self, src_doc, exp_type, my_spawners):
         new_docs = []
-        def return_docs(whateva):
-            return new_docs
-        def gen_work():
-            for spawner in my_spawners:
-                # each of our spawners returns a simple list of identities
-                idrels = spawner.get_identity_rels(src_doc)
-                if __debug__: # check the extension is sane...
-                    for iid, rel in idrels:
-                        assert isinstance(iid, (tuple, list)) and len(iid)==2,\
-                               repr(iid)
-                        assert rel is None or isinstance(rel, basestring), repr(rel)
-                # Find contacts associated with *any* of the identities and use the
-                # first we find - hence the requirement the 'primary' identity be
-                # the first, so if a contact is associated with that, we use
-                # it
-                identities = [i[0] for i in idrels]
-                yield self.doc_model.open_view('raindrop!contacts!all',
-                                               'by_identity',
-                                               keys=identities, limit=1,
-                                               include_docs=True,
-                    ).addCallback(self._check_contact_view, src_doc, new_docs,
-                                  spawner, idrels,
-                    )
-
-        if src_doc.get('type') != exp_type:
+        src_doc = yield self.doc_model.open_document_by_id(src_id)
+        if src_doc.get('type') != doc_type:
             # probably an error record...
             logger.info("skipping doc %r - unexpected type of %s",
                          src_doc['_id'], src_doc.get('type'))
-            return new_docs
-        coop = task.Cooperator()
-        return coop.coiterate(gen_work()
-                    ).addCallback(return_docs
-                    )
+            defer.returnValue(new_docs)
+
+        for spawner in my_spawners:
+            # each of our spawners returns a simple list of identities
+            idrels = spawner.get_identity_rels(src_doc)
+            if __debug__: # check the extension is sane...
+                for iid, rel in idrels:
+                    assert isinstance(iid, (tuple, list)) and len(iid)==2,\
+                           repr(iid)
+                    assert rel is None or isinstance(rel, basestring), repr(rel)
+            # Find contacts associated with *any* of the identities and use the
+            # first we find - hence the requirement the 'primary' identity be
+            # the first, so if a contact is associated with that, we use
+            # it
+            identities = [i[0] for i in idrels]
+            _ = yield self.doc_model.open_view('raindrop!contacts!all',
+                                               'by_identity',
+                                               keys=identities, limit=1,
+                                               include_docs=True,
+                ).addCallback(self._check_contact_view, src_doc, new_docs,
+                              spawner, idrels,
+                )
+
+        if new_docs:
+            logger.debug("creating %d new docs", len(new_docs))
+            _ = yield self.doc_model.create_raw_documents(None, new_docs)
+        defer.returnValue(len(new_docs))
 
     def _check_contact_view(self, result, src_doc, new_docs, spawner, idrels):
         rows = result['rows']
@@ -558,15 +533,7 @@ def prepare_work_queue(doc_model, wq):
 
 @defer.inlineCallbacks
 def process_work_queue(doc_model, wq, state_doc, num_to_process=1000):
-    """generate deferreds which will determine where our processing is up
-    to and walk us through the _all_docs_by_seq view from that point.  This
-    generator itself determines the source documents to process, then passes
-    each of those documents through another new generator, which actually
-    calls the extensions.  The result from the extension is then passed to
-    the consumer (a callable) which does whatever necessary.
-    
-    In the common case the generator_factory will yield documents and
-    the consumer will save them.
+    """processes a number of items in a work-queue.
     """
     # else no doc exists - the '_id' remains in the default though.
     logger.debug("Work queue %r starting with sequence ID %d",
@@ -599,9 +566,8 @@ def process_work_queue(doc_model, wq, state_doc, num_to_process=1000):
             continue
         did = row['id']
         src_rev = row['value']['rev']
-        for task in wq.generate_tasks(did, src_rev):
-            num = yield task.addCallback(wq.consume)
-            num_processed += num
+        num = yield wq.process(did, src_rev)
+        num_processed += (num or 0)
 
     logger.info("finished processing %r to %r - %d processed",
                 wq.queue_state_doc_id, state_doc['seq'], num_processed)

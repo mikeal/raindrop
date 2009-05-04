@@ -23,15 +23,8 @@ class TestPipelineBase(TestCaseWithTestDB):
         
         coop = task.Cooperator()
         wq = pipeline.MessageTransformerWQ(doc_model, **FakeOptions().__dict__)
-        def fake_workqueue():
-            for task in wq.generate_tasks(doc['_id'], doc['_rev']):
-                yield task.addCallback(wq.consume)
-        def log_done(whateva):
-            logger.info('process_doc done')
+        return wq.process(doc['_id'], doc['_rev'])
 
-        logger.info('process_doc starting')
-        return coop.coiterate(fake_workqueue()
-                    ).addCallback(log_done)
 
 class TestPipeline(TestPipelineBase):
     def test_one_step(self):
