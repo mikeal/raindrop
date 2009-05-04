@@ -381,9 +381,20 @@ class DocumentModel(object):
         for doc in docs:
             assert '_id' in doc # should have called prepare_ext_document!
             try:
-                all_attachments.append(doc['_attachments'])
-                # nuke attachments specified
-                del doc['_attachments']
+                this_attach = doc['_attachments']
+                total_bytes = 0
+                for a in this_attach.values():
+                    total_bytes += len(a['data'])
+                if total_bytes > 100000: # pulled from a hat!
+                    # nuke attachments specified
+                    del doc['_attachments']
+                    all_attachments.append(this_attach)
+                else:
+                    # base64-encode in place...
+                    for a in this_attach.values():
+                        a['data'] = base64.encodestring(a['data']).replace('\n', '')
+                   
+                    all_attachments.append(None)
             except KeyError:
                 # It is important we put 'None' here so the list of
                 # attachments is exactly parallel with the list of docs.
@@ -412,9 +423,14 @@ class DocumentModel(object):
         attachments = self._prepare_attachments(docs)
         # save the document.
         logger.debug('saving %d extension documents', len(docs))
+        def log_error_info(failure):
+            failure.trap(twisted.web.error.Error)
+            logger.error("Server error response is %s", failure.value.response)
+            failure.raiseException()
+        
         return self.db.updateDocuments(docs,
                     ).addCallback(self._cb_saved_docs, attachments
-                    )
+                    ).addErrback(log_error_info)
 
     def _cb_saved_docs(self, result, attachments):
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
