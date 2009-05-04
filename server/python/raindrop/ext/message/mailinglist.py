@@ -47,8 +47,6 @@ class MailingListExtractor(base.SimpleConverterBase):
         if 'list-id' not in doc['headers']:
             return ret
 
-        logger.warning("i'm in ur pipeline xtractng ur mailng lists")
-
         # FIXME: use keys().filter() or an array comprehension?
         headers = filter(lambda x: x.startswith('list-'), doc['headers'].keys())
         logger.debug("list-* headers: %s", headers)
