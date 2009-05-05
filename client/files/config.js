@@ -15,7 +15,7 @@
 
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.
-    require: ["rd", "couch", "dojo.parser" /*"dojox.io.proxy.xip"*/],
+    require: ["rd", "couch", /*INSERT REQUIRES HERE*/ "dojo.parser" /*"dojox.io.proxy.xip"*/],
     parseOnLoad: true,
     baseUrl: "./",
     couchUrl: prefix.split("/", 3).join("/"),

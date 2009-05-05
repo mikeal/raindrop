@@ -314,6 +314,30 @@ def update_apps(whateva):
 
         replacements["module_paths"] = module_paths
         
+        return db.openView("raindrop!uiext!requires", "all"
+                    ).addCallback(_insert_requires, replacements)
+
+
+    def _insert_requires(view_results, replacements):
+        # Convert couch config value for module paths
+        # to a JS string to be used in config.js
+        requires = []
+
+        # Build up a complete list of required resources.
+        for reqs in view_results["rows"]:
+            requires.extend(reqs["key"])
+
+        # Add the string of the required resources to
+        # the replacement structure.
+        replacements["requires"] = ",".join([
+            '"%s"' % (req) for req in requires
+        ])
+
+        # Make sure if we have requires, end with a comma
+        # since this is inserted mid-list in the JavaScript.
+        if len(requires) > 0:
+            replacements["requires"] += ","
+
         return db.openView("raindrop!uiext!subs", "all"
                     ).addCallback(_insert_extensions, replacements)
 
@@ -356,6 +380,7 @@ def update_apps(whateva):
         # update config.js contents with couch data
         data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
         data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
+        data = data.replace("/*INSERT REQUIRES HERE*/", replacements["requires"])
 
         # save config.js in the files.
         doc["_attachments"]["config.js"] = {

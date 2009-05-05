@@ -54,10 +54,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
       this.message = rd.hyperlink.addTwitterTags(this.message);
     }
 
-    /* XXX this is for the debug links */
-    this._id = this.doc._id;
-    this._idName = this.doc._id.substring(this.doc._id.lastIndexOf("!") + 1, this.doc._id.length);
-
     this.time = this.doc.timestamp;
 
     /* XXX this timestamp needs a lot more thought to show the right kind of 
@@ -90,15 +86,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
         }
         //Don't worry about errors, just will not show pic.
       }), function(err){console.error(err)});
-    }
-    /* XXX this is for the debug links */
-    for (var src in this.doc.raindrop_sources) {
-      var id = this.doc.raindrop_sources[src][0]
-      var a = document.createElement("a");
-      a.className = "tag";
-      a.href = "/_utils/document.html?raindrop/" + encodeURIComponent(id);
-      a.appendChild(document.createTextNode(id.substring(id.lastIndexOf("/") + 1, id.length)));
-      this.debugNode.appendChild(a)
     }
   },
 
