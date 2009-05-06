@@ -128,8 +128,8 @@ class Pipeline(object):
         # them all.
         exts = self.options.exts
         derived = set()
-        exts = find_specified_extensions(exts)
-        for e in exts:
+        ext_insts = find_specified_extensions(exts)
+        for e in ext_insts:
             derived.add(e.target_type)
 
         # error records are always 'derived'
@@ -165,16 +165,17 @@ class Pipeline(object):
             if doc is None:
                 logger.debug("can't delete document %r - it doesn't exist", rid)
             else:
-                logger.info("Deleting document %(_id)r (rev %(_rev)s)", doc)
+                logger.info("deleting document %(_id)r (rev %(_rev)s)", doc)
                 _ = yield self.doc_model.db.deleteDoc(doc['_id'], doc['_rev'])
         # and rebuild our views
         logger.info("rebuilding all views...")
         _ = yield self.doc_model._update_important_views()
 
     @defer.inlineCallbacks
-    def start(self):
+    def start(self, force=None):
         queue_types = self.options.exts
-        force = self.options.force
+        if force is None:
+            force = self.options.force
         if not queue_types:
             facs = self.get_work_queues()
         else:
@@ -511,8 +512,6 @@ class IdentitySpawnerWQ(WorkQueue):
         for doc_infos in results:
             to_save.append([d for d in doc_infos if d is not None])
         if to_save:
-            from pprint import pprint
-            pprint(to_save)
             logger.debug("creating %d new docs", len(to_save))
             _ = yield self.doc_model.create_raw_documents(None, to_save)
         defer.returnValue(len(to_save))
