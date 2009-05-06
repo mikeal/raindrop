@@ -42,6 +42,8 @@ class MessageTagAggregator(base.ConverterBase):
         for d in docs:
             for tag in d.get('tags', []):
                 tags.add(tag)
+        if not tags:
+            return None
         return {'tags': list(tags)}
 
 
