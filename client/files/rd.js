@@ -181,8 +181,9 @@ dojo.mixin(rd, {
     //summary: registers an extension to be applied to a declared object.
     var exts = this._declaredExtensions[declareName]
                || (this._declaredExtensions[declareName] = []);
-    
-    if (exts._loaded) {
+
+    var obj = dojo.getObject(declareName);
+    if (exts._loaded || (obj && obj.prototype)) {
       this.applyDeclareExtension(declareName, extension);
     } else {
       exts.push(extension);
@@ -194,20 +195,25 @@ dojo.mixin(rd, {
 
   applyDeclareExtension: function(/*String|Object*/declareName, /*Object*/extension) {
     //summary: modifies the declareName object by attaching an extension to it.
+    var decObj = declareName;
     if(typeof declareName == "string") {
-      declareName = dojo.getObject(declareName);
+      decObj = dojo.getObject(declareName);
     }
-  
+
     //For each type of extension wrapping,
     //call the appropriate function to handle them.
     for (var i = 0, type; type = this._extTypes[i]; i++) {
       if(extension[type]) {
-        this._extApplyType(declareName, extension[type], type, this["_ext_" + type]);
+        this._extApplyType(declareName, decObj, extension[type], type, this["_ext_" + type]);
       }
     }
   },
 
-  _extApplyType: function(/*Object*/declared, /*Object*/typeExtensions, /*String*/type, /*Function*/typeFunc) {
+  _extApplyType: function(/*String*/declaredName,
+                          /*Object*/declared,
+                          /*Object*/typeExtensions,
+                          /*String*/type,
+                          /*Function*/typeFunc) {
     //summary: loops through the typeExtensions, calling
     //typeFunc to apply the type of extension.
     var proto = declared.prototype;
@@ -216,7 +222,7 @@ dojo.mixin(rd, {
       if(!(prop in empty)) {
         if (type != "replace" && !(prop in proto) || !dojo.isFunction(proto[prop])) {
           console.error("Trying to register a 'before' extension on object "
-                        + declared.declaredClass 
+                        + declaredName
                         + "for non-existent function property: " 
                         + prop);
         } else {
@@ -273,11 +279,11 @@ dojo.mixin(rd, {
   var subs = dojo.config.rd.subs;
   var extSubs = {};
   var extSubHandles = {};
-  var tObj = {};
+  var empty = {};
   for (var i = 0; subs && i < subs.length; i++) {
     for (var topic in subs[i]) {
-      //Use tObj to weed out stuff added by other JS code to Object.prototype
-      if (!tObj[topic]) {
+      //Use empty to weed out stuff added by other JS code to Object.prototype
+      if (!empty[topic]) {
         if (!extSubs[topic]) {
           extSubs[topic] = [];
           extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
@@ -287,7 +293,8 @@ dojo.mixin(rd, {
     }
   }
 
-  //Handle extensions that want to modify modules.
+  //Handle extensions that want to modify modules
+  //By overriding dojo.declare.
   var declareOld = dojo.declare;
   var declareNew = function(){
     //Apply old declare first.
@@ -316,6 +323,25 @@ dojo.mixin(rd, {
   };
   dojo.mixin(declareNew, declareOld);
   dojo.declare = declareNew;
+
+  //Change dojo.require to load modules that want to extend
+  //the targeted modules
+  var reqExts = dojo.config.rd.extends;
+  var requireOld = dojo.require;
+  dojo.require = function(/*String*/resourceName) {
+    //Ask the extensions to be loaded.
+    var exts = reqExts[resourceName];
+    if (exts) {
+      for (var i = 0, ext; ext = exts[i]; i++) {
+        dojo["require"](ext);
+      }
+      delete reqExts[resourceName];
+    }
+
+    //Do the normal dojo.require work.
+    var ret = requireOld.apply(dojo, arguments);
+    return ret;
+  }
 
 /*
   //Modify xd loader function that registers new modules that are ready to load.

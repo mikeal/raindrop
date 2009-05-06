@@ -15,19 +15,12 @@
 
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.
-    require: ["rd", "couch", /*INSERT REQUIRES HERE*/ "dojo.parser" /*"dojox.io.proxy.xip"*/],
+    require: ["rd", "couch", "dojo.parser"],
     parseOnLoad: true,
     baseUrl: "./",
     couchUrl: prefix.split("/", 3).join("/"),
-    //iframeProxyUrl: "http://127.0.0.1:5984/raindrop/files/xip_server.html",
-
-    //If we only support postMessage browsers, then don't need client URL
-    //This makes the assumption the app always includes xip_client.html in the
-    //same directory as any app page that uses the couchdb API.
-    //xipClientUrl: "./xip_client.html",
     modulePaths: {
       /*INSERT PATHS HERE*/
-      //"dojox.io.proxy.xip": prefix + "/xip",
       "dojo": dojoPrefix + "/dojo",
       "dijit": dojoPrefix + "/dijit",
       "dojox": dojoPrefix + "/dojox",
@@ -39,6 +32,7 @@
     
     rd: {
       /*INSERT SUBS HERE*/
+      /*INSERT EXTENDS HERE*/
     },
 
     scopeMap: [
@@ -55,8 +49,22 @@
     djConfig.useApiStub = true;
   }
   
-  
-  
+  //Adjust djConfig.rd.extends to be structured differently.
+  var extends = djConfig.rd.extends;
+  if (extends) {
+    var extNew = {};
+    var empty = {};
+    for (var i = 0, ext; ext = extends[i]; i++) {
+      for (var prop in ext) {
+        if (!(prop in empty)) {
+          var extList = extNew[prop] || (extNew[prop] = []);
+          extList.push(ext[prop]);
+        }
+      }
+    }
+    djConfig.rd.extends = extNew;
+  }
+
   //TODO: just doing this here in JS because my python fu is weak.
   //Need to split off the html file name from the application paths.
   //Also need to strip off domain if it matches the page we are currently
@@ -68,8 +76,7 @@
     "dojo": 1,
     "dijit": 1,
     "dojox": 1,
-    "couch": 1,
-    //"dojox.io.proxy.xip": 1
+    "couch": 1
   };
 
   for (var param in djConfig.modulePaths) {

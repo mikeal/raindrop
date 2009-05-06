@@ -314,29 +314,32 @@ def update_apps(whateva):
 
         replacements["module_paths"] = module_paths
         
-        return db.openView("raindrop!uiext!requires", "all"
-                    ).addCallback(_insert_requires, replacements)
+        return db.openView("raindrop!uiext!extends", "all"
+                    ).addCallback(_insert_extends, replacements)
 
 
-    def _insert_requires(view_results, replacements):
+    def _insert_extends(view_results, replacements):
         # Convert couch config value for module paths
         # to a JS string to be used in config.js
-        requires = []
+        extends = "extends: ["
 
         # Build up a complete list of required resources.
-        for reqs in view_results["rows"]:
-            requires.extend(reqs["key"])
+        for row in view_results["rows"]:
+            extender = row["key"]
+            for key in extender.keys():
+                  extends += "{'%s': '%s'}," % (
+                      key.replace("'", "\\'"),
+                      extender[key].replace("'", "\\'")
+                  )
+
+        # TODO: if my python fu was greater, probably could do this with some
+        # fancy list joins, but falling back to removing trailing comma here.
+        extends = re.sub(",$", "", extends)
+        extends += "]"
 
         # Add the string of the required resources to
         # the replacement structure.
-        replacements["requires"] = ",".join([
-            '"%s"' % (req) for req in requires
-        ])
-
-        # Make sure if we have requires, end with a comma
-        # since this is inserted mid-list in the JavaScript.
-        if len(requires) > 0:
-            replacements["requires"] += ","
+        replacements["extends"] = extends
 
         return db.openView("raindrop!uiext!subs", "all"
                     ).addCallback(_insert_extensions, replacements)
@@ -380,7 +383,7 @@ def update_apps(whateva):
         # update config.js contents with couch data
         data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
         data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
-        data = data.replace("/*INSERT REQUIRES HERE*/", replacements["requires"])
+        data = data.replace("/*INSERT EXTENDS HERE*/", replacements["extends"])
 
         # save config.js in the files.
         doc["_attachments"]["config.js"] = {

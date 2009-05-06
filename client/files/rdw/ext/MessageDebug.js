@@ -22,6 +22,7 @@ rd.extendDeclared("rdw.Message", {
 
         dojo.create("a", {
           "class": "tag",
+          target: "_blank",
           href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
           innerHTML: id.substring(id.lastIndexOf("/") + 1, id.length)
         }, debugNode);
