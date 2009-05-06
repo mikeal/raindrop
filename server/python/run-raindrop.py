@@ -55,6 +55,14 @@ def process(result, parser, options):
     return p.start().addCallback(done)
 
 @asynch_command
+def reprocess(result, parser, options):
+    """Reprocess all messages even if they are up to date."""
+    def done(result):
+        print "Message pipeline has finished..."
+    p = pipeline.Pipeline(model.get_doc_model(), options)
+    return p.start(True).addCallback(done)
+
+@asynch_command
 def retry_errors(result, parser, options):
     """Reprocess all conversions which previously resulted in an error."""
     def done_errors(result):
