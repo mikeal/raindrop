@@ -28,7 +28,7 @@ def decode_header_part(value, fallback_charset='latin-1'):
         # XXX charset is unknown to Python.
         logger.warning("character-set '%s' is unknown - falling back to %s",
                        charset, fallback_charset)
-        return unicode(rawval, fallback_charset, errors)
+        return unicode(rawval, fallback_charset, 'ignore')
 
 
 def decode_body_part(docid, body_bytes, charset=None):
@@ -272,7 +272,13 @@ class RFC822Converter(base.SimpleConverterBase):
             pass
         else:
             if dval:
-                ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+                try:
+                    ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+                except (ValueError, TypeError), exc:
+                    logger.warning('Failed to parse date %r in doc %r: %s',
+                                   dval, doc['_id'], exc)
+                    # later extensions will get upset if no attr exists
+                    ret['timestamp'] = 0
 
         # body handling
         try:
