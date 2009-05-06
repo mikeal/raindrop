@@ -314,6 +314,33 @@ def update_apps(whateva):
 
         replacements["module_paths"] = module_paths
         
+        return db.openView("raindrop!uiext!extends", "all"
+                    ).addCallback(_insert_extends, replacements)
+
+
+    def _insert_extends(view_results, replacements):
+        # Convert couch config value for module paths
+        # to a JS string to be used in config.js
+        extends = "extends: ["
+
+        # Build up a complete list of required resources.
+        for row in view_results["rows"]:
+            extender = row["key"]
+            for key in extender.keys():
+                  extends += "{'%s': '%s'}," % (
+                      key.replace("'", "\\'"),
+                      extender[key].replace("'", "\\'")
+                  )
+
+        # TODO: if my python fu was greater, probably could do this with some
+        # fancy list joins, but falling back to removing trailing comma here.
+        extends = re.sub(",$", "", extends)
+        extends += "]"
+
+        # Add the string of the required resources to
+        # the replacement structure.
+        replacements["extends"] = extends
+
         return db.openView("raindrop!uiext!subs", "all"
                     ).addCallback(_insert_extensions, replacements)
 
@@ -356,6 +383,7 @@ def update_apps(whateva):
         # update config.js contents with couch data
         data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
         data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
+        data = data.replace("/*INSERT EXTENDS HERE*/", replacements["extends"])
 
         # save config.js in the files.
         doc["_attachments"]["config.js"] = {

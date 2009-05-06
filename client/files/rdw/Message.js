@@ -18,7 +18,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "Message.html"),
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
-  
+
   postMixInProperties: function() {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
@@ -53,8 +53,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
       this.message = rd.hyperlink.addTwitterUsers(this.message);
       this.message = rd.hyperlink.addTwitterTags(this.message);
     }
-
-    this._id = this.doc._id;
 
     this.time = this.doc.timestamp;
 

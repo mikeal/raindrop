@@ -95,7 +95,7 @@ dojo.mixin(rd, {
     return text && text.replace(/\n/g, "<br>");  
   },
 
-  loadStyle: function(/*String*/modulePath) {
+  addStyle: function(/*String*/modulePath) {
     //summary: loads a CSS file based on a modulePath. This allows for reskinning
     //by overriding the modulePath via djConfig.modulePaths/dojo.registerModulePath()
     var url = dojo.moduleUrl(modulePath).toString();
@@ -173,28 +173,193 @@ dojo.mixin(rd, {
         rd.pub("protocol-" + proto, value);
       }
     }
+  },
+  
+  _declaredExtensions: {},
+
+  extendDeclared: function(/*String*/declareName, /*Function*/extension) {
+    //summary: registers an extension to be applied to a declared object.
+    var exts = this._declaredExtensions[declareName]
+               || (this._declaredExtensions[declareName] = []);
+
+    var obj = dojo.getObject(declareName);
+    if (exts._loaded || (obj && obj.prototype)) {
+      this.applyDeclareExtension(declareName, extension);
+    } else {
+      exts.push(extension);
+    }
+  },
+  
+  //Types of extension wrapping. Similar to aspected oriented advice.
+  _extTypes: ["before", "after", "around", "replace"],
+
+  applyDeclareExtension: function(/*String|Object*/declareName, /*Object*/extension) {
+    //summary: modifies the declareName object by attaching an extension to it.
+    var decObj = declareName;
+    if(typeof declareName == "string") {
+      decObj = dojo.getObject(declareName);
+    }
+
+    //For each type of extension wrapping,
+    //call the appropriate function to handle them.
+    for (var i = 0, type; type = this._extTypes[i]; i++) {
+      if(extension[type]) {
+        this._extApplyType(declareName, decObj, extension[type], type, this["_ext_" + type]);
+      }
+    }
+  },
+
+  _extApplyType: function(/*String*/declaredName,
+                          /*Object*/declared,
+                          /*Object*/typeExtensions,
+                          /*String*/type,
+                          /*Function*/typeFunc) {
+    //summary: loops through the typeExtensions, calling
+    //typeFunc to apply the type of extension.
+    var proto = declared.prototype;
+    var empty = {};
+    for (var prop in typeExtensions) {
+      if(!(prop in empty)) {
+        if (type != "replace" && !(prop in proto) || !dojo.isFunction(proto[prop])) {
+          console.error("Trying to register a 'before' extension on object "
+                        + declaredName
+                        + "for non-existent function property: " 
+                        + prop);
+        } else {
+          typeFunc(prop, proto, proto[prop], typeExtensions[prop]);
+        }
+      }
+    }
+  },
+
+  _ext_before: function(propName, obj, oldValue, newValue) {
+    //summary: applies the extension on the named function before the
+    //real function on the object. If the before function returns any
+    //value, it will be treated as an array of arguments to pass to
+    //the original function.
+    obj[propName] = function(){
+      var args = (newValue.apply(this, arguments) || arguments);
+      return oldValue.apply(this, args);
+    }
+  },
+  
+  _ext_after: function(propName, obj, oldValue, newValue) {
+    //summary: applies the extension on the named function after the
+    //real function on the object. Passes the return value of the original
+    //function as "targetReturn" property on the extension function.
+    //Extension function can access it via arguments.callee.targetReturn
+    obj[propName] = function(){
+      var ret = oldValue.apply(this, arguments);
+      newValue.targetReturn = ret;
+      return newValue.apply(this, arguments);
+    }
+  },
+
+  _ext_around: function(propName, obj, oldValue, newValue) {
+    //summary: applies the extension on the named function around the
+    //real function. Attaches the original function as arguments.callee.proceed.
+    //The around function has the option to change the arguments passed
+    //to arguments.callee.proceed and also to modify the return value. Extension
+    //needs to call arguments.callee.proceed.apply(this, arguments) to trigger
+    //original function.
+    newValue.target = obj[propName];
+    obj[propName] = newValue;    
+  },
+
+  _ext_replace: function(propName, obj, oldValue, newValue) {
+    //summary: Replaces the named property with the new value.
+    obj[propName] = newValue;
   }
 });
 
-//Register for the extenstion subscriptions as appropriate
-//These were set in djConfig.rd.subs, but we use dojo.config
-//here in case there is another dojo in the page that overwrites our djConfig.
-var subs = dojo.config.rd.subs;
-var extSubs = {};
-var extSubHandles = {};
-var tObj = {};
-for (var i = 0; subs && i < subs.length; i++) {
-  for (var topic in subs[i]) {
-    //Use tObj to weed out stuff added by other JS code to Object.prototype
-    if (!tObj[topic]) {
-      if (!extSubs[topic]) {
-        extSubs[topic] = [];
-        extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
+(function(){
+  //Register for the extenstion subscriptions as appropriate
+  //These were set in djConfig.rd.subs, but we use dojo.config
+  //here in case there is another dojo in the page that overwrites our djConfig.
+  var subs = dojo.config.rd.subs;
+  var extSubs = {};
+  var extSubHandles = {};
+  var empty = {};
+  for (var i = 0; subs && i < subs.length; i++) {
+    for (var topic in subs[i]) {
+      //Use empty to weed out stuff added by other JS code to Object.prototype
+      if (!empty[topic]) {
+        if (!extSubs[topic]) {
+          extSubs[topic] = [];
+          extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
+        }
+        extSubs[topic].push(subs[i][topic]);
       }
-      extSubs[topic].push(subs[i][topic]);
     }
   }
-}
+
+  //Handle extensions that want to modify modules
+  //By overriding dojo.declare.
+  var declareOld = dojo.declare;
+  var declareNew = function(){
+    //Apply old declare first.
+    var ret = declareOld.apply(dojo, arguments);
+    
+    //See if there are any extensions for this declared name.
+    var declareName = arguments[0];
+    var exts = rd._declaredExtensions[declareName];
+    if(exts){
+      //Set flag knowing the target of the extensions
+      //has been loaded, so subsequent extensions are
+      //just called as soon as they register.
+      exts._loaded = true;
+
+      //Apply each extension. Get the declared object
+      //once for speed concerns.
+      var declareObj = dojo.getObject(declareName);
+      for(var i = 0, ext; ext = exts[i]; i++) {
+        rd.applyDeclareExtension(declareObj, ext);
+      }
+
+      //Clean up the extensions that we were holding on to.
+      delete rd._declaredExtensions[declareName];
+    }
+    return ret;
+  };
+  dojo.mixin(declareNew, declareOld);
+  dojo.declare = declareNew;
+
+  //Change dojo.require to load modules that want to extend
+  //the targeted modules
+  var reqExts = dojo.config.rd.extends;
+  var requireOld = dojo.require;
+  dojo.require = function(/*String*/resourceName) {
+    //Ask the extensions to be loaded.
+    var exts = reqExts[resourceName];
+    if (exts) {
+      for (var i = 0, ext; ext = exts[i]; i++) {
+        dojo["require"](ext);
+      }
+      delete reqExts[resourceName];
+    }
+
+    //Do the normal dojo.require work.
+    var ret = requireOld.apply(dojo, arguments);
+    return ret;
+  }
+
+/*
+  //Modify xd loader function that registers new modules that are ready to load.
+  var _xdResourceLoadedOld = dojo._xdResourceLoaded;
+  dojo._xdResourceLoaded = function(res){
+    //Modify the content-defining function to call our extension registry
+    if(res.defineResource) {
+      var defineResourceOld = res.defineResource;
+      res.defineResource = function(){
+        var result = defineResourceOld.apply(this, arguments);
+        rd.
+      };
+    }
+    return _xdResourceLoadedOld.apply(dojo, arguments);
+  };
+*/
+
+})();
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.

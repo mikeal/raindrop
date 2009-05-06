@@ -1,0 +1,6 @@
+{
+  "_id": "uiext!rdw.ext.MessageDebug",
+  "extends": {
+    "rdw.Message": "rdw.ext.MessageDebug"
+  }
+}

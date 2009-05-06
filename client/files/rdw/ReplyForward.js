@@ -63,5 +63,5 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   rd.sub("rdw.Message-reply", dojo.partial(makeWidget, "reply", "rdw.Message-reply"));
   rd.sub("rdw.Message-forward", dojo.partial(makeWidget, "forward", "rdw.Message-reply"));
 
-  rd.loadStyle("rdw.css.ReplyForward");
+  rd.addStyle("rdw.css.ReplyForward");
 })();
