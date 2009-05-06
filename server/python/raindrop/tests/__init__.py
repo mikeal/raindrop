@@ -40,6 +40,7 @@ class FakeOptions:
     stop_on_error = False
     force = False
     protocols = None
+    exts = None
 
 class TestCase(unittest.TestCase):
     pass

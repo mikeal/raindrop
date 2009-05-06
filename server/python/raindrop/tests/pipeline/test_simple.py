@@ -16,17 +16,23 @@ class TestPipelineBase(TestCaseWithTestDB):
         dm = get_doc_model()
         return pipeline.Pipeline(dm, opts)
 
-    def process_doc(self, doc):
+    def process_doc(self, doc, exts = None):
         doc_model = get_doc_model()
         if not pipeline.converters: # XXX - *sob* - misplaced...
             pipeline.load_extensions(doc_model)
-        
-        coop = task.Cooperator()
-        wq = pipeline.MessageTransformerWQ(doc_model, **FakeOptions().__dict__)
-        return wq.process(doc['_id'], doc['_rev'])
+
+        p = self.get_pipeline()
+        p.options.exts = exts
+        return p.start()
 
 
 class TestPipeline(TestPipelineBase):
+    simple_exts = [
+            'raindrop.proto.test.TestConverter',
+            'raindrop.ext.message.rfc822.RFC822Converter',
+            'raindrop.ext.message.email.EmailConverter',
+            'raindrop.ext.message.message.MessageAnnotator'
+        ]
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
         test_proto.test_next_convert_fails = False
@@ -43,11 +49,12 @@ class TestPipeline(TestPipelineBase):
                         ).addCallback(check_targets_last, target_types
                         )
 
-        # open the test document to get its ID and _rev.
-        targets = set(('raw/message/rfc822', 'anno/flags'))
+        targets = set(('raw/message/rfc822', 'anno/tags', 'message', 'raw/message/email'))
+        for e in self.simple_exts:
+            targets.add('workqueue!msg!' + e)
         dm = get_doc_model()
         return dm.open_document('msg', '0', 'proto/test'
-                ).addCallback(self.process_doc
+                ).addCallback(self.process_doc, self.simple_exts
                 ).addCallback(check_targets, targets
                 )
 
@@ -68,7 +75,7 @@ class TestPipeline(TestPipelineBase):
                         )
 
         def reprocess(src_doc, targets_b4):
-            return self.process_doc(src_doc
+            return self.process_doc(src_doc, self.simple_exts
                         ).addCallback(check_nothing_done, targets_b4)
 
         def do_it_again(target_docs):
@@ -81,25 +88,10 @@ class TestPipeline(TestPipelineBase):
                 )
         
 
-    def test_two_steps(self):
-        # Test taking a raw message two steps along its pipeline.
-        def check_last_docs(lasts, target_types):
-            db_types = set(row['doc']['type'] for row in lasts)
-            self.failUnlessEqual(db_types, target_types)
-
-        def process_nexts(targets):
-            return defer.DeferredList([self.process_doc(d) for d in targets])
-
-        target_types = set(('raw/message/email', 'aggr/flags'))
-        return self.test_one_step(
-                ).addCallback(process_nexts,
-                ).addCallback(lambda whateva: self.get_last_by_seq(len(target_types))
-                ).addCallback(check_last_docs, target_types
-                )
-
     def test_all_steps(self):
         def check_last_doc(lasts):
-            self.failUnlessEqual(lasts[0]['id'], 'workqueue!msg')
+            self.failUnlessEqual(lasts[0]['id'],
+                                 'workqueue!msg!raindrop.ext.message.message.MessageTagAggregator')
             self.failUnless(lasts[1]['id'].endswith("!aggr/tags"), lasts)
 
         test_proto.test_next_convert_fails = False
@@ -115,16 +107,17 @@ class TestErrors(TestPipelineBase):
         test_proto.test_next_convert_fails = True
 
         def check_target_last(lasts):
-            # The current pipeline means that the 'raw/message/email' is an
-            # error but the 'anno/flags' works...
-            expected = set(('anno/flags', 'core/error/msg'))
+            expected = set(('core/error/msg',
+                            'workqueue!msg!raindrop.proto.test.TestConverter'))
             types = set([row['doc']['type'] for row in lasts])
             self.failUnlessEqual(types, expected)
+
+        exts = ['raindrop.proto.test.TestConverter']
 
         # open the test document to get its ID and _rev.
         dm = get_doc_model()
         return dm.open_document('msg', '0', 'proto/test'
-                ).addCallback(self.process_doc
+                ).addCallback(self.process_doc, exts
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_target_last
                 )
