@@ -11,9 +11,9 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
 
-    this.id = this.doc.value.id;
-    this.name = this.doc.value.id.split(".")[0];
-    this.title = this.doc.value.name || '';
+    this.id = this.doc.key[0];
+    this.name = this.doc.key[0].split(".")[0];
+    this.title = this.doc.key[1] || '';
   },
 
   onClick: function(evt) {
