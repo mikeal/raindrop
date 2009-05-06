@@ -59,14 +59,13 @@ class ConversationConverter(base.SimpleConverterBase):
       raise ValueError, "empty message id!"
     logger.debug("header_message_id: %s ", header_message_ids)
     logger.debug("references: %s", '\n\t'.join(references))
-    # XXX - the below can now be done in 1 request with 'keys='
-    return defer.DeferredList([self.doc_model.open_view('raindrop!messages!by',
+    return self.doc_model.open_view('raindrop!messages!by',
                                     'by_header_message_id',
                                     include_docs=True,
-                                    key=hid) for hid in header_message_ids]
+                                    keys=header_message_ids
       ).addCallback(self._gotMessageIds, references, header_message_ids, doc)
 
-  def _gotMessageIds(self, results, references, header_message_ids, doc):
+  def _gotMessageIds(self, result, references, header_message_ids, doc):
     conversation_id = None
     conversations = {}
     self_message = None
@@ -79,11 +78,12 @@ class ConversationConverter(base.SimpleConverterBase):
     logger.debug("headers['from']: %s", headers['from'])
     logger.debug("headers['subject']: %s", headers['subject'])
 
-    for row in results[0][1]['rows']:
+    for row in result['rows']:
       hid = row['key']
       if (hid in unseen):
         unseen.remove(hid)
-      if row['doc']['type'] == 'message/email-in-conversation' and \
+      if 'error' not in row and \
+           row['doc']['type'] == 'message/email-in-conversation' and \
            'ghost' not in row['doc']:
         conversation_id = row['doc']['conversation_id']
 
