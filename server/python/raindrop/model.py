@@ -443,7 +443,7 @@ class DocumentModel(object):
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
-        if self._docs_since_view_update > 50:
+        if self._docs_since_view_update > 2000:
             ds.append(self._update_important_views())
             self._docs_since_view_update = 0
 
@@ -510,14 +510,13 @@ class DocumentModel(object):
                     doc_id = row['id'][len('_design/'):]
                     self._important_views.append((doc_id, view_name))
 
-        def gen_work():
-            for did, vn in self._important_views:
-                logger.debug("updating view %s/%s", did, vn)
-                # limit=0 updates without giving us rows.
-                yield self.open_view(did, vn, limit=0)
-                logger.debug("updated view %s/%s", did, vn)
+        dl = []
+        for did, vn in self._important_views:
+            logger.debug("updating view %s/%s", did, vn)
+            # limit=0 updates without giving us rows.
+            dl.append(self.open_view(did, vn, limit=0))
 
-        return coiterate(gen_work())
+        return defer.DeferredList(dl)
 
 
 _doc_model = None
