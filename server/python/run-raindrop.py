@@ -213,6 +213,10 @@ def main():
                       help="Specifies the protocols to enable.  If not "
                            "specified, all protocols are enabled")
 
+    parser.add_option("-e", "--ext", action="append", dest='exts',
+                      help="Specifies the extensions to use for the specified "
+                           "operations.")
+
     parser.add_option("", "--doctype", action="append", dest='doctypes',
                       help="Specifies the document types to use for some "
                            "operations.")
