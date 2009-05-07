@@ -301,4 +301,9 @@ class RFC822Converter(base.SimpleConverterBase):
 
             ret['body'] = '\n'.join(parts)
         ret['body_preview'] = extract_preview(ret['body'])
+        try:
+            # If the provider could supply tags then pass them on
+            ret['tags'] = doc['tags']
+        except KeyError:
+            pass
         defer.returnValue(ret)

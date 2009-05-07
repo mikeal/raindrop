@@ -114,6 +114,7 @@ class TestConverter(base.SimpleConverterBase):
         new_doc['multipart'] = False
         new_doc['headers'] = {}        
         new_doc['timestamp'] = 123456
+        new_doc['tags'] = ['test', 'test%d' % doc['storage_key']]
         for hn, hv in msg.items():
             new_doc['headers'][hn.lower()] = hv
         return new_doc
