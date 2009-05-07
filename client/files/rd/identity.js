@@ -36,6 +36,26 @@ dojo.mixin(rd.identity, {
     }
   },
 
+  byImage: function(/*Function*/callback, /*Function?*/errback) {
+    //summary: Fetches identities that have images associated with them.
+    //Only retrieves the identityIds, not a full identity doc. Use get()
+    //to get the docs.
+    if (this._byImage) {
+      callback(this._byImage);
+    } else {
+      couch.db("raindrop").view("raindrop!identities!all/_view/by_image", {
+        success: dojo.hitch(this, function(json) {
+          this._byImage = [];
+          for (var i = 0, row; row = json.rows[i]; i++) {
+            this._byImage.push(row.key);
+          }
+          callback(this._byImage);
+        }),
+        error: errback
+      });
+    }
+  },
+
   _get: function(/*Array*/identityId) {
     //summary: private method that figures out what identities are already
     //loaded and which ones are missing. identityId can be one ID or an array

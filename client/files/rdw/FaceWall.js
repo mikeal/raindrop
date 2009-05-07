@@ -18,42 +18,43 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
 
-    rd.contact.list(dojo.hitch(this, function(/*Object*/contacts){
-      //First, get the contactIds for the max count of people we want to show.
-      var contactIds = [];
-      for (var i = 0, contact; (contact = contacts[i]) && (i < this.count); i++) {
-        contactIds.push(contact.contact_id);
+    rd.identity.byImage(dojo.hitch(this, function(/*Array*/identityIds){
+      //First, get the identityIds for the max count of people we want to show.
+      var ids = [];
+      for (var i = 0, idtyId; (idtyId = identityIds[i]) && (i < this.count); i++) {
+        ids.push(idtyId);
       }
-
-      //Now load all the contacts.
-      rd.contact.get(contactIds, dojo.hitch(this, function(contacts) {
+    
+      rd.contact.byIdentity(ids, dojo.hitch(this, function(contacts) {
         var html = ""; 
         var count = 0;
 
-        for (var i = 0, contact; contact = contacts[i]; i++) {
-          //TODO: may not have enough contacts with an image.
-          //Find image for the contact.
-          var imageUrl = null;
-          for (var j = 0, idty; idty = contact.identities[j]; j++) {
-            if (idty.image) {
-              imageUrl = idty.image;
-              break;
+        if (contacts) {
+          for (var i = 0, contact; contact = contacts[i]; i++) {
+            //TODO: may not have enough contacts with an image.
+            //Find image for the contact.
+            var imageUrl = null;
+            for (var j = 0, idty; idty = contact.identities[j]; j++) {
+              if (idty.image) {
+                imageUrl = idty.image;
+                break;
+              }
+            }
+  
+            //Generate the HTML for this contact. Skip contacts without
+            //and image.
+            if (imageUrl) {
+              html += dojo.string.substitute(this.faceTemplateString, {
+                url: "#rd:contact:" + contact.contact_id,
+                title: rd.escapeHtml(contact.name),
+                imgUrl: imageUrl
+              });
             }
           }
-
-          //Generate the HTML for this contact. Skip contacts without
-          //and image.
-          if (imageUrl) {
-            html += dojo.string.substitute(this.faceTemplateString, {
-              url: "#rd:contact:" + contact.contact_id,
-              title: rd.escapeHtml(contact.name),
-              imgUrl: imageUrl
-            });
+  
+          if(html){
+            dojo.place(html, this.domNode);
           }
-        }
-
-        if(html){
-          dojo.place(html, this.domNode);
         }
       }), function(err){ console.log(err) })
     }));

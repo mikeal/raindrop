@@ -1,8 +1,8 @@
 dojo.provide("rdw.QuickCompose");
 
-dojo.require("couch");
 dojo.require("rdw._Base");
 dojo.require("rd.identity");
+dojo.require("rd.account");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "QuickCompose.html"),
@@ -26,29 +26,21 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     this.inherited("postCreate", arguments);
 
     //See if a twitter icon can be pulled in for the user.
-    couch.db("raindrop").view("raindrop!accounts!all/_view/alltypes", {
-      success: dojo.hitch(this, function(json) {
-        dojo.forEach(json.rows, dojo.hitch(this, function(row){
-          if (row.value == "twitter") {
-            this.twitterId = row.key;
-          }
+    rd.account.all(dojo.hitch(this, function(accounts) {
+      if (accounts.twitter) {
+        rd.identity.get(["twitter", accounts.twitter.id], dojo.hitch(this, function(user) {
+            if (user.image) {
+              this.picture.src = user.image;
+            }
+            if (user.name) {
+              rd.escapeHtml(user.name, this.name);
+            }
+            //Don't worry about errors, just will not show pic.
         }));
 
-        if (this.twitterId) {
-          rd.identity.get(["twitter", this.twitterId], dojo.hitch(this, function(user) {
-              if (user.image) {
-                this.picture.src = user.image;
-              }
-              if (user.name) {
-                rd.escapeHtml(user.name, this.name);
-              }
-              //Don't worry about errors, just will not show pic.
-          }));
-
-          rd.escapeHtml("twitter.com/" + this.twitterId, this.address);
-        }
-      })
-    });
+        rd.escapeHtml("twitter.com/" + this.twitterId, this.address);
+      }
+    }));
   },
 
   onFocusTextArea: function(evt) {
