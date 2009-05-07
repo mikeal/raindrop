@@ -146,10 +146,6 @@ dojo.mixin(rd.contact, {
   _loadIdtys: function(/*String|Array*/contactId, /*Function*/callback, /*Function?*/errback){
     //Loads all the identities for a set of contacts.
 
-    //Set state on rd._api to indicate we are loading.
-    this._loaded = false;
-    this._fetching = true;
-
     //Normalize input to an array.
     if (typeof contactId == "string") {
       contactId = [contactId];

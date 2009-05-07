@@ -1,0 +1,6 @@
+{
+  "_id": "uiext!rd.conversations",
+  "subscriptions": [
+    {"rd-protocol-contact": "rd.conversations"}
+  ]
+}

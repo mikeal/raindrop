@@ -74,7 +74,7 @@
           var html = '<select id="url" name="url">';
           for (var i = 0, url; url = urls[i]; i++) {
             if (url != "_design/raindrop!accounts!all/_view/all") {
-              html += '<option value="' + url + '">' + url + '</option>';
+              html += '<option value="' + url + '">' + url.replace(/^_design\//, "") + '</option>';
             }
           }
           html += '</select>';
@@ -96,11 +96,11 @@
             "reduce",
             "include_docs"
           ];
-          
+
           //Convert form controls into HTML.
           for (var i = 0, input; input = inputs[i]; i++) {
             var html = dojo.string.substitute(
-              '<label><span class="label">${name}:</span> <input type="text" id="${name}" name="${name}" size="40"</label>',
+              '<label><span class="label">${name}:</span> <input type="text" name="${name}" size="40"</label>',
               {
                 name: input
               }
@@ -109,44 +109,47 @@
             rd.place(html, nodes);
           }
           rd.place(nodes, "masterForm");
-    
+
           //Bind to onsubmit for the form.
           rd.connect(dojo.byId("masterForm"), "onsubmit", function(evt){
-            
+            dojo.stopEvent(evt);
+
             var args = rd.formToObject("masterForm");
             var url = "/raindrop/" + args.url;
             delete args.url;
-            
+
             //Prune out empty fields, automatically JSON-escape other fields.
             for (var prop in args) {
               if (!args[prop]) {
                 delete args[prop];
-              } else {
+              } else if(!(args[prop] instanceof Array)) {
                 var value = rd.trim(args[prop]);
-                if (value != "true" && value != "false" && !value.match(/^[0-9\.]+$/) && !value.match(/^[{\[]/)) {
+                if (value != "true" && value != "false" && !value.match(/^[0-9\.]+$/) && !value.match(/^[{\["']/)) {
                   args[prop] = '"' + value.replace(/"/g, '\\"') + '"';
                 } else {
                   args[prop] = value;
                 }
               }
             }
-            
+
             //Change pretty printing of JSON to just use two spaces.
             rd.toJsonIndentStr = "  ";
             
             rd.xhrGet({
               url: url,
               content: args,
-              handleAs: "json",
+              //handleAs: "json",
+              handleAs: "text",
               handle: function(response, ioArgs) {
                 if (response instanceof Error) {
                   response = ioArgs.xhr.responseText;
                 }
-                rdw.byId("output").attr("value", rd.toJson(response, true));
+                //var text = rd.toJson(response, true);
+                //var text = response.replace(/\},/g, "},\n");
+                var text = response;
+                rdw.byId("output").attr("value", text);
               }
             });
-            
-            dojo.stopEvent(evt);
           });
         }
       });
