@@ -288,14 +288,44 @@ class WorkQueue(object):
         return self.queue_state_doc_id
 
     def consume(self, results):
-        # Consumes a list of whatever 'process' returns.  Intent is we call
-        # 'process' collecting the results until we have 'enough', then we
-        # call consume() to process all those results in one hit.
+        # Consumes whatever 'process' returns, which should be a generator.
+        # Ultimately we want to push the generator itself down into the
+        # "doc-model" so only one doc needs to be in memory at once.  Even
+        # before that is should be possible to share the same impl between
+        # queues - but currently some create 'raw' docs
+        # and some create 'ext' docs.
         raise NotImplementedError(self)
 
     def process(self, src_infos, *args, **kw):
-        # A function with processes the a doc in the work-queue doc.
+        # A function which processes a number of 'source docs' found by the
+        # work-queue.  The extension is free to consume as many as it
+        # chooses (ie, the only promise is the first will be consumed, but
+        # more may be consumed if the extension can batch things safely...)
+        # Should returns a generator of deferreds, but whatever is returned
+        # is passed directly to self.consume.
         raise NotImplementedError(self)
+
+    # Eventually we want the docmodel to consume a generator directly, but for
+    # now we 'unroll' it first.  The 'process' method may return None or a
+    # generator, and each elt of the generator may itself be None, a document
+    # or another generator.
+    # IOW - a 'tree' of generators where each leaf is None or a doc.
+    @classmethod
+    @defer.inlineCallbacks
+    def unroll_generator(cls, g):
+        import types
+        ret = []
+        if g is not None:
+            for item in g:
+                if isinstance(item, defer.Deferred):
+                    item = yield item
+                if isinstance(item, types.GeneratorType):
+                    # unroll the new generator
+                    item = yield cls.unroll_generator(item)
+                    ret.extend(item)
+                elif item is not None:
+                    ret.append(item)
+        defer.returnValue(ret)
 
 class MessageTransformerWQ(WorkQueue):
     """A queue which uses 'transformers' to create 'related' documents based
@@ -316,12 +346,12 @@ class MessageTransformerWQ(WorkQueue):
         return klass.__module__ + '.' + klass.__name__
 
     @defer.inlineCallbacks
-    def consume(self, new_docs):
-        to_save = [d for d in new_docs if d is not None]
+    def consume(self, doc_gen):
+        to_save = yield self.unroll_generator(doc_gen)
         if to_save:
             logger.debug("creating %d new docs", len(to_save))
             _ = yield self.doc_model.create_ext_documents(to_save)
-        defer.returnValue(len(to_save or []))
+        defer.returnValue(len(to_save))
 
     @defer.inlineCallbacks
     def process(self, src_infos, force=False, num_per_batch=50):
@@ -343,7 +373,6 @@ class MessageTransformerWQ(WorkQueue):
                 logger.debug("skipping document %r - not one of ours", src_id)
                 continue
     
-            new_docs = []
             target_cat, target_type = self.ext.target_type
             assert target_cat==doc_cat, (target_cat, doc_cat)
             target_id = dm.build_docid(target_cat, target_type, proto_id)
@@ -403,7 +432,6 @@ class MessageTransformerWQ(WorkQueue):
         nper = len(cvtr.sources)
         # there are multiple rows for each target...
         assert len(rows) == len(target_info) * nper
-        new_docs = []
         def gen_em(rows):
             while rows:
                 this_rows = rows[:nper]
@@ -430,13 +458,12 @@ class MessageTransformerWQ(WorkQueue):
 
                 yield defer.maybeDeferred(cvtr.convert, sources
                             ).addBoth(self._cb_converted_or_not, sources,
-                                      pid, target_rev, new_docs)
+                                      pid, target_rev)
 
-        _ = yield task.coiterate(gen_em(rows))
-        defer.returnValue(new_docs)
+        # return a generator for consumption by the caller
+        defer.returnValue(gen_em(rows))
 
-    def _cb_converted_or_not(self, result, sources, proto_id, target_rev,
-                             new_docs):
+    def _cb_converted_or_not(self, result, sources, proto_id, target_rev):
         # This is both a callBack and an errBack.  If a converter fails to
         # create a document, we can't just fail, or no later messages in the
         # DB will ever get processed!
@@ -483,7 +510,7 @@ class MessageTransformerWQ(WorkQueue):
         new_doc['raindrop_sources'] = [(s['_id'], s['_rev']) for s in sources]
         if target_rev is not None:
             new_doc['_rev'] = target_rev
-        new_docs.append(new_doc)
+        return new_doc
 
 
 class IdentitySpawnerWQ(WorkQueue):
@@ -506,88 +533,74 @@ class IdentitySpawnerWQ(WorkQueue):
         return '/'.join(identity_id)
 
     @defer.inlineCallbacks
-    def consume(self, results):
-        to_save = []
-        # Our 'process' returns a list - so we get called with a list of lists
-        for doc_infos in results:
-            to_save.append([d for d in doc_infos if d is not None])
+    def consume(self, doc_gen):
+        to_save = yield self.unroll_generator(doc_gen)
         if to_save:
             logger.debug("creating %d new docs", len(to_save))
             _ = yield self.doc_model.create_raw_documents(None, to_save)
-        defer.returnValue(len(to_save))
 
     @defer.inlineCallbacks
     def process(self, src_infos, force=False, num_per_batch=50):
         dm = self.doc_model
-        doc_ids = []
-        for src_id, src_rev in src_infos:
-            logger.debug("generating transition tasks for %r (rev=%s)", src_id,
-                         src_rev)
-            # For each target we need to determine if the doc exists, and if so,
-            # if our revision number is in the 'raindrop_sources' attribute.
-            # If it is, the target is up-to-date wrt us, so all is good.
-            try:
-                doc_cat, doc_type, proto_id = dm.split_docid(src_id)
-            except ValueError:
-                logger.info("skipping document %r", src_id)
-                continue
-    
-            my_spawners = spawners.get((doc_cat, doc_type))
-            if not my_spawners:
-                logger.debug("documents of type %r have no spawners", doc_type)
-                continue
+        # We only ever do one at a time; the next in the queue may depend
+        # on what we wrote - specifically the contact.  If this shows as
+        # a bottle-neck, we could cache contacts, or write only contacts
+        # immediately - but for now things are complex enough...
+        try:
+            # src_infos may be a list?  so iter it is..
+            src_id, src_rev = iter(src_infos).next()
+        except StopIteration:
+            return
 
-            doc_ids.append(src_id)
-            if len(doc_ids) >= num_per_batch:
-                break
+        logger.debug("generating transition tasks for %r (rev=%s)", src_id,
+                     src_rev)
+        try:
+            doc_cat, doc_type, proto_id = dm.split_docid(src_id)
+        except ValueError:
+            logger.info("skipping document %r", src_id)
+            return
 
-        # open the source docs then let-em at it...
-        result = yield dm.db.listDoc(keys=doc_ids, include_docs=True)
-        doc_infos = []
+        my_spawners = spawners.get((doc_cat, doc_type))
+        if not my_spawners:
+            logger.debug("documents of type %r have no spawners", doc_type)
+            return
+
+        # open the source doc then let-em at it...
+        src_doc = yield dm.open_document_by_id(src_id)
+        if src_doc is None:
+            return
+        if src_doc.get('type') != doc_type:
+            # probably an error record...
+            logger.info("skipping doc %r - unexpected type of %s",
+                         src_doc['_id'], src_doc.get('type'))
+            return
+
         def gen_em():
-            for r in result['rows']:
-                if 'error' in r:
-                    # This is usually a simple 'not found' error; it doesn't
-                    # mean an 'error record'
-                    logger.debug('skipping document %(key)s - %(error)s', r)
-                    continue
-                if 'deleted' in r['value']:
-                    logger.debug('skipping document %s - deleted', r['key'])
-                    continue
-                
-                src_doc = r['doc']
-                if src_doc.get('type') != doc_type:
-                    # probably an error record...
-                    logger.info("skipping doc %r - unexpected type of %s",
-                                 src_doc['_id'], src_doc.get('type'))
-                    continue
-                yield self._process_one(my_spawners, src_doc, doc_infos)
-        _ = yield task.coiterate(gen_em())
-        defer.returnValue(doc_infos)
+            for spawner in my_spawners:
+                # each of our spawners returns a simple list of identities
+                idrels = spawner.get_identity_rels(src_doc)
+                if __debug__: # check the extension is sane...
+                    for iid, rel in idrels:
+                        assert isinstance(iid, (tuple, list)) and len(iid)==2,\
+                               repr(iid)
+                        assert rel is None or isinstance(rel, basestring), repr(rel)
+                # Find contacts associated with *any* of the identities and use the
+                # first we find - hence the requirement the 'primary' identity be
+                # the first, so if a contact is associated with that, we use
+                # it
+                identities = [i[0] for i in idrels]
+                yield self.doc_model.open_view('raindrop!contacts!all',
+                                               'by_identity',
+                                               keys=identities, limit=1,
+                                               include_docs=True,
+                        ).addCallback(self._check_contact_view, src_doc,
+                                      spawner, idrels,
+                        )
 
-    def _process_one(self, my_spawners, src_doc, new_docs):
-        for spawner in my_spawners:
-            # each of our spawners returns a simple list of identities
-            idrels = spawner.get_identity_rels(src_doc)
-            if __debug__: # check the extension is sane...
-                for iid, rel in idrels:
-                    assert isinstance(iid, (tuple, list)) and len(iid)==2,\
-                           repr(iid)
-                    assert rel is None or isinstance(rel, basestring), repr(rel)
-            # Find contacts associated with *any* of the identities and use the
-            # first we find - hence the requirement the 'primary' identity be
-            # the first, so if a contact is associated with that, we use
-            # it
-            identities = [i[0] for i in idrels]
-            return self.doc_model.open_view('raindrop!contacts!all',
-                                            'by_identity',
-                                            keys=identities, limit=1,
-                                            include_docs=True,
-                ).addCallback(self._check_contact_view, src_doc, new_docs,
-                              spawner, idrels,
-                )
+        # return a generator for consumption by the caller
+        defer.returnValue(gen_em())
 
-    def _check_contact_view(self, result, src_doc, new_docs, spawner, idrels):
+    def _check_contact_view(self, result, src_doc, spawner, idrels):
         rows = result['rows']
         if not rows:
             # None of the identities matched a contact, so we create a new
@@ -600,7 +613,7 @@ class IdentitySpawnerWQ(WorkQueue):
             def_props = spawner.get_default_contact_props(src_doc)
             assert 'name' in def_props, def_props # give us a name at least!
             cdoc.update(def_props)
-            new_docs.append(('id', 'contact', contact_provid, cdoc))
+            yield ('id', 'contact', contact_provid, cdoc)
             logger.debug("Will create new contact %r", contact_provid)
             contact_id = contact_provid
         else:
@@ -625,12 +638,12 @@ class IdentitySpawnerWQ(WorkQueue):
             did = doc_model.build_docid('id', 'contacts', prov_id,
                                         prov_encoded=False)
             keys.append(did)
-    
-        return doc_model.db.listDoc(keys=keys, include_docs=True,
-                ).addCallback(self._got_identities, new_docs, contact_id, idrels
-                )
 
-    def _got_identities(self, result, new_docs, contact_id, idrels):
+        yield doc_model.db.listDoc(keys=keys, include_docs=True,
+                    ).addCallback(self._got_identities, contact_id, idrels
+                    )
+
+    def _got_identities(self, result, contact_id, idrels):
         doc_model = self.doc_model
         rows = result['rows']
         # we expect a row for every key, even those which failed.
@@ -649,7 +662,7 @@ class IdentitySpawnerWQ(WorkQueue):
                 id_doc = {
                     'identity_id': iid,
                 }
-                new_docs.append(('id', iid[0], prov_id, id_doc))
+                yield ('id', iid[0], prov_id, id_doc)
             # The 'relationship' row should exist as we either (a) wrote a new
             # one above or (b) found and used an existing one...
             new_rel = (contact_id, rel)
@@ -675,7 +688,7 @@ class IdentitySpawnerWQ(WorkQueue):
                     logger.debug("new relationship (update) from %r -> %r",
                                  iid, contact_id)
             if new_rel_doc is not None:
-                new_docs.append(('id', 'contacts', prov_id, new_rel_doc))
+                yield ('id', 'contacts', prov_id, new_rel_doc)
 
 
 @defer.inlineCallbacks
@@ -715,7 +728,10 @@ def process_work_queue(doc_model, wq, state_doc, force, num_to_process=5000):
     # and process each of the rows...
     def gen_sources():
         # A generator that will keep offering rows until either we run out or
-        # the extension has generated 'enough' documents.
+        # the extension has generated 'enough' documents (eg, some extension
+        # points may not be able to 'batch' effectively, so will only consume
+        # one item per call, others may consume until the generator is
+        # exhausted...)
         while rows:
             row = rows.pop(0)
             # Update the state-doc now (it's not saved until we get to the end tho..)
