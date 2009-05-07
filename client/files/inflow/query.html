@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>raindrop</title>
+
+  <style type="text/css">
+    body {
+      font-family: Verdana,Verdana,Geneva,sans-serif;
+    }
+
+    table {
+      width: 100%;
+      border: 0;
+    }
+    
+    #intake {
+      width: 424px;
+      vertical-align: top;  
+    }
+    
+    #outake {
+      width: 100%;
+      vertical-align: top;  
+    }
+
+    form {
+      width: 424px;
+      text-align: right;
+    }
+
+    label {
+      display: block;
+    }
+    
+    span.label {
+      display: inline-block;
+      width: 8em;
+      text-align: right;
+    }
+    
+    h3 {
+      margin: 0;
+    }
+
+    textarea {
+      width: 100%;
+    }
+  </style>
+
+  <script src="/raindrop/files/config.js" charset="utf-8"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    rd.require("dijit.form.Textarea");
+  
+    rd.addOnLoad(function(){
+
+      //Get the list of views available for querying.
+      rd.xhrGet({
+        url: "http://127.0.0.1:5984/raindrop/_all_docs?startkey=%22_design%2F%22&endkey=%22_design0%22&include_docs=true",
+        handleAs: "json",
+        load: function(response, ioArgs) {
+          //Get all the views from all the docs and make view URLs
+          var urls = [];
+          for (var i = 0, row, doc; (row = response.rows[i]) && (doc = row.doc); i++) {
+            for (var prop in doc.views) {
+              urls.push(doc._id + "/_view/" + prop);
+            }
+          }
+          urls.sort();
+
+
+          //Build up HTML for URLs
+          var nodes = rd.doc.createDocumentFragment();
+          var html = '<select id="url" name="url">';
+          for (var i = 0, url; url = urls[i]; i++) {
+            if (url != "_design/raindrop!accounts!all/_view/all") {
+              html += '<option value="' + url + '">' + url + '</option>';
+            }
+          }
+          html += '</select>';
+          rd.place(html, nodes);
+
+          //Specify input controls.
+          var inputs = [
+            "key",
+            "startkey",
+            "startkey_docid",
+            "endkey",
+            "endkey_docid",
+            "limit",
+            "stale",
+            "descending",
+            "skip",
+            "group",
+            "group_level",
+            "reduce",
+            "include_docs"
+          ];
+          
+          //Convert form controls into HTML.
+          for (var i = 0, input; input = inputs[i]; i++) {
+            var html = dojo.string.substitute(
+              '<label><span class="label">${name}:</span> <input type="text" id="${name}" name="${name}" size="40"</label>',
+              {
+                name: input
+              }
+            );
+    
+            rd.place(html, nodes);
+          }
+          rd.place(nodes, "masterForm");
+    
+          //Bind to onsubmit for the form.
+          rd.connect(dojo.byId("masterForm"), "onsubmit", function(evt){
+            
+            var args = rd.formToObject("masterForm");
+            var url = "/raindrop/" + args.url;
+            delete args.url;
+            
+            //Prune out empty fields, automatically JSON-escape other fields.
+            for (var prop in args) {
+              if (!args[prop]) {
+                delete args[prop];
+              } else {
+                var value = rd.trim(args[prop]);
+                if (value != "true" && value != "false" && !value.match(/^[0-9\.]+$/) && !value.match(/^[{\[]/)) {
+                  args[prop] = '"' + value.replace(/"/g, '\\"') + '"';
+                } else {
+                  args[prop] = value;
+                }
+              }
+            }
+            
+            //Change pretty printing of JSON to just use two spaces.
+            rd.toJsonIndentStr = "  ";
+            
+            rd.xhrGet({
+              url: url,
+              content: args,
+              handleAs: "json",
+              handle: function(response, ioArgs) {
+                if (response instanceof Error) {
+                  response = ioArgs.xhr.responseText;
+                }
+                rdw.byId("output").attr("value", rd.toJson(response, true));
+              }
+            });
+            
+            dojo.stopEvent(evt);
+          });
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <table>
+    <tbody>
+    <tr>
+      <td id="intake">
+        <form id="masterForm">
+          <button>Go</button>
+        </form>      
+      </td>
+      <td id="outake">      
+        <h3>Output</h3>
+        <textarea id="output" rdType="dijit.form.Textarea"></textarea>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</body>
+</html>
