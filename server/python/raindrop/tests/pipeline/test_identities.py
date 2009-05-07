@@ -16,6 +16,7 @@ class TestIDPipelineBase(TestCaseWithTestDB):
         dm = get_doc_model()
         return pipeline.Pipeline(dm, opts)
 
+    @defer.inlineCallbacks
     def process_doc(self, doc, emit_common_ids=True):
         test_proto.test_emit_common_identities = emit_common_ids
         doc_model = get_doc_model()
@@ -24,7 +25,8 @@ class TestIDPipelineBase(TestCaseWithTestDB):
 
         coop = task.Cooperator()
         wq = pipeline.IdentitySpawnerWQ(doc_model, **FakeOptions().__dict__)
-        return wq.process(doc['_id'], doc['_rev'])
+        got = yield wq.process([(doc['_id'], doc['_rev'])])
+        num = yield wq.consume(got)
 
 
 class TestIDPipeline(TestIDPipelineBase):
