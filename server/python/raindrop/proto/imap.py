@@ -89,12 +89,13 @@ class ImapClient(imap4.IMAP4Client):
     logger.info("Folder %s has %d messages, %d new", name,
                 len(all_uids), len(remaining))
     def gen_remaining(folder_name, reming):
-      left = sorted(list(reming))
+      # fetch most-recent (highest UID) first...
+      left = sorted(list(reming), reverse=True)
       while left:
         # do 10 at a time...
         this = left[:10]
         left = left[10:]
-        to_fetch = imap4.MessageSet(this[0], this[-1])
+        to_fetch = imap4.MessageSet(this[-1], this[0])
         # grr - we have to get the rfc822 body and the flags in separate requests.
         yield self.fetchMessage(to_fetch, uid=True
                       ).addCallback(self._cb_got_body, folder_name, to_fetch
