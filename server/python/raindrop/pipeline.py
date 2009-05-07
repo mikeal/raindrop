@@ -354,11 +354,13 @@ class MessageTransformerWQ(WorkQueue):
         defer.returnValue(len(to_save))
 
     @defer.inlineCallbacks
-    def process(self, src_infos, force=False, num_per_batch=50):
+    def process(self, src_infos, force=False):
         dm = self.doc_model
         cvtr = self.ext
         keys = []
         src_infos_use = []
+        # src_infos will might return *lots* - we self-throttle...
+        num_per_batch=200
         for src_id, src_rev in src_infos:
             # For each target we need to determine if the doc exists, and if so,
             # if our revision number is in the 'raindrop_sources' attribute.
@@ -540,7 +542,7 @@ class IdentitySpawnerWQ(WorkQueue):
             _ = yield self.doc_model.create_raw_documents(None, to_save)
 
     @defer.inlineCallbacks
-    def process(self, src_infos, force=False, num_per_batch=50):
+    def process(self, src_infos, force=False):
         dm = self.doc_model
         # We only ever do one at a time; the next in the queue may depend
         # on what we wrote - specifically the contact.  If this shows as
@@ -749,7 +751,7 @@ def process_work_queue(doc_model, wq, state_doc, force, num_to_process=5000):
             yield did, src_rev
 
     while rows:
-        got = yield wq.process(gen_sources(), num_per_batch=200, force=force)
+        got = yield wq.process(gen_sources(), force=force)
         num = yield wq.consume(got)
         num_processed += (num or 0)
 
