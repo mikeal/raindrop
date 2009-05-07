@@ -29,17 +29,8 @@ extension_modules = [
     'raindrop.ext.message.convos',
 ]
 
-# A dict of converter instances, keyed by (src_info, dest_info)
-converters = {}
-
-# Given a (doc-cat, document-type) key, return a list of those which depend
-# on it
-# eg:
-#depends = {
-#    ('msg', 'anno/flags') : [('msg', 'aggr/flags')],
-#    ('contact', 'anno/flags') : [('msg', 'aggr/flags')]
-#}
-depends = {}
+# A set of extensions...
+extensions = set()
 
 # A list of extensions which 'spawn' new documents, optionally based on the
 # existance of some other document.
@@ -60,9 +51,12 @@ def find_exts_in_module(mod_name, base_class):
         if isinstance(ob, type) and issubclass(ob, base_class):
             yield ob
 
-def find_specified_extensions(exts):
+def find_specified_extensions(base_class, exts=None):
     ret = set()
-    for ext in converters.itervalues():
+    ret_names = set()
+    for ext in extensions:
+        if not isinstance(ext, base_class):
+            continue
         if exts is None:
             ret.add(ext)
         else:
@@ -70,9 +64,17 @@ def find_specified_extensions(exts):
             name = klass.__module__ + '.' + klass.__name__
             if name in exts:
                 ret.add(ext)
+                ret_names.add(name)
+    if __debug__ and exts:
+        missing = set(exts) - set(ret_names)
+        if missing:
+            logger.error("The following extensions are unknown: %s",
+                         missing)
     return ret
 
 def load_extensions(doc_model):
+    converters = {} # identify conflicts to help the user...
+    # still a little confused - this should load more types...
     for mod_name in extension_modules:
         for cvtr in find_exts_in_module(mod_name, base.ConverterBase):
             assert cvtr.target_type, cvtr # must have a target type
@@ -80,15 +82,17 @@ def load_extensions(doc_model):
             assert isinstance(cvtr.target_type, tuple) and \
                    len(cvtr.target_type)==2, cvtr
             inst = cvtr(doc_model)
+            extensions.add(inst)
             for sid in cvtr.sources:
-                depends.setdefault(sid, []).append(cvtr.target_type)
                 cvtr_key = sid, cvtr.target_type
                 if cvtr_key in converters:
                     other = converters[cvtr_key]
                     msg = "Message transition %r->%r is registered by both %r and %r"
-                    logger.warn(msg, sid, cvtr.target_type, cvtr, other)
+                    logger.error(msg, sid, cvtr.target_type, cvtr, other)
                     continue
                 converters[cvtr_key] = inst
+        # XXX - this is wrong - technically the things below are extensions
+        # of the IdentitySpawner extension!
         for ext in find_exts_in_module(mod_name, base.IdentitySpawnerBase):
             assert ext.source_type, ext # must have a source type.
             inst = ext(doc_model)
@@ -102,23 +106,25 @@ class Pipeline(object):
         # use a cooperator to do the work via a generator.
         # XXX - should we own the cooperator or use our parents?
         self.coop = task.Cooperator()
-        if not converters:
+        if not extensions:
             load_extensions(doc_model)
-            assert converters # this can't be good!
+            assert extensions # this can't be good!
 
-    def get_work_queues(self):
+    def get_work_queues(self, spec_exts=None):
         """Get all the work-queues we know about - later this might be
         an extension point?
         """
+        if spec_exts is None:
+            spec_exts = self.options.exts
         ret = []
-        exts = set() # XXX - fix all this
-        for (src_info, dest_info), ext in converters.iteritems():
-            exts.add(ext)
-        for ext in exts:
+        for ext in find_specified_extensions(base.ConverterBase, spec_exts):
             inst = MessageTransformerWQ(self.doc_model, ext,
                                         options = self.options.__dict__)
             ret.append(inst)
-        ret.append(IdentitySpawnerWQ(self.doc_model, self.options.__dict__))
+        # yuck yuck...
+        iwq = IdentitySpawnerWQ(self.doc_model, self.options.__dict__)
+        if not spec_exts or iwq.get_queue_name() in spec_exts:
+            ret.append(iwq)
         return ret
 
     @defer.inlineCallbacks
@@ -128,7 +134,7 @@ class Pipeline(object):
         # them all.
         exts = self.options.exts
         derived = set()
-        ext_insts = find_specified_extensions(exts)
+        ext_insts = find_specified_extensions(base.ConverterBase, exts)
         for e in ext_insts:
             derived.add(e.target_type)
 
@@ -176,14 +182,12 @@ class Pipeline(object):
         queue_types = self.options.exts
         if force is None:
             force = self.options.force
-        if not queue_types:
-            facs = self.get_work_queues()
-        else:
-            facs = [f for f in self.get_work_queues()
-                    if f.get_queue_name() in queue_types]
+        queues = self.get_work_queues()
+        if not queues:
+            logger.warning("pipeline start, but there is nothing to do")
+            return
 
         dm = self.doc_model
-        queues = facs
         result = yield defer.DeferredList([
                     prepare_work_queue(dm, q)
                     for q in queues])
@@ -244,30 +248,32 @@ class Pipeline(object):
         """Attempt to re-process all messages for which our previous
         attempt generated an error.
         """
-        # We need to re-process this item from all its sources.  Once the new
-        # item is in-place the normal mechanisms will do the right thing
-        state_doc = {'raindrop_seq': 0}
-        wq = MessageTransformerWQ(self.doc_model)
-        while True:
-            num_processed = 0
-            start_seq = state_doc['raindrop_seq']
-            # no 'include_docs' so results are small; fetch 500 at a time.
-            result = yield self.doc_model.open_view(
-                                'raindrop!proto!workqueue', 'errors',
-                                startkey=state_doc['raindrop_seq'],
-                                limit=500)
-            for row in result['rows']:
-                logger.debug("processing error document %r", row['id'])
-                # Open *any* of the original source docs and re-process.
-                sources = row['value']
-                source = yield self.doc_model.open_document_by_id(sources[0][0])
-                num = yield wq.process(source['_id'], source['_rev'],
-                                       force=True)
-                num_processed += num
-                state_doc['raindrop_seq'] = row['key']
-
-            if start_seq == state_doc['raindrop_seq']:
-                break
+        qs = self.get_work_queues()
+        for q in qs:
+            # We need to re-process this item from all its sources.  Once the new
+            # item is in-place the normal mechanisms will do the right thing
+            state_doc = {'raindrop_seq': 0}
+            while True:
+                num_processed = 0
+                start_seq = state_doc['raindrop_seq']
+                # no 'include_docs' so results are small; fetch 500 at a time.
+                result = yield self.doc_model.open_view(
+                                    'raindrop!proto!workqueue', 'errors',
+                                    startkey=[q.get_queue_id(), start_seq],
+                                    endkey=[q.get_queue_id(), {}],
+                                    limit=500)
+                for row in result['rows']:
+                    logger.debug("processing error document %r", row['id'])
+                    # Open *any* of the original source docs and re-process.
+                    sources = row['value']
+                    source = yield self.doc_model.open_document_by_id(sources[0][0])
+                    got = yield q.process([(source['_id'], source['_rev'])],
+                                           force=True)
+                    num = yield q.consume(got)
+                    num_processed += (num or 0)
+                    state_doc['raindrop_seq'] = row['key']
+                if start_seq == state_doc['raindrop_seq']:
+                    break
 
 
 class WorkQueue(object):
@@ -493,6 +499,7 @@ class MessageTransformerWQ(WorkQueue):
                                                 new_doc)
             # and patch the 'type' attribute to reflect its really an error.
             new_doc['type'] = 'core/error/msg'
+            new_doc['workqueue'] = self.get_queue_id()
         else:
             if result is None:
                 # most likely the converter found an 'error' record in place
@@ -759,7 +766,8 @@ def process_work_queue(doc_model, wq, state_doc, force, num_to_process=5000):
                  wq.get_queue_name(), state_doc['seq'], num_processed)
 
     # We can chew 10000 docs quickly next time...
-    if num_processed or state_doc['seq']-state_doc.get('last_saved_seq', 0) > 10000:
+    last_saved = state_doc.get('last_saved_seq')
+    if num_processed or (last_saved and state_doc['seq']-last_saved) > 10000:
         logger.debug("flushing state doc at end of run...")
         # API mis-match here - the state doc isn't an 'extension'
         # doc - but create_ext_documents is the easy option...

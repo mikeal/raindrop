@@ -11,6 +11,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
+    simple_exts = [
+            'raindrop.proto.test.TestConverter',
+            'raindrop.ext.message.rfc822.RFC822Converter',
+            'raindrop.ext.message.email.EmailConverter',
+            'raindrop.ext.message.message.MessageAnnotator'
+        ]
+    extra_exts = [
+            'raindrop.ext.message.message.MessageTagAggregator',
+    ]
+    
     def get_pipeline(self):
         opts = FakeOptions()
         dm = get_doc_model()
@@ -18,7 +28,7 @@ class TestPipelineBase(TestCaseWithTestDB):
 
     def process_doc(self, doc, exts = None):
         doc_model = get_doc_model()
-        if not pipeline.converters: # XXX - *sob* - misplaced...
+        if not pipeline.extensions: # XXX - *sob* - misplaced...
             pipeline.load_extensions(doc_model)
 
         p = self.get_pipeline()
@@ -27,12 +37,6 @@ class TestPipelineBase(TestCaseWithTestDB):
 
 
 class TestPipeline(TestPipelineBase):
-    simple_exts = [
-            'raindrop.proto.test.TestConverter',
-            'raindrop.ext.message.rfc822.RFC822Converter',
-            'raindrop.ext.message.email.EmailConverter',
-            'raindrop.ext.message.message.MessageAnnotator'
-        ]
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
         test_proto.test_next_convert_fails = False
@@ -95,7 +99,9 @@ class TestPipeline(TestPipelineBase):
             self.failUnless(lasts[1]['id'].endswith("!aggr/tags"), lasts)
 
         test_proto.test_next_convert_fails = False
-        return self.get_pipeline().start('workqueue!msg'
+        p = self.get_pipeline()
+        p.options.exts = self.simple_exts + self.extra_exts
+        return p.start(
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_last_doc
                 )
@@ -126,9 +132,8 @@ class TestErrors(TestPipelineBase):
         # Test that reprocessing an error results in the correct thing.
         dm = get_doc_model()
 
-        def check_target_last(lasts):
+        def check_target_last(lasts, expected):
             got = set(row['doc']['type'] for row in lasts)
-            expected = set(('anno/flags', 'raw/message/rfc822'))
             self.failUnlessEqual(got, expected)
 
         def start_retry(result):
@@ -136,10 +141,11 @@ class TestErrors(TestPipelineBase):
             logger.info('starting retry for %r', result)
             return self.get_pipeline().start_retry_errors()
 
+        expected = set(('raw/message/rfc822',))
         return self.test_error_stub(
                 ).addCallback(start_retry
-                ).addCallback(lambda whateva: self.get_last_by_seq(2
-                ).addCallback(check_target_last)
+                ).addCallback(lambda whateva: self.get_last_by_seq(len(expected)
+                ).addCallback(check_target_last, expected)
                 )
 
     def test_all_steps(self):
@@ -147,17 +153,18 @@ class TestErrors(TestPipelineBase):
         # when our test converter throws an error.
         def check_last_doc(lasts):
             # The tail of the DB should be as below:
-            expected = set(['workqueue!msg', 'aggr/flags',
-                            'anno/flags', 'core/error/msg', 'proto/test'])
+            expected = set(['workqueue!msg!raindrop.proto.test.TestConverter', 
+                            'core/error/msg', 'proto/test'])
             # Note the 'core/error/msg' is the failing conversion (ie, the
             # error stub for the rfc822 message), and no 'email' record exists
-            # as it depends on the failing conversion.  The anno and aggr
-            # are independent of the failing message, so they complete.
+            # as it depends on the failing conversion.
             got = set(l['doc']['type'] for l in lasts)
             self.failUnlessEqual(got, expected)
 
         test_proto.test_next_convert_fails = True
-        return self.get_pipeline().start('workqueue!msg'
-                ).addCallback(lambda whateva: self.get_last_by_seq(5)
+        p = self.get_pipeline()
+        p.options.exts = self.simple_exts + self.extra_exts
+        return p.start(
+                ).addCallback(lambda whateva: self.get_last_by_seq(3)
                 ).addCallback(check_last_doc
                 )
