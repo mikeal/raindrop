@@ -6,6 +6,7 @@ import optparse
 import logging
 
 from twisted.internet import reactor, defer, task
+from twisted.python.failure import Failure
 
 from raindrop import model
 from raindrop import bootstrap
@@ -39,12 +40,54 @@ def install_accounts(result, parser, options):
     """Install accounts in the database from the config file"""
     return bootstrap.install_accounts(None)
 
+# A helper function that arranges to continually perform a 'process' until
+# the passed deferred has fired.  Mainly used so we can 'process' at the same
+# time as 'sync-messages'
+def _process_until_deferred(defd, options):
+    state = {'fired': False,
+             'delayed_call': None}
+    p = pipeline.Pipeline(model.get_doc_model(), options)
+    def_done = defer.Deferred()
+
+    def do_start():
+        # can't use Force or it will just restart each time...
+        p.start(force=False).addBoth(proc_done)
+
+    def defd_fired(result):
+        state['fired'] = True
+        dc = state['delayed_call']
+        if dc is not None:
+            # cancel the delayed call and call it now.
+            dc.cancel()
+            do_start()
+        if isinstance(result, Failure):
+            result.raiseException()
+
+    def proc_done(result):
+        state['delayed_call'] = None
+        if state['fired']:
+            print "Message pipeline has caught-up..."
+            def_done.callback(None)
+
+        print "Message pipeline has finished but tasks are still running; " \
+              "waiting then restarting..."
+        dc = reactor.callLater(5, do_start)
+        state['delayed_call'] = dc
+
+    do_start()
+    defd.addCallback(defd_fired)
+    
+    return def_done
+    
 
 @asynch_command
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
-    return conductor.sync(None)
+    ret = conductor.sync(None)
+    if not options.no_process:
+        ret = _process_until_deferred(ret, options)
+    return ret
 
 @asynch_command
 def process(result, parser, options):
@@ -237,6 +280,9 @@ def main():
                       help="Causes (some) operations which would normally "
                            "handle an error and continue to stop when an "
                            "error occurs.")
+
+    parser.add_option("", "--no-process", action="store_true",
+                      help="Don't process the work-queue.")
 
     options, args = parser.parse_args()
 
