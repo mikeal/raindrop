@@ -187,11 +187,11 @@ def install_client_files(whateva, options):
         root_dir = path_part_nuke(model.__file__, 4)
         client_dir = os.path.join(root_dir, 'client')
         zip_path = os.path.join(client_dir, 'dojo.zip')
-
-        f = open(zip_path, 'rb')
-        data = f.read()
-        fp.get_finger(zip_path).update(data)
-        f.close()
+        finger = fp.get_finger('client/dojo.zip')
+        # .zip files might be large, so update in chunks...
+        with open(zip_path, 'rb') as f:
+            for chunk in f:
+                finger.update(chunk)
 
         new_prints = fp.get_prints()
         if options.force or design_doc.get('fingerprints') != new_prints:
