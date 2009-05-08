@@ -38,14 +38,14 @@ def decode_body_part(docid, body_bytes, charset=None):
     try:
         body = body_bytes.decode(charset or 'ascii')
     except UnicodeError, exc:
-        logger.error("Failed to decode body in document %r from %r: %s",
-                     docid, charset, exc)
+        logger.warning("Failed to decode body in document %r from %r: %s",
+                       docid, charset, exc)
         # no charset failed to decode as declared - try utf8
         try:
             body = body_bytes.decode('utf-8')
         except UnicodeError, exc:
-            logger.error("Failed to fallback decode body in document %r"
-                         " from utf8: %s", docid, exc)
+            logger.warning("Failed to fallback decode body in document %r"
+                           " from utf8: %s", docid, exc)
             body = body_bytes.decode('latin-1', 'ignore')
     return body
 
