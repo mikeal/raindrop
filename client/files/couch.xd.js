@@ -150,7 +150,7 @@ couch = {
         allDocs: function(options) {
           if (options && options.keys) {
             options = dojo.delegate(options || {});
-            options.postData = toJSON({keys: options.keys});
+            options.postData = dojo.toJson({keys: options.keys});
             _call("POST", this.uri + "_all_docs" + encodeOptions(options), options);
           } else {
             _call("GET", this.uri + "_all_docs" + encodeOptions(options), options);

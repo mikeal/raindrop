@@ -32,7 +32,7 @@
     
     rd: {
       /*INSERT SUBS HERE*/
-      /*INSERT EXTENDS HERE*/
+      /*INSERT EXTS HERE*/
     },
 
     scopeMap: [
@@ -49,12 +49,12 @@
     djConfig.useApiStub = true;
   }
   
-  //Adjust djConfig.rd.extends to be structured differently.
-  var extends = djConfig.rd.extends;
-  if (extends) {
+  //Adjust djConfig.rd.exts to be structured differently.
+  var exts = djConfig.rd.exts;
+  if (exts) {
     var extNew = {};
     var empty = {};
-    for (var i = 0, ext; ext = extends[i]; i++) {
+    for (var i = 0, ext; ext = exts[i]; i++) {
       for (var prop in ext) {
         if (!(prop in empty)) {
           var extList = extNew[prop] || (extNew[prop] = []);
@@ -62,7 +62,7 @@
         }
       }
     }
-    djConfig.rd.extends = extNew;
+    djConfig.rd.exts = extNew;
   }
 
   //TODO: just doing this here in JS because my python fu is weak.

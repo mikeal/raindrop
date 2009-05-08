@@ -37,8 +37,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             }
             //Don't worry about errors, just will not show pic.
         }));
-
-        rd.escapeHtml("twitter.com/" + this.twitterId, this.address);
+        rd.escapeHtml("twitter.com/" + accounts.twitter.id, this.address);
       }
     }));
   },
