@@ -275,13 +275,10 @@ class QueueRunner(object):
             force = self.options.force
         dm = self.doc_model
         result = yield defer.DeferredList([
-                    prepare_work_queue(dm, q)
+                    prepare_work_queue(dm, q, force)
                     for q in self.queues])
 
         state_docs = self.state_docs = [r[1] for r in result]
-        if force:
-            for d in state_docs:
-                d['seq'] = 0
 
         self.dc_status = reactor.callLater(5, self._q_status)
         def_done = defer.Deferred()
@@ -583,7 +580,7 @@ class IdentitySpawnerWQ(WorkQueue):
         try:
             doc_cat, doc_type, proto_id = dm.split_docid(src_id)
         except ValueError:
-            logger.info("skipping document %r", src_id)
+            logger.debug("skipping document %r", src_id)
             return
 
         my_spawners = spawners.get((doc_cat, doc_type))
@@ -718,7 +715,7 @@ class IdentitySpawnerWQ(WorkQueue):
 
 
 @defer.inlineCallbacks
-def prepare_work_queue(doc_model, wq):
+def prepare_work_queue(doc_model, wq, force=False):
     # first open our 'state' document
     state_doc = {'_id': wq.get_queue_id(),
                  'type': wq.get_queue_id(),
@@ -729,6 +726,9 @@ def prepare_work_queue(doc_model, wq):
         assert state_doc['_id'] == result['_id'], result
         state_doc.update(result)
     # else no doc exists - the '_id' remains in the default though.
+    if force:
+        state_doc['seq'] = 0
+    state_doc['last_saved_seq'] = state_doc['seq']
     defer.returnValue(state_doc)
 
 @defer.inlineCallbacks
@@ -782,9 +782,9 @@ def process_work_queue(doc_model, wq, state_doc, force, num_to_process=5000):
     logger.debug("finished processing %r to %r - %d processed",
                  wq.get_queue_name(), state_doc['seq'], num_processed)
 
-    # We can chew 10000 docs quickly next time...
-    last_saved = state_doc.get('last_saved_seq')
-    if num_processed or (last_saved and state_doc['seq']-last_saved) > 10000:
+    # We can chew 5000 docs quickly next time...
+    last_saved = state_doc['last_saved_seq']
+    if num_processed or (state_doc['seq']-last_saved) > 5000:
         logger.debug("flushing state doc at end of run...")
         # API mis-match here - the state doc isn't an 'extension'
         # doc - but create_ext_documents is the easy option...
