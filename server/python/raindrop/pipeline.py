@@ -177,71 +177,10 @@ class Pipeline(object):
         logger.info("rebuilding all views...")
         _ = yield self.doc_model._update_important_views()
 
-    @defer.inlineCallbacks
     def start(self, force=None):
-        queue_types = self.options.exts
-        if force is None:
-            force = self.options.force
-        queues = self.get_work_queues()
-        if not queues:
-            logger.warning("pipeline start, but there is nothing to do")
-            return
-
-        dm = self.doc_model
-        result = yield defer.DeferredList([
-                    prepare_work_queue(dm, q)
-                    for q in queues])
-
-        state_docs = [r[1] for r in result]
-        if force:
-            for d in state_docs:
-                d['seq'] = 0
-
-        def_done = defer.Deferred()
-        def q_bit_done(result, q, state_doc):
-            logger.debug('queue reports it is complete: %s', state_doc)
-            q.running = False
-            assert result in (True, False), repr(result)
-            # First check for any other queues which are no longer running
-            # but have a sequence less than ours.
-            still_going = False
-            slowest = True
-            for qlook, sdlook in zip(queues, state_docs):
-                if qlook.running:
-                    still_going = True
-                if qlook is not q and sdlook['seq'] > state_doc['seq']:
-                    slowest = False
-                if qlook is not q and not qlook.running and sdlook['seq'] < state_doc['seq']:
-                    still_going = True
-                    qlook.running = True
-                    process_work_queue(dm, qlook, sdlook, force
-                            ).addCallback(q_bit_done, qlook, sdlook
-                            )
-
-            if not result:
-                # The queue which called us back hasn't actually finished yet...
-                still_going = True
-                q.running = True
-                process_work_queue(dm, q, state_doc, force
-                        ).addCallback(q_bit_done, q, state_doc
-                        )
-            # All done.
-            if not still_going:
-                logger.info("All queues are finished!")
-                def_done.callback(None)
-            else:
-                if slowest:
-                    logger.info("slowest workqueue is %s at seq %d",
-                                q.get_queue_name(), state_doc['seq'])
-
-        for q, state_doc in zip(queues, state_docs):
-            q.running = True
-            process_work_queue(dm, q, state_doc, force
-                    ).addCallback(q_bit_done, q, state_doc
-                    )
-        _ = yield self.doc_model._update_important_views()
-        _ = yield def_done
-        # and we are done!
+        runner = QueueRunner(self.doc_model, self.get_work_queues(),
+                             self.options)
+        return runner.run()
 
     @defer.inlineCallbacks
     def start_retry_errors(self):
@@ -275,6 +214,75 @@ class Pipeline(object):
                 if start_seq == state_doc['raindrop_seq']:
                     break
 
+class QueueRunner(object):
+    def __init__(self, dm, qs, options):
+        self.doc_model = dm
+        self.queues = qs
+        assert qs, "nothing to do?"
+        self.options = options
+        self.state_docs = None # set as we run.
+
+    def _start_q(self, q, sd, def_done):
+        assert not q.running, q
+        q.running = True
+        process_work_queue(self.doc_model, q, sd, self.options.force
+                ).addCallback(self._q_done, q, sd, def_done
+                )
+
+    def _q_done(self, result, q, state_doc, def_done):
+        logger.debug('queue reports it is complete: %s', state_doc)
+        q.running = False
+        assert result in (True, False), repr(result)
+        # First check for any other queues which are no longer running
+        # but have a sequence less than ours.
+        still_going = False
+        slowest = True
+        for qlook, sdlook in zip(self.queues, self.state_docs):
+            if qlook.running:
+                still_going = True
+            if qlook is not q and sdlook['seq'] > state_doc['seq']:
+                slowest = False
+            if qlook is not q and not qlook.running and sdlook['seq'] < state_doc['seq']:
+                still_going = True
+                self._start_q(qlook, sdlook, def_done)
+
+        if not result:
+            # The queue which called us back hasn't actually finished yet...
+            still_going = True
+            self._start_q(q, state_doc, def_done)
+
+        # All done.
+        if not still_going:
+            logger.info("All queues are finished!")
+            def_done.callback(None)
+        else:
+            if slowest:
+                logger.info("slowest workqueue is %s at seq %d",
+                            q.get_queue_name(), state_doc['seq'])
+
+    @defer.inlineCallbacks
+    def run(self, force=None):
+        if force is None:
+            force = self.options.force
+        dm = self.doc_model
+        result = yield defer.DeferredList([
+                    prepare_work_queue(dm, q)
+                    for q in self.queues])
+
+        state_docs = self.state_docs = [r[1] for r in result]
+        if force:
+            for d in state_docs:
+                d['seq'] = 0
+
+        def_done = defer.Deferred()
+        for q, state_doc in zip(self.queues, state_docs):
+            q.running = False
+            self._start_q(q, state_doc, def_done)
+        _ = yield self.doc_model._update_important_views()
+        # and we are done when def_done gets called-back - why can't we
+        # just 'returnValue()' it?  If we try things blow up...
+        _ = yield def_done
+    
 
 class WorkQueue(object):
     # These WorkQueues are very much still a thought-in-progress.
