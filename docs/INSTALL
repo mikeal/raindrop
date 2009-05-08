@@ -36,6 +36,10 @@ optional - if the modules aren't installed a warning will be generated and
 the protocol will simply be disabled
 
 imap over SSL: PyOpenSSL (link?)
+Note for mac users: doing easy_install PyOpenSSL after May 1st, may install
+some badly. It may be a PyOppenSSL 0.9 issue. 0.8 is known to work. Try
+the latest code, but if that does not work, switch to 0.8.
+
 
 skype: Skype4Py (link?)
   easy_install Skype4Py
