@@ -228,37 +228,55 @@ class QueueRunner(object):
         assert not q.running, q
         q.running = True
         process_work_queue(self.doc_model, q, sd, force
-                ).addCallback(self._q_done, q, sd, def_done, force
+                ).addBoth(self._q_done, q, sd, def_done, force
                 )
 
     def _q_status(self):
         lowest = (0xFFFFFFFFFFFF, None)
         highest = (0, None)
+        nfailed = 0
         for qlook, sdlook in zip(self.queues, self.state_docs):
+            if qlook.failed:
+                nfailed += 1
+                continue
             this = sdlook['seq'], qlook.get_queue_name()
             if this < lowest:
                 lowest = this
             if this > highest:
                 highest = this
-        logger.info("fastest queue is %r at %d, slowest is %r at %d",
-                    highest[1], highest[0], lowest[1], lowest[0])
+        behind = highest[0] - lowest[0]
+        msg = "slowest queue is %r at %d (%d behind)" % \
+              (lowest[1], lowest[0], behind)
+        if nfailed:
+            msg += " - %d queues have failed" % nfailed
+        logger.info(msg)
         self.dc_status = reactor.callLater(5, self._q_status)
 
     def _q_done(self, result, q, state_doc, def_done, force):
-        logger.debug('queue reports it is complete: %s', state_doc)
         q.running = False
-        assert result in (True, False), repr(result)
+        failed = isinstance(result, Failure)
+        if failed:
+            logger.error("queue %r failed: %s", state_doc, result)
+            q.failed = True
+        else:
+            logger.debug('queue reports it is complete: %s', state_doc)
+            assert result in (True, False), repr(result)
         # First check for any other queues which are no longer running
         # but have a sequence less than ours.
         still_going = False
+        nerrors = len([tq for tq in self.queues if tq.failed])
         for qlook, sdlook in zip(self.queues, self.state_docs):
             if qlook.running:
                 still_going = True
-            if qlook is not q and not qlook.running and sdlook['seq'] < state_doc['seq']:
+            # only restart queues if stop_on_error isn't specified.
+            if nerrors and self.options.stop_on_error:
+                continue
+            if qlook is not q and not qlook.running and not qlook.failed and \
+               sdlook['seq'] < state_doc['seq']:
                 still_going = True
                 self._start_q(qlook, sdlook, def_done, force)
 
-        if not result:
+        if not failed and not result:
             # The queue which called us back hasn't actually finished yet...
             still_going = True
             self._start_q(q, state_doc, def_done, force)
@@ -283,6 +301,7 @@ class QueueRunner(object):
         self.dc_status = reactor.callLater(5, self._q_status)
         def_done = defer.Deferred()
         for q, state_doc in zip(self.queues, state_docs):
+            q.failed = False
             q.running = False
             self._start_q(q, state_doc, def_done, force)
         _ = yield def_done
