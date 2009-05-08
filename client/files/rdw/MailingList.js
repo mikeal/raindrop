@@ -13,7 +13,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
 
     this.id = this.doc.key[0];
     this.name = this.doc.key[0].split(".")[0];
-    this.title = this.doc.key[1] || '';
+    this.title = this.doc.key[1]; /* this is always either the name or id */
   },
 
   onClick: function(evt) {
