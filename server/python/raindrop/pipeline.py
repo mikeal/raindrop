@@ -181,7 +181,7 @@ class Pipeline(object):
     def start(self, force=None):
         runner = QueueRunner(self.doc_model, self.get_work_queues(),
                              self.options)
-        return runner.run()
+        return runner.run(force)
 
     @defer.inlineCallbacks
     def start_retry_errors(self):
@@ -224,11 +224,11 @@ class QueueRunner(object):
         self.state_docs = None # set as we run.
         self.dc_status = None # a 'delayed call'
 
-    def _start_q(self, q, sd, def_done):
+    def _start_q(self, q, sd, def_done, force):
         assert not q.running, q
         q.running = True
-        process_work_queue(self.doc_model, q, sd, self.options.force
-                ).addCallback(self._q_done, q, sd, def_done
+        process_work_queue(self.doc_model, q, sd, force
+                ).addCallback(self._q_done, q, sd, def_done, force
                 )
 
     def _q_status(self):
@@ -244,7 +244,7 @@ class QueueRunner(object):
                     highest[1], highest[0], lowest[1], lowest[0])
         self.dc_status = reactor.callLater(5, self._q_status)
 
-    def _q_done(self, result, q, state_doc, def_done):
+    def _q_done(self, result, q, state_doc, def_done, force):
         logger.debug('queue reports it is complete: %s', state_doc)
         q.running = False
         assert result in (True, False), repr(result)
@@ -256,12 +256,12 @@ class QueueRunner(object):
                 still_going = True
             if qlook is not q and not qlook.running and sdlook['seq'] < state_doc['seq']:
                 still_going = True
-                self._start_q(qlook, sdlook, def_done)
+                self._start_q(qlook, sdlook, def_done, force)
 
         if not result:
             # The queue which called us back hasn't actually finished yet...
             still_going = True
-            self._start_q(q, state_doc, def_done)
+            self._start_q(q, state_doc, def_done, force)
 
         if not still_going:
             # All done.
@@ -287,7 +287,7 @@ class QueueRunner(object):
         def_done = defer.Deferred()
         for q, state_doc in zip(self.queues, state_docs):
             q.running = False
-            self._start_q(q, state_doc, def_done)
+            self._start_q(q, state_doc, def_done, force)
         _ = yield def_done
         self.dc_status.cancel()
         _ = yield self.doc_model._update_important_views()
