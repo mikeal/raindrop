@@ -6,6 +6,7 @@ import uuid
 
 from twisted.internet import defer, task
 from twisted.python.failure import Failure
+from twisted.internet import reactor
 import twisted.web.error
 
 import logging
@@ -221,6 +222,7 @@ class QueueRunner(object):
         assert qs, "nothing to do?"
         self.options = options
         self.state_docs = None # set as we run.
+        self.dc_status = None # a 'delayed call'
 
     def _start_q(self, q, sd, def_done):
         assert not q.running, q
@@ -229,6 +231,19 @@ class QueueRunner(object):
                 ).addCallback(self._q_done, q, sd, def_done
                 )
 
+    def _q_status(self):
+        lowest = (0xFFFFFFFFFFFF, None)
+        highest = (0, None)
+        for qlook, sdlook in zip(self.queues, self.state_docs):
+            this = sdlook['seq'], qlook.get_queue_name()
+            if this < lowest:
+                lowest = this
+            if this > highest:
+                highest = this
+        logger.info("fastest queue is %r at %d, slowest is %r at %d",
+                    highest[1], highest[0], lowest[1], lowest[0])
+        self.dc_status = reactor.callLater(5, self._q_status)
+
     def _q_done(self, result, q, state_doc, def_done):
         logger.debug('queue reports it is complete: %s', state_doc)
         q.running = False
@@ -236,12 +251,9 @@ class QueueRunner(object):
         # First check for any other queues which are no longer running
         # but have a sequence less than ours.
         still_going = False
-        slowest = True
         for qlook, sdlook in zip(self.queues, self.state_docs):
             if qlook.running:
                 still_going = True
-            if qlook is not q and sdlook['seq'] > state_doc['seq']:
-                slowest = False
             if qlook is not q and not qlook.running and sdlook['seq'] < state_doc['seq']:
                 still_going = True
                 self._start_q(qlook, sdlook, def_done)
@@ -251,14 +263,11 @@ class QueueRunner(object):
             still_going = True
             self._start_q(q, state_doc, def_done)
 
-        # All done.
         if not still_going:
+            # All done.
             logger.info("All queues are finished!")
             def_done.callback(None)
-        else:
-            if slowest:
-                logger.info("slowest workqueue is %s at seq %d",
-                            q.get_queue_name(), state_doc['seq'])
+        # else wait for one of the queues to finish and call us again...
 
     @defer.inlineCallbacks
     def run(self, force=None):
@@ -274,14 +283,14 @@ class QueueRunner(object):
             for d in state_docs:
                 d['seq'] = 0
 
+        self.dc_status = reactor.callLater(5, self._q_status)
         def_done = defer.Deferred()
         for q, state_doc in zip(self.queues, state_docs):
             q.running = False
             self._start_q(q, state_doc, def_done)
-        _ = yield self.doc_model._update_important_views()
-        # and we are done when def_done gets called-back - why can't we
-        # just 'returnValue()' it?  If we try things blow up...
         _ = yield def_done
+        self.dc_status.cancel()
+        _ = yield self.doc_model._update_important_views()
     
 
 class WorkQueue(object):
