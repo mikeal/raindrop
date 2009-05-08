@@ -118,7 +118,7 @@ def install_client_files(whateva, options):
         if not ct and not ignore_unknowns:
             assert ct, "can't guess the content type for '%s'" % path
         data = f.read()
-        fp.get_finger(path).update(data)
+        fp.get_finger(couch_path).update(data)
         attachments[couch_path] = {
             'content_type': ct,
             'data': base64.b64encode(data)
@@ -155,7 +155,7 @@ def install_client_files(whateva, options):
 
         new_prints = fp.get_prints()
         if options.force or design_doc.get('fingerprints') != new_prints:
-            logger.info("client files are different - updating doc")
+            logger.info("client files in %r are different - updating doc", doc_name)
             design_doc['fingerprints'] = new_prints
             return d.saveDoc(design_doc, doc_name)
         logger.debug("client files are identical - not updating doc")
