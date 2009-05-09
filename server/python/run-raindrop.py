@@ -51,6 +51,7 @@ def _process_until_deferred(defd, options):
 
     def do_start():
         # can't use Force or it will just restart each time...
+        state['delayed_call'] = None
         p.start(force=False).addBoth(proc_done)
 
     def defd_fired(result):
@@ -64,13 +65,10 @@ def _process_until_deferred(defd, options):
             result.raiseException()
 
     def proc_done(result):
-        state['delayed_call'] = None
         if state['fired']:
             print "Message pipeline has caught-up..."
             def_done.callback(None)
 
-        print "Message pipeline has finished but tasks are still running; " \
-              "waiting then restarting..."
         dc = reactor.callLater(5, do_start)
         state['delayed_call'] = dc
 
