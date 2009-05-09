@@ -227,6 +227,11 @@ class TwistySkype(object):
             if ok:
                 doc['skype_'+name.lower()] = simple_convert(val, typ)
         doc['skype_id'] = msg._Id
+        # Denormalize the simple chat properties we need later to avoid us
+        # needing to reopen the chat for each message in that chat...
+        # XXX - this may bite us later - what happens when the chat subject
+        # changes? :(  For now it offers serious speedups, so it goes in.
+        doc['skype_chat_friendlyname'] = chat.FriendlyName
         # we include the skype username with the ID as they are unique per user.
         provid = self.get_provid_for_msg(msg)
         pending.append(('msg', 'proto/skype-msg', provid, doc))
@@ -271,16 +276,8 @@ class SkypeConverter(base.SimpleConverterBase):
         ('msg', 'proto/skype-msg'),
     ]
     def simple_convert(self, doc):
-        # We need to open the 'chat' for this Message.  Clearly this is
-        # going to be inefficient...
         proto_id = doc['skype_chatname'].encode('utf8') # hrmph!
-        return self.doc_model.open_document('msg', proto_id,
-                                            'proto/skype-chat'
-                        ).addCallback(self.finish_convert, doc)
-
-    def finish_convert(self, chat_doc, doc):
-        assert chat_doc is not None, "failed to fetch skype chat!"
-        subject = chat_doc['skype_friendlyname']
+        subject = doc['skype_chat_friendlyname']
         return {'from': ['skype', doc['skype_from_handle']],
                 'subject': subject,
                 'body': doc['skype_body'],
