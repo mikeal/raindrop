@@ -365,11 +365,11 @@ def update_apps(whateva):
 
         replacements["subs"] = subs
 
-        return db.openDoc(FILES_DOC
-                    ).addCallback(_save_config, replacements
+        return db.openDoc(FILES_DOC, attachments=True,
+                    ).addCallback(_check_config, replacements
                     )
 
-    def _save_config(doc, replacements):
+    def _check_config(doc, replacements):
         # Find config.js skeleton on disk   
         # we cannot go in a zipped egg...
         root_dir = path_part_nuke(model.__file__, 4)
@@ -385,13 +385,15 @@ def update_apps(whateva):
         data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
         data = data.replace("/*INSERT EXTS HERE*/", replacements["exts"])
 
-        # save config.js in the files.
-        doc["_attachments"]["config.js"] = {
+        new = {
             'content_type': "application/x-javascript; charset=UTF-8",
             'data': base64.b64encode(data)
         }
-
-        return db.saveDoc(doc, FILES_DOC)
+        # save config.js in the files.
+        if doc["_attachments"]["config.js"] != new:
+            logger.info("config.js in %r has changed; updating", doc['_id'])
+            doc["_attachments"]["config.js"] = new
+            return db.saveDoc(doc, FILES_DOC)
 
     replacements = {}
     return db.openView("raindrop!ui!paths", "all"
