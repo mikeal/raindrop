@@ -93,11 +93,15 @@ class CouchDB(paisley.CouchDB):
         return requester(uri, *xtra
             ).addCallback(self.parseResult)
 
-    def openDoc(self, dbName, docId, revision=None, full=False, attachment=""):
+    def openDoc(self, dbName, docId, revision=None, full=False, attachment="",
+                attachments=False):
         # paisley appears to use an old api for attachments?
         if attachment:
             uri = "/%s/%s/%s" % (dbName, docId, quote(attachment))
             return  self.get(uri)
+        # XXX - hack 'attachments' in...
+        if attachments:
+            docId += "?attachments=true"
         return super(CouchDB, self).openDoc(dbName, docId, revision, full)
 
     # This is a potential addition to the paisley API;  It is hard to avoid
@@ -247,6 +251,7 @@ class DocumentModel(object):
         self.db = db
         self._important_views = None # views we update periodically
         self._docs_since_view_update = 0
+        self._def_important_views_done = None
 
     @classmethod
     def build_docid(cls, category, doc_type, provider_id, prov_encoded=True):
@@ -443,9 +448,19 @@ class DocumentModel(object):
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
-        if self._docs_since_view_update > 2000:
-            ds.append(self._update_important_views())
-            self._docs_since_view_update = 0
+
+        def views_done(result):
+            self._def_important_views_done = None
+
+        if self._def_important_views_done is None and \
+           self._need_update_important_views():
+            self._def_important_views_done = self._update_important_views(
+                        ).addCallback(views_done
+                        )
+            
+
+        if self._def_important_views_done is not None:
+            ds.append(self._def_important_views_done)
 
         def return_orig(ignored_result):
             return result
@@ -489,12 +504,12 @@ class DocumentModel(object):
         logger.error("Failed to save attachment (%r): %s", ids, failure)
         failure.raiseException()
 
+    def _need_update_important_views(self):
+        return self._docs_since_view_update > 1000
+
     def _update_important_views(self):
-        # We periodically update all our important views.
-        # This is a hacky implementation - we should use something like
-        # reactor.callLater() so we are updating the views in the "background"
-        # to avoid blocking the protocols.  But for now we block them cos we
-        # suck
+        # Something else periodically updates our important views.
+        self._docs_since_view_update = 0
         if not self._important_views:
             # these keys come from jquery.couch.js
             return self.db.listDoc(startkey="_design", endkey="_design0",
@@ -502,22 +517,43 @@ class DocumentModel(object):
                                    ).addCallback(self._do_update_views)
         return self._do_update_views(None)
 
+    @defer.inlineCallbacks
     def _do_update_views(self, result):
         if result is not None:
             self._important_views = []
             for row in result['rows']:
+                if 'error' in row or 'deleted' in row['value']:
+                    continue
                 for view_name in row['doc']['views']:
                     doc_id = row['id'][len('_design/'):]
                     self._important_views.append((doc_id, view_name))
+                    # We only need one view doc from each doc
+                    break
 
-        dl = []
+        # We could use a DeferredList to run them all in parallel, but
+        # it might make more sense to run them sequentially so we don't
+        # overload the couch while we are still feeding it docs...
+        # (However, each view update can run in parallel - so if we have
+        # lotsa cores, doing more than 1 at a time makes sense...)
+        # As the views are slow we keep some timings and log them at the end...
+        logger.info("important view updates starting.")
+        slowest = 0
+        slowest_info = None, None
+        st = time.time()
         for did, vn in self._important_views:
             logger.debug("updating view %s/%s", did, vn)
+            tst = time.time()
             # limit=0 updates without giving us rows.
-            dl.append(self.open_view(did, vn, limit=0))
-
-        return defer.DeferredList(dl)
-
+            _ = yield self.open_view(did, vn, limit=0)
+            took = time.time() - tst
+            if took > slowest:
+                slowest = took
+                slowest_info = did, vn
+            logger.debug("View in %s updated in %d sec(s)", did, took)
+        all_took = int(time.time() - st)
+        if all_took:
+            logger.info("updated %d views in %d secs - slowest was '%s' at %d secs.",
+                        len(self._important_views), all_took, slowest_info[0], slowest)
 
 _doc_model = None
 
