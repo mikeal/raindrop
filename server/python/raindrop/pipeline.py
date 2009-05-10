@@ -223,6 +223,7 @@ class QueueRunner(object):
         self.options = options
         self.state_docs = None # set as we run.
         self.dc_status = None # a 'delayed call'
+        self.status_msg_last = None
 
     def _start_q(self, q, sd, def_done, force):
         assert not q.running, q
@@ -249,7 +250,9 @@ class QueueRunner(object):
               (lowest[1], lowest[0], behind)
         if nfailed:
             msg += " - %d queues have failed" % nfailed
-        logger.info(msg)
+        if self.status_msg_last != msg:
+            logger.info(msg)
+            self.status_msg_last = msg
         self.dc_status = reactor.callLater(5, self._q_status)
 
     def _q_done(self, result, q, state_doc, def_done, force):
@@ -306,6 +309,7 @@ class QueueRunner(object):
             self._start_q(q, state_doc, def_done, force)
         _ = yield def_done
         self.dc_status.cancel()
+        # update the views now...
         _ = yield self.doc_model._update_important_views()
     
 
@@ -411,7 +415,7 @@ class MessageTransformerWQ(WorkQueue):
                 continue
     
             if (doc_cat, doc_type) not in self.ext.sources:
-                logger.debug("skipping document %r - not one of ours", src_id)
+                #logger.debug("skipping document %r - not one of ours", src_id)
                 continue
     
             target_cat, target_type = self.ext.target_type
