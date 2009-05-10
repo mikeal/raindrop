@@ -32,18 +32,18 @@ rd.conversations = {
       }
 
       couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
-        startkey: ["from", id, "message", 0],
-        endkey: ["from", id, "message", 9999999999],
+        startkey: ["message", "from", id, 0],
+        endkey: ["message", "from", id, 9999999999],
         include_docs: true,
         success: dojo.hitch(this, function(json) {
           //Get the list of message IDs.
           if(json.rows.length) {
             var messageDocIds = [];
             for (var i = 0, row; row = json.rows[i]; i++) {
-              messageDocIds.push(row.value);
+              messageDocIds.push(row.id);
             }
           }
-          
+
           //Load the conversations based on these message IDs.
           if(!messageDocIds.length) {
             return;
