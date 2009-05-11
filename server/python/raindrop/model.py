@@ -524,11 +524,8 @@ class DocumentModel(object):
             for row in result['rows']:
                 if 'error' in row or 'deleted' in row['value']:
                     continue
-                for view_name in row['doc']['views']:
-                    doc_id = row['id'][len('_design/'):]
-                    self._important_views.append((doc_id, view_name))
-                    # We only need one view doc from each doc
-                    break
+                doc_id = row['id'][len('_design/'):]
+                self._important_views.append((doc_id, row['doc']['views']))
 
         # We could use a DeferredList to run them all in parallel, but
         # it might make more sense to run them sequentially so we don't
@@ -540,11 +537,12 @@ class DocumentModel(object):
         slowest = 0
         slowest_info = None, None
         st = time.time()
-        for did, vn in self._important_views:
-            logger.debug("updating view %s/%s", did, vn)
+        for did, vns in self._important_views:
+            logger.debug("updating views in %s", did)
             tst = time.time()
             # limit=0 updates without giving us rows.
-            _ = yield self.open_view(did, vn, limit=0)
+            for vn in vns:
+                _ = yield self.open_view(did, vn, limit=0)
             took = time.time() - tst
             if took > slowest:
                 slowest = took
@@ -552,7 +550,7 @@ class DocumentModel(object):
             logger.debug("View in %s updated in %d sec(s)", did, took)
         all_took = int(time.time() - st)
         if all_took:
-            logger.info("updated %d views in %d secs - slowest was '%s' at %d secs.",
+            logger.info("updated %d view docs in %d secs - slowest was '%s' at %d secs.",
                         len(self._important_views), all_took, slowest_info[0], slowest)
 
 _doc_model = None
