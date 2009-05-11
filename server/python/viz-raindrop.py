@@ -7,6 +7,8 @@ import pygraphviz as pgv
 
 from raindrop import pipeline
 from raindrop.model import get_doc_model
+from raindrop.proc import base
+
 
 import logging
 logging.basicConfig() # so we can see errors in the pipeline loader.
@@ -16,10 +18,9 @@ pipeline.load_extensions(get_doc_model())
 G=pgv.AGraph()
 G.graph_attr['label']='raindrop message pipeline'
 
-for sid, targets in pipeline.depends.iteritems():
-    for target_type in targets:
-        cvtr = pipeline.converters[sid, target_type]
-        fname = cvtr.__class__.__module__.replace('.', '/') + '.py'
-        label = "%s (%s)" % (cvtr.__class__.__name__, fname)
-        G.add_edge(sid, target_type, label=label)
+for ext in pipeline.find_specified_extensions(base.ConverterBase):
+    for sid in ext.sources:
+        fname = ext.__class__.__module__.replace('.', '/') + '.py'
+        label = "%s (%s)" % (ext.__class__.__name__, fname)
+        G.add_edge(sid, ext.target_type, label=label)
 G.draw("pipeline.svg", prog="dot")
