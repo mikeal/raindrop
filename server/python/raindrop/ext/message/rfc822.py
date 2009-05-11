@@ -227,14 +227,7 @@ def extract_preview(body):
     # get rid of blank lines
     lines = [line.strip() for line in lines if line.strip()]
     preview_lines = []
-    
-    # we're going to identify 
-    for i in range(len(lines)-1, -1, -1):
-        line = lines[i]
-        if not line.startswith('>') and line.endswith(':') and lines[i+1].startswith('>'):
-            continue
-        preview_lines.insert(0, line)
-        
+
     for (i, line) in enumerate(lines):
         if not line.startswith('>') and line.endswith(':') and \
             i+1 < len(lines)-1 and lines[i+1].startswith('>'):
