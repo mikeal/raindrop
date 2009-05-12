@@ -106,55 +106,6 @@ def extract_message_ids(message_id_string):
       references.append(ref)
   return references
 
-def extract_message_id(message_id_string, acceptNonDelimitedReferences):
-  # this is a port of my fix for bug 466796, the comments should be ported
-  #  too if we keep this logic...
-  whitespaceEndedAt = None
-  firstMessageIdChar = None
-  foundLessThan = False
-  message_len = len(message_id_string)
-  i = 0
-  while i < message_len:
-    char = message_id_string[i]
-    # do nothing on whitespace
-    if char in r' \r\n\t':
-      pass
-    else:
-      if char == '<':
-        i += 1 # skip over the '<'
-        firstMessageIdChar = i
-        foundLessThan = True
-        break
-      if whitespaceEndedAt is None:
-        whitespaceEndedAt = i
-    i += 1
-
-  # if we hit a '<', keep going until we hit a '>' or the end
-  if foundLessThan:
-    while i < message_len:
-      char = message_id_string[i]
-      if char == '>':
-        # it's valid, update reference, making sure to stop before the '>'
-        return [message_id_string[firstMessageIdChar:i],
-            message_id_string[i+1:]]
-      i += 1
-
-  # if we are at the end of the string, we found some non-whitespace,
-  #  and the caller requested that we accept non-delimited whitespace,
-  #  give them that as their reference.  (otherwise, leave it empty)
-  if acceptNonDelimitedReferences and whitespaceEndedAt:
-    return [message_id_string[whitespaceEndedAt:], '']
-  return [None, '']
-
-def extract_message_ids(message_id_string):
-  references = []
-  while message_id_string:
-    ref, message_id_string = extract_message_id(message_id_string,
-                                                not references)
-    if ref:
-      references.append(ref)
-  return references
-
 def sanitize_attach_name(name):
     if not name:
         return name
