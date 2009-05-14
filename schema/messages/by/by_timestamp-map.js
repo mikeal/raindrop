@@ -2,8 +2,7 @@
 // recent.
 
 function(doc) {
-  if (doc.conversation_id) {
+  if (doc.type == "message" && doc.conversation_id) {
     emit(doc.timestamp, {'conversation_id': doc.conversation_id});
   }
 }
-

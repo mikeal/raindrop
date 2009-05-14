@@ -1,13 +1,16 @@
 dojo.provide("rdw.ext.MessageDebug");
 
-rd.extendDeclared("rdw.Message", {
+dojo.require("rdw.Message");
+
+rd.applyExtension("rdw.Message", {
   after: {
     postCreate: function() {
       //summary: adds debug links to show documents associated with message
       //NOTE: the "this" in this function is the instance of rdw.Message.
 
-      var id = this.doc._id;
-      var idName = this.doc._id.substring(this.doc._id.lastIndexOf("!") + 1, this.doc._id.length);
+      var msgDoc = this.messageBag.message;
+      var id = msgDoc._id;
+      var idName = msgDoc._id.substring(msgDoc._id.lastIndexOf("!") + 1, msgDoc._id.length);
 
       //Create a node to hold the debug links
       var debugNode = dojo.create("div", {
@@ -17,8 +20,8 @@ rd.extendDeclared("rdw.Message", {
       });
 
       //Loop over the sources and add links for each kind.
-      for (var src in this.doc.raindrop_sources) {
-        id = this.doc.raindrop_sources[src][0];
+      for (var src in msgDoc.raindrop_sources) {
+        id = msgDoc.raindrop_sources[src][0];
 
         dojo.create("a", {
           "class": "tag",
