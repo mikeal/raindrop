@@ -1,0 +1,6 @@
+{
+  "_id": "uiext!rdw.ext.messageByContact",
+  "subscriptions": [
+    {"rd-protocol-contact": "rdw.ext.messageByContact"}
+  ]
+}

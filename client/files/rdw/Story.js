@@ -20,7 +20,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
     this.msgs.sort(function (a,b) {return a.timestamp > b.timestamp });
     for (var i = 0, msg; msg = this.msgs[i]; i++) {
       new rdw.Message({
-        doc: msg,
+        doc: msg.message,
         type: first ? "" : "reply"
       }, dojo.create("div", null, this.domNode));
       first = false;

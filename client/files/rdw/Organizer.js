@@ -1,4 +1,6 @@
 dojo.provide("rdw.Organizer");
+
+dojo.require("rd.conversation");
 dojo.require("rdw._Base");
 dojo.require("rdw.MailingList");
 
@@ -72,14 +74,8 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   },
 
   showHome: function() {
-    couch.db("raindrop").view("raindrop!messages!by/_view/by_timestamp", {
-      limit: 30,
-      include_docs: false, // the timestamp view includes conversation ids in the value
-      descending: true,
-      success: function(json) {
-        dijit.byId("Stories").docs(json.rows);
-      }
+    rd.conversation.byTimeStamp(30, function(conversations) {
+      dijit.byId("Stories").conversations(conversations);
     });
   }
-
 });

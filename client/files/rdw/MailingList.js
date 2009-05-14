@@ -1,4 +1,7 @@
 dojo.provide("rdw.MailingList");
+
+dojo.require("rd.conversation");
+
 dojo.require("rdw._Base");
 
 dojo.declare("rdw.MailingList", [rdw._Base], {
@@ -33,11 +36,18 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     couch.db("raindrop").view("raindrop!messages!by/_view/by_mailing_list", {
       keys: [id],
       limit: 30,
-      include_docs: true,
       success: function(json) {
-        dijit.byId("Stories").docs(json.rows);
+        //Get conversation IDs.
+        var convIds = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          convIds.push(row.value.conversation_id);
+        }
+
+        //Load up conversations and give to Stories
+        rd.conversation(convIds, function(conversations) {
+          dijit.byId("Stories").conversations(conversations);
+        });
       }
     });
   }
-
 });
