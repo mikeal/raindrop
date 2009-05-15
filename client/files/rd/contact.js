@@ -12,12 +12,17 @@ dojo.mixin(rd.contact, {
   _store: [],
   _byContact: {},
   _byIdty: {},
+  _listStatus: "unfetched",
 
   list: function(/*Function*/callback, /*Function?*/errback) {
-    //summary: returns a list of contacts. Only has the contact documents,
-    //it does not contain the consolidated identities for each contact.
-    //Use get() to get a consolidated contact.
-    callback(this._store);
+    //summary: returns a list of all contacts with their identities loaded.
+    if (this._listStatus == "done") {
+      callback(this._store);
+    } else {
+      this._loaded = false;
+      this._listStatus = "needFetch";
+      this.list.apply(this, arguments);
+    }
   },
 
   get: function(/*String|Array*/contactId, /*Function*/callback, /*Function?*/errback) {
@@ -91,7 +96,7 @@ dojo.mixin(rd.contact, {
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
-          this.error = new Error("no contacts");
+          this._error = new Error("no contacts");
           this._onload();
         } else {
           for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
@@ -103,7 +108,7 @@ dojo.mixin(rd.contact, {
         }
       }),
       error: dojo.hitch(this, function(err) {
-        this.error = err;
+        this._error = err;
         this._onload();
       })      
     });
@@ -116,7 +121,7 @@ dojo.mixin(rd.contact, {
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
-          this.error = new Error("no contacts");
+          this._error = new Error("no contacts");
           this._onload();
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
@@ -134,10 +139,16 @@ dojo.mixin(rd.contact, {
             }
             byIdty.push(row.key[0]);
           }
-          this._onload();
+
+          if (this._listStatus == "needFetch") {
+            this._fetchAllIdentities();
+          } else {
+            this._onload();
+          }
         }
       }),
       error: dojo.hitch(this, function(err) {
+        this._error = err;
         this._onload();
       })
     });
@@ -209,6 +220,32 @@ dojo.mixin(rd.contact, {
         callback(ret);
       }),
       errback
+    );
+  },
+  
+  _fetchAllIdentities: function() {
+    //summary: fetches all the identities for all the contacts. Normally
+    //a response to a rd.contact.list() call.
+    
+    //Get the list of contactIds that still need to be fetched.
+    var contactIds = [];
+    for (var i = 0, contact; contact = this._store[i]; i++) {
+      if (!contact.identities) {
+        contactIds.push(contact.contact_id);
+      }
+    }
+
+    //Load the identities.
+    this._loadIdtys(
+      contactIds,
+      dojo.hitch(this, function(contacts) {
+        this._listStatus = "done";
+        this._onload();
+      }),
+      dojo.hitch(this, function(err) {
+          this._error = err;
+          this._onload();
+      })
     );
   }
 });

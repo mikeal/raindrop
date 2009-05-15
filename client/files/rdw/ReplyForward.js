@@ -1,6 +1,6 @@
 dojo.provide("rdw.ReplyForward");
 
-dojo.require("rdw.ReplyForward");
+dojo.require("rdw.QuickCompose");
 
 dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   //Valid replyTypes: "reply" and "forward"

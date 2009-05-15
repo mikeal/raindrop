@@ -4,25 +4,27 @@ dojo.require("rdw._Base");
 dojo.require("rdw.Story");
 
 dojo.declare("rdw.Stories", [rdw._Base], {
-  templateString: '<ol id="Stories"></ol>',
+  //Array of conversations to show.
+  //Warning: this is a prototype property,
+  //be sure to always set it on the instance.
+  conversations: [],
 
-  // docs is called w/ a set of document IDs which correspond to
-  // the messages that we want to display.  But we want to display
-  // them in context, so we need to find the set of related
-  // mesages which provide the 'story'.
-  conversations: function(conversations) {
-    // Remove existing message widgets from the presentation.
-    rd.query(".Message", this.domNode).forEach(function(message) {
-      rd.destroy(message);
-    });
+  templateString: '<ol class="Stories"></ol>',
+
+  postCreate: function() {
+    //summary: dijit lifecycle method.
+
+    //Use _supportingWidgets to track child widgets
+    //so that they get cleaned up automatically by dijit destroy.
+    this._supportingWidgets = [];
 
     //Use a document fragment for best performance
     //and load up each story widget in there.
     var frag = dojo.doc.createDocumentFragment();
-    for (var i = 0, conv; conv = conversations[i]; i++) {
-      new rdw.Story({
+    for (var i = 0, conv; conv = this.conversations[i]; i++) {
+      this._supportingWidgets.push(new rdw.Story({
          msgs: conv
-       }, dojo.create("div", null, frag));        
+       }, dojo.create("div", null, frag)));        
     }
 
     //Inject nodes all at once for best performance.

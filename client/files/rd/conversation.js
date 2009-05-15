@@ -105,8 +105,7 @@ dojo._mixin(rd.conversation, {
 
   byContact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
-    //a given contact. Assumes there is a rdw.Stories widget
-    //in the page to show the messages.
+    //a given contact.
 
     //Get the list of identities for the user.
     rd.contact.get(contactId, dojo.hitch(this, function(contact) {

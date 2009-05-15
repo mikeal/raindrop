@@ -47,7 +47,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
-    this.showHome();
+    rd.pub("rd-protocol-home");
 
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
@@ -56,26 +56,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
       success: dojo.hitch(this, function(json) {
         this.mailingLists(json.rows);
       })
-    });
-  },
-
-  onClick: function(evt) {
-    //summary: handles click delegation when clicking on list of links.
-    var target = evt.target;
-    if (target.href) {
-      target = target.href.split("#")[1];
-      if (target) {
-        dojo.publish("rd-nav-" + target);
-        dojo.stopEvent(evt);
-        if (target == "home")
-          this.showHome();
-      }
-    }
-  },
-
-  showHome: function() {
-    rd.conversation.byTimeStamp(30, function(conversations) {
-      dijit.byId("Stories").conversations(conversations);
     });
   }
 });

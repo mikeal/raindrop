@@ -1,8 +1,9 @@
 ({
   closeIcon: "X",
-  reply: "reply",
+  contacts: "Contacts",
   forward: "forward",
-  send: "send",
   home: "Home",
+  reply: "reply",
+  send: "send",
   sent: "Sent"
 })

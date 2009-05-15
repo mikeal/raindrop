@@ -17,7 +17,9 @@
     debugAtAllCosts: true, //comment  this out for faster loading.
     require: ["rd", "couch", "dojo.parser"],
     parseOnLoad: true,
-    baseUrl: "./",
+    //base is just bogus, just want paths to resolve to local html directory
+    //for app-specific files.
+    baseUrl: "./base/",
     couchUrl: prefix.split("/", 3).join("/"),
     modulePaths: {
       /*INSERT PATHS HERE*/

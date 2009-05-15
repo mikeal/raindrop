@@ -119,7 +119,7 @@ dojo.mixin(rd.identity, {
         this._onload();
       }),
       error: dojo.hitch(this, function(err) {
-        this.error = err;
+        this._error = err;
         this._onload();
       })
     });

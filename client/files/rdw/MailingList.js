@@ -25,7 +25,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     if (target.href) {
       target = target.href.split("#")[1];
       if (target) {
-        dojo.publish("rd-nav-" + target);
+        dojo.publish("rd-protocol-" + target);
         dojo.stopEvent(evt);
         this.show(target);
       }
@@ -43,9 +43,9 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
           convIds.push(row.value.conversation_id);
         }
 
-        //Load up conversations and give to Stories
+        //Load up conversations and ask for them to be displayed.
         rd.conversation(convIds, function(conversations) {
-          dijit.byId("Stories").conversations(conversations);
+          rd.pub("rd-display-conversations", conversations);
         });
       }
     });
