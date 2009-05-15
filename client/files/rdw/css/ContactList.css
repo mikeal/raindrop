@@ -1,0 +1,62 @@
+.ContactList,
+.ContactList ul {
+  list-style: none;
+}
+
+.ContactList .hidden {
+  display: none;
+}
+
+.ContactList .contact {
+  margin-bottom: 2ex;
+  text-decoration: none;
+  font-weight: bold;
+  font-family: Arial Black, Gadget, sans-serif;
+  color: #44617E;
+}
+
+.ContactList .photoSection {
+  display: inline-block;
+  width: 50px;
+  height: 50px;
+  vertical-align: top;
+}
+
+.ContactList .contact .photo {
+  width: 48px;
+  height: 48px;
+  border: 1px solid transparent;
+}
+
+
+.ContactList .contactDetails {
+  display: inline-block;
+  padding-left: 0.5em;
+}
+
+.ContactList .identities {
+  padding: 0;
+}
+
+.ContactList .contact .identity {
+  margin-bottom: 1ex;
+  font-size: x-small;
+  font-family: Lucida Console, Monaco, monospace;
+  color: #617B95;
+}
+
+.ContactList .contact .identity .photoSection {
+  width: 26px;
+  height: 26px;
+}
+
+.ContactList .contact .identity .photo {
+  width: 24px;
+  height: 24px;
+}
+
+.ContactList .identityDetails {
+  display: inline-block;
+  padding: 0;
+}
+
