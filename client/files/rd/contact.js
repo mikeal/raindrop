@@ -91,27 +91,37 @@ dojo.mixin(rd.contact, {
 
   _load: function() {
     //summary: rd._api trigger for loading api data.
-    couch.db("raindrop").view("raindrop!contacts!all/_view/all", {
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        //Error out if no rows return.
-        if(!json.rows.length) {
-          this._error = new Error("no contacts");
-          this._onload();
-        } else {
-          for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-            this._store.push(doc);
-            this._store[row.key] = doc;
-          }
-
-          this._loadIdtyMapping();
-        }
-      }),
-      error: dojo.hitch(this, function(err) {
-        this._error = err;
+    if(this._store.length) {
+      //Already retrieved the contacts and identity/contact mappings.
+      //Just need to make sure we do not need to load all identities.
+      if (this._listStatus == "needFetch") {
+        this._fetchAllIdentities();
+      } else {
         this._onload();
-      })      
-    });
+      }
+    } else {
+      couch.db("raindrop").view("raindrop!contacts!all/_view/all", {
+        include_docs: true,
+        success: dojo.hitch(this, function(json) {
+          //Error out if no rows return.
+          if(!json.rows.length) {
+            this._error = new Error("no contacts");
+            this._onload();
+          } else {
+            for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+              this._store.push(doc);
+              this._store[row.key] = doc;
+            }
+  
+            this._loadIdtyMapping();
+          }
+        }),
+        error: dojo.hitch(this, function(err) {
+          this._error = err;
+          this._onload();
+        })      
+      });
+    }
   },
 
   _loadIdtyMapping: function() {
