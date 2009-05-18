@@ -1,0 +1,46 @@
+Eventually we want schema definitions to live in the couch, along
+with other fancy things, such as validators etc.
+
+But for now, this is where the schema are defined.
+
+rd/msg/body
+-----------
+** Notes **
+This is named 'body' in anticipation of splitting the envelope related
+fields into their own schema.
+
+** Fields **
+from:  An identity ID (presumably initially an 'email' one, but other
+extensions may replace with something else.)
+
+body: the body
+
+body_preview:
+
+rd/msg/rfc822:
+--------------
+** Notes **
+A schema designed to store a raw RFC822 stream
+
+** Fields **
+
+rfc822: attachment holding a raw rfc822 message stream.
+
+rd/msg/email:
+--------------
+** Notes **
+A deconstructed email message.  Note that body and envelope information
+isn't stored here - extensions emiting one of these schemas will almost
+certainly also emit a rd/msg/body schema which should be used.
+
+** Fields **
+
+headers: a dictionary holding all headers.  Header names have been lower-cased
+and duplicate headers concatenated
+
+text: only exists for non-multipart messages with a main content-type of text.
+
+multipart_info: A list of dictionaries, with each element having elements:
+  name: The name of the attachment which holds the data for this part.
+  headers: A dictionary holding the headers for this sub-part.
+  content_type: The type of the content stored in the attachment

@@ -1,7 +1,7 @@
 import sys
 import logging
 import time
-from urllib import urlencode, quote
+from urllib import urlencode, quote, unquote
 import base64
 
 import twisted.web.error
@@ -322,6 +322,72 @@ class DocumentModel(object):
                          result)
         return result
 
+    def get_doc_id_for_schema_item(self, si):
+        key_type, key_val = si['rd_key']
+        enc_key_val = encode_provider_id(json.dumps(key_val))
+        key_part = "%s.%s" % (key_type, enc_key_val)
+        ext_id = self.quote_id(si['ext_id'])
+        if si.get('schema_id'):
+            sch_id = self.quote_id(si['schema_id'])
+        else:
+            sch_id = ''
+        bits = ['rc', key_part, ext_id, sch_id]
+        return "!".join(bits)
+
+    def create_schema_items(self, item_defs):
+        docs = []
+        for si in item_defs:
+            doc = {}
+            if 'items' in si:
+                doc.update(si['items'])
+            else:
+                # No items == no schema!
+                assert si.get('schema_id') is None, si
+            docs.append(doc)
+            if 'id' in si:
+                id = si['_id']
+                # Only look for '_rev' if they supplied '_id'
+                if '_rev' in si:
+                    doc['_rev'] = si['_rev']
+            else:
+                id = self.get_doc_id_for_schema_item(si)
+            doc['_id'] = id
+            doc['rd_key'] = si['rd_key']
+            rd_source = si.get('rd_source')
+            if rd_source:
+                doc['rd_source'] = rd_source
+            doc['rd_ext_id'] = si['ext_id']
+            # Always explicitly write a null for the schema if its missing...
+            doc['rd_schema_id'] = si.get('schema_id')
+            if 'confidence' in si:
+                doc['_rd_schema_confidence'] = si['confidence']
+
+        attachments = self._prepare_attachments(docs)
+        logger.debug('create_raw_documents saving %d docs', len(docs))
+        return self.db.updateDocuments(docs
+                    ).addCallback(self._cb_saved_docs, item_defs, attachments
+                    )
+
+    @defer.inlineCallbacks
+    def open_schemas(self, rd_key, schema_id):
+        key_type, key_val = rd_key
+        enc_key_val = encode_provider_id(json.dumps(key_val))
+        key_part = "%s.%s" % (key_type, enc_key_val)
+        sk = "rc!" + key_part + "!"
+        ek = sk + u"\x9999".encode('utf8')
+
+        ret = []
+        result = yield self.db.listDoc(startkey=sk, endkey=ek, include_docs=True)
+        for r in result['rows']:
+            _, _, ext, sch_id = r['id'].split(4)
+            if sch_id == schema_id:
+                ret.append(r['doc'])
+        defer.returnValue(ret)
+
+    def open_schema_attachment(self, src, attachment):
+        "A function to abstract document storage requirements away..."
+        return self.open_attachment(src['_id'], attachment)
+
     def _prepare_raw_doc(self, account, doc, doc_cat, doc_type, provid):
         docid = self.build_docid(doc_cat, doc_type, encode_provider_id(provid))
         # practicality beats purity - we may need to update a raw doc,
@@ -433,18 +499,22 @@ class DocumentModel(object):
             logger.error("Server error response is %s", failure.value.response)
             failure.raiseException()
         
+        defs = [None] * len(docs)
         return self.db.updateDocuments(docs,
-                    ).addCallback(self._cb_saved_docs, attachments
+                    ).addCallback(self._cb_saved_docs, defs, attachments
                     ).addErrback(log_error_info)
 
-    def _cb_saved_docs(self, result, attachments):
+    def _cb_saved_docs(self, result, item_defs, attachments):
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
         logger.debug("saved %d documents", len(result))
         self._docs_since_view_update += len(result)
         ds = []
-        for dinfo, dattach in zip(result, attachments):
+        for dinfo, dattach, item_def in zip(result, attachments, item_defs):
             if 'error' in dinfo:
-                raise DocumentSaveError(dinfo)
+                # If no 'schema_id' was specified then this is OK - the
+                # extension is just noting the ID exists and it already does.
+                if item_def and item_def.get('rd_schema_id') is not None:
+                    raise DocumentSaveError(dinfo)
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))

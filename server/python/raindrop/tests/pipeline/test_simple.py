@@ -12,15 +12,11 @@ logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
     simple_exts = [
-            'raindrop.proto.test.TestConverter',
-            'raindrop.ext.message.rfc822.RFC822Converter',
-            'raindrop.ext.message.email.EmailConverter',
-            'raindrop.ext.message.message.MessageAnnotator'
+            'raindrop.proto.test.test_converter',
+            'raindrop.ext.message.rfc822.rfc822_converter',
+            'raindrop.ext.message.rfc822.email_converter',
         ]
-    extra_exts = [
-            'raindrop.ext.message.message.MessageTagAggregator',
-    ]
-    
+
     def get_pipeline(self):
         opts = FakeOptions()
         dm = get_doc_model()
@@ -42,20 +38,19 @@ class TestPipeline(TestPipelineBase):
         test_proto.test_next_convert_fails = False
 
         def check_targets_last(lasts_by_seq, target_types):
-            docs = [row['doc'] for row in lasts_by_seq]
-            db_types = set(doc['type'] for doc in docs)
+            docs = [row['doc'] for row in lasts_by_seq if row['doc']['_id'].startswith('rc!')]
+            db_types = set(doc['rd_schema_id'] for doc in docs)
             self.failUnlessEqual(db_types, target_types)
             return docs
 
         def check_targets(result, target_types):
             # Our targets should be the last written
-            return self.get_last_by_seq(len(target_types),
+            return self.get_last_by_seq(len(target_types)*2,
                         ).addCallback(check_targets_last, target_types
                         )
 
-        targets = set(('raw/message/rfc822', 'anno/tags', 'message', 'raw/message/email'))
-        for e in self.simple_exts:
-            targets.add('workqueue!msg!' + e)
+        targets = set(('rd/msg/body', 'rd/msg/email', 'rd/msg/flags',
+                       'rd/msg/rfc822', 'rd/msg/test/raw'))
         dm = get_doc_model()
         return dm.open_document('msg', '0', 'proto/test'
                 ).addCallback(self.process_doc, self.simple_exts
@@ -69,12 +64,12 @@ class TestPipeline(TestPipelineBase):
 
         def check_targets_same(lasts, targets_b4):
             # Re-processing should not have modified the targets in any way.
-            db_ids = set(row['id'] for row in lasts)
+            db_ids = set(row['id'] for row in lasts if row['id'].startswith('rc!'))
             expected = set(doc['_id'] for doc in targets_b4)
             self.failUnlessEqual(db_ids, expected)
 
         def check_nothing_done(whateva, targets_b4):
-            return self.get_last_by_seq(len(targets_b4),
+            return self.get_last_by_seq(len(targets_b4)*2,
                         ).addCallback(check_targets_same, targets_b4
                         )
 
@@ -90,21 +85,7 @@ class TestPipeline(TestPipelineBase):
         return self.test_one_step(
                 ).addCallback(do_it_again
                 )
-        
 
-    def test_all_steps(self):
-        def check_last_doc(lasts):
-            self.failUnlessEqual(lasts[0]['id'],
-                                 'workqueue!msg!raindrop.ext.message.message.MessageTagAggregator')
-            self.failUnless(lasts[1]['id'].endswith("!aggr/tags"), lasts)
-
-        test_proto.test_next_convert_fails = False
-        p = self.get_pipeline()
-        p.options.exts = self.simple_exts + self.extra_exts
-        return p.start(
-                ).addCallback(lambda whateva: self.get_last_by_seq(2)
-                ).addCallback(check_last_doc
-                )
 
 class TestErrors(TestPipelineBase):
     def test_error_stub(self):

@@ -96,20 +96,22 @@ def simple_convert(str_val, typ):
 
 
 class TwistySkype(object):
+    # The 'id' of this extension
+    # XXX - should be managed by our caller once these 'protocols' become
+    # regular extensions.
+    rd_extension_id = 'proto.skype'
     def __init__(self, account, conductor):
         self.account = account
         self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
         self.skype = Skype4Py.Skype()
 
-    def get_provid_for_chat(self, chat):
-        return chat.Name.encode('utf8') # hrmph!
+    def get_rdkey_for_chat(self, chat):
+        return ('skype-chat', chat.Name.encode('utf8')) # hrmph!
 
-    def get_provid_for_msg(self, msg):
-        return "%s-%d" % (self.account.details['username'], msg._Id)
-
-    def get_provid_for_user(self, user):
-        return user.Handle
+    def get_rdkey_for_msg(self, msg):
+        return ('skype-msg',
+                "%s-%d" % (self.account.details['username'], msg._Id))
 
     def attach(self):
         logger.info("attaching to skype...")
@@ -168,7 +170,6 @@ class TwistySkype(object):
         all_keys = [(chatname, None)]
         all_keys.extend((chatname, mid) for mid in msgs_by_id.keys())
         seen_chats = set([tuple(row['key']) for row in result['rows']])
-        add_bulk = [] # we bulk-update these at the end!
         remaining = set(all_keys)-set(seen_chats)
         # we could just process the empty list as normal, but the logging of
         # an info when we do have items is worthwhile...
@@ -204,7 +205,8 @@ class TwistySkype(object):
                             ).addCallback(self._cb_got_msg_props, chat, msg, tow)
 
         if tow:
-            yield self.doc_model.create_raw_documents(self.account, tow)
+            yield self.doc_model.create_schema_items(tow)
+
         logger.debug("finished processing chat %r", chat.Name)
 
     def _cb_got_chat_props(self, results, chat, pending):
@@ -217,8 +219,11 @@ class TwistySkype(object):
         # 'Name' is a special case that doesn't come via a prop.  We use
         # 'chatname' as that is the equiv attr on the messages themselves.
         doc['skype_chatname'] = chat.Name
-        provid = self.get_provid_for_chat(chat)
-        pending.append(('msg', 'proto/skype-chat', provid, doc))
+        rdkey = self.get_rdkey_for_chat(chat)
+        pending.append({'rd_key' : rdkey,
+                        'ext_id': self.rd_extension_id,
+                        'schema_id': 'rd/msg/skypechat/raw',
+                        'items': doc})
 
     def _cb_got_msg_props(self, results, chat, msg, pending):
         logger.debug("got message properties for %s", msg._Id)
@@ -233,164 +238,126 @@ class TwistySkype(object):
         # changes? :(  For now it offers serious speedups, so it goes in.
         doc['skype_chat_friendlyname'] = chat.FriendlyName
         # we include the skype username with the ID as they are unique per user.
-        provid = self.get_provid_for_msg(msg)
-        pending.append(('msg', 'proto/skype-msg', provid, doc))
+        rdkey = self.get_rdkey_for_msg(msg)
+        pending.append({'rd_key' : rdkey,
+                        'ext_id': self.rd_extension_id,
+                        'schema_id': 'rd/msg/skypemsg/raw',
+                        'items': doc})
 
     # friends...
     def _cb_got_friends(self, friends):
         logger.debug("skype has %d friends(s) total", len(friends))
 
-        def check_identity(doc, friend):
-            fhandle = friend._Handle
-            # See if we have an existing contact - if so, update it.
-            if doc is None:
-                new_doc = {'identity_id': ['skype', fhandle],
-                          }
-                # XXX - needs refactoring so each protocol doesn't know this,
-                # the 'provider_id' is currently a hack of 'proto/id'
-                prov_id = 'skype/%s' % fhandle
-                dinfos = [('id', 'skype', prov_id, new_doc)]
-                logger.info('creating new doc for %r', fhandle)
-                return self.doc_model.create_raw_documents(self.account, dinfos)
-            else:
-                logger.debug('existing contact %r is up to date', fhandle)
-                return None
+        schemas = []
+        for friend in friends:
+            # Simply emit a document with a 'null' schema - that is
+            # just an 'assertion' the identity exists - the framework
+            # will take care of handling the fact it may already exist.
+            rdkey = ('identity', ('skype', friend._Handle))
+            item = rdkey, self.rd_extension_id, 'rd/identity/raw', None, None
+            schemas.append({'rd_key' : rdkey,
+                            'ext_id': self.rd_extension_id})
+        return self.doc_model.create_schema_items(schemas)
 
-        def gen_friend_checks():
-            for friend in friends:
-                prov_id = 'skype/%s' % friend._Handle
-                yield self.doc_model.open_document('id', prov_id, 'skype'
-                    ).addCallback(check_identity, friend,
-                    )
-            logger.info("skype has finished processing all friends")
-
-        return self.conductor.coop.coiterate(gen_friend_checks())
-
-
-# A 'converter' - takes a proto/skype-msg as input and creates a
-# 'message' as output (some other intermediate step might end up more
-# appopriate)
-class SkypeConverter(base.SimpleConverterBase):
-    target_type = 'msg', 'message'
-    sources = [
-        ('msg', 'proto/skype-msg'),
-    ]
-    def simple_convert(self, doc):
-        proto_id = doc['skype_chatname'].encode('utf8') # hrmph!
+# A 'converter' - takes a rd/msg/proto/skype-msg as input and creates various
+# schema outputs for that message - specifically 'body' and 'conversation'
+@base.raindrop_extension('rd/msg/skypemsg/raw')
+def skype_converter(doc):
         subject = doc['skype_chat_friendlyname']
-        return {'from': ['skype', doc['skype_from_handle']],
+        # Currently 'body' also defines 'envelope' type items
+        bdoc = {'from': ['skype', doc['skype_from_handle']],
                 'subject': subject,
                 'body': doc['skype_body'],
                 'body_preview': doc['skype_body'][:140],
-                'conversation_id': doc['skype_chatname'],
                 'timestamp': doc['skype_timestamp'], # skype's works ok here?
                 }
+        emit_schema('rd/msg/body', bdoc)
+        # and a conversation schema
+        cdoc = {'conversation_id': doc['skype_chatname']}
+        emit_schema('rd/msg/conversation', cdoc)
 
-# An identity 'converter' for skype...
-class SkypeRawConverter(base.SimpleConverterBase):
-    target_type = 'id', 'skype/raw'
-    sources = [('id', 'skype')]
+    
+_skype_id_converter_skype = None
 
-    def __init__(self, *args, **kw):
-        super(SkypeRawConverter, self).__init__(*args, **kw)
-        self.skype = Skype4Py.Skype()
-        self.attached = False
+@base.raindrop_extension('rd/identity/raw')
+def skype_id_converter(doc):
+    typ, (id_type, id_id) = doc['_rd_key']
+    assert typ=='identity' # Must be an 'identity' to have this schema type!
+    if id_type != 'skype':
+        # Not a skype ID.
+        return
+    # Is a skype ID - attach to skype and process it.
+    global _skype_id_converter_skype
+    if _skype_id_converter_skype is None:
+        _skype_id_converter_skype = Skype4Py.Skype()
+        _skype_id_converter_skype.Attach()
+    s = _skype_id_converter_skype
 
-    def _get_skype(self):
-        # *sob* - this is painful as attach may block for a very long time :(
-        if self.attached:
-            return self.skype
-        def return_skype(result):
-            self.attached = True
-            return self.skype
-        return threads.deferToThread(self.skype.Attach
-                    ).addCallback(return_skype
-                    )
+    user = skype.User(id_id)
+    props = {}
+    for name, typ in USER_PROPS:
+        val = user._Property(name)
+        props['skype_'+name.lower()] = simple_convert(val, typ)
 
-    def _fetch_user_info(self, skype, doc):
-        # Called in a thread so we can block...
-        proto, iid = doc['identity_id']
-        assert proto=='skype'
-        user = skype.User(iid)
-        props = {}
-        for name, typ in USER_PROPS:
-            val = user._Property(name)
-            props['skype_'+name.lower()] = simple_convert(val, typ)
-
-        # XXX - this sucks - the ID things needs more thought - does it
-        # really need to be carried forward?
-        props['identity_id'] = doc['identity_id']
-
-        # Avatars...
-        # for now just attempt to get one avatar for this user...
-        avfname = tempfile.mktemp(".jpg", "raindrop-skype-avatar")
+    # Avatars...
+    # for now just attempt to get one avatar for this user...
+    avfname = tempfile.mktemp(".jpg", "raindrop-skype-avatar")
+    try:
         try:
+            user.SaveAvatarToFile(avfname)
+            # apparently the avatar was saved...
+            with open(avfname, "rb") as f:
+                data = f.read()
+        finally:
+            # apparently skype still creates a 0-byte file when there
+            # are no avatars...
             try:
-                user.SaveAvatarToFile(avfname)
-                # apparently the avatar was saved...
-                with open(avfname, "rb") as f:
-                    data = f.read()
-            finally:
-                # apparently skype still creates a 0-byte file when there
-                # are no avatars...
-                try:
-                    os.unlink(avfname)
-                except os.error, why:
-                    logger.warning('failed to remove avatar file %r: %s',
-                                   avfname, why)
-            logger.debug("got an avatar for %r", iid)
-            # the literal '1' reflects the 1-based indexing of skype..
-            attachments = {'avatar1' :
-                                {'content_type': 'image/jpeg',
-                                 'data': data,
-                                }
-                           }
-            props['_attachments'] = attachments
-        except Skype4Py.errors.ISkypeError, why:
-            # apparently:
-            # invalid 'avatar' index: [Errno 114] GET Invalid avatar
-            # no avatar at all: [Errno 122] GET Unable to load avatar
-            if why[0] in (114, 122):
-                logger.debug("friend %r has no avatar (%s)", iid, why)
-            else:
-                logger.warning("Cannot save avatar for skype user %s", iid)
-        return props
+                os.unlink(avfname)
+            except os.error, why:
+                logger.warning('failed to remove avatar file %r: %s',
+                               avfname, why)
+        logger.debug("got an avatar for %r", iid)
+        # the literal '1' reflects the 1-based indexing of skype..
+        attachments = {'avatar1' :
+                            {'content_type': 'image/jpeg',
+                             'data': data,
+                            }
+                       }
+        props['_attachments'] = attachments
+        has_avatar = True
+    except Skype4Py.errors.ISkypeError, why:
+        has_avatar = False
+        # apparently:
+        # invalid 'avatar' index: [Errno 114] GET Invalid avatar
+        # no avatar at all: [Errno 122] GET Unable to load avatar
+        if why[0] in (114, 122):
+            logger.debug("friend %r has no avatar (%s)", iid, why)
+        else:
+            logger.warning("Cannot save avatar for skype user %s", iid)
 
-    def simple_convert(self, doc):
-        def return_props(ret, props):
-            return props
+    did = emit_schema('rd/identity/skype', props)
 
-        def fetch(skype):
-            return threads.deferToThread(self._fetch_user_info, skype, doc)
+    # emit one for the normalized identity schema
+    props = {
+            'name' : user.DisplayName or user.FullName,
+            'nickname' : user._Handle
+    }
+    user_homepage = user.Homepage
+    if user_homepage:
+        props['url'] = user_homepage
 
-        return defer.maybeDeferred(self._get_skype
-                ).addCallback(fetch
-                )
+    if has_avatar:
+        props['image'] = '/%s/avatar1' % self.doc_model.quote_id(did)
+    emit_schema('rd/identity', props)
 
-# The intent of this class is a 'union' of the useful fields we might want...
-class SkypeBakedConverter(base.SimpleConverterBase):
-    target_type = 'id', 'identity'
-    sources = [('id', 'skype/raw')]
-    def simple_convert(self, doc):
-        ret = {
-            'name' : doc['skype_displayname'] or doc['skype_fullname'],
-            'nickname' : doc['identity_id'][1],
-            'url' : doc['skype_homepage'],
-        }
-
-        if '_attachments' in doc:
-            assert 'avatar1' in doc['_attachments'], doc
-            ret['image'] = '/%s/avatar1' % self.doc_model.quote_id(doc['_id'])
-
-        ret['identity_id'] = doc['identity_id']
-        return ret
+    # and finally emit lots of other raw identities we can deduce for this
+    # user.
 
 # An 'identity spawner' skype/raw as input and creates a number of identities.
-class SkypeIdentitySpawner(base.IdentitySpawnerBase):
-    source_type = 'id', 'skype/raw'
-    def get_identity_rels(self, src_doc):
-        return [r for r in self._gen_em(src_doc)]
-
+# A slightly different extension point, as we do some higher-level contacts
+# work with the result schemas.
+@base.raindrop_identity_extension('rd/identity/skype')
+def skype_id_converter(doc):
     def _gen_em(self, props):
         # the primary 'skype' one first...
         yield props['identity_id'], None
@@ -418,11 +385,8 @@ class SkypeIdentitySpawner(base.IdentitySpawnerBase):
         # displays the number as a 'home' number...
         if props.get('skype_onlinestatus')=='SKYPEOUT':
             yield ('phone', props['identity_id'][1]), 'home'
-
-    def get_default_contact_props(self, src_doc):
-        return {
-            'name': src_doc['skype_displayname'] or src_doc['skype_fullname'],
-        }
+    for idinfo in _gen_em(doc):
+        emit_identity(idinfo)
 
 
 class SkypeAccount(base.AccountBase):

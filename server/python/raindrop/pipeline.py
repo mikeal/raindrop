@@ -2,12 +2,14 @@
 form to their most useful form.
 """
 import sys
+import types
 import uuid
 
 from twisted.internet import defer, task
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 import twisted.web.error
+from urllib import unquote
 
 import logging
 
@@ -15,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 from .proc import base
 
-# XXX - we need a registry of some type...
-# We search the modules for subclasses of our base-classes.
+# XXX - we need to load this info - including the code - from the couch...
+# We search the modules for decorated functions.
 extension_modules = [
     'raindrop.proto.test',
     'raindrop.proto.skype',
@@ -41,7 +43,7 @@ extensions = set()
 spawners = {}
 
 
-def find_exts_in_module(mod_name, base_class):
+def find_exts_in_module(mod_name, special_attr):
     try:
         __import__(mod_name)
         mod = sys.modules[mod_name]
@@ -49,20 +51,22 @@ def find_exts_in_module(mod_name, base_class):
         logger.exception("Failed to load extension %r", mod_name)
         return
     for ob in mod.__dict__.itervalues():
-        if isinstance(ob, type) and issubclass(ob, base_class):
+        if callable(ob) and hasattr(ob, special_attr):
             yield ob
 
-def find_specified_extensions(base_class, exts=None):
+def get_extension_id(ext):
+    return ext.extension_id
+
+def find_specified_extensions(special_attr, exts=None):
     ret = set()
     ret_names = set()
     for ext in extensions:
-        if not isinstance(ext, base_class):
+        if not hasattr(ext, special_attr):
             continue
         if exts is None:
             ret.add(ext)
         else:
-            klass = ext.__class__
-            name = klass.__module__ + '.' + klass.__name__
+            name = get_extension_id(ext)
             if name in exts:
                 ret.add(ext)
                 ret_names.add(name)
@@ -74,30 +78,15 @@ def find_specified_extensions(base_class, exts=None):
     return ret
 
 def load_extensions(doc_model):
-    converters = {} # identify conflicts to help the user...
     # still a little confused - this should load more types...
     for mod_name in extension_modules:
-        for cvtr in find_exts_in_module(mod_name, base.ConverterBase):
-            assert cvtr.target_type, cvtr # must have a target type
-            # Is the target-type valid
-            assert isinstance(cvtr.target_type, tuple) and \
-                   len(cvtr.target_type)==2, cvtr
-            inst = cvtr(doc_model)
-            extensions.add(inst)
-            for sid in cvtr.sources:
-                cvtr_key = sid, cvtr.target_type
-                if cvtr_key in converters:
-                    other = converters[cvtr_key]
-                    msg = "Message transition %r->%r is registered by both %r and %r"
-                    logger.error(msg, sid, cvtr.target_type, cvtr, other)
-                    continue
-                converters[cvtr_key] = inst
+        for cvtr in find_exts_in_module(mod_name, 'extension_id'):
+            extensions.add(cvtr)
         # XXX - this is wrong - technically the things below are extensions
         # of the IdentitySpawner extension!
-        for ext in find_exts_in_module(mod_name, base.IdentitySpawnerBase):
-            assert ext.source_type, ext # must have a source type.
-            inst = ext(doc_model)
-            spawners.setdefault(ext.source_type, []).append(inst)
+        for ext in find_exts_in_module(mod_name, 'identity_extension_id'):
+            assert getattr(ext, "source_schema"), ext # must have a source type.
+            spawners.setdefault(ext.source_schema, []).append(ext)
 
 
 class Pipeline(object):
@@ -118,7 +107,7 @@ class Pipeline(object):
         if spec_exts is None:
             spec_exts = self.options.exts
         ret = []
-        for ext in find_specified_extensions(base.ConverterBase, spec_exts):
+        for ext in find_specified_extensions('extension_id', spec_exts):
             inst = MessageTransformerWQ(self.doc_model, ext,
                                         options = self.options.__dict__)
             ret.append(inst)
@@ -130,36 +119,21 @@ class Pipeline(object):
 
     @defer.inlineCallbacks
     def unprocess(self):
-        # A bit of a hack that will suffice until we get better dependency
-        # management.  Determines which doc-types are 'derived', then deletes
-        # them all.
-        exts = self.options.exts
-        derived = set()
-        ext_insts = find_specified_extensions(base.ConverterBase, exts)
-        for e in ext_insts:
-            derived.add(e.target_type)
+        # Just nuke all items that have a 'rd_source' specified...
+        # XXX - should do this in a loop with a limit to avoid chewing
+        # all mem...
+        result = yield self.doc_model.open_view('raindrop!docs!all',
+                                                'by_raindrop_source')
+        docs = []
+        to_del = [(row['id'], row['value']) for row in result['rows']]
+        for id, rev in to_del:
+            docs.append({'_id': id, '_rev': rev, '_deleted': True})
+        logger.info('deleting %d messages', len(docs))
+        _ = yield self.doc_model.db.updateDocuments(docs)
 
-        # error records are always 'derived'
-        # XXX - error records per queue!
-        derived.add(('msg', 'core/error/msg'))
-        derived.add(('msg', 'ghost'))
-        # our test messages can always go...
-        derived.add(('msg', 'proto/test'))
-
-        for dc, dt in derived:
-            result = yield self.doc_model.open_view('raindrop!messages!by',
-                                                    'by_doc_type',
-                                                    key=dt)
-
-            docs = []
-            to_del = [(row['id'], row['value']) for row in result['rows']]
-            for id, rev in to_del:
-                docs.append({'_id': id, '_rev': rev, '_deleted': True})
-            logger.info('deleting %d messages of type %r', len(docs), dt)
-            _ = yield self.doc_model.db.updateDocuments(docs)
-            
         # and our work-queue docs - they aren't seen by the view, so
         # just delete them by ID.
+        exts = self.options.exts
         if not exts:
             queues = self.get_work_queues()
         else:
@@ -356,7 +330,6 @@ class WorkQueue(object):
     @classmethod
     @defer.inlineCallbacks
     def unroll_generator(cls, g):
-        import types
         ret = []
         if g is not None:
             for item in g:
@@ -371,8 +344,8 @@ class WorkQueue(object):
         defer.returnValue(ret)
 
 class MessageTransformerWQ(WorkQueue):
-    """A queue which uses 'transformers' to create 'related' documents based
-    on our DAG.
+    """A queue which uses extensions to create new schema instances for
+    raindrop content items
     """
     queue_state_doc_id = 'workqueue!msg'
 
@@ -381,141 +354,117 @@ class MessageTransformerWQ(WorkQueue):
         self.ext = ext
 
     def get_queue_id(self):
-        klass = self.ext.__class__
-        return 'workqueue!msg!' + klass.__module__ + '.' + klass.__name__
+        return 'workqueue!msg!' + get_extension_id(self.ext)
 
     def get_queue_name(self):
-        klass = self.ext.__class__
-        return klass.__module__ + '.' + klass.__name__
+        return get_extension_id(self.ext)
 
     @defer.inlineCallbacks
     def consume(self, doc_gen):
         to_save = yield self.unroll_generator(doc_gen)
         if to_save:
             logger.debug("creating %d new docs", len(to_save))
-            _ = yield self.doc_model.create_ext_documents(to_save)
+            _ = yield self.doc_model.create_schema_items(to_save)
         defer.returnValue(len(to_save))
+
+    def _get_ext_env(self, new_items, src_doc):
+        # Hack together an environment for the extension to run in
+        # (specifically, provide the emit_schema global)
+        def emit_schema(schema_id, items, rd_key=None, confidence=None):
+            ni = {'schema_id': schema_id,
+                  'items': items,
+                  'ext_id' : self.ext.extension_id,
+                  }
+            if rd_key is None:
+                ni['rd_key'] = src_doc['rd_key']
+            if confidence is not None:
+                ni['confidence'] = confidence
+            ni['rd_source'] = [src_doc['_id'], src_doc['_rev']]
+            new_items.append(ni)
+            return self.doc_model.get_doc_id_for_schema_item(ni)
+
+        new_globs = self.ext.func_globals.copy()
+        new_globs['emit_schema'] = emit_schema
+        new_globs['doc_model'] = self.doc_model # XXX - maybe this can die?
+#        if self.ext.func_closure:
+#            func = self.ext.func_closure[-1].cell_contents # XXX - wtf???
+#        else:
+        func = self.ext
+        
+        func = types.FunctionType(func.func_code, new_globs,
+                                  func.func_name)
+        return func
 
     @defer.inlineCallbacks
     def process(self, src_infos, force=False):
         dm = self.doc_model
         cvtr = self.ext
-        keys = []
-        src_infos_use = []
-        # src_infos will might return *lots* - we self-throttle...
+        src_ids = []
+        # src_infos might return *lots* - we self-throttle...
         num_per_batch=200
         for src_id, src_rev in src_infos:
-            # For each target we need to determine if the doc exists, and if so,
-            # if our revision number is in the 'raindrop_sources' attribute.
-            # If it is, the target is up-to-date wrt us, so all is good.
-            try:
-                doc_cat, doc_type, proto_id = dm.split_docid(src_id)
-            except ValueError:
+            if not src_id.startswith('rc!'):
                 logger.debug("skipping document %r", src_id)
                 continue
-    
-            if (doc_cat, doc_type) not in self.ext.sources:
-                #logger.debug("skipping document %r - not one of ours", src_id)
+
+            try:
+                rt, rdkey, ext, schema = src_id.split("!", 4)
+                schema = unquote(schema)
+            except ValueError:
+                logger.warning('skipping malformed ID %r', src_id)
+                rt = None
+            # 'raindrop content' documents all start with 'rc'
+            if rt != 'rc':
+                logger.debug("skipping document %r", src_id)
                 continue
-    
-            target_cat, target_type = self.ext.target_type
-            assert target_cat==doc_cat, (target_cat, doc_cat)
-            target_id = dm.build_docid(target_cat, target_type, proto_id)
-            logger.debug('looking for existing document %r', target_id)
-            keys.append(target_id)
-            src_infos_use.append((src_id, src_rev, proto_id))
-            if len(keys) > num_per_batch:
+
+            if schema != self.ext.source_schema:
+                logger.debug("skipping document %r - has schema %r but we want %r",
+                             src_id, schema, self.ext.source_schema)
+                continue
+
+            # We need to find *all* items previously written by this extension
+            # so a 'reprocess' doesn't cause conflicts.
+            # Later...
+            src_ids.append(src_id)
+            if len(src_ids) > num_per_batch:
                 break
 
-        if not keys:
+        if not src_ids:
             defer.returnValue([])
 
-        result = yield dm.open_view('raindrop!proto!workqueue',
-                                    'source_revs',
-                                    keys=keys)
+        result = yield dm.db.listDoc(keys=src_ids, include_docs=True)
 
-        # 'Missing' documents aren't in the list, so we need to reconstruct
-        # the list inserting missing entries.
+        all_new_items = []
+        # Now process each item
         rows = result['rows']
-        rd = {}
-        for row in rows:
-            rd[row['key']] = row
-        rows = []
-        for key in keys:
-            rows.append(rd.get(key))
-
-        assert len(rows)==len(keys) # errors etc are still included...
-        all_targets = set()
-        all_deps = []
-        target_info = []
-        for r, target, (src_id, src_rev, pid) in zip(rows, keys, src_infos_use):
-            if r is None:
-                # no target exists at all - needs to be executed...
-                need_target = True
-                target_rev = None
-            else:
-                val = r['value']
-                target_rev, all_sources = val
-                look = [src_id, src_rev]
-                need_target = force or look not in all_sources
-                logger.debug("need target=%s (looked for %r in %r)", need_target,
-                             look, all_sources)
-            if not need_target or target in all_targets:
+        for r in rows:
+            # XXX - is this likely in practice?  Can't our queue detect this?
+            if 'error' in r:
+                # This is usually a simple 'not found' error; it doesn't
+                # mean an 'error record'
+                logger.debug('skipping document %(key)s - %(error)s', r)
+                continue
+            if 'deleted' in r['value']:
+                logger.debug('skipping document %s - deleted', r['key'])
                 continue
 
-            all_targets.add(target)
-            # OK - need to create this new type - locate all dependents in the
-            # DB - this will presumably include the document which triggered
-            # the process...
-            for src_cat, src_type in cvtr.sources:
-                all_deps.append(dm.build_docid(src_cat, src_type, pid))
-            target_info.append((pid, target_rev))
+            src_doc = r['doc']
+            new_items = []
+            func = self._get_ext_env(new_items, src_doc)
+            logger.debug("calling %r with doc %r, rev %s", self.ext,
+                         src_doc['_id'], src_doc['_rev'])
+            _ = yield defer.maybeDeferred(func, src_doc
+                        ).addBoth(self._cb_converted_or_not, src_doc, new_items)
+            logger.debug("extension %r generated %d new schemas", self.ext, len(new_items))
+            all_new_items.extend(new_items)
+        defer.returnValue(all_new_items)
 
-        result = yield dm.db.listDoc(keys=all_deps, include_docs=True)
-        # Now split the results back into individual targets...
-        rows = result['rows']
-        nper = len(cvtr.sources)
-        # there are multiple rows for each target...
-        assert len(rows) == len(target_info) * nper
-        def gen_em(rows):
-            while rows:
-                this_rows = rows[:nper]
-                rows = rows[nper:]
-                pid, target_rev = target_info.pop(0)
-                sources = []
-                for r in this_rows:
-                    if 'error' in r:
-                        # This is usually a simple 'not found' error; it doesn't
-                        # mean an 'error record'
-                        logger.debug('skipping document %(key)s - %(error)s', r)
-                        continue
-                    if 'deleted' in r['value']:
-                        logger.debug('skipping document %s - deleted', r['key'])
-                        continue
-                    sources.append(r['doc'])
-                if not sources:
-                    # no source documents - that's strange but OK - when sources
-                    # appear we will get here again...
-                    continue
-    
-                logger.debug("calling %r to create a %s from %d docs", cvtr,
-                             cvtr.target_type, len(sources))
-
-                yield defer.maybeDeferred(cvtr.convert, sources
-                            ).addBoth(self._cb_converted_or_not, sources,
-                                      pid, target_rev)
-
-        # return a generator for consumption by the caller
-        defer.returnValue(gen_em(rows))
-
-    def _cb_converted_or_not(self, result, sources, proto_id, target_rev):
+    def _cb_converted_or_not(self, result, src_doc, new_items):
         # This is both a callBack and an errBack.  If a converter fails to
-        # create a document, we can't just fail, or no later messages in the
+        # create a schema item, we can't just fail, or no later messages in the
         # DB will ever get processed!
-        # So we write a "dummy" record - it has the same docid that the real
-        # document would have - but the 'type' attribute in the document
-        # reflects it is actually an error marker.
-        dest_cat, dest_type = self.ext.target_type
+        # So we write an 'error' schema and discard any it did manage to create
         if isinstance(result, Failure):
             #if isinstance(result.value, twisted.web.error.Error):
             #    # eeek - a socket error connecting to couch; we want to abort
@@ -524,39 +473,27 @@ class MessageTransformerWQ(WorkQueue):
             #    # actually be written - we might just be out of sockets...)
             #    result.raiseException()
 
-            sids = [s['_id'] for s in sources]
-            logger.warn("Failed to create a %r from %r: %s",
-                        self.ext.target_type, sids, result)
+            logger.warn("Failed to process document %r: %s", src_doc['_id'],
+                        result)
             if self.options.get('stop_on_error', False):
                 logger.info("--stop-on-error specified - re-throwing error")
                 result.raiseException()
-            # and make a dummy doc.
-            new_doc = {'error_details': unicode(result)}
-            self.doc_model.prepare_ext_document(dest_cat, dest_type, proto_id,
-                                                new_doc)
-            # and patch the 'type' attribute to reflect its really an error.
-            new_doc['type'] = 'core/error/msg'
-            new_doc['workqueue'] = self.get_queue_id()
+            # and make the error record
+            edoc = {'error_details': unicode(result)}
+            if new_items:
+                logger.info("discarding %d items created before the failure",
+                            len(new_items))
+            new_items = [{'rd_key'
+                          'rd_source': [src_doc['_id'], src_doc['_rev']],
+                          'schema_id': 'rc/core/error',
+                          'items' : edoc,
+                         }]
         else:
-            if result is None:
-                # most likely the converter found an 'error' record in place
-                # of its dependency.  We can safely skip this now - once the
-                # error is corrected we will get another chance...
-                logger.debug("converter declined to create a document")
-                return
-
-            new_doc = result
-            self.doc_model.prepare_ext_document(dest_cat, dest_type, proto_id,
-                                                new_doc)
-            logger.debug("converter returned new document type %r for %r: %r",
-                         dest_type, proto_id, new_doc['_id'])
-        # In theory, the source ID of each doc that contributed is
-        # redundant as it could be deduced.  But we need the revision to
-        # check if we are up-to-date wrt our 'children'...
-        new_doc['raindrop_sources'] = [(s['_id'], s['_rev']) for s in sources]
-        if target_rev is not None:
-            new_doc['_rev'] = target_rev
-        return new_doc
+            if result is not None:
+                # an extension returning a value implies they may be
+                # confused?
+                logger.warn("extension %r returned value %r which is ignored",
+                            self.ext, result)
 
 
 class IdentitySpawnerWQ(WorkQueue):

@@ -3,7 +3,6 @@ from twisted.mail import imap4
 import logging
 
 from ..proc import base
-from ..ext.message.rfc822 import doc_from_bytes
 
 brat = base.Rat
 
@@ -204,22 +203,6 @@ class ImapClientFactory(protocol.ClientFactory):
     # try again *now*"?
     self.conductor.reactor.callLater(self.backoff, self.connect)
     self.backoff = min(self.backoff * 2, 600) # magic number
-
-
-# A 'converter' - takes a proto/imap as input and creates a
-# 'raw/message/rfc822' as output
-class IMAPConverter(base.SimpleConverterBase):
-  target_type = 'msg', 'raw/message/rfc822'
-  sources = [('msg', 'proto/imap')]
-
-  def simple_convert(self, doc):
-    # I need the binary attachment.
-    return self.doc_model.open_attachment(doc['_id'], "rfc822",
-              ).addCallback(self._cb_got_attachment, doc)
-
-  def _cb_got_attachment(self, content, doc):
-    # the 'rfc822' module knows what to do...
-    return doc_from_bytes(doc['_id'], content)
 
 
 class IMAPAccount(base.AccountBase):

@@ -112,11 +112,9 @@ def sanitize_attach_name(name):
     # hrmph - what are good rules?  I see a space :)
     return name.split()[0]
 
-# an 'rfc822' message stores the unpacked version of the rfc822 stream, a-la
-# the interface provided by the 'email' package.  IOW, we never bother storing
-# the raw stream, just a 'raw' unpacked version of it.
-# This helper function takes a raw rfc822 string and returns a 'document'
-# suitable for storing as an rfc822 message.
+# Given a raw rfc822 message stream, return a list of useful schema instances
+# describing that message.
+# Returns a list of (schema_id, schema_fields) tuples.
 def doc_from_bytes(docid, b):
     msg = message_from_string(b)
     doc = {}
@@ -137,7 +135,7 @@ def doc_from_bytes(docid, b):
 
     # XXX - technically msg objects are recursive; handling that requires
     # more thought.  For now, assume they are flat.
-    # Unlikely, but if we *aren't* text based also return as attachments.
+    # We must return non-text parts in attachments...
     if mp or msg.get_content_maintype() != 'text':
         # a multi-part message - flatten it here by walking the list, but
         # only looking at the 'leaf' nodes.
@@ -170,7 +168,7 @@ def doc_from_bytes(docid, b):
     else:
         body_bytes = msg.get_payload(decode=True)
         charset = msg.get_content_charset()
-        doc['body'] = decode_body_part(docid, body_bytes, charset)
+        doc['text'] = decode_body_part(docid, body_bytes, charset)
     return doc
 
 def extract_preview(body):
@@ -196,58 +194,69 @@ def extract_preview(body):
     preview_body = '\n'.join(trimmed_preview_lines)
     return preview_body[:140] + (preview_body[140:] and '...') # cute trick
 
-class RFC822Converter(base.SimpleConverterBase):
-    target_type = 'msg', 'raw/message/email'
-    sources = [('msg', 'raw/message/rfc822')]
-    @defer.inlineCallbacks
-    def simple_convert(self, doc):
-        # a 'rfc822' stores 'headers' as a dict
-        headers = doc['headers']
-        # for now, 'from' etc are all tuples of [identity_type, identity_id]
-        callbacks = []
-        ret = {'from': ['email', headers['from']],
-               'subject': headers['subject'],
-               'header_message_id': headers['message-id'],
-               'headers': headers,
-        }
-        try:
-            dval = headers['date']
-        except KeyError:
-            pass
-        else:
-            if dval:
-                try:
-                    ret['timestamp'] = mktime_tz(parsedate_tz(dval))
-                except (ValueError, TypeError), exc:
-                    logger.warning('Failed to parse date %r in doc %r: %s',
-                                   dval, doc['_id'], exc)
-                    # later extensions will get upset if no attr exists
-                    ret['timestamp'] = 0
 
-        # body handling
-        try:
-            # if it's not a multipart, it's easy
-            ret['body'] = doc['body']
-        except KeyError:
-            # it better be multipart
-            assert doc['multipart']
-            parts = []
-            docid = doc['_id']
-            for info in doc['multipart_info']:
-                ct, charset = _splitparam(info['content_type'])
-                if ct == 'text/plain':
-                    name = info['name']
-                    content = yield self.doc_model.open_attachment(docid, name)
-                    parts.append(decode_body_part(docid, content, charset))
-               
-                # else: we should annotate the object with non-plaintext
-                # attachment information XXX
+@base.raindrop_extension('rd/msg/rfc822')
+def rfc822_converter(doc):
+    # I need the binary attachment.
+    return doc_model.open_schema_attachment(doc, "rfc822",
+              ).addCallback(_cb_got_attachment, doc, emit_schema)
 
-            ret['body'] = '\n'.join(parts)
-        ret['body_preview'] = extract_preview(ret['body'])
-        try:
-            # If the provider could supply tags then pass them on
-            ret['tags'] = doc['tags']
-        except KeyError:
-            pass
-        defer.returnValue(ret)
+def _cb_got_attachment(content, doc, emit_schema):
+    emit_schema('rd/msg/email', doc_from_bytes(doc['_id'], content))
+
+
+@base.raindrop_extension('rd/msg/email')
+def email_converter(doc):
+    # a 'rfc822' stores 'headers' as a dict
+    headers = doc['headers']
+    # for now, 'from' etc are all tuples of [identity_type, identity_id]
+    callbacks = []
+    ret = {}
+    if 'from' in headers:
+        ret['from'] = ['email', headers['from']]
+    if 'subject' in headers:
+        ret['subject'] = headers['subject']
+    if 'date' in headers:
+        dval = headers['date']
+        if dval:
+            try:
+                ret['timestamp'] = mktime_tz(parsedate_tz(dval))
+            except (ValueError, TypeError), exc:
+                logger.warning('Failed to parse date %r in doc %r: %s',
+                               dval, doc['_id'], exc)
+                # later extensions will get upset if no attr exists
+                ret['timestamp'] = 0
+
+    # body handling
+    try:
+        # if it's not a multipart, it's easy
+        ret['body'] = doc['text']
+    except KeyError:
+        # Let's just make these extensions synchronous before fixing
+        # this...
+        logger.warning("skipping multi-part body fetching - fix me!!!")
+        x = """
+        # it better be multipart
+        assert doc['multipart']
+        parts = []
+        docid = doc['_id']
+        for info in doc['multipart_info']:
+            ct, charset = _splitparam(info['content_type'])
+            if ct == 'text/plain':
+                name = info['name']
+                content = yield self.doc_model.open_attachment(docid, name)
+                parts.append(decode_body_part(docid, content, charset))
+           
+            # else: we should annotate the object with non-plaintext
+            # attachment information XXX
+        ret['body'] = '\n'.join(parts)
+        """
+        ret['body'] = "This is multi-part - FIX ME!!!"
+
+    ret['body_preview'] = extract_preview(ret['body'])
+    try:
+        # If the provider could supply tags then pass them on
+        ret['tags'] = doc['tags']
+    except KeyError:
+        pass
+    emit_schema('rd/msg/body', ret)
