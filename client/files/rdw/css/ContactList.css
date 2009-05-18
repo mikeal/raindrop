@@ -1,3 +1,5 @@
+@import url("/raindrop/dojo/dojo/resources/dnd.css");
+
 .ContactList,
 .ContactList ul {
   list-style: none;

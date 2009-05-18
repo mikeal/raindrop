@@ -164,16 +164,18 @@ couch = {
           if (doc._id === undefined) {
             var method = "POST";
             var uri = this.uri;
+            options.postData = dojo.toJson(doc);
           } else {
             var method = "PUT";
             var uri = this.uri  + encodeURIComponent(doc._id);
+            options.putData = dojo.toJson(doc);
           }
           _call(method, uri, options, function(response, ioArgs) {
-              doc._id = resp.id;
-              doc._rev = resp.rev;
-              if (req.status == 201) {
+              doc._id = response.id;
+              doc._rev = response.rev;
+              if (ioArgs.xhr.status == 201) {
                 if (options.success) {
-                  options.success(resp);
+                  options.success(response);
                 }                
               } else {
                 return Error("Invalid status: " + ioArgs.xhr.status);              

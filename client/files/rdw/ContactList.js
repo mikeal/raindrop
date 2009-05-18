@@ -1,7 +1,9 @@
 dojo.provide("rdw.ContactList");
 
-dojo.require("rd.contact");
+dojo.require("dojo.dnd.Source");
 dojo.require("dojo.string");
+
+dojo.require("rd.contact");
 
 dojo.declare("rdw.ContactList", [rdw._Base], {
   //Array of contacts to show.
@@ -11,7 +13,7 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
 
   templateString: '<ul class="ContactList"></ul>',
 
-  contactTemplate: '<li class="contact" data-contactId="${contactId}">'
+  contactTemplate: '<li class="dojoDndItem contact" data-contactId="${contactId}" dndType="contact">'
                  + '  <div class="photoSection"><img class="photo" src="${imageUrl}" /></div>'
                  + '  <div class="contactDetails">${name} ${identityHtml}</div>'
                  + '</li>',
@@ -87,6 +89,51 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
       });
     }
 
+    //Insert the HTML
     dojo.place(html, this.domNode, "only");
+
+    //Wire up the DnD sources
+    this.dndSources = [];
+    this.dndSources.push(new dojo.dnd.Source(this.domNode, {accept: ["contact"]}));
+
+    dojo.query(".contact", this.domNode).forEach(function(node) {
+      this.dndSources.push(new dojo.dnd.Source(node, {accept: ["contact"]}));
+    }, this);
+    
+    //Listen to the dnd drop
+    this.dndDropHandle = dojo.subscribe("/dnd/drop", this, "onDndDrop");
+
+  },
+
+  onDndDrop: function(/*Object*/source, /*Array*/droppedNodes, /*Boolean*/copy, /*Object*/target) {
+    //Handles DND drops. Just a quick and dirty way to do contact merging.
+    var sourceNode = droppedNodes[0];
+    var targetNode = target.node;
+    //debugger;
+
+    var sourceContactId = dojo.attr(sourceNode, "data-contactId");
+    var targetContactId = dojo.attr(targetNode, "data-contactId");
+
+    if (sourceContactId && targetContactId) {
+      rd.contact.merge(sourceContactId, targetContactId, function() {
+        rd.publish("rd-protocol-contacts");
+      });
+
+      //Update the display for now. A bit hacky, not very
+      //nice. TODO: make it better.
+      this.domNode.innerHTML = "Merging contacts...";
+    }
+  },
+
+  destroy: function() {
+    //summary: dijit lifecycle method.
+
+    //Be sure to destroy the DnD handles.
+    for (var i = 0, source; source = this.dndSources[i]; i++) {
+      source.destroy();
+    }
+    dojo.unsubscribe(this.dndDropHandle);
+
+    this.inherited("destroy", arguments);
   }
 });
