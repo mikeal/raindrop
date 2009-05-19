@@ -133,21 +133,33 @@ class TwistySkype(object):
                     ),
             ])
 
+
     def _cb_got_chats(self, chats):
-        logger.debug("skype has %d chat(s) total", len(chats))
+        keys = [[self.get_rdkey_for_chat(c),
+                 'rd/msg/skypechat/raw',
+                 self.rd_extension_id] for c in chats]
+        return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
+                                        keys=keys
+                    ).addCallback(self._cb_got_seen_chats, chats
+                    )
+
+    def _cb_got_seen_chats(self, result, chats):
+        seen_chats = set([r['key'][0][1] for r in result['rows']])
+        nnew = len(chats)-len(seen_chats)
+        logger.debug("skype has %d chat(s) total %d new", len(chats), nnew)
         # fetch all the messages (future optimization; all we need are the
         # IDs, but we suffer from creating an instance wrapper for each item.
         # Sadly the skype lib doesn't offer a clean way of doing this.)
         def gen_chats(chats):
             for chat in chats:
                 yield threads.deferToThread(chat._GetMessages
-                        ).addCallback(self._cb_got_messages, chat,
+                        ).addCallback(self._cb_got_messages, chat, seen_chats
                         )
             logger.info("skype has finished processing all chats")
 
         return self.conductor.coop.coiterate(gen_chats(chats))
 
-    def _cb_got_messages(self, messages, chat):
+    def _cb_got_messages(self, messages, chat, seen_chats):
         logger.debug("chat '%s' has %d message(s) total; looking for new ones",
                      chat.Name, len(messages))
 
@@ -155,54 +167,53 @@ class TwistySkype(object):
         # determine which we have seen (note that we obviously could just
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
-        return self.doc_model.open_view('raindrop!proto!seen', 'skype',
-                                        startkey=[chat.Name],
-                                        endkey=[chat.Name, {}]
-                    ).addCallback(self._cb_got_seen, chat, messages
+        keys = [[self.get_rdkey_for_msg(m),
+                 'rd/msg/skypemsg/raw',
+                 self.rd_extension_id] for m in messages]
+        return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
+                                        keys=keys
+                    ).addCallback(self._cb_got_seen, chat, messages, seen_chats,
                     )
 
-    def _cb_got_seen(self, result, chat, messages):
-        msgs_by_id = dict((m._Id, m) for m in messages)
+    def _cb_got_seen(self, result, chat, messages, seen_chats):
+        msgs_by_id = dict((self.get_rdkey_for_msg(m)[1], m) for m in messages)
         chatname = chat.Name
-        # The view gives us a list of [chat_name, msg_id], where msg_id is
-        # None if we've seen the chat itself.  Create a set of messages we
-        # *haven't* seen - including the [chat_name, None] entry if applic.
-        all_keys = [(chatname, None)]
-        all_keys.extend((chatname, mid) for mid in msgs_by_id.keys())
-        seen_chats = set([tuple(row['key']) for row in result['rows']])
-        remaining = set(all_keys)-set(seen_chats)
+        need_chat = chatname not in seen_chats
+
+        seen_msgs = set([r['key'][0][1] for r in result['rows']])
+        remaining = set(msgs_by_id.keys())-set(seen_msgs)
         # we could just process the empty list as normal, but the logging of
         # an info when we do have items is worthwhile...
-        if not remaining:
+        if not remaining and not need_chat:
             logger.debug("Chat %r has no new items to process", chatname)
             return None
         # we have something to do...
         logger.info("Chat %r has %d items to process", chatname,
                     len(remaining))
         logger.debug("we've already seen %d items from this chat",
-                     len(seen_chats))
+                     len(seen_msgs))
         return self.conductor.coop.coiterate(
-                    self.gen_items(chat, remaining, msgs_by_id))
+                    self.gen_items(chat, remaining, msgs_by_id, need_chat))
 
-    def gen_items(self, chat, todo, msgs_by_id):
+    def gen_items(self, chat, todo, msgs_by_id, need_chat):
         tow = [] # documents to write.
-        for _, msgid in todo:
-            if msgid is None:
-                # we haven't seen the chat itself - do that.
-                logger.debug("Creating new skype chat %r", chat.Name)
-                # make a 'deferred list' to fetch each property one at a time.
-                ds = [threads.deferToThread(chat._Property, p)
-                      for p, _ in CHAT_PROPS]
-                yield defer.DeferredList(ds
-                            ).addCallback(self._cb_got_chat_props, chat, tow)
-            else:
-                msg = msgs_by_id[msgid]
-                # A new msg in this chat.
-                logger.debug("New skype message %d", msg._Id)
-                # make a 'deferred list' to fetch each property one at a time.
-                ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
-                yield defer.DeferredList(ds
-                            ).addCallback(self._cb_got_msg_props, chat, msg, tow)
+        if need_chat:
+            # we haven't seen the chat itself - do that.
+            logger.debug("Creating new skype chat %r", chat.Name)
+            # make a 'deferred list' to fetch each property one at a time.
+            ds = [threads.deferToThread(chat._Property, p)
+                  for p, _ in CHAT_PROPS]
+            yield defer.DeferredList(ds
+                        ).addCallback(self._cb_got_chat_props, chat, tow)
+            
+        for msgid in todo:
+            msg = msgs_by_id[msgid]
+            # A new msg in this chat.
+            logger.debug("New skype message %d", msg._Id)
+            # make a 'deferred list' to fetch each property one at a time.
+            ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
+            yield defer.DeferredList(ds
+                        ).addCallback(self._cb_got_msg_props, chat, msg, tow)
 
         if tow:
             yield self.doc_model.create_schema_items(tow)

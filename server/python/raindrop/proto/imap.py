@@ -8,6 +8,8 @@ brat = base.Rat
 
 logger = logging.getLogger(__name__)
 
+def get_rdkey_for_email(msg_id):
+  return ("email", msg_id)
 
 class ImapClient(imap4.IMAP4Client):
   '''
@@ -15,6 +17,10 @@ class ImapClient(imap4.IMAP4Client):
   reference to the IMAP4Client instance subclass.  Consider refactoring if we
   don't turn out to benefit from the subclassing relationship.
   '''
+  # The 'id' of this extension
+  # XXX - should be managed by our caller once these 'protocols' become
+  # regular extensions.
+  rd_extension_id = 'proto.imap'
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
     return self._doAuthenticate(
@@ -55,6 +61,7 @@ class ImapClient(imap4.IMAP4Client):
       # XXX - sob - markh sees:
       # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven't seen'
       # although we obviously have seen them already in the other folders.
+      # XXX - but should not be necessary now we are using message-id.
       if name and name.startswith('['):
         logger.info("'%s' appears special -skipping", name)
         continue
@@ -65,78 +72,92 @@ class ImapClient(imap4.IMAP4Client):
     logger.debug('imap processing finished.')
 
   def _examineFolder(self, result, folder_path):
-    logger.debug('Looking for messages already fetched for folder %s', folder_path)
-    return self.doc_model.open_view('raindrop!proto!seen', 'imap',
-                             startkey=[folder_path], endkey=[folder_path, {}]
-              ).addCallback(self._fetchAndProcess, folder_path)
-
-  def _fetchAndProcess(self, result, folder_path):
-    # XXX - we should look at the flags and update the message if it's not
-    # the same - later.
-    rows = result['rows']
-    logger.debug('_FetchAndProcess says we have seen %d items for %r',
-                 len(rows), folder_path)
-    seen_uids = set(row['key'][1] for row in rows)
-    # now build a list of all message currently in the folder.
+    # fetch info about all messages currently in the folder.
     allMessages = imap4.MessageSet(1, None)
-    return self.fetchUID(allMessages, True).addCallback(
-            self._gotUIDs, folder_path, seen_uids)
+    # fetchAll does *not* get the body...
+    return self.fetchAll(allMessages, True,
+        ).addCallback(self._gotInfo, folder_path)
 
-  def _gotUIDs(self, uidResults, name, seen_uids):
-    all_uids = set(int(result['UID']) for result in uidResults.values())
-    remaining = all_uids - seen_uids
-    logger.info("Folder %s has %d messages, %d new", name,
-                len(all_uids), len(remaining))
-    def gen_remaining(folder_name, reming):
+  def _gotInfo(self, results, folder_name):
+    msg_infos = {}
+    # 'invert' the map so we have one keyed by UID
+    for msg_info in results.itervalues():
+      msg_id = msg_info['ENVELOPE'][-1]
+      if msg_id in msg_infos:
+        # This isn't a very useful check - we are only looking in a single
+        # folder...
+        logger.warn("Duplicate message ID %r detected", msg_id)
+        # and it will get clobbered below :(
+      msg_infos[get_rdkey_for_email(msg_id)] = msg_info
+
+    # Get all messages we've seen before
+    keys = [[k, 'rd/msg/rfc822', self.rd_extension_id]
+            for k in msg_infos.keys()]
+    return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
+                                    keys=keys,
+                ).addCallback(self._gotSeen, folder_name, msg_infos
+                )
+
+  def _gotSeen(self, result, folder_name, msg_infos):
+    seen = set([tuple(r['key'][0]) for r in result['rows']])
+    # convert each key elt to a list like we get from the views.
+    remaining = set(msg_infos.iterkeys())-set(seen)
+
+    logger.info("Folder %s has %d messages, %d new", folder_name,
+                len(msg_infos), len(remaining))
+    rem_uids = [int(msg_infos[k]['UID']) for k in remaining]
+    # *sob* - re-invert keyed by the UID.
+    by_uid = {}
+    for key, info in msg_infos.iteritems():
+      uid = int(info['UID'])
+      if uid in rem_uids:
+        info['RAINDROP_KEY'] = key
+        by_uid[uid] = info
+
+    def gen_remaining():
       # fetch most-recent (highest UID) first...
-      left = sorted(list(reming), reverse=True)
+      left = sorted(list(rem_uids), reverse=True)
       while left:
         # do 10 at a time...
         this = left[:10]
         left = left[10:]
-        to_fetch = imap4.MessageSet(this[-1], this[0])
+        to_fetch = ",".join(str(v) for v in this)
         # grr - we have to get the rfc822 body and the flags in separate requests.
         yield self.fetchMessage(to_fetch, uid=True
-                      ).addCallback(self._cb_got_body, folder_name, to_fetch
+                      ).addCallback(self._cb_got_body, folder_name, by_uid
                       )
+    return self.conductor.coop.coiterate(gen_remaining())
 
-    return self.conductor.coop.coiterate(gen_remaining(name, remaining))
-
-  def _cb_got_body(self, results, folder_name, to_fetch):
-    # grr - get the flags
-    logger.debug("Got %d messages from %s; fetching flags", len(results),
-                 folder_name)
-    return self.fetchFlags(to_fetch, uid=True
-                ).addCallback(self._cb_got_flags, results, folder_name,
-                )
-
-  def _cb_got_flags(self, results, msg_results, folder_name):
-    #logger.debug("flags are %s", result)
-    doc_infos = []
-    for seq in results:
-      uid = int(msg_results[seq]['UID'])
-      content = msg_results[seq]['RFC822']
-      flags = results[seq]['FLAGS']
-      assert int(results[seq]['UID']) == uid
+  def _cb_got_body(self, results, folder_name, by_uid):
+    # Run over the results stashing in our by_uid dict.
+    infos = []
+    for info in results.values():
+      uid = int(info['UID'])
+      content = info['RFC822']
+      flags = by_uid[uid]['FLAGS']
+      rdkey = by_uid[uid]['RAINDROP_KEY']
+      mid = rdkey[-1]
       # XXX - we need something to make this truly unique.
-      did = "%s#%d" % (folder_name, uid)
-      logger.debug("new imap message %r (flags=%s)", did, flags)
-      # put the 'raw' document object together and save it.
-      doc = dict(
-        storage_key=[folder_name, uid],
-        imap_flags=flags,
-        )
+      logger.debug("new imap message %r (flags=%s)", mid, flags)
+
+      # put our schemas together
       attachments = {'rfc822' : {'content_type': 'message',
                                  'data': content,
                                  }
-                    }
-      doc['_attachments'] = attachments
-      doc_infos.append(('msg', 'proto/imap', did, doc))
-    return self.doc_model.create_raw_documents(self.account, doc_infos
-                ).addCallback(self._cb_saved_messages)
+      }
+      items = {'_attachments': attachments}
+      infos.append({'rd_key' : rdkey,
+                    'ext_id': self.rd_extension_id,
+                    'schema_id': 'rd/msg/rfc822',
+                    'items': items})
+      items = {'flags' : flags}
+      infos.append({'rd_key' : rdkey,
+                    'ext_id': self.rd_extension_id,
+                    'schema_id': 'rd/msg/imap/flags',
+                    'items': items})
+      # could add other schemas with info from the 'body'?
 
-  def _cb_saved_messages(self, result):
-    logger.debug("Saved message %s", result)
+    return self.doc_model.create_schema_items(infos)
 
   def _cantExamineFolder(self, failure, name, *args, **kw):
     logger.warning("Failed to examine folder '%s': %s", name, failure)
