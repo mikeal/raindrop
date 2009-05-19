@@ -233,7 +233,7 @@ class QueueRunner(object):
         q.running = False
         failed = isinstance(result, Failure)
         if failed:
-            logger.error("queue %r failed: %s", state_doc, result)
+            logger.error("queue %r failed: %s", q.get_queue_name(), result)
             q.failed = True
         else:
             logger.debug('queue reports it is complete: %s', state_doc)

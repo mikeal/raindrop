@@ -509,11 +509,12 @@ class DocumentModel(object):
         logger.debug("saved %d documents", len(result))
         self._docs_since_view_update += len(result)
         ds = []
+        assert len(result)==len(attachments) and len(result)==len(item_defs)
         for dinfo, dattach, item_def in zip(result, attachments, item_defs):
             if 'error' in dinfo:
                 # If no 'schema_id' was specified then this is OK - the
                 # extension is just noting the ID exists and it already does.
-                if item_def and item_def.get('rd_schema_id') is not None:
+                if item_def and item_def.get('schema_id') is not None:
                     raise DocumentSaveError(dinfo)
 
             if dattach:
