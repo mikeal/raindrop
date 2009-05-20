@@ -83,6 +83,9 @@ class SyncConductor(object):
   def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):
       self.log.error("Account %s failed with an error: %s", account, result)
+      if self.options.stop_on_error:
+        self.log.info("--stop-on-error specified - re-throwing error")
+        result.raiseException()
     else:
       self.log.debug("Account %s finished successfully", account)
     assert account in self.active_accounts, (account, self.active_accounts)
