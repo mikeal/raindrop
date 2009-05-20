@@ -384,9 +384,6 @@ class DocumentModel(object):
                 ret.append(r['doc'])
         defer.returnValue(ret)
 
-    def open_schema_attachment(self, src, attachment):
-        "A function to abstract document storage requirements away..."
-        return self.open_attachment(src['_id'], attachment)
 
     def _prepare_raw_doc(self, account, doc, doc_cat, doc_type, provid):
         docid = self.build_docid(doc_cat, doc_type, encode_provider_id(provid))

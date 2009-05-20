@@ -89,16 +89,12 @@ def test_converter(src):
     # every 3rd message we process.
     num_converted += 1
     if test_next_convert_fails or \
-       (test_next_convert_fails is None and self.num_converted % 3 == 0):
+       (test_next_convert_fails is None and num_converted % 3 == 0):
         raise RuntimeError("This is a test failure")
 
     # for the sake of testing, we fetch the raw attachment just to compare
     # its value.
-    return doc_model.open_schema_attachment(src, "raw-attach"
-                    ).addCallback(_cb_got_attachment, src, emit_schema
-                    )
-
-def _cb_got_attachment(attach_content, src, emit_schema):
+    attach_content = open_schema_attachment(src, "raw-attach")
     if attach_content != 'test\0blob':
         raise RuntimeError(attach_content)
 

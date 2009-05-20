@@ -198,10 +198,7 @@ def extract_preview(body):
 @base.raindrop_extension('rd/msg/rfc822')
 def rfc822_converter(doc):
     # I need the binary attachment.
-    return doc_model.open_schema_attachment(doc, "rfc822",
-              ).addCallback(_cb_got_attachment, doc, emit_schema)
-
-def _cb_got_attachment(content, doc, emit_schema):
+    content = open_schema_attachment(doc, "rfc822")
     emit_schema('rd/msg/email', doc_from_bytes(doc['_id'], content))
 
 
@@ -225,6 +222,7 @@ def email_converter(doc):
                 logger.warning('Failed to parse date %r in doc %r: %s',
                                dval, doc['_id'], exc)
                 # later extensions will get upset if no attr exists
+                # XXX - is this still true?  We should fix those extensions!
                 ret['timestamp'] = 0
 
     # body handling
@@ -232,10 +230,6 @@ def email_converter(doc):
         # if it's not a multipart, it's easy
         ret['body'] = doc['text']
     except KeyError:
-        # Let's just make these extensions synchronous before fixing
-        # this...
-        logger.warning("skipping multi-part body fetching - fix me!!!")
-        x = """
         # it better be multipart
         assert doc['multipart']
         parts = []
@@ -244,14 +238,12 @@ def email_converter(doc):
             ct, charset = _splitparam(info['content_type'])
             if ct == 'text/plain':
                 name = info['name']
-                content = yield self.doc_model.open_attachment(docid, name)
+                content = open_schema_attachment(doc, name)
                 parts.append(decode_body_part(docid, content, charset))
-           
+
             # else: we should annotate the object with non-plaintext
             # attachment information XXX
         ret['body'] = '\n'.join(parts)
-        """
-        ret['body'] = "This is multi-part - FIX ME!!!"
 
     ret['body_preview'] = extract_preview(ret['body'])
     try:

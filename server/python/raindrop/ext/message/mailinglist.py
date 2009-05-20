@@ -37,47 +37,37 @@ logger = logging.getLogger(__name__)
 
 from ...proc import base
 
-class MailingListExtractor(base.SimpleConverterBase):
-    target_type = 'msg', 'raw/message/email/mailing-list-extracted'
-    sources = [('msg', 'raw/message/rfc822')]
-    def simple_convert(self, orig_doc):
-        doc = orig_doc.copy()
-        ret = {}
+@base.raindrop_extension('rd/msg/email')
+def list_converter(doc):
+    if 'list-id' not in doc['headers']:
+        return
 
-        if 'list-id' not in doc['headers']:
-            return ret
+    headers = [h for h in doc['headers'].keys() if h.startswith('list-')]
+    logger.debug("list-* headers: %s", headers)
+    mailing_list = {}
 
-        # FIXME: use keys().filter() or an array comprehension?
-        headers = filter(lambda x: x.startswith('list-'), doc['headers'].keys())
-        logger.debug("list-* headers: %s", headers)
+    # I haven't actually seen one of these list-id values that includes
+    # the name of the list, but this regexp was in the old JavaScript code,
+    # so we do it here too.
+    match = re.search('([\W\w]*)\s*<(.+)>.*', doc['headers']['list-id'])
+    if (match):
+        logger.debug("complex list-id header with name '%s' and ID '%s'",
+              match.group(1), match.group(2))
+        mailing_list['name']  = match.group(1)
+        mailing_list['id']    = match.group(2)
+    else:
+        logger.debug("simple list-id header with ID '%s'",
+                     doc['headers']['list-id'])
+        mailing_list['id'] = doc['headers']['list-id']
 
-        mailing_list = {}
-
-        # I haven't actually seen one of these list-id values that includes
-        # the name of the list, but this regexp was in the old JavaScript code,
-        # so we do it here too.
-        match = re.search('([\W\w]*)\s*<(.+)>.*', doc['headers']['list-id'])
-        if (match):
-            logger.debug("complex list-id header with name '%s' and ID '%s'",
-                  match.group(1), match.group(2))
-            mailing_list['name']  = match.group(1)
-            mailing_list['id']    = match.group(2)
-        else:
-            logger.debug("simple list-id header with ID '%s'",
-                         doc['headers']['list-id'])
-            mailing_list['id'] = doc['headers']['list-id']
-
-        # For now just reflect the literal values of the various headers
-        # into the dict; eventually we'll want to do some processing of those
-        # values to make life easier on the frontend.
-        # XXX reflect other list-related headers like (X-)Mailing-List
-        # and Archived-At?
-        for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
-                    'list-unsubscribe']:
-            if key in doc['headers']:
-                mailing_list[key[5:]] = doc['headers'][key]
-                logger.debug("set %s to %s", key[5:], doc['headers'][key])
-
-        ret['mailing_list'] = mailing_list
-
-        return ret
+    # For now just reflect the literal values of the various headers
+    # into the dict; eventually we'll want to do some processing of those
+    # values to make life easier on the frontend.
+    # XXX reflect other list-related headers like (X-)Mailing-List
+    # and Archived-At?
+    for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
+                'list-unsubscribe']:
+        if key in doc['headers']:
+            mailing_list[key[5:]] = doc['headers'][key]
+            logger.debug("set %s to %s", key[5:], doc['headers'][key])
+    emit_schema('rd/msg/email/mailing-list', mailing_list)

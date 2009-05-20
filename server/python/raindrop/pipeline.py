@@ -5,7 +5,7 @@ import sys
 import types
 import uuid
 
-from twisted.internet import defer, task
+from twisted.internet import defer, task, threads
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 import twisted.web.error
@@ -26,9 +26,7 @@ extension_modules = [
     'raindrop.proto.twitter',
     'raindrop.ext.identity',
     'raindrop.ext.message.rfc822',
-    'raindrop.ext.message.email',
     'raindrop.ext.message.mailinglist',
-    'raindrop.ext.message.message',
     'raindrop.ext.message.convos',
 ]
 
@@ -369,7 +367,9 @@ class MessageTransformerWQ(WorkQueue):
 
     def _get_ext_env(self, new_items, src_doc):
         # Hack together an environment for the extension to run in
-        # (specifically, provide the emit_schema global)
+        # (specifically, provide the emit_schema etc globals)
+        # NOTE: These are all called in the context of a worker thread and
+        # are expected by the caller to block.
         def emit_schema(schema_id, items, rd_key=None, confidence=None):
             ni = {'schema_id': schema_id,
                   'items': items,
@@ -377,15 +377,27 @@ class MessageTransformerWQ(WorkQueue):
                   }
             if rd_key is None:
                 ni['rd_key'] = src_doc['rd_key']
+            else:
+                ni['rd_key'] = rd_key
             if confidence is not None:
                 ni['confidence'] = confidence
             ni['rd_source'] = [src_doc['_id'], src_doc['_rev']]
             new_items.append(ni)
             return self.doc_model.get_doc_id_for_schema_item(ni)
 
+        def open_schema_attachment(src, attachment):
+            "A function to abstract document storage requirements away..."
+            return threads.blockingCallFromThread(reactor,
+                        self.doc_model.open_attachment, src['_id'], attachment)
+
+        def open_view(*args, **kw):
+            return threads.blockingCallFromThread(reactor,
+                        self.doc_model.open_view, *args, **kw)
+            
         new_globs = self.ext.func_globals.copy()
         new_globs['emit_schema'] = emit_schema
-        new_globs['doc_model'] = self.doc_model # XXX - maybe this can die?
+        new_globs['open_schema_attachment'] = open_schema_attachment
+        new_globs['open_view'] = open_view
 #        if self.ext.func_closure:
 #            func = self.ext.func_closure[-1].cell_contents # XXX - wtf???
 #        else:
@@ -401,7 +413,9 @@ class MessageTransformerWQ(WorkQueue):
         cvtr = self.ext
         src_ids = []
         # src_infos might return *lots* - we self-throttle...
-        num_per_batch=200
+        # XXX - but now we only ever do one at a time anyway - both 'identities' and 'conversations' rely on it as
+        # one extension may write a record the next invocation must find in its view.
+        num_per_batch=1
         for src_id, src_rev in src_infos:
             if not src_id.startswith('rc!'):
                 logger.debug("skipping document %r", src_id)
@@ -454,7 +468,9 @@ class MessageTransformerWQ(WorkQueue):
             func = self._get_ext_env(new_items, src_doc)
             logger.debug("calling %r with doc %r, rev %s", self.ext,
                          src_doc['_id'], src_doc['_rev'])
-            _ = yield defer.maybeDeferred(func, src_doc
+
+            # Our extensions are 'blocking', so use a thread...
+            _ = yield threads.deferToThread(func, src_doc
                         ).addBoth(self._cb_converted_or_not, src_doc, new_items)
             logger.debug("extension %r generated %d new schemas", self.ext, len(new_items))
             all_new_items.extend(new_items)
