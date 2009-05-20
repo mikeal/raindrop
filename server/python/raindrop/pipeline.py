@@ -441,7 +441,7 @@ class MessageTransformerWQ(WorkQueue):
             # so a 'reprocess' doesn't cause conflicts.
             # Later...
             src_ids.append(src_id)
-            if len(src_ids) > num_per_batch:
+            if len(src_ids) >= num_per_batch:
                 break
 
         if not src_ids:
