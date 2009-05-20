@@ -43,12 +43,12 @@ def mail_convo_converter(doc):
     else:
         logger.debug("CREATING conversation_id %s", header_message_ids[0])
         convo_id = header_message_ids[0]
-        seen_ids = [] # we do an 'in' check...
+        seen_ids = None
 
     items = {'conversation_id': convo_id}
     # create convo records for any messages which don't yet exist -
     # presumably that includes me too!
     for hid in uniq_header_message_ids:
-        if hid not in seen_ids:
+        if seen_ids is None or hid not in seen_ids:
             rdkey = ['email', hid]
             emit_schema('rd/msg/conversation', items, rd_key=rdkey)
