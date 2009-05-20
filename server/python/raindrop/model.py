@@ -344,7 +344,7 @@ class DocumentModel(object):
                 # No items == no schema!
                 assert si.get('schema_id') is None, si
             docs.append(doc)
-            if 'id' in si:
+            if '_id' in si:
                 id = si['_id']
                 # Only look for '_rev' if they supplied '_id'
                 if '_rev' in si:
@@ -374,12 +374,13 @@ class DocumentModel(object):
         enc_key_val = encode_provider_id(json.dumps(key_val))
         key_part = "%s.%s" % (key_type, enc_key_val)
         sk = "rc!" + key_part + "!"
-        ek = sk + u"\x9999".encode('utf8')
+        ek = sk[:-1] + '#' # '#' sorts later than '!'
 
         ret = []
         result = yield self.db.listDoc(startkey=sk, endkey=ek, include_docs=True)
+        schema_id = self.quote_id(schema_id)
         for r in result['rows']:
-            _, _, ext, sch_id = r['id'].split(4)
+            _, _, ext, sch_id = r['id'].split('!', 4)
             if sch_id == schema_id:
                 ret.append(r['doc'])
         defer.returnValue(ret)
