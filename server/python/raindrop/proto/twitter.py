@@ -31,6 +31,10 @@ logger = logging.getLogger(__name__)
 
 
 class TwitterProcessor(object):
+    # The 'id' of this extension
+    # XXX - should be managed by our caller once these 'protocols' become
+    # regular extensions.
+    rd_extension_id = 'proto.twitter'
     def __init__(self, account, conductor):
         self.account = account
         self.doc_model = account.doc_model # this is a little confused...
@@ -73,49 +77,48 @@ class TwitterProcessor(object):
                   ).addCallback(self._cb_got_friends)
 
     def _cb_got_friends(self, friends):
-        # Our 'seen' view is a reduce view, so we only get one result per
-        # friend we pass in.  It is probably safe to assume we don't have
-        # too many friends that we can't get them all in one hit...
-        return self.doc_model.open_view('raindrop!proto!seen', 'twitter',
-                                        group=True
-                  ).addCallback(self._cb_got_seen, friends)
-
-    def _cb_got_seen(self, result, friends):
-        # result -> [{'key': '12449', 'value': 1371372980}, ...]
-        # turn it into a map.
-        rows = result['rows']
-        last_seen_ids = dict((r['key'], int(r['value'])) for r in rows)
         return self.conductor.coop.coiterate(
-                    self.gen_friends_info(friends, last_seen_ids))
+                    self.gen_friends_info(friends))
 
-    def gen_friends_info(self, friends, last_seen_ids):
+    def gen_friends_info(self, friends):
         logger.info("apparently I've %d friends", len(friends))
-        def check_identity(doc, friend):
+        def check_identity(schemas, friend, rdkey):
+            # XXX - the framework should do this for us :(
+            mine = [s for s in schemas if s['rd_ext_id']==self.rd_extension_id]
+            assert len(mine) in [0, 1], mine
             friend_raw = self.user_to_raw(friend)
-            friend_raw['identity_id'] = ['twitter', friend.screen_name]
             # Add the identity_id as our 'raw' record has it...
-            if doc is None or doc['raw'] != friend_raw:
+            if not mine or mine[0]['raw'] != friend_raw:
                 logger.info("Need to update twitter user %s",
                             friend.screen_name)
-                new_doc = {}
-                if doc is not None:
-                    new_doc['_rev'] = doc['_rev']
-                new_doc['raw'] = friend_raw
-                new_doc['identity_id'] = friend_raw['identity_id']
-                # XXX - needs refactoring so each protocol doesn't know this,
-                # the 'provider_id' is currently a hack of 'proto/id'
-                prov_id = 'twitter/' + friend.screen_name
-                dinfos = [('id', 'twitter', prov_id, new_doc)]
-                return self.doc_model.create_raw_documents(self.account, dinfos)
+                new_fields = {'raw': friend_raw}
+                new_info = {'rd_key' : rdkey,
+                            'ext_id': self.rd_extension_id,
+                            'schema_id': 'rd/identity/twitter/raw',
+                            'items': new_fields,
+                          }
+                if mine:
+                    # this is an update...
+                    new_info['_id'] = mine[0]['_id']
+                    new_info['_rev'] = mine[0]['_rev']
+                # should try and batch these up...
+                return self.doc_model.create_schema_items([new_info])
 
         def do_friend_identity(friend):
-            prov_id = 'twitter/' + friend.screen_name # *sob*
-            return self.doc_model.open_document('id', prov_id, 'twitter'
-                        ).addCallback(check_identity, friend
+            rdkey = ['twitter', friend.screen_name]
+            return self.doc_model.open_schemas(rdkey, 'rd/identity/twitter/raw'
+                        ).addCallback(check_identity, friend, rdkey
                         )
-        
-        def do_friend_tweets(friend):
-            last_this = last_seen_ids.get(friend.screen_name)
+
+        def find_new_tweets(results, friend):
+            rows = results['rows']
+            if rows:
+                rdkey = rows[0]['key'][0]
+                assert rdkey[0]=='tweet'
+                assert rdkey[1][0]==friend.screen_name
+                last_this = rdkey[1][1]
+            else:
+                last_this = None
             logger.debug("friend %r (%s) has latest tweet id of %s",
                          friend.screen_name, friend.id, last_this)
             return threads.deferToThread(
@@ -123,6 +126,23 @@ class TwitterProcessor(object):
                             ).addCallback(self._cb_got_friend_timeline, friend
                             ).addErrback(self.err_friend_timeline, friend
                             )
+    
+        def do_friend_tweets(friend):
+            # Execute a view to find the last tweet ID we know about for
+            # this user.  We take advantage of the ID format for tweets and
+            # couch's sorting semantics...
+            # NOTE: as we use 'descending' the concepts of 'startkey' and
+            # 'endkey' are reversed.
+            endkey=[["tweet", [friend.screen_name]]]
+            startkey=[["tweet", [friend.screen_name, {}]]]
+            return self.doc_model.open_view('raindrop!docs!all',
+                                            'by_raindrop_key',
+                                            startkey=startkey,
+                                            endkey=endkey,
+                                            descending=True,
+                                            limit=1
+                        ).addCallback(find_new_tweets, friend
+                        )
 
         # None means 'me' - but we don't really want to use 'None'.  This is
         # the only way I can work out how to get ourselves!
@@ -140,45 +160,47 @@ class TwitterProcessor(object):
                      friend.screen_name, failure)
 
     def _cb_got_friend_timeline(self, timeline, friend):
-        return self.conductor.coop.coiterate(
-                    self.gen_friend_timeline(timeline, friend))
-
-    def gen_friend_timeline(self, timeline, friend):
+        infos = []
         for tweet in timeline:
             tid = tweet.id
             # put the 'raw' document object together and save it.
             logger.info("New tweet '%s...' (%s)", tweet.text[:25], tid)
-            # create the couch document for the tweet itself.
-            doc = self.tweet_to_raw(tweet)
-            # not clear if the user ID is actually needed.
-            proto_id = "%s#%s" % (tweet.user.id, tid)
-            yield self.doc_model.create_raw_documents(
-                            self.account,
-                            [('msg', 'proto/twitter', proto_id, doc)])
+            # create the schema for the tweet itself.
+            fields = self.tweet_to_raw(tweet)
+            rdkey = ['tweet', [friend.screen_name, tid]]
+            infos.append({'rd_key' : rdkey,
+                          'ext_id': self.rd_extension_id,
+                          'schema_id': 'rd/msg/tweet/raw',
+                          'items': fields})
+        logger.info("friend %s has %d new tweets", friend.screen_name,
+                    len(infos))
+        return self.doc_model.create_schema_items(infos)
 
-# A 'converter' - takes a proto/twitter as input and creates a
-# 'message' as output (some other intermediate step might end up more
-# appropriate)
-class TwitterConverter(base.SimpleConverterBase):
-    target_type = 'msg', 'message'
-    sources = [('msg', 'proto/twitter')]
-    re_tags = re.compile(r'#(\w+)')    
-    def simple_convert(self, doc):
-        # for now, if a 'proto' can detect tags, it writes them directly
-        # to a 'tags' attribute.
-        body = doc['twitter_text']
-        tags = self.re_tags.findall(body)
-        conversation_id = doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
-        return {'from': ['twitter', doc['twitter_user']],
-                'body': body,
-                'body_preview': body[:140],
-                'tags': tags,
-                'conversation_id' : str(conversation_id),
-                'header_message_id': str(doc['twitter_id']),
-                # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 
-                # to fake having this property that doesn't come with AsDict
-                'timestamp': doc['twitter_created_at_in_seconds']
-                }
+# A 'converter' - takes a rd/msg/tweet/raw as input and creates various
+# schema outputs for that message
+re_tags = re.compile(r'#(\w+)')
+
+@base.raindrop_extension('rd/msg/tweet/raw')
+def tweet_converter(doc):
+    # body schema
+    body = doc['twitter_text']
+    bdoc = {'from': ['twitter', doc['twitter_user']],
+            'body': body,
+            'body_preview': body[:140],
+            # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 
+            # to fake having this property that doesn't come with AsDict
+            'timestamp': doc['twitter_created_at_in_seconds']
+    }
+    emit_schema('rd/msg/body', bdoc)
+    # and a conversation schema
+    conversation_id = doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
+    cdoc = {'conversation_id': str(conversation_id)}
+    emit_schema('rd/msg/conversation', cdoc)
+    # and tags
+    tags = re_tags.findall(body)
+    if tags:
+        tdoc = {'tags': tags}
+        emit_schema('rd/tags', tdoc)
 
 # Twitter identities...
 
