@@ -44,3 +44,9 @@ multipart_info: A list of dictionaries, with each element having elements:
   name: The name of the attachment which holds the data for this part.
   headers: A dictionary holding the headers for this sub-part.
   content_type: The type of the content stored in the attachment
+
+rd/msg/conversation:
+--------------------
+** Fields**
+
+conversation_id: a string which identifies the conversation.
