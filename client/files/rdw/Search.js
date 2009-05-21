@@ -27,7 +27,7 @@ dojo.declare("rdw.Search", [rdw._Base], {
     if (target.href) {
       target = target.href.split("#")[1];
       if (target) {
-        dojo.publish("rd-nav-" + target);
+        dojo.publish("rd-protocol-" + target);
         dojo.stopEvent(evt);
       }
     }

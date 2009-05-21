@@ -1,5 +1,7 @@
 dojo.provide("rd.contact");
 
+dojo.require("dojo.DeferredList");
+
 dojo.require("couch");
 dojo.require("rd._api");
 dojo.require("rd.identity");
@@ -12,12 +14,18 @@ dojo.mixin(rd.contact, {
   _store: [],
   _byContact: {},
   _byIdty: {},
+  _idtyMapIds: {},
+  _listStatus: "unfetched",
 
   list: function(/*Function*/callback, /*Function?*/errback) {
-    //summary: returns a list of contacts. Only has the contact documents,
-    //it does not contain the consolidated identities for each contact.
-    //Use get() to get a consolidated contact.
-    callback(this._store);
+    //summary: returns a list of all contacts with their identities loaded.
+    if (this._listStatus == "done") {
+      callback(this._store);
+    } else {
+      this._loaded = false;
+      this._listStatus = "needFetch";
+      this.list.apply(this, arguments);
+    }
   },
 
   get: function(/*String|Array*/contactId, /*Function*/callback, /*Function?*/errback) {
@@ -63,6 +71,71 @@ dojo.mixin(rd.contact, {
     this.get(contactIds, callback, errback);
   },
 
+  merge: function(/*String*/sourceContactId, /*String*/targetContactId,
+                  /*Function*/callback, /*Function?*/errback) {
+    //summary: merges two contacts by figuring out which one has the fewer
+    //number of identities, then changing the identity maps for those identities
+    //to point to the other contact. Then deletes the old contact record.
+    var source = this._store[sourceContactId];
+    var target = this._store[targetContactId];
+
+    if (target.identities.length < source.identities.length) {
+      var temp = source;
+      source = target;
+      target = temp;
+    }
+
+    //For each identity in source, grab the identity/contact map document
+    //and update it to point to the new contactId.
+    //TODO: this is really unsafe: just doing a bunch of doc updates
+    //and then a contact delete. Need to account for errors better and
+    //try to do rollbacks?
+    var dfds = [];
+    for (var i = 0, idty; idty = source.identities[i]; i++) {
+      var idtyMapDocId = this._idtyMapIds[idty.identity_id.join("|")];
+      var dfd = new dojo.Deferred();
+      couch.db("raindrop").openDoc(idtyMapDocId, {
+        success: dojo.hitch(this, function(dfd, json) {
+          //Update the contact ID field with the new field.
+          var contacts = json.contacts;
+          for (var i = 0; i < contacts.length; i++) {
+            if (contacts[i][0] == source.contact_id) {
+              contacts[i][0] = target.contact_id;
+              break;
+            }
+          }
+
+          //Now save the change to the couch.
+          couch.db("raindrop").saveDoc(json, {
+            success: function(json) {
+              dfd.callback(json);
+              return json;
+            },
+            error: function(response) {
+              dfd.errback(response);
+              return response;
+            }
+          });
+        }, dfd),
+        error: errback
+      });
+
+      dfds.push(dfd);
+    }
+
+    //Now wait for all the contacts to be updated via a DeferredList.
+    var dfdList = new dojo.DeferredList(dfds);
+    dfdList.addCallback(dojo.hitch(this, function(response) {
+      //The data we have is not incomplete.  Force a refresh of the
+      //data. TODO: make this smarter? Just update in memory cache?
+      this._reset();
+      return response;
+    }));
+    dfdList.addCallbacks(callback, errback);
+
+    //TODO: delete the old contact?
+  },
+
   _get: function(/*String|Array*/contactId) {
     //summary: private method that figures out what contacts are already
     //loaded with identities and which ones are missing identities.
@@ -84,29 +157,51 @@ dojo.mixin(rd.contact, {
     }
   },
 
+  _reset: function() {
+    //summary: clears the in memory cache and sets up a trigger
+    //of data on next public operation.
+    this._store = [];
+    this._byContact = {};
+    this._byIdty = {};
+    this._idtyMapIds = {};
+    this._listStatus = "unfetched";
+
+    this._loaded = false;    
+  },
+
   _load: function() {
     //summary: rd._api trigger for loading api data.
-    couch.db("raindrop").view("raindrop!contacts!all/_view/all", {
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        //Error out if no rows return.
-        if(!json.rows.length) {
-          this.error = new Error("no contacts");
-          this._onload();
-        } else {
-          for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-            this._store.push(doc);
-            this._store[row.key] = doc;
-          }
-
-          this._loadIdtyMapping();
-        }
-      }),
-      error: dojo.hitch(this, function(err) {
-        this.error = err;
+    if(this._store.length) {
+      //Already retrieved the contacts and identity/contact mappings.
+      //Just need to make sure we do not need to load all identities.
+      if (this._listStatus == "needFetch") {
+        this._fetchAllIdentities();
+      } else {
         this._onload();
-      })      
-    });
+      }
+    } else {
+      couch.db("raindrop").view("raindrop!contacts!all/_view/all", {
+        include_docs: true,
+        success: dojo.hitch(this, function(json) {
+          //Error out if no rows return.
+          if(!json.rows.length) {
+            this._error = new Error("no contacts");
+            this._onload();
+          } else {
+            for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+              this._store.push(doc);
+              this._store[row.key] = doc;
+            }
+  
+            this._loadIdtyMapping();
+          }
+        }),
+        error: dojo.hitch(this, function(err) {
+          this._error = err;
+          this._onload();
+        })      
+      });
+    }
   },
 
   _loadIdtyMapping: function() {
@@ -116,10 +211,16 @@ dojo.mixin(rd.contact, {
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
-          this.error = new Error("no contacts");
+          this._error = new Error("no contacts");
           this._onload();
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
+            var idtyStringKey = row.value.join("|");
+
+            //Hold onto the document ID for this identity map,
+            //for use in updating/merging identity/contact relationships
+            this._idtyMapIds[idtyStringKey] = row.id;
+
             //Store identities by contactId
             var byContact = this._byContact[row.key[0]];
             if (!byContact) {
@@ -128,16 +229,22 @@ dojo.mixin(rd.contact, {
             byContact.push(row.value);
 
             //Then store the contact by identity.
-            var byIdty = this._byIdty[row.value.join("|")];
+            var byIdty = this._byIdty[idtyStringKey];
             if (!byIdty) {
-              byIdty = this._byIdty[row.value.join("|")] = [];
+              byIdty = this._byIdty[idtyStringKey] = [];
             }
             byIdty.push(row.key[0]);
           }
-          this._onload();
+
+          if (this._listStatus == "needFetch") {
+            this._fetchAllIdentities();
+          } else {
+            this._onload();
+          }
         }
       }),
       error: dojo.hitch(this, function(err) {
+        this._error = err;
         this._onload();
       })
     });
@@ -209,6 +316,32 @@ dojo.mixin(rd.contact, {
         callback(ret);
       }),
       errback
+    );
+  },
+  
+  _fetchAllIdentities: function() {
+    //summary: fetches all the identities for all the contacts. Normally
+    //a response to a rd.contact.list() call.
+    
+    //Get the list of contactIds that still need to be fetched.
+    var contactIds = [];
+    for (var i = 0, contact; contact = this._store[i]; i++) {
+      if (!contact.identities) {
+        contactIds.push(contact.contact_id);
+      }
+    }
+
+    //Load the identities.
+    this._loadIdtys(
+      contactIds,
+      dojo.hitch(this, function(contacts) {
+        this._listStatus = "done";
+        this._onload();
+      }),
+      dojo.hitch(this, function(err) {
+          this._error = err;
+          this._onload();
+      })
     );
   }
 });

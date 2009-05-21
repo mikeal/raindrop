@@ -24,7 +24,7 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
       for (var i = 0, idtyId; (idtyId = identityIds[i]) && (i < this.count); i++) {
         ids.push(idtyId);
       }
-    
+
       rd.contact.byIdentity(ids, dojo.hitch(this, function(contacts) {
         var html = ""; 
         var count = 0;

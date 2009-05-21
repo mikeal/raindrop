@@ -1,4 +1,6 @@
 dojo.provide("rdw.Organizer");
+
+dojo.require("rd.conversation");
 dojo.require("rdw._Base");
 dojo.require("rdw.MailingList");
 
@@ -45,7 +47,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
-    this.showHome();
+    rd.pub("rd-protocol-home");
 
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
@@ -55,31 +57,5 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
         this.mailingLists(json.rows);
       })
     });
-  },
-
-  onClick: function(evt) {
-    //summary: handles click delegation when clicking on list of links.
-    var target = evt.target;
-    if (target.href) {
-      target = target.href.split("#")[1];
-      if (target) {
-        dojo.publish("rd-nav-" + target);
-        dojo.stopEvent(evt);
-        if (target == "home")
-          this.showHome();
-      }
-    }
-  },
-
-  showHome: function() {
-    couch.db("raindrop").view("raindrop!messages!by/_view/by_timestamp", {
-      limit: 30,
-      include_docs: false, // the timestamp view includes conversation ids in the value
-      descending: true,
-      success: function(json) {
-        dijit.byId("Stories").docs(json.rows);
-      }
-    });
   }
-
 });

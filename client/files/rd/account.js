@@ -24,7 +24,7 @@ dojo.mixin(rd.account, {
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
-          this.error = new Error("no accounts");
+          this._error = new Error("no accounts");
           this._onload();
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
@@ -37,7 +37,7 @@ dojo.mixin(rd.account, {
         }
       }),
       error: dojo.hitch(this, function(err) {
-        this.error = err;
+        this._error = err;
         this._onload();
       })      
     });

@@ -3,23 +3,19 @@
 <head>
   <title>raindrop</title>
   
-  <link type="text/css" rel=stylesheet href="index.css">
+  <link type="text/css" rel="stylesheet" href="index.css">
 
   <script src="/raindrop/files/config.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
-    rd.require("rdw.QuickCompose");
-    rd.require("rdw.Search");
-    rd.require("rdw.Stories");
-    rd.require("rdw.Organizer");
-    rd.require("rdw.FaceWall");
+    rd.require("inflow");
   </script>
 </head>
 <body>
   <div id="content">
     <div id="column1">
       <div rdType="rdw.QuickCompose"></div>
-      <ol id="Stories" rdType="rdw.Stories"></ol>
+      <div id="mainList"></div>
     </div>
     <div id="column2">
       <div rdType="rdw.Search"></div>

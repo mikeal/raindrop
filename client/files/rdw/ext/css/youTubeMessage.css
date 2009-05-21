@@ -1,0 +1,5 @@
+.Message > .message > .youTube {
+  background-color: #efefef;
+  padding: 1em;
+  display: inline-block;  
+}

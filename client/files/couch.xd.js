@@ -15,19 +15,20 @@ dojo.provide("couch");
     if (response instanceof Error) {
       if (dojo.isFunction(options.error)) {
         var xhr = ioArgs.xhr;
-        options.error(xhr.status, xhr.statusText, xhr.responseText);
+        return options.error(xhr.status, xhr.statusText, xhr.responseText) || response;
       } else {
         alert("An error occurred talking with the couch: " + response);
+        return response;
       }
     } else {
       if (options.beforeSuccess){
-        options.beforeSuccess(response, ioArgs);
+        return options.beforeSuccess(response, ioArgs) || response;
       }else if (options.success) {
-        options.success(response);
+        return options.success(response, ioArgs) || response;
       }
     }
   }
-  
+
   function _call(type, url, options, beforeSuccess) {
     //Basic fetch method used by all calls.
     options = options || {};
@@ -46,7 +47,7 @@ dojo.provide("couch");
       handle: _handle,
     });
 
-    dojo.xhr(type, options, (options.postData || options.putData));
+    return dojo.xhr(type, options, (options.postData || options.putData));
   }
 
   var encodeExceptions = {
@@ -105,11 +106,11 @@ dojo.provide("couch");
 
 couch = {
     allDbs: function(options) {
-      _call("GET", "/_all_dbs", options);
+      return _call("GET", "/_all_dbs", options);
     },
 
     config: function(options) {
-      _call("GET", "/_config/", options);
+      return _call("GET", "/_config/", options);
     },
 
     db: function(name) {
@@ -118,7 +119,7 @@ couch = {
         uri: djConfig.couchUrl + "/" + encodeURIComponent(name) + "/",
 
         compact: function(options) {
-          _call("POST", this.uri + "_compact", options, function(response, ioArgs) {
+          return _call("POST", this.uri + "_compact", options, function(response, ioArgs) {
             var options = ioArgs.args;
             if (ioArgs.xhr.status == 202) {
               if (options.success) {
@@ -130,7 +131,7 @@ couch = {
           });
         },
         create: function(options) {
-          _call("PUT", this.uri + "_compact", options, function(response, ioArgs) {
+          return _call("PUT", this.uri + "_compact", options, function(response, ioArgs) {
             var options = ioArgs.args;
             if (ioArgs.xhr.status == 201) {
               if (options.success) {
@@ -142,37 +143,39 @@ couch = {
           });
         },
         drop: function(options) {
-          _call("DELETE", this.uri, options);
+          return _call("DELETE", this.uri, options);
         },
         info: function(options) {
-          _call("GET", this.uri, options);
+          return _call("GET", this.uri, options);
         },
         allDocs: function(options) {
           if (options && options.keys) {
             options = dojo.delegate(options || {});
             options.postData = dojo.toJson({keys: options.keys});
-            _call("POST", this.uri + "_all_docs" + encodeOptions(options), options);
+            return _call("POST", this.uri + "_all_docs" + encodeOptions(options), options);
           } else {
-            _call("GET", this.uri + "_all_docs" + encodeOptions(options), options);
+            return _call("GET", this.uri + "_all_docs" + encodeOptions(options), options);
           }
         },
         openDoc: function(docId, options) {
-          _call("GET", this.uri + encodeURIComponent(docId) + encodeOptions(options), options);
+          return _call("GET", this.uri + encodeURIComponent(docId) + encodeOptions(options), options);
         },
         saveDoc: function(doc, options) {
           if (doc._id === undefined) {
             var method = "POST";
             var uri = this.uri;
+            options.postData = dojo.toJson(doc);
           } else {
             var method = "PUT";
             var uri = this.uri  + encodeURIComponent(doc._id);
+            options.putData = dojo.toJson(doc);
           }
           _call(method, uri, options, function(response, ioArgs) {
-              doc._id = resp.id;
-              doc._rev = resp.rev;
-              if (req.status == 201) {
+              doc._id = response.id;
+              doc._rev = response.rev;
+              if (ioArgs.xhr.status == 201) {
                 if (options.success) {
-                  options.success(resp);
+                  options.success(response);
                 }                
               } else {
                 return Error("Invalid status: " + ioArgs.xhr.status);              
@@ -180,7 +183,7 @@ couch = {
           });
         },
         removeDoc: function(doc, options) {
-          _call("DELETE", this.uri + encodeURIComponent(doc._id) + encodeOptions({rev: doc._rev}), options);
+          return _call("DELETE", this.uri + encodeURIComponent(doc._id) + encodeOptions({rev: doc._rev}), options);
         },
         query: function(mapFun, reduceFun, language, options) {
           language = language || "javascript"
@@ -197,7 +200,7 @@ couch = {
           options = dojo.delegate(options || {});
           options.postData = toJSON(body);
 
-          _call("POST", this.uri + "_slow_view" + encodeOptions(options), options);
+          return _call("POST", this.uri + "_slow_view" + encodeOptions(options), options);
         },
         view: function(name, options, extensions) {
           if (dojo.config.useApiStub) {
@@ -206,7 +209,7 @@ couch = {
           if (options.keys) {
             options = dojo.delegate(options || {});
             options.postData = dojo.toJson({keys: options.keys});            
-            _call(dojo.config.useApiStub ? "GET" : "POST", this.uri + "_design/" + name + encodeOptions(options), options);
+            return _call(dojo.config.useApiStub ? "GET" : "POST", this.uri + "_design/" + name + encodeOptions(options), options);
           } else {
             var beforeSuccess;
             if(extensions) {
@@ -217,20 +220,20 @@ couch = {
                 }
               };
             }
-            _call("GET", this.uri + "_design/" + name + encodeOptions(options), options, beforeSuccess);
+            return _call("GET", this.uri + "_design/" + name + encodeOptions(options), options, beforeSuccess);
           }
         }
       };
     },
 
     info: function(options) {
-      _call("GET", "/", options);
+      return _call("GET", "/", options);
     },
 
     replicate: function(source, target, options) {
       options = dojo.delegate(options || {});
       options.postData = toJSON({source: source, target: target});
-      _call("POST", "/_replicate", options);
+      return _call("POST", "/_replicate", options);
     }
 
   }
