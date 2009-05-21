@@ -314,8 +314,6 @@ class MessageTransformerWQ(object):
             _ = yield self.doc_model.create_schema_items(to_save)
         defer.returnValue(len(to_save))
 
-
-
     def get_queue_id(self):
         return 'workqueue!msg!' + get_extension_id(self.ext)
 
@@ -343,10 +341,12 @@ class MessageTransformerWQ(object):
             return self.doc_model.get_doc_id_for_schema_item(ni)
 
         def emit_related_identities(identity_ids, def_contact_props):
-            new_items.extend(items_from_related_identities(self.doc_model,
+            for item in items_from_related_identities(self.doc_model,
                                                  identity_ids,
                                                  def_contact_props,
-                                                 self.ext.extension_id))
+                                                 self.ext.extension_id):
+                item['rd_source'] = [src_doc['_id'], src_doc['_rev']]
+                new_items.append(item)
 
         def open_schema_attachment(src, attachment, **kw):
             "A function to abstract document storage requirements away..."
@@ -477,6 +477,8 @@ class MessageTransformerWQ(object):
 
 # NOTE: called from a background thread by extensions, so we can block :)
 def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
+    idrels = list(idrels) # likely a generator...
+    assert idrels, "don't give me an empty list - just don't emit!!"
     if __debug__: # check the extension is sane...
         for iid, rel in idrels:
             assert isinstance(iid, (tuple, list)) and len(iid)==2,\
@@ -506,6 +508,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
             doc_model.open_schemas(rdkey, 'rd/identity/contacts'))
     results = threads.blockingCallFromThread(reactor,
                     defer.DeferredList, dl)
+    assert len(results)==len(idrels), (results, idrels)
 
     # check for errors...
     for (ok, result) in results:
