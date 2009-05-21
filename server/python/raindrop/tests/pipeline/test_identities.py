@@ -16,71 +16,76 @@ class TestIDPipelineBase(TestCaseWithTestDB):
         dm = get_doc_model()
         return pipeline.Pipeline(dm, opts)
 
-    @defer.inlineCallbacks
-    def process_doc(self, doc, emit_common_ids=True):
+    def process_doc(self, exts=None, emit_common_ids=True):
+        test_proto.test_emit_identities = True
         test_proto.test_emit_common_identities = emit_common_ids
         doc_model = get_doc_model()
-        if not pipeline.spawners: # XXX - *sob* - misplaced...
+        if not pipeline.extensions: # XXX - *sob* - misplaced...
             pipeline.load_extensions(doc_model)
 
-        coop = task.Cooperator()
-        wq = pipeline.IdentitySpawnerWQ(doc_model, **FakeOptions().__dict__)
-        got = yield wq.process([(doc['_id'], doc['_rev'])])
-        num = yield wq.consume(got)
+        p = self.get_pipeline()
+        p.options.exts = exts
+        return p.start()
 
 
 class TestIDPipeline(TestIDPipelineBase):
     # Test extracting identities and contacts test protocol messages
     # work as expected.
+    @defer.inlineCallbacks
     def deferVerifyCounts(self, _, contact_count, identity_count):
-        def verify(results):
-            self.failUnlessEqual(len(results), 2)
-            (c_ok, c_ret), (i_ok, i_ret) = results
-            self.failUnless(c_ok)
-            self.failUnlessEqual(len(c_ret['rows']), contact_count, repr(c_ret))
-            self.failUnless(i_ok)
-            self.failUnlessEqual(len(i_ret['rows']), identity_count, repr(i_ret))
-            
-        return defer.DeferredList([
-            get_doc_model().open_view('raindrop!messages!by',
-                                      'by_doc_type',
-                                      key="contact"),
-            get_doc_model().open_view('raindrop!messages!by',
-                                      'by_doc_type',
-                                      key="test_identity")
-            ]).addCallback(verify)
+        # First determine the contact ID.
+        result = yield get_doc_model().open_view('raindrop!docs!all',
+                                         'by_raindrop_schema',
+                                         key='rd/contact')
+        self.failUnlessEqual(len(result['rows']), contact_count, repr(result))
+
+        for id_schema in ('rd/identity/exists', 'rd/identity/contacts'):
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key=id_schema)
+            self.failUnlessEqual(len(result['rows']), identity_count, repr(result))
 
     def test_one_testmsg(self):
         # When processing a single test message we end up with 2 identies
         # both associated with the same contact
-        def extract_and_test(result):
-            rows = result['rows']
-            cid = rows[0]['key'][0]
-            ex_bycontact = [
-                     # expected 'key',  expected 'value'
-                    ([cid, 'personal'], ['test_identity', '0']),
-                    ([cid, 'public'],   ['test_identity', 'common']),
-            ]
-            # and 'by_id' is the exact inverse.
-            ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!all',
-                                       'by_contact',
-                                       expect=ex_bycontact,
-                        ).addCallback(self.deferFailUnlessView,
-                                      'raindrop!contacts!all', 'by_identity',
-                                      expect=ex_byid,
-                                      )
 
-        def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!all',
-                                             'by_contact', limit=1
-                        ).addCallback(extract_and_test
-                        )
-            
+        @defer.inlineCallbacks
+        def check_it(result):
+            # First determine the contact ID.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/contact',
+                                             include_docs=True)
+
+            rows = result['rows']
+            # Should be exactly 1 record with a 'contact' schema.
+            self.failUnlessEqual(len(rows), 1, str(rows))
+            key_type, cid = rows[0]['doc']['rd_key']
+            self.failUnlessEqual(key_type, 'contact')
+
+            # should be exact 2 rd/identity/contacts records, each pointing
+            # at my contact.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/identity/contacts',
+                                             include_docs=True)
+
+            rows = result['rows']
+            self.failUnlessEqual(len(rows), 2, str(rows))
+            docs = [r['doc'] for r in rows]
+            for doc in docs:
+                contacts = doc['contacts']
+                self.failUnlessEqual(len(contacts), 1, contacts)
+                this_id, this_rel = contacts[0]
+                self.failUnlessEqual(this_id, cid)
+                self.failUnless(this_rel in ['personal', 'public'], this_rel)
+            # and that will do!
+
         dm = get_doc_model()
-        return dm.open_document('msg', '0', 'proto/test'
-                ).addCallback(self.process_doc
-                ).addCallback(determine_contact_id,
+        exts = ['raindrop.proto.test.test_converter']
+
+        return self.process_doc(exts
+                ).addCallback(check_it,
                 )
 
     def test_one_testmsg_common(self):
@@ -90,89 +95,90 @@ class TestIDPipeline(TestIDPipelineBase):
         # is already associated with the contact we created first time round,
         # with the end result we still end up with a single contact, but now
         # have *three* identities for him
-        def extract_and_test(result):
+        @defer.inlineCallbacks
+        def check_it(result):
+            # First determine the contact ID.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/contact',
+                                             include_docs=True)
+
             rows = result['rows']
-            cid = rows[0]['key'][0]
-            # Our 1 contact has 3 ids.
-            ex_bycontact = [
-                ([cid, 'personal'], ['test_identity', '0']),
-                ([cid, 'personal'], ['test_identity', '1']),
-                ([cid, 'public'],   ['test_identity', 'common']),
-            ]
-            # and 'by_id' is the exact inverse.
-            ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!all',
-                                       'by_contact',
-                                        expect=ex_bycontact,
-                        ).addCallback(self.deferFailUnlessView,
-                                      'raindrop!contacts!all', 'by_identity',
-                                      expect=ex_byid,
-                                      )
+            # Should be exactly 1 record with a 'contact' schema.
+            self.failUnlessEqual(len(rows), 1, str(rows))
+            key_type, cid = rows[0]['doc']['rd_key']
+            self.failUnlessEqual(key_type, 'contact')
 
-        def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!all',
-                                             'by_contact', limit=1,
-                        ).addCallback(extract_and_test
-                        )
+            # should be exact 3 rd/identity/contacts records, each pointing
+            # at my contact.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/identity/contacts',
+                                             include_docs=True)
 
+            rows = result['rows']
+            self.failUnlessEqual(len(rows), 3, str(rows))
+            docs = [r['doc'] for r in rows]
+            for doc in docs:
+                contacts = doc['contacts']
+                self.failUnlessEqual(len(contacts), 1, contacts)
+                this_id, this_rel = contacts[0]
+                self.failUnlessEqual(this_id, cid)
+                self.failUnless(this_rel in ['personal', 'public'], this_rel)
+            # and that will do!
 
-        open_doc = get_doc_model().open_document
+        exts = ['raindrop.proto.test.test_converter']
         return self.test_one_testmsg(
                 ).addCallback(self.deferMakeAnotherTestMessage
-                ).addCallback(lambda _: open_doc('msg', '1', 'proto/test')
-                ).addCallback(self.process_doc
-                ).addCallback(determine_contact_id,
+                ).addCallback(lambda _: self.process_doc(exts)
+                ).addCallback(check_it,
                 ).addCallback(self.deferVerifyCounts, 1, 3
                 )
 
     def test_one_testmsg_unique(self):
-        # Here we process 2 test messages but none of the message emit a
+        # Here we process 2 test messages but none of the messages emit a
         # common identity ID.  The end result is we end up with 2 contacts;
         # one with 2 identities (from reusing test_one_testmsg), then a second
         # contact with only a single identity
-        def extract_and_test(result):
+        @defer.inlineCallbacks
+        def check_it(result):
+            # First determine the 2 contact IDs.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/contact',
+                                             include_docs=True)
+
             rows = result['rows']
-            cids = [r['key'][0] for r in rows]
-            # One of the contact-ids must be the same.
-            if cids[0]==cids[1]:
-                cid_first = cids[0]
-                cid_second = cids[2]
-            elif cids[0]==cids[2]:
-                cid_first = cids[0]
-                cid_second = cids[1]
-            elif cids[1]==cids[2]:
-                cid_first = cids[1]
-                cid_second = cids[0]
-            else:
-                self.fail(cids)
-                
-            # Our 1 contact has 3 ids.
-            ex_bycontact = [
-                        ([cid_first, 'personal'], ['test_identity', '0']),
-                        ([cid_first, 'public'],   ['test_identity', 'common']),
-                        ([cid_second, 'personal'], ['test_identity', '1'])
-                        ]
-            # and 'by_id' is the exact inverse.
-            ex_byid = [(e[1], e[0]) for e in ex_bycontact]
-            return self.failUnlessView('raindrop!identities!all',
-                                       'by_contact',
-                                        expect=ex_bycontact,
-                        ).addCallback(self.deferFailUnlessView,
-                                      'raindrop!contacts!all', 'by_identity',
-                                      expect=ex_byid,
-                                      )
+            # Should be exactly 2 records with a 'contact' schema.
+            self.failUnlessEqual(len(rows), 2, str(rows))
+            key_type, cid1 = rows[0]['doc']['rd_key']
+            self.failUnlessEqual(key_type, 'contact')
+            key_type, cid2 = rows[1]['doc']['rd_key']
+            self.failUnlessEqual(key_type, 'contact')
 
-        def determine_contact_id(result):
-            return get_doc_model().open_view('raindrop!identities!all',
-                                             'by_contact', limit=3
-                        ).addCallback(extract_and_test
-                        )
+            # should be exact 3 rd/identity/contacts records, each pointing
+            # at my contact.
+            result = yield get_doc_model().open_view('raindrop!docs!all',
+                                             'by_raindrop_schema',
+                                             key='rd/identity/contacts',
+                                             include_docs=True)
+
+            rows = result['rows']
+            self.failUnlessEqual(len(rows), 3, str(rows))
+            docs = [r['doc'] for r in rows]
+            for doc in docs:
+                contacts = doc['contacts']
+                self.failUnlessEqual(len(contacts), 1, contacts)
+                this_id, this_rel = contacts[0]
+                self.failUnless(this_id in [cid1, cid2])
+                self.failUnless(this_rel in ['personal', 'public'], this_rel)
+            # and that will do!
 
 
-        open_doc = get_doc_model().open_document
+        exts = ['raindrop.proto.test.test_converter']
         return self.test_one_testmsg(
                 ).addCallback(self.deferMakeAnotherTestMessage
-                ).addCallback(lambda _: open_doc('msg', '1', 'proto/test')
-                ).addCallback(self.process_doc, False
-                ).addCallback(determine_contact_id,
+                ).addCallback(lambda _: self.process_doc(exts, False)
+                ).addCallback(check_it,
+                ).addCallback(self.deferVerifyCounts, 2, 3
                 )

@@ -285,24 +285,8 @@ class DocumentModel(object):
     def open_view(self, *args, **kwargs):
         # A convenience method for completeness so consumers don't hit the
         # DB directly (and to give a consistent 'style').  Is it worth it?
+        logger.debug("attempting to open view %r %r", args, kwargs)
         return self.db.openView(*args, **kwargs)
-
-    def open_attachment(self, doc_id, attachment, **kw):
-        """Open an attachment for the given docID.  As this is generally done
-        when processing the document itself, so the raw ID of the document
-        itself is known.  For this reason, a docid rather than the parts is
-        used.
-
-        Unlike open_document, this never returns None, but raises an
-        exception if the attachment doesn't exist.
-        """
-        logger.debug("attempting to open attachment %s/%s", doc_id, attachment)
-        return self.db.openDoc(self.quote_id(doc_id), attachment=attachment, **kw)
-
-    def open_document(self, category, proto_id, ext_type, **kw):
-        """Open the specific document, returning None if it doesn't exist"""
-        docid = self.build_docid(category, ext_type, encode_provider_id(proto_id))
-        return self.open_document_by_id(docid, **kw)
 
     def open_document_by_id(self, doc_id, **kw):
         """Open a document by the already constructed docid"""
@@ -326,11 +310,14 @@ class DocumentModel(object):
         key_type, key_val = si['rd_key']
         enc_key_val = encode_provider_id(json.dumps(key_val))
         key_part = "%s.%s" % (key_type, enc_key_val)
-        ext_id = self.quote_id(si['ext_id'])
-        if si.get('schema_id'):
-            sch_id = self.quote_id(si['schema_id'])
+        sch_id = self.quote_id(si['schema_id'])
+        # only use the extension_id when items were provided (ie, its not
+        # an 'exists' schema.)
+        if si['items'] is None:
+            assert sch_id.endswith('%2Fexists'), sch_id
+            ext_id = ''
         else:
-            sch_id = ''
+            ext_id = self.quote_id(si['ext_id'])
         bits = ['rc', key_part, ext_id, sch_id]
         return "!".join(bits)
 
@@ -338,12 +325,21 @@ class DocumentModel(object):
         docs = []
         for si in item_defs:
             doc = {}
-            if 'items' in si:
-                doc.update(si['items'])
+            schema_id = si.get('schema_id')
+            assert schema_id  # schema-id not optional.
+            items = si['items'] # items not optional - but may be None
+            if items is None:
+                # None presumably means an 'exists' schema ID - assert for
+                # now incase it helps detect confusion...
+                assert schema_id.endswith("/exists"), schema_id
+            elif not items:
+                logger.warning("Got an empty schema - ignoring!")
+                continue
             else:
-                # No items == no schema!
-                assert si.get('schema_id') is None, si
+                doc.update(si['items'])
             docs.append(doc)
+            # If the extension needs to update an existing record it must
+            # give the id and rev.
             if '_id' in si:
                 id = si['_id']
                 # Only look for '_rev' if they supplied '_id'
@@ -357,8 +353,7 @@ class DocumentModel(object):
             if rd_source:
                 doc['rd_source'] = rd_source
             doc['rd_ext_id'] = si['ext_id']
-            # Always explicitly write a null for the schema if its missing...
-            doc['rd_schema_id'] = si.get('schema_id')
+            doc['rd_schema_id'] = schema_id
             if 'confidence' in si:
                 doc['_rd_schema_confidence'] = si['confidence']
 
@@ -385,53 +380,6 @@ class DocumentModel(object):
                 ret.append(r['doc'])
         defer.returnValue(ret)
 
-
-    def _prepare_raw_doc(self, account, doc, doc_cat, doc_type, provid):
-        docid = self.build_docid(doc_cat, doc_type, encode_provider_id(provid))
-        # practicality beats purity - we may need to update a raw doc,
-        # in which case they better give us the _rev...
-        is_update = '_id' in doc
-        if is_update:
-            assert '_rev' in doc, doc
-        else:
-            doc['_id'] = docid
-            assert 'raindrop_account' not in doc, doc # we look after that!
-        # We don't actually *use* this best I can tell, and this function
-        # ends up being called to create 'identity' docs, which don't belong
-        # to an account anyway...
-        if account is not None:
-            doc['raindrop_account'] = account.details['_id']
-
-        for (attr, val) in [
-                        ('type', doc_type),
-                        ('raindrop_category', doc_cat),
-                        ]:
-            if is_update:
-                # But you can't change the basic 'type' etc on update...
-                assert doc[attr]==val, doc
-            else:
-                assert attr not in doc, (doc, attr) # we look after that!
-                doc[attr] = val
-
-        assert is_update or 'raindrop_seq' not in doc, doc # we look after that!
-        doc['raindrop_seq'] = get_seq()
-
-    def create_raw_documents(self, account, doc_infos):
-        """Entry-point to create raw documents.  The API reflects that
-        creating multiple documents in a batch is faster; if you want to
-        create a single doc, just put it in a list
-        """
-        docs = []
-        logger.debug('create_raw_documents preparing %d docs', len(doc_infos))
-        for (cat, doc_type, provid, doc) in doc_infos:
-            self._prepare_raw_doc(account, doc, cat, doc_type, provid)
-            docs.append(doc)
-        attachments = self._prepare_attachments(docs)
-        logger.debug('create_raw_documents saving %d docs', len(docs))
-        return self.db.updateDocuments(docs
-                    ).addCallback(self._cb_saved_docs, attachments
-                    )
-
     def _prepare_attachments(self, docs):
         # called internally when creating a batch of documents. Returns a list
         # of attachments which should be saved separately.
@@ -448,7 +396,7 @@ class DocumentModel(object):
         # have no transactional semantics.
         all_attachments = []
         for doc in docs:
-            assert '_id' in doc # should have called prepare_ext_document!
+            assert '_id' in doc
             try:
                 this_attach = doc['_attachments']
                 total_bytes = 0
@@ -471,24 +419,9 @@ class DocumentModel(object):
         assert len(all_attachments)==len(docs)
         return all_attachments
 
-    def prepare_ext_document(self, doc_cat, doc_type, enc_prov_id, doc):
-        """Called by extensions to setup the raindrop maintained attributes
-           of the documents, including the document ID
-        """
-        assert '_id' not in doc, doc # We manage IDs for all but 'raw' docs.
-        assert 'type' not in doc, doc # we manage this
-        assert 'raindrop_seq' not in doc, doc # we manage this
-        doc['_id'] = self.build_docid(doc_cat, doc_type, enc_prov_id)
-        doc['raindrop_seq'] = get_seq()
-        # just 'type' might not be good - XXX - consider making 'type' a tuple
-        # of (doc_cat, doc_type) - for now we store the category in a separate
-        # field...
-        doc['type'] = doc_type 
-        doc['raindrop_category'] = doc_cat
-
     def create_ext_documents(self, docs):
         for doc in docs:
-            assert '_id' in doc, doc # should have called prepare_ext_document!
+            assert '_id' in doc, doc
         attachments = self._prepare_attachments(docs)
         # save the document.
         logger.debug('saving %d extension documents', len(docs))
@@ -512,7 +445,13 @@ class DocumentModel(object):
             if 'error' in dinfo:
                 # If no 'schema_id' was specified then this is OK - the
                 # extension is just noting the ID exists and it already does.
-                if item_def and item_def.get('schema_id') is not None:
+                if item_def and dinfo.get('error')=='conflict' and \
+                   item_def['items'] is None:
+                    logger.debug('ignoring conflict error when asserting %r exists',
+                                 dinfo['id'])
+                    pass # all OK
+                else:
+                    # presumably an unexpected error :(
                     raise DocumentSaveError(dinfo)
 
             if dattach:

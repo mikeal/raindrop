@@ -22,7 +22,7 @@ class TestPipelineBase(TestCaseWithTestDB):
         dm = get_doc_model()
         return pipeline.Pipeline(dm, opts)
 
-    def process_doc(self, doc, exts = None):
+    def process_doc(self, exts = None):
         doc_model = get_doc_model()
         if not pipeline.extensions: # XXX - *sob* - misplaced...
             pipeline.load_extensions(doc_model)
@@ -36,6 +36,7 @@ class TestPipeline(TestPipelineBase):
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
         test_proto.test_next_convert_fails = False
+        test_proto.test_emit_identities = False
 
         def check_targets_last(lasts_by_seq, target_types):
             docs = [row['doc'] for row in lasts_by_seq if row['doc']['_id'].startswith('rc!')]
@@ -52,8 +53,7 @@ class TestPipeline(TestPipelineBase):
         targets = set(('rd/msg/body', 'rd/msg/email', 'rd/msg/flags',
                        'rd/msg/rfc822', 'rd/msg/test/raw'))
         dm = get_doc_model()
-        return dm.open_document('msg', '0', 'proto/test'
-                ).addCallback(self.process_doc, self.simple_exts
+        return self.process_doc(self.simple_exts
                 ).addCallback(check_targets, targets
                 )
 
@@ -73,17 +73,12 @@ class TestPipeline(TestPipelineBase):
                         ).addCallback(check_targets_same, targets_b4
                         )
 
-        def reprocess(src_doc, targets_b4):
-            return self.process_doc(src_doc, self.simple_exts
+        def reprocess(targets_b4):
+            return self.process_doc(self.simple_exts
                         ).addCallback(check_nothing_done, targets_b4)
 
-        def do_it_again(target_docs):
-            return dm.open_document('msg', '0', 'proto/test'
-                            ).addCallback(reprocess, target_docs
-                            )
-
         return self.test_one_step(
-                ).addCallback(do_it_again
+                ).addCallback(reprocess
                 )
 
 
@@ -103,8 +98,7 @@ class TestErrors(TestPipelineBase):
 
         # open the test document to get its ID and _rev.
         dm = get_doc_model()
-        return dm.open_document('msg', '0', 'proto/test'
-                ).addCallback(self.process_doc, exts
+        return self.process_doc(exts
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_target_last
                 )

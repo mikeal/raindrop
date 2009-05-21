@@ -3,6 +3,9 @@ with other fancy things, such as validators etc.
 
 But for now, this is where the schema are defined.
 
+MESSAGES:
+=========
+
 rd/msg/body
 -----------
 ** Notes **
@@ -50,3 +53,49 @@ rd/msg/conversation:
 ** Fields**
 
 conversation_id: a string which identifies the conversation.
+
+IDENTITIES AND CONTACTS:
+========================
+
+rd/contact:
+** Fields **
+name:
+
+
+rd/identity/exists:
+-------------------
+** Fields **
+
+This schema has no fields!  It could have 'identity_id', but the 'rd_key'
+for such schemas is always ['identity', identity_id_value].
+
+NOTE: Schemas with no fields are treated specially by the framework; such
+records are considered an 'assertion' the object key exists, so conflict
+errors are ignored when attempting to write them.
+
+rd/identity:
+------------
+** Notes **
+This is a 'normalized schema' - its a set of fields that any identity provider
+might be able to fetch.
+
+** Fields **
+
+name: A display name?
+nickname: nickname
+url: user's home page
+image: Either a URL or reference to an attachment.
+
+rd/identity/contacts:
+---------------------
+** Fields **
+contacts: A list of (contact_id, relationship_name) tuples, where
+'relationship_name' can be None or may help differentiate things like phone
+numbers or email addresses.
+
+
+rd/identity/skype:
+rd/identity/twitter:
+--------------------
+
+"Private" schemas - whatever the identity fetchers want to store.

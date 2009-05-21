@@ -7,6 +7,7 @@ Fetch twitter raw* objects
 from __future__ import absolute_import
 
 import logging
+import sys
 import re
 import twisted.python.log
 from twisted.internet import defer, threads
@@ -29,6 +30,8 @@ with warnings.catch_warnings():
 
 logger = logging.getLogger(__name__)
 
+re_user = re.compile(r'@(\w+)')
+
 
 class TwitterProcessor(object):
     # The 'id' of this extension
@@ -41,12 +44,6 @@ class TwitterProcessor(object):
         self.conductor = conductor
         self.twit = None
         self.seen_tweets = None
-
-    def user_to_raw(self, user):
-        ret = {}
-        for name, val in user.AsDict().iteritems():
-            ret['twitter_'+name.lower()] = val
-        return ret
 
     def tweet_to_raw(self, tweet):
         ret = {}
@@ -82,33 +79,6 @@ class TwitterProcessor(object):
 
     def gen_friends_info(self, friends):
         logger.info("apparently I've %d friends", len(friends))
-        def check_identity(schemas, friend, rdkey):
-            # XXX - the framework should do this for us :(
-            mine = [s for s in schemas if s['rd_ext_id']==self.rd_extension_id]
-            assert len(mine) in [0, 1], mine
-            friend_raw = self.user_to_raw(friend)
-            # Add the identity_id as our 'raw' record has it...
-            if not mine or mine[0]['raw'] != friend_raw:
-                logger.info("Need to update twitter user %s",
-                            friend.screen_name)
-                new_fields = {'raw': friend_raw}
-                new_info = {'rd_key' : rdkey,
-                            'ext_id': self.rd_extension_id,
-                            'schema_id': 'rd/identity/twitter/raw',
-                            'items': new_fields,
-                          }
-                if mine:
-                    # this is an update...
-                    new_info['_id'] = mine[0]['_id']
-                    new_info['_rev'] = mine[0]['_rev']
-                # should try and batch these up...
-                return self.doc_model.create_schema_items([new_info])
-
-        def do_friend_identity(friend):
-            rdkey = ['twitter', friend.screen_name]
-            return self.doc_model.open_schemas(rdkey, 'rd/identity/twitter/raw'
-                        ).addCallback(check_identity, friend, rdkey
-                        )
 
         def find_new_tweets(results, friend):
             rows = results['rows']
@@ -147,10 +117,8 @@ class TwitterProcessor(object):
         # None means 'me' - but we don't really want to use 'None'.  This is
         # the only way I can work out how to get ourselves!
         me = self.twit.GetUser(self.twit._username)
-        yield do_friend_identity(me)
         yield do_friend_tweets(me)
         for f in friends:
-            yield do_friend_identity(f)
             yield do_friend_tweets(f)
 
         logger.debug("Finished friends")
@@ -161,7 +129,12 @@ class TwitterProcessor(object):
 
     def _cb_got_friend_timeline(self, timeline, friend):
         infos = []
+        user_ids = set([friend.screen_name])
         for tweet in timeline:
+            user_ids.add(tweet.user.screen_name)
+            for ref in (re_user.findall(tweet.text) or []):
+                user_ids.add(ref)
+
             tid = tweet.id
             # put the 'raw' document object together and save it.
             logger.info("New tweet '%s...' (%s)", tweet.text[:25], tid)
@@ -172,8 +145,14 @@ class TwitterProcessor(object):
                           'ext_id': self.rd_extension_id,
                           'schema_id': 'rd/msg/tweet/raw',
                           'items': fields})
-        logger.info("friend %s has %d new tweets", friend.screen_name,
-                    len(infos))
+        logger.info("friend %s has %d new tweets referencing %d tweeters",
+                    friend.screen_name, len(infos), len(user_ids))
+        # emit 'I assert this user exists' style schemas...
+        for uid in user_ids:
+            infos.append({'rd_key' : ['identity', ['twitter', uid]],
+                          'ext_id': self.rd_extension_id,
+                          'schema_id': 'rd/identity/exists',
+                          'items': None})
         return self.doc_model.create_schema_items(infos)
 
 # A 'converter' - takes a rd/msg/tweet/raw as input and creates various
@@ -202,64 +181,60 @@ def tweet_converter(doc):
         tdoc = {'tags': tags}
         emit_schema('rd/tags', tdoc)
 
+
 # Twitter identities...
+_twitter_id_converter = None
 
-# An identity 'converter' for twitter...
-class TwitterRawConverter(base.SimpleConverterBase):
-    target_type = 'id', 'twitter/raw'
-    sources = [('id', 'twitter')]
-    def simple_convert(self, doc):
-        # here is a cheat - if the identity was created by our twitter
-        # processor, it will have written a 'raw' dict - this means we don't
-        # need to revisit twitter to get the details.  (If no 'raw' field
-        # existed, then this was probably introduced by the front-end or
-        # some other 'identity scraper') where all they know is the ID)
-        # Eg: very soon that will include us, as we detect @tags
-        assert 'raw' in doc, doc #"Sorry front-end, you can't do that yet!"
-        return doc['raw'].copy()
+@base.raindrop_extension('rd/identity/exists')
+def twitter_id_converter(doc):
+    typ, (id_type, id_id) = doc['rd_key']
+    assert typ=='identity' # Must be an 'identity' to have this schema type!
+    if id_type != 'twitter':
+        # Not a twitter ID.
+        return
 
+    # Is a skype ID - attach to skype and process it.
+    global _twitter_id_converter
+    if _twitter_id_converter is None:
+        _twitter_id_converter = twitter.Api()
+    twit = _twitter_id_converter
 
-# The intent of this class is a 'union' of the useful fields we might want...
-class TwitterBakedConverter(base.SimpleConverterBase):
-    target_type = 'id', 'identity'
-    sources = [('id', 'twitter/raw')]
-    def simple_convert(self, doc):
-        # Python's twitter API only gives us elts explicitly set, so many
-        # may not exist...
-        ret = {}
-        for dest, src in [
-            ('name', 'twitter_name'),
-            ('nickname', 'twitter_screen_name'),
-            ('url', 'twitter_url'),
-            ('image', 'twitter_profile_image_url'),
-            # XXX - this sucks - the ID things needs more thought - does it
-            # really need to be carried forward?
-            ('identity_id', 'identity_id'),
-            ]:
-            try:
-                ret[dest] = doc[src]
-            except KeyError:
-                pass
-        return ret
+    try:
+        user = twit.GetUser(id_id)
+    # *sob* - twitter package causes urllib2 errors :(
+    except:
+        logger.warning("can't find twitter user %r: %s", id_id,
+                       sys.exc_info()[1])
+        return
 
+    items = {}
+    for name, val in user.AsDict().iteritems():
+        items['twitter_'+name.lower()] = val
+    did = emit_schema('rd/identity/twitter', items)
 
-# An 'identity spawner' twitter/raw as input and creates a number of identities.
-class TwitterIdentitySpawner(base.IdentitySpawnerBase):
-    source_type = 'id', 'twitter/raw'
-    def get_identity_rels(self, src_doc):
-        return [r for r in self._gen_em(src_doc)]
+    # emit one for the normalized identity schema
+    items = {'nickname': user.screen_name}
+    # the rest are optional...
+    for dest, src in [
+        ('name', 'name'),
+        ('url', 'url'),
+        ('image', 'profile_image_url'),
+        ]:
+        val = getattr(user, src)
+        if val:
+            items[dest] = val
+    emit_schema('rd/identity', items)
 
-    def _gen_em(self, props):
+    # and we use the same extension to emit the 'known identities' too...
+    def gen_em():
         # the primary 'twitter' one first...
-        yield ('twitter', props['twitter_screen_name']), None
-        v = props.get('twitter_url')
+        yield ('twitter', user.screen_name), None
+        v = user.url
         if v:
             yield ('url', v.rstrip('/')), 'homepage'
 
-    def get_default_contact_props(self, src_doc):
-        return {
-            'name': src_doc['twitter_name'] or src_doc['twitter_screen_name']
-        }
+    def_contact_props = {'name': user.name or user.screen_name}
+    emit_related_identities(gen_em(), def_contact_props)
 
 
 class TwitterAccount(base.AccountBase):

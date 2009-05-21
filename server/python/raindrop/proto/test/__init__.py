@@ -10,6 +10,7 @@ from ...proc import base
 # May be set to True or False by the test suite, or remains None for
 # "normal" behaviour
 test_next_convert_fails = None
+test_emit_identities = False
 test_emit_common_identities = False
 # overrides the config option.
 test_num_test_docs = None
@@ -68,6 +69,23 @@ class TestMessageProvider(object):
                     'items': data,
                     }
             self.bulk_docs.append(info)
+            # and we 'assert the existance' of 2 identities - one unique to
+            # out test message and one common for all.
+            if test_emit_identities:
+                self.bulk_docs.append({
+                        'schema_id': 'rd/identity/exists',
+                        'ext_id': self.rd_extension_id,
+                        'rd_source': None,
+                        'rd_key': ['identity', ['test_identity', str(doc_num)]],
+                        'items': None,
+                    })
+                self.bulk_docs.append({
+                        'schema_id': 'rd/identity/exists',
+                        'ext_id': self.rd_extension_id,
+                        'rd_source': None,
+                        'rd_key': ['identity', ['test_identity', 'common']],
+                        'items': None,
+                    })
         else:
             logger.info("Skipping test message with ID %d - already exists",
                         doc_num)
@@ -111,7 +129,7 @@ def test_converter(src):
     body = u"Hello, this is test message %(storage_key)d (with extended \xa9haracter!)" % src
     msg.set_payload(body.encode('utf-8'), 'utf-8')
     attachments = {"rfc822" : {"content_type" : 'message',
-                               "data" : msg.get_payload(),
+                               "data" : msg.as_string(),
                              }
                   }
     
@@ -122,21 +140,18 @@ def test_converter(src):
     # emit a 'flags' schema too just for fun
     emit_schema('rd/msg/flags', {'seen': False})
 
-   
-# An 'identity spawner' takes proto/test as input and creates a few test
-# identities.
-@base.raindrop_identity_extension('rd/msg/test/raw')
-def get_identity_rels(source_doc):
-    # We want every 'test message' to result in 2 identities - one
-    # unique to the message and one common across all.
-    myid = str(source_doc['storage_key'])
-    # invent relationships called 'public' and 'personal'...
-    ret = [
-        (('test_identity', myid), 'personal'),
-    ]
-    if test_emit_common_identities:
-        ret.append((('test_identity', 'common'), 'public'))
-    return ret
+    if test_emit_identities:
+        # and assertions about the existance of a couple of identities...
+        # We want every 'test message' to result in 2 identities - one
+        # unique to the message and one common across all.
+        # invent relationships called 'public' and 'personal'...
+        items = [
+            (('test_identity', str(me)), 'personal'),
+        ]
+        if test_emit_common_identities:
+            items.append((('test_identity', 'common'), 'public'))
+        emit_related_identities(items, {'name':'test protocol'})
+
 
 class TestAccount(base.AccountBase):
   def startSync(self, conductor):

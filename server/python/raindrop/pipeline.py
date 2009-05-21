@@ -24,7 +24,6 @@ extension_modules = [
     'raindrop.proto.skype',
     'raindrop.proto.imap',
     'raindrop.proto.twitter',
-    'raindrop.ext.identity',
     'raindrop.ext.message.rfc822',
     'raindrop.ext.message.mailinglist',
     'raindrop.ext.message.convos',
@@ -32,14 +31,6 @@ extension_modules = [
 
 # A set of extensions...
 extensions = set()
-
-# A list of extensions which 'spawn' new documents, optionally based on the
-# existance of some other document.
-# Keyed by 'source_type' (which may be None), and each elt is a list of
-# extension instances
-# XXX - for now limited to 'identity spawners'...
-spawners = {}
-
 
 def find_exts_in_module(mod_name, special_attr):
     try:
@@ -75,16 +66,12 @@ def find_specified_extensions(special_attr, exts=None):
                          missing)
     return ret
 
+
 def load_extensions(doc_model):
     # still a little confused - this should load more types...
     for mod_name in extension_modules:
         for cvtr in find_exts_in_module(mod_name, 'extension_id'):
             extensions.add(cvtr)
-        # XXX - this is wrong - technically the things below are extensions
-        # of the IdentitySpawner extension!
-        for ext in find_exts_in_module(mod_name, 'identity_extension_id'):
-            assert getattr(ext, "source_schema"), ext # must have a source type.
-            spawners.setdefault(ext.source_schema, []).append(ext)
 
 
 class Pipeline(object):
@@ -109,10 +96,6 @@ class Pipeline(object):
             inst = MessageTransformerWQ(self.doc_model, ext,
                                         options = self.options.__dict__)
             ret.append(inst)
-        # yuck yuck...
-        iwq = IdentitySpawnerWQ(self.doc_model, self.options.__dict__)
-        if not spec_exts or iwq.get_queue_name() in spec_exts:
-            ret.append(iwq)
         return ret
 
     @defer.inlineCallbacks
@@ -285,40 +268,16 @@ class QueueRunner(object):
         _ = yield self.doc_model._update_important_views()
     
 
-class WorkQueue(object):
-    # These WorkQueues are very much still a thought-in-progress.
-    # In particular, abstracting of dependency management and error
-    # handling remains to be done.
-    queue_state_doc_id = None
-    def __init__(self, doc_model, options={}):
+class MessageTransformerWQ(object):
+    """A queue which uses extensions to create new schema instances for
+    raindrop content items
+    """
+    queue_state_doc_id = 'workqueue!msg'
+
+    def __init__(self, doc_model, ext, options={}):
+        self.ext = ext
         self.doc_model = doc_model
         self.options = options
-
-    def get_queue_id(self):
-        # The ID for the doc etc.
-        return "workqueue!" + self.queue_state_doc_id
-
-    def get_queue_name(self):
-        # The name the user uses
-        return self.queue_state_doc_id
-
-    def consume(self, results):
-        # Consumes whatever 'process' returns, which should be a generator.
-        # Ultimately we want to push the generator itself down into the
-        # "doc-model" so only one doc needs to be in memory at once.  Even
-        # before that is should be possible to share the same impl between
-        # queues - but currently some create 'raw' docs
-        # and some create 'ext' docs.
-        raise NotImplementedError(self)
-
-    def process(self, src_infos, *args, **kw):
-        # A function which processes a number of 'source docs' found by the
-        # work-queue.  The extension is free to consume as many as it
-        # chooses (ie, the only promise is the first will be consumed, but
-        # more may be consumed if the extension can batch things safely...)
-        # Should returns a generator of deferreds, but whatever is returned
-        # is passed directly to self.consume.
-        raise NotImplementedError(self)
 
     # Eventually we want the docmodel to consume a generator directly, but for
     # now we 'unroll' it first.  The 'process' method may return None or a
@@ -341,29 +300,27 @@ class WorkQueue(object):
                     ret.append(item)
         defer.returnValue(ret)
 
-class MessageTransformerWQ(WorkQueue):
-    """A queue which uses extensions to create new schema instances for
-    raindrop content items
-    """
-    queue_state_doc_id = 'workqueue!msg'
+    @defer.inlineCallbacks
+    def consume(self, doc_gen):
+        # Consumes whatever 'process' returns, which should be a generator.
+        # Ultimately we want to push the generator itself down into the
+        # "doc-model" so only one doc needs to be in memory at once.  Even
+        # before that is should be possible to share the same impl between
+        # queues - but currently some create 'raw' docs
+        # and some create 'ext' docs.
+        to_save = yield self.unroll_generator(doc_gen)
+        if to_save:
+            logger.debug("creating %d new docs", len(to_save))
+            _ = yield self.doc_model.create_schema_items(to_save)
+        defer.returnValue(len(to_save))
 
-    def __init__(self, doc_model, ext, options={}):
-        super(MessageTransformerWQ, self).__init__(doc_model, options)
-        self.ext = ext
+
 
     def get_queue_id(self):
         return 'workqueue!msg!' + get_extension_id(self.ext)
 
     def get_queue_name(self):
         return get_extension_id(self.ext)
-
-    @defer.inlineCallbacks
-    def consume(self, doc_gen):
-        to_save = yield self.unroll_generator(doc_gen)
-        if to_save:
-            logger.debug("creating %d new docs", len(to_save))
-            _ = yield self.doc_model.create_schema_items(to_save)
-        defer.returnValue(len(to_save))
 
     def _get_ext_env(self, new_items, src_doc):
         # Hack together an environment for the extension to run in
@@ -385,10 +342,20 @@ class MessageTransformerWQ(WorkQueue):
             new_items.append(ni)
             return self.doc_model.get_doc_id_for_schema_item(ni)
 
-        def open_schema_attachment(src, attachment):
+        def emit_related_identities(identity_ids, def_contact_props):
+            new_items.extend(items_from_related_identities(self.doc_model,
+                                                 identity_ids,
+                                                 def_contact_props,
+                                                 self.ext.extension_id))
+
+        def open_schema_attachment(src, attachment, **kw):
             "A function to abstract document storage requirements away..."
+            doc_id = src['_id']
+            logger.debug("attempting to open attachment %s/%s", doc_id, attachment)
+            dm = self.doc_model
             return threads.blockingCallFromThread(reactor,
-                        self.doc_model.open_attachment, src['_id'], attachment)
+                        dm.db.openDoc, dm.quote_id(doc_id),
+                        attachment=attachment, **kw)
 
         def open_view(*args, **kw):
             return threads.blockingCallFromThread(reactor,
@@ -396,16 +363,12 @@ class MessageTransformerWQ(WorkQueue):
             
         new_globs = self.ext.func_globals.copy()
         new_globs['emit_schema'] = emit_schema
+        new_globs['emit_related_identities'] = emit_related_identities
         new_globs['open_schema_attachment'] = open_schema_attachment
         new_globs['open_view'] = open_view
-#        if self.ext.func_closure:
-#            func = self.ext.func_closure[-1].cell_contents # XXX - wtf???
-#        else:
         func = self.ext
-        
-        func = types.FunctionType(func.func_code, new_globs,
+        return types.FunctionType(func.func_code, new_globs,
                                   func.func_name)
-        return func
 
     @defer.inlineCallbacks
     def process(self, src_infos, force=False):
@@ -501,7 +464,7 @@ class MessageTransformerWQ(WorkQueue):
                             len(new_items))
             new_items = [{'rd_key'
                           'rd_source': [src_doc['_id'], src_doc['_rev']],
-                          'schema_id': 'rc/core/error',
+                          'schema_id': 'rd/core/error',
                           'items' : edoc,
                          }]
         else:
@@ -512,182 +475,106 @@ class MessageTransformerWQ(WorkQueue):
                             self.ext, result)
 
 
-class IdentitySpawnerWQ(WorkQueue):
-    """For examining types of documents and running extensions which can
-    create new identity records.
-
-    Basic contact management is also done by this extension; once we have
-    been given a list of (identity_id, relationship_name) tuples see if we can
-    find a contact ID associated with any of them, and create a new 'default'
-    contact if not. Then ensure each of the identities is associated with the
-    contact.
-    """
-    queue_state_doc_id = 'identities'
-
-    # It sucks we need to join these here; the doc_model should do
-    # that - so we abstract that away...(poorly - skype and twitter now
-    # also duplicate this...)
-    @classmethod
-    def get_prov_id(cls, identity_id):
-        return '/'.join(identity_id)
-
-    @defer.inlineCallbacks
-    def consume(self, doc_gen):
-        to_save = yield self.unroll_generator(doc_gen)
-        if to_save:
-            logger.debug("creating %d new docs", len(to_save))
-            _ = yield self.doc_model.create_raw_documents(None, to_save)
-
-    @defer.inlineCallbacks
-    def process(self, src_infos, force=False):
-        dm = self.doc_model
-        # We only ever do one at a time; the next in the queue may depend
-        # on what we wrote - specifically the contact.  If this shows as
-        # a bottle-neck, we could cache contacts, or write only contacts
-        # immediately - but for now things are complex enough...
-        try:
-            # src_infos may be a list?  so iter it is..
-            src_id, src_rev = iter(src_infos).next()
-        except StopIteration:
-            return
-
-        logger.debug("generating transition tasks for %r (rev=%s)", src_id,
-                     src_rev)
-        try:
-            doc_cat, doc_type, proto_id = dm.split_docid(src_id)
-        except ValueError:
-            logger.debug("skipping document %r", src_id)
-            return
-
-        my_spawners = spawners.get((doc_cat, doc_type))
-        if not my_spawners:
-            logger.debug("documents of type %r have no spawners", doc_type)
-            return
-
-        # open the source doc then let-em at it...
-        src_doc = yield dm.open_document_by_id(src_id)
-        if src_doc is None:
-            return
-        if src_doc.get('type') != doc_type:
-            # probably an error record...
-            logger.info("skipping doc %r - unexpected type of %s",
-                         src_doc['_id'], src_doc.get('type'))
-            return
-
-        def gen_em():
-            for spawner in my_spawners:
-                # each of our spawners returns a simple list of identities
-                idrels = spawner.get_identity_rels(src_doc)
-                if __debug__: # check the extension is sane...
-                    for iid, rel in idrels:
-                        assert isinstance(iid, (tuple, list)) and len(iid)==2,\
-                               repr(iid)
-                        assert rel is None or isinstance(rel, basestring), repr(rel)
-                # Find contacts associated with *any* of the identities and use the
-                # first we find - hence the requirement the 'primary' identity be
-                # the first, so if a contact is associated with that, we use
-                # it
-                identities = [i[0] for i in idrels]
-                yield self.doc_model.open_view('raindrop!contacts!all',
-                                               'by_identity',
-                                               keys=identities, limit=1,
-                                               include_docs=True,
-                        ).addCallback(self._check_contact_view, src_doc,
-                                      spawner, idrels,
-                        )
-
-        # return a generator for consumption by the caller
-        defer.returnValue(gen_em())
-
-    def _check_contact_view(self, result, src_doc, spawner, idrels):
-        rows = result['rows']
-        if not rows:
-            # None of the identities matched a contact, so we create a new
-            # contact for this skype user.
-            # we can't use a 'natural key' for a contact....
-            contact_provid = str(uuid.uuid4())
-            cdoc = {
-                'contact_id': contact_provid,
-            }
-            def_props = spawner.get_default_contact_props(src_doc)
-            assert 'name' in def_props, def_props # give us a name at least!
-            cdoc.update(def_props)
-            yield ('id', 'contact', contact_provid, cdoc)
-            logger.debug("Will create new contact %r", contact_provid)
-            contact_id = contact_provid
-        else:
-            row = rows[0]
-            contact_id = row['value'][0]
-            logger.debug("Found existing contact %r", contact_id)
-
-        # We know the contact to use and the list of identity relationships.
-        # The relationship to the contact is stored next to the identity - so
-        # open the document listing the relationships of the identities to
-        # contacts, and create or update them as necessary...
-        doc_model = self.doc_model
-        keys = []
-        infos = []
+# NOTE: called from a background thread by extensions, so we can block :)
+def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
+    if __debug__: # check the extension is sane...
         for iid, rel in idrels:
-            prov_id = self.get_prov_id(iid)
-            # the identity itself.
-            did = doc_model.build_docid('id', iid[0], prov_id,
-                                        prov_encoded=False)
-            keys.append(did)
-            # the identity/contact relationships doc.
-            did = doc_model.build_docid('id', 'contacts', prov_id,
-                                        prov_encoded=False)
-            keys.append(did)
-
-        yield doc_model.db.listDoc(keys=keys, include_docs=True,
-                    ).addCallback(self._got_identities, contact_id, idrels
-                    )
-
-    def _got_identities(self, result, contact_id, idrels):
-        doc_model = self.doc_model
-        rows = result['rows']
-        # we expect a row for every key, even those which failed.
-        assert len(rows)==len(idrels)*2
-        def row_exists(r):
-            return 'error' not in r and 'deleted' not in r['value']
-
-        for i, (iid, rel) in enumerate(idrels):
-            assert isinstance(iid, (tuple, list)) and len(iid)==2, repr(iid)
+            assert isinstance(iid, (tuple, list)) and len(iid)==2,\
+                   repr(iid)
             assert rel is None or isinstance(rel, basestring), repr(rel)
-            id_row = rows[i*2]
-            rel_row = rows[i*2+1]
-            prov_id = self.get_prov_id(iid)
-            # The ID row is easy - just create it if it doesn't exist.
-            if not row_exists(id_row):
-                id_doc = {
-                    'identity_id': iid,
-                }
-                yield ('id', iid[0], prov_id, id_doc)
-            # The 'relationship' row should exist as we either (a) wrote a new
-            # one above or (b) found and used an existing one...
-            new_rel = (contact_id, rel)
-            if not row_exists(rel_row):
-                # need to create a new ID doc...
-                new_rel_doc = {
-                    'identity_id': iid,
-                    'contacts': [new_rel],
-                }
-                logger.debug("new relationship (new doc) from %r -> %r", iid,
-                             contact_id)
+
+    # Take a short-cut to ensure all identity records exist and to
+    # handle conflicts from the same identity being created at the
+    # same time; ask the doc-model to emit a NULL schema for each
+    # one if it doesn't already exist.
+    for iid, rel in idrels:
+        yield {'rd_key' : ['identity', iid],
+               'schema_id' : 'rd/identity/exists',
+               'items': None,
+               'ext_id' : ext_id,
+               }
+
+    # Find contacts associated with any and all of the identities;
+    # any identities not associated with a contact will be updated
+    # to have a contact (either one we find with for different ID)
+    # or a new one we create.
+    dl = []
+    for iid, rel in idrels:
+        # the identity itself.
+        rdkey = ['identity', iid]
+        dl.append(
+            doc_model.open_schemas(rdkey, 'rd/identity/contacts'))
+    results = threads.blockingCallFromThread(reactor,
+                    defer.DeferredList, dl)
+
+    # check for errors...
+    for (ok, result) in results:
+        if not ok:
+            result.raiseException()
+    # scan the list looking for an existing contact for any of the ids.
+    for schemas in [r[1] for r in results]:
+        if schemas:
+            contacts = schemas[0].get('contacts', [])
+            if contacts:
+                contact_id = contacts[0][0]
+                logger.debug("Found existing contact %r", contact_id)
+                break
+    else: # for loop not broken...
+        # allocate a new contact-id; we can't use a 'natural key' for a
+        # contact....
+        contact_id = str(uuid.uuid4())
+        # just choose any of the ID's details (although first is likely
+        # to be 'best')
+        cdoc = {}
+        # We expect a 'name' field at least...
+        assert 'name' in def_contact_props, def_contact_props
+        cdoc.update(def_contact_props)
+        logger.debug("Will create new contact %r", contact_id)
+        yield {'rd_key' : ['contact', contact_id],
+               'schema_id' : 'rd/contact',
+               # ext_id might be wrong here - maybe it should be 'us'?
+               'ext_id' : ext_id,
+               'items' : cdoc,
+        }
+
+    # We know the contact to use and the list of identities
+    # which we know exist. We've also got the 'contacts' schemas for
+    # those identities - which may or may not exist, and even if they do,
+    # may not refer to this contact.  So fix all that...
+    for (_, schemas), (iid, rel) in zip(results, idrels):
+        # identity ID is a tuple/list of exactly 2 elts.
+        assert isinstance(iid, (tuple, list)) and len(iid)==2, repr(iid)
+        new_rel = (contact_id, rel)
+        doc_id = doc_rev = None # incase we are updating a doc...
+        if not schemas:
+            # No 'contacts' schema exists for this identity
+            new_rel_fields = {'contacts': [new_rel]}
+        else:
+            # At least one 'contacts' schema exists - let's hope ours
+            # is the only one :)
+            assert len(schemas)==1, schemas # but what if it's not? :)
+            sch = schemas[0]
+            existing = sch.get('contacts', [])
+            logger.debug("looking for %r in %s", contact_id, existing)
+            for cid, existing_rel in existing:
+                if cid == contact_id:
+                    new_rel_fields = None
+                    break # yay
             else:
-                existing = rel_row['doc'].get('contacts', [])
-                logger.debug("looking for %r in %s", contact_id, existing)
-                for cid, existing_rel in existing:
-                    if cid == contact_id:
-                        new_rel_doc = None
-                        break # yay
-                else:
-                    # not found - we need to re-write this doc.
-                    new_rel_doc = rel_row['doc'].copy()
-                    new_rel_doc['contacts'] = existing + [new_rel]
-                    logger.debug("new relationship (update) from %r -> %r",
-                                 iid, contact_id)
-            if new_rel_doc is not None:
-                yield ('id', 'contacts', prov_id, new_rel_doc)
+                # not found - we need to update this doc
+                new_rel_fields = sch.copy()
+                sch['contacts'] = existing + [new_rel]
+                logger.debug("new relationship (update) from %r -> %r",
+                             iid, contact_id)
+                # and note the fields which allows us to update...
+                doc_id = sch['_id']
+                doc_rev = sch['_rev']
+        if new_rel_fields is not None:
+            yield {'rd_key' : ['identity', iid],
+                   'schema_id' : 'rd/identity/contacts',
+                   'ext_id' : ext_id,
+                   'items' : new_rel_fields,
+            }
 
 
 @defer.inlineCallbacks

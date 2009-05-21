@@ -261,12 +261,14 @@ class TwistySkype(object):
 
         schemas = []
         for friend in friends:
-            # Simply emit a document with a 'null' schema - that is
+            # Simply emit a NULL document with the 'exists' schema - that is
             # just an 'assertion' the identity exists - the framework
             # will take care of handling the fact it may already exist.
             rdkey = ('identity', ('skype', friend._Handle))
-            item = rdkey, self.rd_extension_id, 'rd/identity/raw', None, None
+            item = rdkey, self.rd_extension_id, 'rd/identity', None, None
             schemas.append({'rd_key' : rdkey,
+                            'schema_id' : 'rd/identity/exists',
+                            'items' : None,
                             'ext_id': self.rd_extension_id})
         return self.doc_model.create_schema_items(schemas)
 
@@ -287,12 +289,12 @@ def skype_converter(doc):
     cdoc = {'conversation_id': doc['skype_chatname']}
     emit_schema('rd/msg/conversation', cdoc)
 
-    
+
 _skype_id_converter_skype = None
 
-@base.raindrop_extension('rd/identity/raw')
+@base.raindrop_extension('rd/identity/exists')
 def skype_id_converter(doc):
-    typ, (id_type, id_id) = doc['_rd_key']
+    typ, (id_type, iid) = doc['rd_key']
     assert typ=='identity' # Must be an 'identity' to have this schema type!
     if id_type != 'skype':
         # Not a skype ID.
@@ -304,8 +306,8 @@ def skype_id_converter(doc):
         _skype_id_converter_skype.Attach()
     s = _skype_id_converter_skype
 
-    user = skype.User(id_id)
-    props = {}
+    user = s.User(iid)
+    props = {'skype_handle': user._Handle}
     for name, typ in USER_PROPS:
         val = user._Property(name)
         props['skype_'+name.lower()] = simple_convert(val, typ)
@@ -358,20 +360,20 @@ def skype_id_converter(doc):
         props['url'] = user_homepage
 
     if has_avatar:
-        props['image'] = '/%s/avatar1' % self.doc_model.quote_id(did)
+        props['image'] = '/%s/avatar1' % did
     emit_schema('rd/identity', props)
 
     # and finally emit lots of other raw identities we can deduce for this
     # user.
 
 # An 'identity spawner' skype/raw as input and creates a number of identities.
-# A slightly different extension point, as we do some higher-level contacts
+# Uses a different 'emit_*' function which does some higher-level contacts
 # work with the result schemas.
-@base.raindrop_identity_extension('rd/identity/skype')
-def skype_id_converter(doc):
-    def _gen_em(self, props):
+@base.raindrop_extension('rd/identity/skype')
+def skype_id_rel_maker(doc):
+    def _gen_em(props):
         # the primary 'skype' one first...
-        yield props['identity_id'], None
+        yield ('skype', props['skype_handle']), None
         v = props.get('skype_homepage')
         if v:
             yield ('url', v.rstrip('/')), 'homepage'
@@ -395,9 +397,12 @@ def skype_id_converter(doc):
         # any phone numbers - but their ID is the phone-number!  Skype
         # displays the number as a 'home' number...
         if props.get('skype_onlinestatus')=='SKYPEOUT':
-            yield ('phone', props['identity_id'][1]), 'home'
-    for idinfo in _gen_em(doc):
-        emit_identity(idinfo)
+            yield ('phone', props['skype_handle']), 'home'
+
+    def_contact_props = {
+        'name': doc['skype_displayname'] or doc['skype_fullname'],
+    }
+    emit_related_identities(_gen_em(doc), def_contact_props)
 
 
 class SkypeAccount(base.AccountBase):

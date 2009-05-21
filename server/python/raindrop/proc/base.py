@@ -108,14 +108,6 @@ def raindrop_extension(src_schema):
         return f
     return decorate
 
-def raindrop_identity_extension(src_schema):
-    def decorate(f):
-        ext_name = f.func_globals['__name__'] + '.' + f.__name__
-        f.identity_extension_id = ext_name
-        f.source_schema = src_schema
-        return f
-    return decorate
-
 
 class SpawnerBase(object):
     """A generic spawner with optionally a dependent input document type.
