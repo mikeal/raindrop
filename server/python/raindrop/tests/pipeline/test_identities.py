@@ -36,13 +36,15 @@ class TestIDPipeline(TestIDPipelineBase):
         # First determine the contact ID.
         result = yield get_doc_model().open_view('raindrop!docs!all',
                                          'by_raindrop_schema',
-                                         key='rd/contact')
+                                         startkey=['rd/contact'],
+                                         endkey=['rd/contact',{}])
         self.failUnlessEqual(len(result['rows']), contact_count, repr(result))
 
         for id_schema in ('rd/identity/exists', 'rd/identity/contacts'):
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key=id_schema)
+                                             startkey=[id_schema],
+                                             endkey=[id_schema,{}])
             self.failUnlessEqual(len(result['rows']), identity_count, repr(result))
 
     def test_one_testmsg(self):
@@ -54,7 +56,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # First determine the contact ID.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/contact',
+                                             startkey=['rd/contact'],
+                                             endkey=['rd/contact', {}],
                                              include_docs=True)
 
             rows = result['rows']
@@ -67,7 +70,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # at my contact.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/identity/contacts',
+                                             startkey=['rd/identity/contacts'],
+                                             endkey=['rd/identity/contacts',{}],
                                              include_docs=True)
 
             rows = result['rows']
@@ -100,7 +104,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # First determine the contact ID.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/contact',
+                                             startkey=['rd/contact'],
+                                             endkey=['rd/contact',{}],
                                              include_docs=True)
 
             rows = result['rows']
@@ -113,7 +118,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # at my contact.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/identity/contacts',
+                                             startkey=['rd/identity/contacts'],
+                                             endkey=['rd/identity/contacts', {}],
                                              include_docs=True)
 
             rows = result['rows']
@@ -145,7 +151,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # First determine the 2 contact IDs.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/contact',
+                                             startkey=['rd/contact'],
+                                             endkey=['rd/contact', {}],
                                              include_docs=True)
 
             rows = result['rows']
@@ -160,7 +167,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # at my contact.
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
-                                             key='rd/identity/contacts',
+                                             startkey=['rd/identity/contacts'],
+                                             endkey=['rd/identity/contacts', {}],
                                              include_docs=True)
 
             rows = result['rows']
