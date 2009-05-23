@@ -3,6 +3,16 @@ with other fancy things, such as validators etc.
 
 But for now, this is where the schema are defined.
 
+COMMON:
+=======
+rd/tags:
+--------
+** Notes **
+Anything can have tags!
+
+** Fields **
+tags: a list of tags!
+
 MESSAGES:
 =========
 
@@ -53,6 +63,17 @@ rd/msg/conversation:
 ** Fields**
 
 conversation_id: a string which identifies the conversation.
+
+rd/msg/email/mailing-list:
+--------------------
+** Fields**
+id:
+post:
+archive:
+help:
+subscribe:
+unsubscribe:
+
 
 IDENTITIES AND CONTACTS:
 ========================
