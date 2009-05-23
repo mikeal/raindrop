@@ -37,14 +37,18 @@ class TestIDPipeline(TestIDPipelineBase):
         result = yield get_doc_model().open_view('raindrop!docs!all',
                                          'by_raindrop_schema',
                                          startkey=['rd/contact'],
-                                         endkey=['rd/contact',{}])
+                                         endkey=['rd/contact',{}],
+                                         reduce=False,
+                                         )
         self.failUnlessEqual(len(result['rows']), contact_count, repr(result))
 
         for id_schema in ('rd/identity/exists', 'rd/identity/contacts'):
             result = yield get_doc_model().open_view('raindrop!docs!all',
                                              'by_raindrop_schema',
                                              startkey=[id_schema],
-                                             endkey=[id_schema,{}])
+                                             endkey=[id_schema,{}],
+                                             reduce=False,
+                                             )
             self.failUnlessEqual(len(result['rows']), identity_count, repr(result))
 
     def test_one_testmsg(self):
@@ -58,6 +62,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/contact'],
                                              endkey=['rd/contact', {}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -72,6 +77,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/identity/contacts'],
                                              endkey=['rd/identity/contacts',{}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -106,6 +112,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/contact'],
                                              endkey=['rd/contact',{}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -120,6 +127,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/identity/contacts'],
                                              endkey=['rd/identity/contacts', {}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -153,6 +161,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/contact'],
                                              endkey=['rd/contact', {}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -169,6 +178,7 @@ class TestIDPipeline(TestIDPipelineBase):
                                              'by_raindrop_schema',
                                              startkey=['rd/identity/contacts'],
                                              endkey=['rd/identity/contacts', {}],
+                                             reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
