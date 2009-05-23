@@ -14,7 +14,11 @@ function(doc) {
              || prop.indexOf("raindrop") == 0) {
           continue;
         }
-        emit([doc.rd_schema_id, prop, doc[prop], (doc.timestamp || 0)], doc._rev)
+        emit([doc.rd_schema_id, prop, doc[prop]],
+             {'_rev': doc._rev,
+              'rd_key' : doc.rd_key,
+              'rd_ext' : doc.rd_ext,
+             });
     }
   }
 }
