@@ -5,6 +5,7 @@ Fetch skype contacts and chats.
 import os
 import logging
 import tempfile
+from urllib import quote
 
 import twisted.python.log
 from twisted.internet import defer, threads
@@ -360,7 +361,7 @@ def skype_id_converter(doc):
         props['url'] = user_homepage
 
     if has_avatar:
-        props['image'] = '/%s/avatar1' % did
+        props['image'] = '/%s/avatar1' % quote(did, safe="")
     emit_schema('rd/identity', props)
 
     # and finally emit lots of other raw identities we can deduce for this

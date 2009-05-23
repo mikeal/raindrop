@@ -1,7 +1,7 @@
 import sys
 import logging
 import time
-from urllib import urlencode, quote, unquote
+from urllib import urlencode, quote
 import base64
 
 import twisted.web.error
@@ -254,26 +254,6 @@ class DocumentModel(object):
         self._def_important_views_done = None
 
     @classmethod
-    def build_docid(cls, category, doc_type, provider_id, prov_encoded=True):
-        """Builds a docid from (category, doc_type, provider_id)
-
-        The exact order of the fields may depend on who can best take
-        advantage of a specific order, so is subject to change in the
-        prototype.  This method gives the code a consistent orderindg
-        regardless of the actual impl."""
-        if not prov_encoded:
-            provider_id = encode_provider_id(provider_id)
-        return "!".join([category, provider_id, doc_type])
-
-    @classmethod
-    def split_docid(cls, docid):
-        """Splits a docid into (category, doc_type, provider_id)
-
-        Is likely to raise ValueError on an 'invalid' docid"""
-        cat, prov_id, doc_type = docid.split("!")
-        return cat, doc_type, prov_id
-
-    @classmethod
     def quote_id(cls, doc_id):
         # A '/' should be impossible now we base64 encode the string given
         # by an extension - but it doesn't hurt.
@@ -307,17 +287,18 @@ class DocumentModel(object):
         return result
 
     def get_doc_id_for_schema_item(self, si):
+        """Returns an *unquoted* version of the doc ID"""
         key_type, key_val = si['rd_key']
         enc_key_val = encode_provider_id(json.dumps(key_val))
         key_part = "%s.%s" % (key_type, enc_key_val)
-        sch_id = self.quote_id(si['schema_id'])
+        sch_id = si['schema_id']
         # only use the extension_id when items were provided (ie, its not
         # an 'exists' schema.)
         if si['items'] is None:
-            assert sch_id.endswith('%2Fexists'), sch_id
+            assert sch_id.endswith('/exists'), sch_id
             ext_id = ''
         else:
-            ext_id = self.quote_id(si['ext_id'])
+            ext_id = si['ext_id']
         bits = ['rc', key_part, ext_id, sch_id]
         return "!".join(bits)
 
@@ -340,6 +321,7 @@ class DocumentModel(object):
             docs.append(doc)
             # If the extension needs to update an existing record it must
             # give the id and rev.
+            # NOTE: _id doesn't need quoting when used via a PUT...
             if '_id' in si:
                 id = si['_id']
                 # Only look for '_rev' if they supplied '_id'
@@ -358,7 +340,7 @@ class DocumentModel(object):
                 doc['_rd_schema_confidence'] = si['confidence']
 
         attachments = self._prepare_attachments(docs)
-        logger.debug('create_raw_documents saving %d docs', len(docs))
+        logger.debug('create_schema_items saving %d docs', len(docs))
         return self.db.updateDocuments(docs
                     ).addCallback(self._cb_saved_docs, item_defs, attachments
                     )
@@ -372,8 +354,11 @@ class DocumentModel(object):
         ek = sk[:-1] + '#' # '#' sorts later than '!'
 
         ret = []
-        result = yield self.db.listDoc(startkey=sk, endkey=ek, include_docs=True)
-        schema_id = self.quote_id(schema_id)
+        # XXX - consider using the by_raindrop_schema view to avoid
+        # ID quoting hackery...
+        result = yield self.db.listDoc(startkey=sk,
+                                       endkey=ek,
+                                       include_docs=True)
         for r in result['rows']:
             _, _, ext, sch_id = r['id'].split('!', 4)
             if sch_id == schema_id:
@@ -449,7 +434,6 @@ class DocumentModel(object):
                    item_def['items'] is None:
                     logger.debug('ignoring conflict error when asserting %r exists',
                                  dinfo['id'])
-                    pass # all OK
                 else:
                     # presumably an unexpected error :(
                     raise DocumentSaveError(dinfo)
