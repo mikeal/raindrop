@@ -172,8 +172,8 @@ def tweet_converter(doc):
     }
     emit_schema('rd/msg/body', bdoc)
     # and a conversation schema
-    conversation_id = doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
-    cdoc = {'conversation_id': str(conversation_id)}
+    conversation_id = 'twitter-%s' % doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
+    cdoc = {'conversation_id': conversation_id}
     emit_schema('rd/msg/conversation', cdoc)
     # and tags
     tags = re_tags.findall(body)
