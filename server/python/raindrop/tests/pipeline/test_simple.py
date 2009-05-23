@@ -138,7 +138,7 @@ class TestErrors(TestPipelineBase):
 
         test_proto.test_next_convert_fails = True
         p = self.get_pipeline()
-        p.options.exts = self.simple_exts + self.extra_exts
+        p.options.exts = self.simple_exts
         return p.start(
                 ).addCallback(lambda whateva: self.get_last_by_seq(3)
                 ).addCallback(check_last_doc
