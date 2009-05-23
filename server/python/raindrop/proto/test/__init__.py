@@ -46,7 +46,7 @@ class TestMessageProvider(object):
 
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
-        rd_key = ['raindrop.test.message', i]
+        rd_key = ['raindrop-test-message', i]
         return self.doc_model.open_schemas(rd_key, "rd/msg/test/raw"
                         ).addCallback(self.process_test_message, i)
 
@@ -57,7 +57,7 @@ class TestMessageProvider(object):
                                         "data" : 'test\0blob'
                                         }
             }
-            rd_key = ['raindrop.test.message', doc_num]
+            rd_key = ['raindrop-test-message', doc_num]
             data = dict(
               storage_key=doc_num,
               _attachments=attachments,
@@ -70,7 +70,7 @@ class TestMessageProvider(object):
                     }
             self.bulk_docs.append(info)
             # and we 'assert the existance' of 2 identities - one unique to
-            # out test message and one common for all.
+            # our test message and one common for all.
             if test_emit_identities:
                 self.bulk_docs.append({
                         'schema_id': 'rd/identity/exists',
