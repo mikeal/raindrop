@@ -59,6 +59,7 @@ def list_converter(doc):
         logger.debug("simple list-id header with ID '%s'",
                      doc['headers']['list-id'])
         mailing_list['id'] = doc['headers']['list-id']
+        mailing_list['name'] = doc['headers']['list-id']
 
     # For now just reflect the literal values of the various headers
     # into the dict; eventually we'll want to do some processing of those
