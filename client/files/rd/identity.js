@@ -43,11 +43,16 @@ dojo.mixin(rd.identity, {
     if (this._byImage) {
       callback(this._byImage);
     } else {
-      couch.db("raindrop").view("raindrop!identities!all/_view/by_image", {
+      couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+        reduce: false,
+        startkey: ['rd/identity', 'image'],
+        endkey: ['rd/identity', 'image', {}],
         success: dojo.hitch(this, function(json) {
           this._byImage = [];
           for (var i = 0, row; row = json.rows[i]; i++) {
-            this._byImage.push(row.key);
+            var rd_key = row.value.rd_key;
+            // rd_key is ['identity', identity_id]
+            this._byImage.push(rd_key[1]);
           }
           callback(this._byImage);
         }),
@@ -64,7 +69,6 @@ dojo.mixin(rd.identity, {
     if (typeof identityId[0] == "string") {
       identityId = [identityId];
     }
-    
     for (var i = 0, id; id = identityId[i]; i++) {
       var temp = this._idty(id);
       temp ? found.push(temp) : missing.push(id);
@@ -76,28 +80,36 @@ dojo.mixin(rd.identity, {
     }
   },
 
-  _load: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
+  _load: function(/*Array*/identityIds, /*Function*/callback, /*Function?*/errback) {
     //summary: pulls a few identity records from the couch, starting
     //with the requested one, to hopefully limit how many times we hit
     //the couch.
-    couch.db("raindrop").view("raindrop!identities!all/_view/all", {
-      keys: typeof identityId[0] == "string" ? [identityId] : identityId,
+    if (typeof identityIds[0] == "string")
+      identityIds = [identityIds];
+    var keys = [];
+    for (var i = 0, id; id = identityIds[i]; i++) {
+      keys.push(['rd/identity', ['identity', id]]);
+    }
+    couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+      keys: keys,
       include_docs: true,
+      reduce: false,
       success: dojo.hitch(this, function(json) {
         //Save off identity docs in our store for all the identities.
         for (var i = 0, row; row = json.rows[i]; i++) {
           var doc = row.doc;
+          var identity_id = doc.rd_key[1];
 
           //Add the document to the store for that service.
-          var svc = dojo.getObject(doc.identity_id[0], true, this);
-          var uId = doc.identity_id[1];
+          var svc = dojo.getObject(identity_id[0], true, this);
+          var uId = identity_id[1];
           if (!svc[uId]) {
             svc[uId] = doc;
           }
         }
 
         //See if we have the requested identities.
-        var idtys = this._get(identityId);
+        var idtys = this._get(identityIds);
         if (idtys.missing) {
           if (idtys.missing.length == 1 && this["_" + idtys.missing[0][0] + "Fetch"]) {
             this["_" + idtys.missing[0][0] + "Fetch"](idtys.missing[0], callback, errback);
@@ -109,8 +121,10 @@ dojo.mixin(rd.identity, {
             //we might want to account for phantom identities?
             for (var i = 0, idty; idty = idtys.missing[i]; i++) {
               idtys.missing[i] = dojo.getObject(idty[0], true, this)[idty[1]] = {
-                identity_id: idty,
-                type: "identity"
+                // it't not clear if we should use a 'real' identity ID here?
+                // theoretically all the fields being empty should be enough...
+                rd_key: ['identity', idty],
+                rd_schema: 'rd/identity',
               }
             }
           }

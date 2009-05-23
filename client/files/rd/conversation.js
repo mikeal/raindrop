@@ -24,24 +24,31 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
     ids = convIds;
   }
 
-  // find out all messages in all conversations
-  couch.db("raindrop").view("raindrop!messages!by/_view/by_conversation", {
-    keys: ids,
+  // find out all messages in all conversations - build a list of the
+  // keys we can use to query a megaview.
+  var queryKeys = [];
+  for (var i = 0, id; id = ids[i]; i++) {
+    queryKeys.push(["rd/msg/conversation", "conversation_id", id]);
+  }
+  couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+    reduce: false,
+    keys: queryKeys,
     success: dojo.hitch(this, function(convList) {
-      //Build up a list of message IDs to fetch complete documents.
-      var messageIds = [];
+      //Build up a list of rd_keys for the messages so we can fetch whatever
+      // schemas are necessary.
+      var rdKeys = [];
       for (var i = 0, row; row = convList.rows[i]; i++) {
-        messageIds.push(row.id);
+        rdKeys.push(row.value.rd_key);
       }
 
-      rd.message(messageIds, function(messages){
+      rd.message(rdKeys, function(messages){
         //Create final result. It will be an array that
         //also has properties for each conversation ID,
         //to allow for easy retrieval.
         var conversations = [];
         
         for (var i = 0, message; message = messages[i]; i++) {
-          var convId = message.message.conversation_id;
+          var convId = message['rd/msg/conversation'].conversation_id;
           var conv = conversations["cId:" + convId];
           if (!conv) {
             conv = conversations["cId:" + convId] = [];
@@ -90,15 +97,41 @@ dojo._mixin(rd.conversation, {
   byTimeStamp: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent messages up to limit, then
     //pulls the conversations associated with those messages.
-    couch.db("raindrop").view("raindrop!messages!by/_view/by_timestamp", {
+    // XXX - this could be optimized as we again re-fetch these messages when
+    // fetching all in the convo.
+    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      reduce: false,
+      startkey: ["rd/msg/body", "timestamp", {}],
+      endkey: ["rd/msg/body", "timestamp"],
       limit: limit,
       descending: true,
       success: dojo.hitch(this, function(json) {
-        var convIds = [];
+        // so we now have the rd_key for messages in timestamp order;
+        // now we need to fetch the 'rd/msg/conversation' schema to fetch the
+        // convo ID.
+        var keys = [];
         for (var i = 0, row; row = json.rows[i]; i++) {
-          convIds.push(row.value.conversation_id);
+          keys.push(['rd/msg/conversation', row.value.rd_key]);
         }
-        this(convIds, callback, errback);
+        couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+          keys: keys,
+          reduce: false,
+          include_docs: true,
+          success: dojo.hitch(this, function(json) {
+            // XXX - how to do sets better in js?????
+            // And can't we just avoid 'reduce=false' and let the the reduce
+            // function make them unique?
+            var convSet = {}
+            for (var i = 0, row; row = json.rows[i]; i++) {
+              convSet[row.doc.conversation_id] = row.doc.conversation_id;
+            }
+            var convIds = [];
+            for each (var cid in convSet) {
+              convIds.push(cid);
+            }
+            this(convIds, callback, errback);
+          })
+        })
       })
     });
   },
@@ -130,6 +163,7 @@ dojo._mixin(rd.conversation, {
       }
 
       couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+        reduce: false,
         startkey: ["message", "from", id, 0],
         endkey: ["message", "from", id, 9999999999],
         include_docs: true,

@@ -27,7 +27,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //properties.
     //TODO: some of these need more info from backend.    
     // XXX: these are a couple hacks to get the UI looking more like we want
-    var msgDoc = this.messageBag.message;
+    var msgBag = this.messageBag;
+    var msgDoc = msgBag['rd/msg/body'];
 
     this.fromName = msgDoc.from[1];
     try {
@@ -77,19 +78,23 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.inherited("postCreate", arguments);
 
     //If twitter user, get their profile pic.
-    var msgDoc = this.messageBag.message;
+    var msgBag = this.messageBag;
+    var msgDoc = msgBag['rd/msg/body'];
     var from = msgDoc.from;
-    if (from[0] == "twitter") {
-      rd.identity.get(from, dojo.hitch(this, function(user) {
-        if (user.image) {
+    rd.identity.get(from, dojo.hitch(this, function(user) {
+      if (user.image) {
+        if (user.image[0]=="/")
+          // It is a URL into our couch.
+          this.userPicNode.src = "/raindrop" + user.image;
+        else
+          // it is an absolute URL...
           this.userPicNode.src = user.image;
-        }
-        if (user.name) {
-          this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
-        }
-        //Don't worry about errors, just will not show pic.
-      }), function(err){console.error(err)});
-    }
+      }
+      if (user.name) {
+        this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
+      }
+      //Don't worry about errors, just will not show pic.
+    }), function(err){console.error(err)});
   },
 
   onToolClick: function(evt) {

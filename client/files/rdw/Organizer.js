@@ -51,10 +51,16 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
-    couch.db("raindrop").view("raindrop!mailing_lists!all/_view/by_list_id", {
-      group: true,
+    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      startkey: ['rd/msg/email/mailing-list', 'id'],
+      endkey: ['rd/msg/email/mailing-list', 'id', {}],
+      group_level: 3,
       success: dojo.hitch(this, function(json) {
-        this.mailingLists(json.rows);
+        var lists = [];
+        for (var i = 0, row; i<json.rows.length; i++) {
+          lists.push(json.rows[i].key[2]);
+        }
+        this.mailingLists(lists);
       })
     });
   }

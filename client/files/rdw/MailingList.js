@@ -14,9 +14,10 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
 
-    this.id = this.doc.key[0];
-    this.name = this.doc.key[0].split(".")[0];
-    this.title = this.doc.key[1]; /* this is always either the name or id */
+    // FIXME: this is now only passed with the list ID...
+    this.title = this.id = this.doc;
+    this.name = this.id.split(".")[0];
+//    this.title = this.doc.key[1]; /* this is always either the name or id */
   },
 
   onClick: function(evt) {
@@ -33,19 +34,33 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
   },
 
   show: function(id) {
-    couch.db("raindrop").view("raindrop!messages!by/_view/by_mailing_list", {
-      keys: [id],
-      limit: 30,
+    // Get the rd_key for all items in the mailing-list.
+    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      key: ["rd/msg/email/mailing-list", "id", id],
+      reduce: false,
       success: function(json) {
-        //Get conversation IDs.
-        var convIds = [];
+        //Get message keys
+        var rdkeys = [];
         for (var i = 0, row; row = json.rows[i]; i++) {
-          convIds.push(row.value.conversation_id);
+          rdkeys.push(["rd/msg/conversation", row.value.rd_key]);
         }
-
-        //Load up conversations and ask for them to be displayed.
-        rd.conversation(convIds, function(conversations) {
-          rd.pub("rd-display-conversations", conversations);
+        // and yet another view to fetch the convo IDs for these messages.
+        couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+          keys: rdkeys,
+          reduce: false,
+          include_docs: true,
+          success: function(json) {
+            //Get conversation IDs.
+            // XXX - this isn't working yet :(
+            var convIds = [];
+            for (var i = 0, row; row = json.rows[i]; i++) {
+              convIds.push(row.doc.conversation_id);
+            }
+            //Load up conversations and ask for them to be displayed.
+            rd.conversation(convIds, function(conversations) {
+              rd.pub("rd-display-conversations", conversations);
+            });
+          }
         });
       }
     });

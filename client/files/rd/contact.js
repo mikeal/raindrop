@@ -180,8 +180,13 @@ dojo.mixin(rd.contact, {
         this._onload();
       }
     } else {
-      couch.db("raindrop").view("raindrop!contacts!all/_view/all", {
+      // open all contacts - note this also includes contacts without
+      // associated identities...
+      couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+        startkey: ['rd/contact'],
+        endkey: ['rd/contact', {}],
         include_docs: true,
+        reduce: false,
         success: dojo.hitch(this, function(json) {
           //Error out if no rows return.
           if(!json.rows.length) {
@@ -190,7 +195,8 @@ dojo.mixin(rd.contact, {
           } else {
             for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
               this._store.push(doc);
-              this._store[row.key] = doc;
+              // for contacts, rd_key is a tuple of ['contact', contact_id]
+              this._store[doc.rd_key[1]] = doc;
             }
   
             this._loadIdtyMapping();
@@ -215,7 +221,10 @@ dojo.mixin(rd.contact, {
           this._onload();
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
-            var idtyStringKey = row.value.join("|");
+            // check we really have an identity record...
+            console.assert(row.value[0] == 'identity', row);
+            var idid = row.value[1]
+            var idtyStringKey = idid.join("|");
 
             //Hold onto the document ID for this identity map,
             //for use in updating/merging identity/contact relationships
@@ -226,7 +235,7 @@ dojo.mixin(rd.contact, {
             if (!byContact) {
               byContact = this._byContact[row.key[0]] = [];
             }
-            byContact.push(row.value);
+            byContact.push(idid);
 
             //Then store the contact by identity.
             var byIdty = this._byIdty[idtyStringKey];
@@ -282,11 +291,13 @@ dojo.mixin(rd.contact, {
           //of the identity as a property on the contact. This means for
           //instance, only one twitter account will be on the contact at
           //contact.twitter, but all identities are listed in contact.identities.
-          var cIds = this._byIdty[idty.identity_id.join("|")];
+          console.assert(idty.rd_key[0]=='identity', idty) // not an identity?
+          idid = idty.rd_key[1];
+          var cIds = this._byIdty[idid.join("|")];
           if (cIds && cIds.length) {
             for (var j = 0, cId; cId = cIds[j]; j++) {
               var contact = this._store[cId];
-              var idType = idty.identity_id[0];
+              var idType = idid[0];
 
               //Only keep one property on the object
               //with the idType, so that means first one
@@ -322,7 +333,7 @@ dojo.mixin(rd.contact, {
   _fetchAllIdentities: function() {
     //summary: fetches all the identities for all the contacts. Normally
     //a response to a rd.contact.list() call.
-    
+
     //Get the list of contactIds that still need to be fetched.
     var contactIds = [];
     for (var i = 0, contact; contact = this._store[i]; i++) {
