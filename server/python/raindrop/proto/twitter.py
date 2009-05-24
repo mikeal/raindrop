@@ -11,6 +11,7 @@ import sys
 import re
 import twisted.python.log
 from twisted.internet import defer, threads
+from urllib2 import HTTPError # errors thrown by twitter...
 
 from ..proc import base
 
@@ -202,10 +203,15 @@ def twitter_id_converter(doc):
     try:
         user = twit.GetUser(id_id)
     # *sob* - twitter package causes urllib2 errors :(
-    except:
-        logger.warning("can't find twitter user %r: %s", id_id,
-                       sys.exc_info()[1])
-        return
+    except HTTPError, exc:
+        if exc.code == 400:
+            raise RuntimeError("we seem to have saturated twitter - "
+                               "please try again in an hour or so...")
+        elif exc.code == 404:
+            logger.info("twitter user %r does not exist", id_id)
+            return
+        else:
+            raise
 
     items = {}
     for name, val in user.AsDict().iteritems():
