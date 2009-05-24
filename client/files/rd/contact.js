@@ -213,7 +213,10 @@ dojo.mixin(rd.contact, {
   _loadIdtyMapping: function() {
     //summary: loads the contact-identity mapping.
 
-    couch.db("raindrop").view("raindrop!identities!all/_view/by_contact", {
+    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      startkey: ['rd/identity/contacts', 'contacts'],
+      endkey: ['rd/identity/contacts', 'contacts', {}],
+      reduce: false,
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
@@ -222,8 +225,10 @@ dojo.mixin(rd.contact, {
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
             // check we really have an identity record...
-            console.assert(row.value[0] == 'identity', row);
-            var idid = row.value[1]
+            rdkey = row.value.rd_key;
+            console.assert(rdkey[0] == 'identity', row);
+            var idid = rdkey[1]
+            var [cid, relationship] = row.key[2];
             var idtyStringKey = idid.join("|");
 
             //Hold onto the document ID for this identity map,
@@ -231,9 +236,9 @@ dojo.mixin(rd.contact, {
             this._idtyMapIds[idtyStringKey] = row.id;
 
             //Store identities by contactId
-            var byContact = this._byContact[row.key[0]];
+            var byContact = this._byContact[cid];
             if (!byContact) {
-              byContact = this._byContact[row.key[0]] = [];
+              byContact = this._byContact[cid] = [];
             }
             byContact.push(idid);
 
@@ -242,7 +247,7 @@ dojo.mixin(rd.contact, {
             if (!byIdty) {
               byIdty = this._byIdty[idtyStringKey] = [];
             }
-            byIdty.push(row.key[0]);
+            byIdty.push(cid);
           }
 
           if (this._listStatus == "needFetch") {

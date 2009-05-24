@@ -47,15 +47,27 @@ dojo.mixin(rd.identity, {
         reduce: false,
         startkey: ['rd/identity', 'image'],
         endkey: ['rd/identity', 'image', {}],
-        success: dojo.hitch(this, function(json) {
-          this._byImage = [];
+        success: function(json) {
+          // We have all identities with images - now find out which of these
+          // identities have sent a message...
+          var keys = [];
           for (var i = 0, row; row = json.rows[i]; i++) {
             var rd_key = row.value.rd_key;
             // rd_key is ['identity', identity_id]
-            this._byImage.push(rd_key[1]);
+            keys.push(["rd/msg/body", "from", rd_key[1]]);
           }
-          callback(this._byImage);
-        }),
+          couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+            keys: keys,
+            group: true,
+            success: dojo.hitch(this, function(json) {
+              this._byImage = [];
+              for (var i = 0, row; row = json.rows[i]; i++) {
+                this._byImage.push(row.key[2]);
+              }
+              callback(this._byImage);
+            }),
+          });
+        },
         error: errback
       });
     }

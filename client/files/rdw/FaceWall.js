@@ -45,7 +45,7 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
             //and image.
             if (imageUrl) {
               html += dojo.string.substitute(this.faceTemplateString, {
-                url: "#rd:contact:" + contact.contact_id,
+                url: "#rd:contact:" + contact.rd_key[1],
                 title: rd.escapeHtml(contact.name),
                 imgUrl: imageUrl
               });

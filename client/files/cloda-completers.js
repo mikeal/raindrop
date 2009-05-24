@@ -31,10 +31,10 @@ var TagCompleter = {
   type: "tag",
   complete: function(aAutocomplete, aText) {
     console.log("Tag completer firing on", aText);
-    Gloda.dbMessages.view("raindrop!tags!all/all", {
+    Gloda.dbMessages.view("raindrop!megaview!all/all", {
       group: true,
-      startkey: aText,
-      endkey: aText + "\u9999",
+      startkey: ['rd/tags', 'tags']
+      endkey: ['rd/tags', 'tags', {}]
       success: function(result) {
         var nodes = [];
         if (result.rows.length==0) {
@@ -45,7 +45,7 @@ var TagCompleter = {
         result.rows.forEach(function (row) {
           var node = $("<div/>")[0];
           ElementXBL.prototype.addBinding.call(node, "autocomplete.xml#tag-completion");
-          node.setTagName(row['key']);
+          node.setTagName(row['key'][2]);
           nodes.push(node);
         });
         aAutocomplete.haveSomeResults(aText, nodes, TagCompleter, 100);
