@@ -20,7 +20,11 @@ dojo.mixin(rd.account, {
 
   _load: function() {
     //summary: rd._api trigger for loading api data.
-    couch.db("raindrop").view("raindrop!accounts!all/_view/alltypes", {
+    couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+      startkey: ['rd/account'],
+      endkey: ['rd/account', {}],
+      reduce: false,
+      include_docs: true,
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
         if(!json.rows.length) {
@@ -28,9 +32,9 @@ dojo.mixin(rd.account, {
           this._onload();
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
-            this._store[row.value] = {
-              id: row.key,
-              docId: row.id
+            this._store[row.doc.kind] = {
+              id: row.key[1][1],
+              docId: row._id
             }
           }
           this._onload();

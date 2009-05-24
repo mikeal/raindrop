@@ -17,6 +17,7 @@ from cStringIO import StringIO
 
 from .config import get_config
 from .model import get_db
+from .model import get_doc_model
 
 import logging
 logger = logging.getLogger(__name__)
@@ -400,42 +401,31 @@ def update_apps(whateva):
                 ).addCallback(_insert_paths, replacements
                 )
 
+@defer.inlineCallbacks
 def install_accounts(whateva):
     db = get_db()
     config = get_config()
-
-    def _opened_ok(doc):
-        logger.info("account '%(_id)s' already exists at revision %(_rev)s"
-                    " - updating", doc)
-        return doc
-
-    def _open_not_exists(failure, doc_id, *args, **kw):
-        failure.trap(twisted.web.error.Error)
-        if failure.value.status != '404': # not found.
-            failure.raiseException()
-        return {'_id': doc_id} # return an empty doc for the account.
-
-    def _update_acct(doc, info):
-        logger.debug("updating %s with %s", doc, info)
-        doc.update(info)
-        doc['type'] = 'account'
-        return db.saveDoc(doc, doc['_id'])
-
-    def _open_doc(whateva, key):
-        return db.openDoc(key)
-
-    d = defer.Deferred()
+    dm = get_doc_model()
 
     for acct_name, acct_info in config.accounts.iteritems():
         acct_id = "account!" + acct_info['id']
         logger.info("Adding account '%s'", acct_id)
-        d.addCallback(_open_doc, acct_id)
-        d.addCallbacks(_opened_ok, _open_not_exists, errbackArgs=(acct_id,))
-        d.addCallback(_update_acct, acct_info)
+        rd_key = ['raindrop-account', acct_id]
 
-    # Start the chain and return.
-    d.callback(None)
-    return d
+        infos = yield dm.open_schemas(rd_key, 'rd/account')
+
+        assert len(infos) in [0, 1]
+        acct_info = acct_info.copy()
+        new_info = {'rd_key' : rd_key,
+                    'schema_id': 'rd/account',
+                    'ext_id': 'raindrop.core',
+                    'items': acct_info}
+        if len(infos)==1:
+            new_info['_id'] = infos[0]['_id']
+            new_info['_rev'] = infos[0]['_rev']
+            logger.info("account '%(_id)s' already exists at revision %(_rev)s"
+                        " - updating", new_info)
+        _ = yield dm.create_schema_items([new_info])
 
 
 # Functions working with design documents holding views.

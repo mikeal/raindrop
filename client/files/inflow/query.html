@@ -78,9 +78,7 @@
 
           //Now all the views.
           for (var i = 0, url; url = urls[i]; i++) {
-            if (url != "_design/raindrop!accounts!all/_view/all") {
-              html += '<option value="' + url + '">' + url.replace(/^_design\//, "") + '</option>';
-            }
+            html += '<option value="' + url + '">' + url.replace(/^_design\//, "") + '</option>';
           }
           html += '</select>';
           rd.place(html, nodes);

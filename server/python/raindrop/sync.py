@@ -48,20 +48,11 @@ class SyncConductor(object):
   def _ohNoes(self, failure, *args, **kwargs):
     self.log.error('OH NOES! failure! %s', failure)
 
-  def _getAllAccounts(self):
-    return self.doc_model.open_view('raindrop!accounts!all', 'all'
-      ).addCallback(self._gotAllAccounts
-      ).addErrback(self._ohNoes)
-
-  def _gotAllAccounts(self, result):
-    # we don't use the cooperator here as we want them all to run in parallel.
-    return defer.DeferredList([d for d in self._genAccountSynchs(result['rows'])])
-
   def _genAccountSynchs(self, rows):
     self.log.info("Have %d accounts to synch", len(rows))
     to_synch = []
     for row in rows:
-      account_details = row['value']
+      account_details = row['doc']
       kind = account_details['kind']
       self.log.debug("Found account using protocol %s", kind)
       if not self.options.protocols or kind in self.options.protocols:
@@ -77,8 +68,17 @@ class SyncConductor(object):
       else:
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
+  @defer.inlineCallbacks
   def sync(self, whateva=None):
-    return self._getAllAccounts()
+    result = yield self.doc_model.open_view('raindrop!docs!all',
+                                            'by_raindrop_schema',
+                                            startkey=['rd/account'],
+                                            endkey=['rd/account', {}],
+                                            reduce=False,
+                                            include_docs=True)
+
+    # we don't use the cooperator here as we want them all to run in parallel.
+    _ = yield defer.DeferredList([d for d in self._genAccountSynchs(result['rows'])])
 
   def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):
