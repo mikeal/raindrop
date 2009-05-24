@@ -90,8 +90,8 @@ class ImapClient(imap4.IMAP4Client):
         # and it will get clobbered below :(
       msg_infos[get_rdkey_for_email(msg_id)] = msg_info
 
-    # Get all messages we've seen before
-    keys = [[k, 'rd/msg/rfc822', self.rd_extension_id]
+    # Get all messages that already have this schema
+    keys = [[k, 'rd/msg/rfc822']
             for k in msg_infos.keys()]
     return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
                                     keys=keys,

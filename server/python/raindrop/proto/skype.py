@@ -137,8 +137,7 @@ class TwistySkype(object):
 
     def _cb_got_chats(self, chats):
         keys = [[self.get_rdkey_for_chat(c),
-                 'rd/msg/skypechat/raw',
-                 self.rd_extension_id] for c in chats]
+                 'rd/msg/skypechat/raw'] for c in chats]
         return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
                                         keys=keys
                     ).addCallback(self._cb_got_seen_chats, chats
@@ -169,8 +168,7 @@ class TwistySkype(object):
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
         keys = [[self.get_rdkey_for_msg(m),
-                 'rd/msg/skypemsg/raw',
-                 self.rd_extension_id] for m in messages]
+                 'rd/msg/skypemsg/raw'] for m in messages]
         return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
                                         keys=keys
                     ).addCallback(self._cb_got_seen, chat, messages, seen_chats,

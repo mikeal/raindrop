@@ -30,16 +30,17 @@ def mail_convo_converter(doc):
     logger.debug("references: %s", '\n\t'.join(references))
     # Open a view trying to locate an existing conversation for any of these
     # headers.
-    rdkeys = [['email', mid] for mid in uniq_header_message_ids]
-    result = open_view('raindrop!conversations!by', 'by_raindrop_key',
-                       keys=rdkeys)
+    keys = [[['email', mid], 'rd/msg/conversation']
+            for mid in uniq_header_message_ids]
+    result = open_view('raindrop!docs!all', 'by_raindrop_key', keys=keys,
+                       include_docs=True)
     # build a map of the keys we actually got back.
     rows = result['rows']
     if rows:
-        convo_id = rows[0]['value']
+        convo_id = rows[0]['doc']['conversation_id']
         logger.debug("FOUND CONVERSATION header_message_id %s with conversation_id %s",
                      self_header_message_id, convo_id)
-        seen_ids = set(r['key'][1] for r in rows)
+        seen_ids = set(r['key'][0][1] for r in rows)
     else:
         logger.debug("CREATING conversation_id %s", header_message_ids[0])
         convo_id = header_message_ids[0]
