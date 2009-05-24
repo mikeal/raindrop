@@ -367,8 +367,6 @@ class DocumentModel(object):
         ek = sk[:-1] + '#' # '#' sorts later than '!'
 
         ret = []
-        # XXX - consider using the by_raindrop_schema view to avoid
-        # ID quoting hackery...
         result = yield self.db.listDoc(startkey=sk,
                                        endkey=ek,
                                        include_docs=True)
