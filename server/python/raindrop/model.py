@@ -41,6 +41,14 @@ if sys.platform == 'win32':
 else:
     get_seq = time.time
 
+# A list of 'schemas' that want their values expanded by the megaview.
+# Intent is that this will come from metadata about the schema - ie, from
+# the couch doc that holds the schema definition.
+# For now it is hard-coded.
+megaview_schemas_expandable_values = {
+    'rd/tags' : ['tags'],
+    'rd/identity/contacts' : ['contacts'],
+}
 
 def encode_provider_id(proto_id):
     # a 'protocol' gives us a 'blob' used to identify the document; we create
@@ -337,7 +345,12 @@ class DocumentModel(object):
             doc['rd_ext_id'] = si['ext_id']
             doc['rd_schema_id'] = schema_id
             if 'confidence' in si:
-                doc['_rd_schema_confidence'] = si['confidence']
+                doc['rd_schema_confidence'] = si['confidence']
+            try:
+                doc['rd_megaview_expandable'] = \
+                        megaview_schemas_expandable_values[schema_id]
+            except KeyError:
+                pass
 
         attachments = self._prepare_attachments(docs)
         logger.debug('create_schema_items saving %d docs', len(docs))
