@@ -416,6 +416,10 @@ def install_accounts(whateva):
 
         assert len(infos) in [0, 1]
         acct_info = acct_info.copy()
+        try:
+            del acct_info['password']
+        except KeyError:
+            pass
         new_info = {'rd_key' : rd_key,
                     'schema_id': 'rd/account',
                     'ext_id': 'raindrop.core',

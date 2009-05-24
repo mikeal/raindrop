@@ -6,6 +6,7 @@ import twisted.web.error
 import paisley
 
 from . import proto as proto
+from .config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,21 @@ class SyncConductor(object):
 
   def _genAccountSynchs(self, rows):
     self.log.info("Have %d accounts to synch", len(rows))
+
+    # Now see what account-info we have locally so we can merge missing
+    # data - particularly the password...
+    config_accts = {}
+    for acct_name, acct_info in get_config().accounts.iteritems():
+      config_accts[acct_info['id']] = acct_info
+
     to_synch = []
     for row in rows:
       account_details = row['doc']
+      acct_id = account_details['id']
+      try:
+        account_details['password'] = config_accts[acct_id]['password']
+      except KeyError:
+        pass
       kind = account_details['kind']
       self.log.debug("Found account using protocol %s", kind)
       if not self.options.protocols or kind in self.options.protocols:
