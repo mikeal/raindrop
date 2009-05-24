@@ -103,7 +103,7 @@ class Pipeline(object):
         # Just nuke all items that have a 'rd_source' specified...
         # XXX - should do this in a loop with a limit to avoid chewing
         # all mem...
-        result = yield self.doc_model.open_view('raindrop!docs!all',
+        result = yield self.doc_model.open_view('raindrop!content!all',
                                                 'by_raindrop_source')
         docs = []
         to_del = [(row['id'], row['value']) for row in result['rows']]

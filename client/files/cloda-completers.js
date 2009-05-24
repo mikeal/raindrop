@@ -31,7 +31,7 @@ var TagCompleter = {
   type: "tag",
   complete: function(aAutocomplete, aText) {
     console.log("Tag completer firing on", aText);
-    Gloda.dbMessages.view("raindrop!megaview!all/all", {
+    Gloda.dbMessages.view("raindrop!content!all/megaview", {
       group: true,
       startkey: ['rd/tags', 'tags']
       endkey: ['rd/tags', 'tags', {}]

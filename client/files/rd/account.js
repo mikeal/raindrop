@@ -20,7 +20,7 @@ dojo.mixin(rd.account, {
 
   _load: function() {
     //summary: rd._api trigger for loading api data.
-    couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+    couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
       startkey: ['rd/account'],
       endkey: ['rd/account', {}],
       reduce: false,

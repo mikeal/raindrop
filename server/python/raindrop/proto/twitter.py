@@ -106,7 +106,7 @@ class TwitterProcessor(object):
             # 'endkey' are reversed.
             endkey=[["tweet", [friend.screen_name]]]
             startkey=[["tweet", [friend.screen_name, {}]]]
-            return self.doc_model.open_view('raindrop!docs!all',
+            return self.doc_model.open_view('raindrop!content!all',
                                             'by_raindrop_key',
                                             startkey=startkey,
                                             endkey=endkey,

@@ -32,7 +32,7 @@ def mail_convo_converter(doc):
     # headers.
     keys = [[['email', mid], 'rd/msg/conversation']
             for mid in uniq_header_message_ids]
-    result = open_view('raindrop!docs!all', 'by_raindrop_key', keys=keys,
+    result = open_view('raindrop!content!all', 'by_raindrop_key', keys=keys,
                        include_docs=True)
     # build a map of the keys we actually got back.
     rows = result['rows']

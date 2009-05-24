@@ -28,7 +28,7 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
       keys.push([schema, id]);
   }
 
-  couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+  couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
     keys: keys,
     include_docs: true,
     reduce: false,

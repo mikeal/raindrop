@@ -43,7 +43,7 @@ dojo.mixin(rd.identity, {
     if (this._byImage) {
       callback(this._byImage);
     } else {
-      couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
         reduce: false,
         startkey: ['rd/identity', 'image'],
         endkey: ['rd/identity', 'image', {}],
@@ -56,7 +56,7 @@ dojo.mixin(rd.identity, {
             // rd_key is ['identity', identity_id]
             keys.push(["rd/msg/body", "from", rd_key[1]]);
           }
-          couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+          couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
             keys: keys,
             group: true,
             success: dojo.hitch(this, function(json) {
@@ -102,7 +102,7 @@ dojo.mixin(rd.identity, {
     for (var i = 0, id; id = identityIds[i]; i++) {
       keys.push(['rd/identity', ['identity', id]]);
     }
-    couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+    couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
       keys: keys,
       include_docs: true,
       reduce: false,

@@ -30,7 +30,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
   for (var i = 0, id; id = ids[i]; i++) {
     queryKeys.push(["rd/msg/conversation", "conversation_id", id]);
   }
-  couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+  couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
     reduce: false,
     keys: queryKeys,
     success: dojo.hitch(this, function(convList) {
@@ -81,7 +81,7 @@ dojo._mixin(rd.conversation, {
     for (var i = 0; i< ids.length; i++) {
       keys.push(['rd/msg/conversation', ids[i]]);
     }
-    couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+    couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
       keys: keys,
       reduce: false,
       include_docs: true,
@@ -109,7 +109,7 @@ dojo._mixin(rd.conversation, {
     //pulls the conversations associated with those messages.
     // XXX - this could be optimized as we again re-fetch these messages when
     // fetching all in the convo.
-    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       reduce: false,
       startkey: ["rd/msg/body", "timestamp", {}],
       endkey: ["rd/msg/body", "timestamp"],
@@ -123,7 +123,7 @@ dojo._mixin(rd.conversation, {
         for (var i = 0, row; row = json.rows[i]; i++) {
           keys.push(['rd/msg/conversation', row.value.rd_key]);
         }
-        couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+        couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
           keys: keys,
           reduce: false,
           include_docs: true,
@@ -162,7 +162,7 @@ dojo._mixin(rd.conversation, {
         return;
       }
 
-      couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
         reduce: false,
         keys: keys,
         success: dojo.hitch(this, function(json) {

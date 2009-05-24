@@ -182,7 +182,7 @@ dojo.mixin(rd.contact, {
     } else {
       // open all contacts - note this also includes contacts without
       // associated identities...
-      couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+      couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
         startkey: ['rd/contact'],
         endkey: ['rd/contact', {}],
         include_docs: true,
@@ -213,7 +213,7 @@ dojo.mixin(rd.contact, {
   _loadIdtyMapping: function() {
     //summary: loads the contact-identity mapping.
 
-    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       startkey: ['rd/identity/contacts', 'contacts'],
       endkey: ['rd/identity/contacts', 'contacts', {}],
       reduce: false,

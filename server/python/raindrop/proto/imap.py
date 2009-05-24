@@ -93,7 +93,7 @@ class ImapClient(imap4.IMAP4Client):
     # Get all messages that already have this schema
     keys = [[k, 'rd/msg/rfc822']
             for k in msg_infos.keys()]
-    return self.doc_model.open_view('raindrop!docs!all', 'by_raindrop_key',
+    return self.doc_model.open_view('raindrop!content!all', 'by_raindrop_key',
                                     keys=keys,
                 ).addCallback(self._gotSeen, folder_name, msg_infos
                 )

@@ -35,7 +35,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
 
   show: function(id) {
     // Get the rd_key for all items in the mailing-list.
-    couch.db("raindrop").view("raindrop!megaview!all/_view/all", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       key: ["rd/msg/email/mailing-list", "id", id],
       reduce: false,
       success: function(json) {
@@ -45,7 +45,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
           rdkeys.push(["rd/msg/conversation", row.value.rd_key]);
         }
         // and yet another view to fetch the convo IDs for these messages.
-        couch.db("raindrop").view("raindrop!docs!all/_view/by_raindrop_schema", {
+        couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
           keys: rdkeys,
           reduce: false,
           include_docs: true,

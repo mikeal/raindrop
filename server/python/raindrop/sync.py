@@ -83,7 +83,7 @@ class SyncConductor(object):
 
   @defer.inlineCallbacks
   def sync(self, whateva=None):
-    result = yield self.doc_model.open_view('raindrop!docs!all',
+    result = yield self.doc_model.open_view('raindrop!content!all',
                                             'by_raindrop_schema',
                                             startkey=['rd/account'],
                                             endkey=['rd/account', {}],
