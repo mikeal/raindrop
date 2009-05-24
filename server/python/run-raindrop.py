@@ -193,13 +193,16 @@ def delete_docs(result, parser, options):
         logger.info("Deleting %d documents of type %r", len(to_del), dt)
         return to_del
 
-    if not options.doctypes:
-        parser.error("You must specify one or more --doctype")
+    if not options.schemas:
+        parser.error("You must specify one or more --schema")
     deferreds = []
-    for dt in options.doctypes:
-        d = model.get_doc_model().open_view('raindrop!messages!by',
-                                            'by_doc_type', key=dt
-                ).addCallback(_got_docs, dt
+    for st in options.schemas:
+        d = model.get_doc_model().open_view('raindrop!docs!all',
+                                            'by_raindrop_schema',
+                                            startkey=[st],
+                                            endkey=[st, {}],
+                                            reduce=False,
+                ).addCallback(_got_docs, st
                 ).addCallback(_del_docs
                 )
         deferreds.append(d)
@@ -266,8 +269,8 @@ def main():
                       help="Specifies the extensions to use for the specified "
                            "operations.")
 
-    parser.add_option("", "--doctype", action="append", dest='doctypes',
-                      help="Specifies the document types to use for some "
+    parser.add_option("", "--schema", action="append", dest='schemas',
+                      help="Specifies the schema ids to use for some "
                            "operations.")
 
     parser.add_option("", "--force", action="store_true",
