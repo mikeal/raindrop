@@ -250,7 +250,7 @@ class QueueRunner(object):
         if self.status_msg_last != msg:
             logger.info(msg)
             self.status_msg_last = msg
-        self.dc_status = reactor.callLater(5, self._q_status)
+        self.dc_status = reactor.callLater(10, self._q_status)
 
     def _q_done(self, result, q, state_doc, def_done):
         q.running = False
@@ -296,7 +296,7 @@ class QueueRunner(object):
 
         state_docs = self.state_docs = [r[1] for r in result]
 
-        self.dc_status = reactor.callLater(5, self._q_status)
+        self.dc_status = reactor.callLater(10, self._q_status)
         def_done = defer.Deferred()
         for q, state_doc in zip(self.queues, state_docs):
             q.failed = False
