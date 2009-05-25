@@ -33,6 +33,23 @@ logger = logging.getLogger(__name__)
 
 re_user = re.compile(r'@(\w+)')
 
+def user_to_raw(user):
+    items = {}
+    for name, val in user.AsDict().iteritems():
+        items['twitter_'+name.lower()] = val
+    return items
+
+def tweet_to_raw(tweet):
+    ret = {}
+    for name, val in tweet.AsDict().iteritems():
+        val = getattr(tweet, name)
+        # simple hacks - users just become the user ID.
+        if isinstance(val, twitter.User):
+            val = val.screen_name
+        ret['twitter_'+name.lower()] = val
+    ret['twitter_created_at_in_seconds'] = tweet.GetCreatedAtInSeconds()
+    return ret
+    
 
 class TwitterProcessor(object):
     # The 'id' of this extension
@@ -46,16 +63,6 @@ class TwitterProcessor(object):
         self.twit = None
         self.seen_tweets = None
 
-    def tweet_to_raw(self, tweet):
-        ret = {}
-        for name, val in tweet.AsDict().iteritems():
-            val = getattr(tweet, name)
-            # simple hacks - users just become the user ID.
-            if isinstance(val, twitter.User):
-                val = val.screen_name
-            ret['twitter_'+name.lower()] = val
-        ret['twitter_created_at_in_seconds'] = tweet.GetCreatedAtInSeconds()
-        return ret
         
     def attach(self):
         logger.info("attaching to twitter...")
@@ -66,95 +73,80 @@ class TwitterProcessor(object):
                     ).addCallback(self.attached
                     )
 
+    @defer.inlineCallbacks
     def attached(self, twit):
-        logger.info("attached to twitter - fetching friends")
+        logger.info("attached to twitter - fetching timeline")
         self.twit = twit
 
-        # build the list of all users we will fetch tweets from.
-        return threads.deferToThread(self.twit.GetFriends
-                  ).addCallback(self._cb_got_friends)
-
-    def _cb_got_friends(self, friends):
-        return self.conductor.coop.coiterate(
-                    self.gen_friends_info(friends))
-
-    def gen_friends_info(self, friends):
-        logger.info("apparently I've %d friends", len(friends))
-
-        def find_new_tweets(results, friend):
-            rows = results['rows']
-            if rows:
-                rdkey = rows[0]['key'][0]
-                assert rdkey[0]=='tweet'
-                assert rdkey[1][0]==friend.screen_name
-                last_this = rdkey[1][1]
-            else:
-                last_this = None
-            logger.debug("friend %r (%s) has latest tweet id of %s",
-                         friend.screen_name, friend.id, last_this)
-            return threads.deferToThread(
-                    self.twit.GetUserTimeline, friend.id, since_id=last_this
-                            ).addCallback(self._cb_got_friend_timeline, friend
-                            ).addErrback(self.err_friend_timeline, friend
-                            )
-    
-        def do_friend_tweets(friend):
-            # Execute a view to find the last tweet ID we know about for
-            # this user.  We take advantage of the ID format for tweets and
-            # couch's sorting semantics...
-            # NOTE: as we use 'descending' the concepts of 'startkey' and
-            # 'endkey' are reversed.
-            endkey=[["tweet", [friend.screen_name]]]
-            startkey=[["tweet", [friend.screen_name, {}]]]
-            return self.doc_model.open_view('raindrop!content!all',
-                                            'by_raindrop_key',
-                                            startkey=startkey,
-                                            endkey=endkey,
-                                            descending=True,
-                                            limit=1
-                        ).addCallback(find_new_tweets, friend
-                        )
-
-        # None means 'me' - but we don't really want to use 'None'.  This is
-        # the only way I can work out how to get ourselves!
+        # This is the only way I can work out how to get ourselves!
         me = self.twit.GetUser(self.twit._username)
-        yield do_friend_tweets(me)
-        for f in friends:
-            yield do_friend_tweets(f)
+        seen_friends = [me]
 
-        logger.debug("Finished friends")
+        # We need to be careful of rate-limiting, so we try and use
+        # the min twitter requests possible to fetch our data.
+        # GetFriendsTimeline is the perfect entry point - 200 tweets and
+        # all info about twitting users in a single request.
+        tl= yield threads.deferToThread(self.twit.GetFriendsTimeline,
+                                        count=200)
+        this_users = {} # probably lots of dupes
+        this_tweets = {}
+        keys = []
+        for status in tl:
+            keys.append([["tweet", status.id], 'rd/msg/tweet/raw'])
+            this_tweets[status.id] = status
+            this_users[status.user.screen_name] = status.user
 
-    def err_friend_timeline(self, failure, friend):
-        logger.error("Failed to fetch timeline for '%s': %s",
-                     friend.screen_name, failure)
+        # execute a view to work out which of these tweets are new.
+        results = yield self.doc_model.open_view('raindrop!content!all',
+                                        'by_raindrop_key',
+                                        keys=keys)
+        seen_tweets = set()
+        for row in results['rows']:
+            seen_tweets.add(row['key'][0][1])
 
-    def _cb_got_friend_timeline(self, timeline, friend):
         infos = []
-        user_ids = set([friend.screen_name])
-        for tweet in timeline:
-            user_ids.add(tweet.user.screen_name)
-            for ref in (re_user.findall(tweet.text) or []):
-                user_ids.add(ref)
-
-            tid = tweet.id
-            # put the 'raw' document object together and save it.
-            logger.info("New tweet '%s...' (%s)", tweet.text[:25], tid)
+        for tid in set(this_tweets.keys())-set(seen_tweets):
             # create the schema for the tweet itself.
-            fields = self.tweet_to_raw(tweet)
-            rdkey = ['tweet', [friend.screen_name, tid]]
+            tweet = this_tweets[tid]
+            fields = tweet_to_raw(tweet)
+            rdkey = ['tweet', tid]
             infos.append({'rd_key' : rdkey,
                           'ext_id': self.rd_extension_id,
                           'schema_id': 'rd/msg/tweet/raw',
                           'items': fields})
-        logger.info("friend %s has %d new tweets referencing %d tweeters",
-                    friend.screen_name, len(infos), len(user_ids))
-        # emit 'I assert this user exists' style schemas...
-        for uid in user_ids:
-            infos.append({'rd_key' : ['identity', ['twitter', uid]],
+
+        # now the same treatment for the users we found; although for users
+        # the fact they exist isn't enough - we also check their profile is
+        # accurate.
+        keys = []
+        for sn in this_users.iterkeys():
+            keys.append([["identity", ["twitter", sn]], 'rd/identity/twitter'])
+        # execute a view process these users.
+        results = yield self.doc_model.open_view('raindrop!content!all',
+                                        'by_raindrop_key',
+                                        keys=keys,
+                                        include_docs=True)
+        seen_users = {}
+        for row in results['rows']:
+            rd_key, schema_id = row['key']
+            _, idid = rd_key
+            _, name = idid
+            seen_users[name] = row['doc']
+
+        # XXX - check the account user is in the list!!
+
+        # XXX - check fields later - for now just check they don't exist.
+        for sn in set(this_users.keys())-set(seen_users.keys()):
+            user = this_users[sn]
+            items = user_to_raw(user)
+            rdkey = ['identity', ['twitter', sn]]
+            infos.append({'rd_key' : rdkey,
                           'ext_id': self.rd_extension_id,
-                          'schema_id': 'rd/identity/exists',
-                          'items': None})
-        return self.doc_model.create_schema_items(infos)
+                          'schema_id': 'rd/identity/twitter',
+                          'items': items})
+
+        _ = yield self.doc_model.create_schema_items(infos)
+
 
 # A 'converter' - takes a rd/msg/tweet/raw as input and creates various
 # schema outputs for that message
@@ -187,14 +179,23 @@ def tweet_converter(doc):
 _twitter_id_converter = None
 
 @base.raindrop_extension('rd/identity/exists')
-def twitter_id_converter(doc):
+def twitter_exists_id_converter(doc):
     typ, (id_type, id_id) = doc['rd_key']
     assert typ=='identity' # Must be an 'identity' to have this schema type!
     if id_type != 'twitter':
         # Not a twitter ID.
         return
 
-    # Is a skype ID - attach to skype and process it.
+    # if we already have a twitter/raw schema for the user just skip it
+    # XXX - later we should check the items are accurate...
+    results = open_view('raindrop!content!all',
+                        'by_raindrop_key',
+                        key=[doc['rd_key'], 'rd/identity/twitter'])
+    if results['rows']:
+        logger.debug("already seen this twitter user - skipping")
+        return
+    
+    # Is a new twitter ID - attach to twitter and process it.
     global _twitter_id_converter
     if _twitter_id_converter is None:
         _twitter_id_converter = twitter.Api()
@@ -213,20 +214,20 @@ def twitter_id_converter(doc):
         else:
             raise
 
-    items = {}
-    for name, val in user.AsDict().iteritems():
-        items['twitter_'+name.lower()] = val
-    did = emit_schema('rd/identity/twitter', items)
+    items = user_to_raw(user)
+    emit_schema('rd/identity/twitter', items)
 
-    # emit one for the normalized identity schema
-    items = {'nickname': user.screen_name}
+@base.raindrop_extension('rd/identity/twitter')
+def twitter_id_converter(doc):
+    # emit the normalized identity schema
+    items = {'nickname': doc['twitter_screen_name']}
     # the rest are optional...
     for dest, src in [
         ('name', 'name'),
         ('url', 'url'),
         ('image', 'profile_image_url'),
         ]:
-        val = getattr(user, src)
+        val = doc.get('twitter_' + src)
         if val:
             items[dest] = val
     emit_schema('rd/identity', items)
@@ -234,12 +235,12 @@ def twitter_id_converter(doc):
     # and we use the same extension to emit the 'known identities' too...
     def gen_em():
         # the primary 'twitter' one first...
-        yield ('twitter', user.screen_name), None
-        v = user.url
+        yield ('twitter', doc['twitter_screen_name']), None
+        v = doc.get('twitter_url')
         if v:
             yield ('url', v.rstrip('/')), 'homepage'
 
-    def_contact_props = {'name': user.name or user.screen_name}
+    def_contact_props = {'name': doc['twitter_name'] or doc['twitter_screen_name']}
     emit_related_identities(gen_em(), def_contact_props)
 
 
