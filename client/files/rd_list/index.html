@@ -31,11 +31,15 @@
   <script type="text/javascript" charset="utf-8">
     rd.addOnLoad(function(){
       //http://127.0.0.1:5984/raindrop/_design/raindrop!apps!all/_view/all?limit=11
-      couch.db("raindrop").view("raindrop!ui!all/_view/all", {
+      couch.db("raindrop").allDocs({
         include_docs: true,
+        startkey: 'ui!',
+        endkey: 'ui#',
         success: rd.hitch(this, function(json) {
           var html = "";
           rd.forEach(json.rows, function(row) {
+            if (row.error || row.value.deleted)
+              return;
             var doc = row.doc;
             if (doc._id != "ui!rd_list") {
               html += '<li><a href="' + doc.location + '">' + doc.name + '</a></li>';

@@ -291,115 +291,116 @@ def insert_default_docs(whateva, options):
 
     return defer.DeferredList(dl).addCallback(_got_existing_docs, docs)
 
-  
+@defer.inlineCallbacks
 def update_apps(whateva):
     """Updates the app config file using the latest app docs in the couch.
        Should be run after a UI app/extension is added or removed from the couch.
     """
-
     db = get_db()
-
-    def _insert_paths(view_results, replacements):
-        # Convert couch config value for module paths
-        # to a JS string to be used in config.js
-        module_paths = ""
-        
-        # TODO: this needs more work/reformatting
-        # but need a real use case first.
-        # module_paths += ",".join(
-        #    ["'%s': '%s'" % (
-        #       item["key"].replace("'", "\\'"), 
-        #       item["value"].replace("'", "\\'")
-        #    ) for item in view_results["rows"]]
-        # )
-
-        replacements["module_paths"] = module_paths
-        
-        return db.openView("raindrop!uiext!exts", "all"
-                    ).addCallback(_insert_exts, replacements)
-
-
-    def _insert_exts(view_results, replacements):
-        # Convert couch config value for module paths
-        # to a JS string to be used in config.js
-        exts = "exts: ["
-
-        # Build up a complete list of required resources.
-        for row in view_results["rows"]:
-            extender = row["key"]
-            for key in extender.keys():
-                  exts += "{'%s': '%s'}," % (
-                      key.replace("'", "\\'"),
-                      extender[key].replace("'", "\\'")
-                  )
-
-        # TODO: if my python fu was greater, probably could do this with some
-        # fancy list joins, but falling back to removing trailing comma here.
-        exts = re.sub(",$", "", exts)
-        exts += "]"
-
-        # Add the string of the required resources to
-        # the replacement structure.
-        replacements["exts"] = exts
-
-        return db.openView("raindrop!uiext!subs", "all"
-                    ).addCallback(_insert_extensions, replacements)
-
-    def _insert_extensions(view_results, replacements):
-        # Pull out all the subscriptions
-        subs = "subs: ["
-        for item in view_results["rows"]:
-            # each row has a key that in an array of objects.
-            for sub in item["key"]:
-                # sub is an object. Get the keys and
-                # add it to the text output.
-                for key in sub.keys():
-                  subs += "{'%s': '%s'}," % (
-                      key.replace("'", "\\'"),
-                      sub[key].replace("'", "\\'")
-                  )
-
-        # TODO: if my python fu was greater, probably could do this with some
-        # fancy list joins, but falling back to removing trailing comma here.
-        subs = re.sub(",$", "", subs)
-        subs += "],"
-
-        replacements["subs"] = subs
-
-        return db.openDoc(FILES_DOC, attachments=True,
-                    ).addCallback(_check_config, replacements
-                    )
-
-    def _check_config(doc, replacements):
-        # Find config.js skeleton on disk   
-        # we cannot go in a zipped egg...
-        root_dir = path_part_nuke(model.__file__, 4)
-        config_path = os.path.join(root_dir, "client/files/config.js")
-
-        # load config.js skeleton
-        f = open(config_path, 'rb')
-        data = f.read()
-        f.close()
-
-        # update config.js contents with couch data
-        data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
-        data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
-        data = data.replace("/*INSERT EXTS HERE*/", replacements["exts"])
-
-        new = {
-            'content_type': "application/x-javascript; charset=UTF-8",
-            'data': base64.b64encode(data)
-        }
-        # save config.js in the files.
-        if doc["_attachments"]["config.js"] != new:
-            logger.info("config.js in %r has changed; updating", doc['_id'])
-            doc["_attachments"]["config.js"] = new
-            return db.saveDoc(doc, FILES_DOC)
-
     replacements = {}
-    return db.openView("raindrop!ui!paths", "all"
-                ).addCallback(_insert_paths, replacements
-                )
+
+    # Convert couch config value for module paths
+    # to a JS string to be used in config.js
+    module_paths = ""
+
+    # TODO: this needs more work/reformatting
+    # but need a real use case first.
+    # module_paths += ",".join(
+    #    ["'%s': '%s'" % (
+    #       item["key"].replace("'", "\\'"), 
+    #       item["value"].replace("'", "\\'")
+    #    ) for item in view_results["rows"]]
+    # )
+
+    replacements["module_paths"] = module_paths
+
+    # XXX - we probably want to unify this with the schema model...
+    uiext_docs = yield db.listDoc(startkey="uiext!", endkey="uiext#",
+                                  include_docs=True)
+    ui_docs = yield db.listDoc(startkey="ui!", endkey="ui#",
+                               include_docs=True)
+    all_rows = uiext_docs['rows'] + ui_docs['rows']
+
+    # Convert couch config value for module paths
+    # to a JS string to be used in config.js
+    sub_docs = []
+    path_docs = []
+    exts = "exts: ["
+
+    # Build up a complete list of required resources.
+    for row in all_rows:
+        if 'error' in row or 'deleted' in row['value']:
+            continue
+        doc = row["doc"]
+        if 'subscriptions' in doc:
+            sub_docs.append(doc)
+        if 'modulePaths' in doc:
+            path_docs.append(doc)
+        try:
+            extender = doc["exts"]
+        except KeyError:
+            continue
+        for key in extender.keys():
+              exts += "{'%s': '%s'}," % (
+                  key.replace("'", "\\'"),
+                  extender[key].replace("'", "\\'")
+              )
+
+    # TODO: if my python fu was greater, probably could do this with some
+    # fancy list joins, but falling back to removing trailing comma here.
+    exts = re.sub(",$", "", exts)
+    exts += "]"
+
+    # Add the string of the required resources to
+    # the replacement structure.
+    replacements["exts"] = exts
+
+    # Pull out all the subscriptions
+    subs = "subs: ["
+    for doc in sub_docs:
+        # each row has a key that in an array of objects.
+        for sub in doc['subscriptions']:
+            # sub is an object. Get the keys and
+            # add it to the text output.
+            for key in sub.keys():
+              subs += "{'%s': '%s'}," % (
+                  key.replace("'", "\\'"),
+                  sub[key].replace("'", "\\'")
+              )
+
+    # TODO: if my python fu was greater, probably could do this with some
+    # fancy list joins, but falling back to removing trailing comma here.
+    subs = re.sub(",$", "", subs)
+    subs += "],"
+    replacements["subs"] = subs
+
+    doc = yield db.openDoc(FILES_DOC, attachments=True)
+
+    # Find config.js skeleton on disk   
+    # we cannot go in a zipped egg...
+    root_dir = path_part_nuke(model.__file__, 4)
+    config_path = os.path.join(root_dir, "client/files/config.js")
+
+    # load config.js skeleton
+    f = open(config_path, 'rb')
+    data = f.read()
+    f.close()
+
+    # update config.js contents with couch data
+    data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
+    data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
+    data = data.replace("/*INSERT EXTS HERE*/", replacements["exts"])
+
+    new = {
+        'content_type': "application/x-javascript; charset=UTF-8",
+        'data': base64.b64encode(data)
+    }
+    # save config.js in the files.
+    if doc["_attachments"]["config.js"] != new:
+        logger.info("config.js in %r has changed; updating", doc['_id'])
+        doc["_attachments"]["config.js"] = new
+        _ = yield db.saveDoc(doc, FILES_DOC)
+
 
 @defer.inlineCallbacks
 def install_accounts(whateva):
