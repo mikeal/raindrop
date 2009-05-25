@@ -95,19 +95,19 @@ class TestMessageProvider(object):
         logger.debug("Finished saving %d test messages in bulk", n)
         # done
 
-num_converted = 0
+# our 'globals' hacks get in the way of using 'normal' globals...
+hacky_state = {'num_converted': 0}
 
 # A 'converter' - takes a proto/test as input and creates a
 # 'rd/msg/rfc822 schema as output, which in turn will force the
 # email schema converters to run to create body etc schemas.
 @base.raindrop_extension('rd/msg/test/raw')
 def test_converter(src):
-    global num_converted
     # for the sake of testing the error queue, we cause an error on
     # every 3rd message we process.
-    num_converted += 1
+    hacky_state['num_converted'] += 1
     if test_next_convert_fails or \
-       (test_next_convert_fails is None and num_converted % 3 == 0):
+       (test_next_convert_fails is None and hacky_state['num_converted'] % 3 == 0):
         raise RuntimeError("This is a test failure")
 
     # for the sake of testing, we fetch the raw attachment just to compare

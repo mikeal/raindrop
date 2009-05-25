@@ -339,9 +339,9 @@ class DocumentModel(object):
                 id = self.get_doc_id_for_schema_item(si)
             doc['_id'] = id
             doc['rd_key'] = si['rd_key']
-            rd_source = si.get('rd_source')
-            if rd_source:
-                doc['rd_source'] = rd_source
+            # always emit rd_source - an explicit NULL means this is a
+            # 'source' doc
+            doc['rd_source'] = si.get('rd_source')
             doc['rd_ext_id'] = si['ext_id']
             doc['rd_schema_id'] = schema_id
             if 'confidence' in si:

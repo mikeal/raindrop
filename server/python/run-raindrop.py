@@ -52,7 +52,7 @@ def _process_until_deferred(defd, options):
     def do_start():
         # can't use Force or it will just restart each time...
         state['delayed_call'] = None
-        p.start(force=False).addBoth(proc_done)
+        p.start().addBoth(proc_done)
 
     def defd_fired(result):
         state['fired'] = True
@@ -101,7 +101,7 @@ def reprocess(result, parser, options):
     def done(result):
         print "Message pipeline has finished..."
     p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.start(True).addCallback(done)
+    return p.reprocess().addCallback(done)
 
 @asynch_command
 def retry_errors(result, parser, options):
