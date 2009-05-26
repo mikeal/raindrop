@@ -103,6 +103,7 @@ hacky_state = {'num_converted': 0}
 # email schema converters to run to create body etc schemas.
 @base.raindrop_extension('rd/msg/test/raw')
 def test_converter(src):
+    """Takes a 'proto/test' as input and creates a 'rd/msg/rfc822' schema"""
     # for the sake of testing the error queue, we cause an error on
     # every 3rd message we process.
     hacky_state['num_converted'] += 1
