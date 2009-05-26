@@ -40,6 +40,21 @@ def install_accounts(result, parser, options):
     """Install accounts in the database from the config file"""
     return bootstrap.install_accounts(None)
 
+def show_info(result, parser, options):
+    """Print a list of all extensions, loggers etc"""
+    if not pipeline.extensions:
+        pipeline.load_extensions(model.get_doc_model())
+    print "Raindrop extensions:"
+    for ext in pipeline.extensions:
+        print "%s: %s" % (ext.extension_id, ext.__doc__)
+    print
+    print "Loggers"
+    # yuck - reach into impl - and hope all have been initialized by now
+    # (they should have been as we loaded the extensions above)
+    for name in logging.Logger.manager.loggerDict:
+        print name
+
+    
 # A helper function that arranges to continually perform a 'process' until
 # the passed deferred has fired.  Mainly used so we can 'process' at the same
 # time as 'sync-messages'
