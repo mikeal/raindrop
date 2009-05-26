@@ -92,14 +92,17 @@ class Pipeline(object):
             load_extensions(doc_model)
             assert extensions # this can't be good!
 
+    def get_extensions(self, spec_exts=None):
+        if spec_exts is None:
+            spec_exts = self.options.exts
+        return find_specified_extensions('extension_id', spec_exts)
+
     def get_work_queues(self, spec_exts=None):
         """Get all the work-queues we know about - later this might be
         an extension point?
         """
-        if spec_exts is None:
-            spec_exts = self.options.exts
         ret = []
-        for ext in find_specified_extensions('extension_id', spec_exts):
+        for ext in self.get_extensions(spec_exts):
             inst = MessageTransformerWQ(self.doc_model, ext,
                                         options = self.options.__dict__)
             ret.append(inst)
@@ -173,21 +176,40 @@ class Pipeline(object):
         # We can't just reset all work-queues as there will be a race
         # (ie, one queue will be deleting a doc while it is being
         # processed by another.)
-        # So this is like 'unprocess' - all docs without a rd_source are
+        # So by default this is like 'unprocess' - all docs without a rd_source are
         # reprocessed as if they were touched.  This should trigger the
         # first wave of extensions to re-run, which will trigger the next
         # etc.
+        # However, if a extensions are named, only those are reprocessed
         # XXX - should do this in a loop with a limit to avoid chewing
         # all mem...
-        result = yield self.doc_model.open_view('raindrop!content!all',
-                                                'by_raindrop_source',
-                                                key=None) # skip NULL rows.
-        def gen_em():
-            to_proc = [(row['id'], row['value']) for row in result['rows']]
+        dm = self.doc_model
+        def gen_em(this_result):
+            to_proc = [(row['id'], row['value']) for row in this_result['rows']]
+            i = 0
             for id, rev in to_proc:
+                i+=1
+                if i % 500 == 0:
+                    logger.info("processed %d documents...", i)
                 yield id, rev
 
-        _ = yield self._reprocess_items(gen_em())
+        if not self.options.exts:
+            result = yield dm.open_view('raindrop!content!all',
+                                        'by_raindrop_source',
+                                        key=None) # only NULL rows.
+            _ = yield self._reprocess_items(gen_em(result))
+        else:
+            # do each specified extension one at a time to avoid the races
+            # if extensions depend on each other...
+            for ext in self.get_extensions():
+                result = yield dm.open_view('raindrop!content!all',
+                                            'by_raindrop_schema',
+                                            startkey=[ext.source_schema],
+                                            endkey=[ext.source_schema, {}],
+                                            reduce=False)
+                logger.info("reprocessing %s - %d docs", get_extension_id(ext),
+                            len(result['rows']))
+                _ = yield self._reprocess_items(gen_em(result))
 
 
     @defer.inlineCallbacks
