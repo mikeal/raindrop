@@ -136,15 +136,15 @@ class TwistySkype(object):
 
 
     def _cb_got_chats(self, chats):
-        keys = [[self.get_rdkey_for_chat(c),
-                 'rd/msg/skypechat/raw'] for c in chats]
-        return self.doc_model.open_view('raindrop!content!all', 'by_raindrop_key',
-                                        keys=keys
+        keys = [['rd/core/content', 'key-schema_id',
+                 [self.get_rdkey_for_chat(c), 'rd/msg/skypechat/raw']]
+                for c in chats]
+        return self.doc_model.open_view(keys=keys, reduce=False
                     ).addCallback(self._cb_got_seen_chats, chats
                     )
 
     def _cb_got_seen_chats(self, result, chats):
-        seen_chats = set([r['key'][0][1] for r in result['rows']])
+        seen_chats = set([r['value']['rd_key'][1] for r in result['rows']])
         nnew = len(chats)-len(seen_chats)
         logger.debug("skype has %d chat(s) total %d new", len(chats), nnew)
         # fetch all the messages (future optimization; all we need are the
@@ -167,10 +167,10 @@ class TwistySkype(object):
         # determine which we have seen (note that we obviously could just
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
-        keys = [[self.get_rdkey_for_msg(m),
-                 'rd/msg/skypemsg/raw'] for m in messages]
-        return self.doc_model.open_view('raindrop!content!all', 'by_raindrop_key',
-                                        keys=keys
+        keys = [['rd/core/content', 'key-schema_id',
+                 [self.get_rdkey_for_msg(m), 'rd/msg/skypemsg/raw']]
+                 for m in messages]
+        return self.doc_model.open_view(keys=keys, reduce=False
                     ).addCallback(self._cb_got_seen, chat, messages, seen_chats,
                     )
 
@@ -179,7 +179,7 @@ class TwistySkype(object):
         chatname = chat.Name
         need_chat = chatname not in seen_chats
 
-        seen_msgs = set([r['key'][0][1] for r in result['rows']])
+        seen_msgs = set([r['value']['rd_key'][1] for r in result['rows']])
         remaining = set(msgs_by_id.keys())-set(seen_msgs)
         # we could just process the empty list as normal, but the logging of
         # an info when we do have items is worthwhile...

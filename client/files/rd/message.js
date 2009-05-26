@@ -25,10 +25,10 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
     messageResults.push(this_bag);
     messageBags[id] = this_bag;
     for (var j=0, schema; schema = schemas[j]; j++)
-      keys.push([schema, id]);
+      keys.push(['rd/core/content', 'key-schema_id', [id, schema]]);
   }
 
-  couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
+  couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
     keys: keys,
     include_docs: true,
     reduce: false,
@@ -38,7 +38,8 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
       } else {
         for (var i = 0, row; row = json.rows[i]; i++) {
           //Make sure we have the right aggregate to use for this row.
-          var [this_sch, this_rdkey] = row.key;
+          var this_rdkey = row.value.rd_key;
+          var this_sch = row.value.rd_schema_id;
           var this_bag = messageBags[this_rdkey];
           // Note that we may get many of the same schema, which implies
           // we need to aggregate them - tags is a good example.  For

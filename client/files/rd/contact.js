@@ -182,9 +182,8 @@ dojo.mixin(rd.contact, {
     } else {
       // open all contacts - note this also includes contacts without
       // associated identities...
-      couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
-        startkey: ['rd/contact'],
-        endkey: ['rd/contact', {}],
+      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+        key: ['rd/core/content', 'schema_id', 'rd/contact'],
         include_docs: true,
         reduce: false,
         success: dojo.hitch(this, function(json) {

@@ -91,15 +91,14 @@ class ImapClient(imap4.IMAP4Client):
       msg_infos[get_rdkey_for_email(msg_id)] = msg_info
 
     # Get all messages that already have this schema
-    keys = [[k, 'rd/msg/rfc822']
+    keys = [['rd/core/content', 'key', [k, 'rd/msg/rfc822']]
             for k in msg_infos.keys()]
-    return self.doc_model.open_view('raindrop!content!all', 'by_raindrop_key',
-                                    keys=keys,
+    return self.doc_model.open_view(keys=keys, reduce=False,
                 ).addCallback(self._gotSeen, folder_name, msg_infos
                 )
 
   def _gotSeen(self, result, folder_name, msg_infos):
-    seen = set([tuple(r['key'][0]) for r in result['rows']])
+    seen = set([tuple(r['value']['rd_key']) for r in result['rows']])
     # convert each key elt to a list like we get from the views.
     remaining = set(msg_infos.iterkeys())-set(seen)
 

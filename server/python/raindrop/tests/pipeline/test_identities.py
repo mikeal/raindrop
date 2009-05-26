@@ -34,22 +34,17 @@ class TestIDPipeline(TestIDPipelineBase):
     @defer.inlineCallbacks
     def deferVerifyCounts(self, _, contact_count, identity_count):
         # First determine the contact ID.
-        result = yield get_doc_model().open_view('raindrop!content!all',
-                                         'by_raindrop_schema',
-                                         startkey=['rd/contact'],
-                                         endkey=['rd/contact',{}],
-                                         reduce=False,
-                                         )
+        key = ['rd/core/content', 'schema_id', 'rd/contact']
+        result = yield get_doc_model().open_view(key=key, reduce=False)
         self.failUnlessEqual(len(result['rows']), contact_count, repr(result))
 
-        for id_schema in ('rd/identity/exists', 'rd/identity/contacts'):
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=[id_schema],
-                                             endkey=[id_schema,{}],
-                                             reduce=False,
-                                             )
-            self.failUnlessEqual(len(result['rows']), identity_count, repr(result))
+        # each identity should have got 2 schema instances.
+        keys = [['rd/core/content', 'schema_id', 'rd/identity/exists'],
+                ['rd/core/content', 'schema_id', 'rd/identity/contacts'],
+               ]
+
+        result = yield get_doc_model().open_view(keys=keys, reduce=False)
+        self.failUnlessEqual(len(result['rows']), identity_count*2, repr(result))
 
     def test_one_testmsg(self):
         # When processing a single test message we end up with 2 identies
@@ -57,13 +52,10 @@ class TestIDPipeline(TestIDPipelineBase):
 
         @defer.inlineCallbacks
         def check_it(result):
+            dm = get_doc_model()
             # First determine the contact ID.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/contact'],
-                                             endkey=['rd/contact', {}],
-                                             reduce=False,
-                                             include_docs=True)
+            key = ['rd/core/content', 'schema_id', 'rd/contact']
+            result = yield dm.open_view(key=key, reduce=False, include_docs=True)
 
             rows = result['rows']
             # Should be exactly 1 record with a 'contact' schema.
@@ -73,13 +65,8 @@ class TestIDPipeline(TestIDPipelineBase):
 
             # should be exact 2 rd/identity/contacts records, each pointing
             # at my contact.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/identity/contacts'],
-                                             endkey=['rd/identity/contacts',{}],
-                                             reduce=False,
-                                             include_docs=True)
-
+            key = ['rd/core/content', 'schema_id', 'rd/identity/contacts']
+            result = yield dm.open_view(key=key, reduce=False, include_docs=True)
             rows = result['rows']
             self.failUnlessEqual(len(rows), 2, str(rows))
             docs = [r['doc'] for r in rows]
@@ -108,11 +95,8 @@ class TestIDPipeline(TestIDPipelineBase):
         @defer.inlineCallbacks
         def check_it(result):
             # First determine the contact ID.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/contact'],
-                                             endkey=['rd/contact',{}],
-                                             reduce=False,
+            key = ['rd/core/content', 'schema_id', 'rd/contact']
+            result = yield get_doc_model().open_view(key=key, reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -123,10 +107,8 @@ class TestIDPipeline(TestIDPipelineBase):
 
             # should be exact 3 rd/identity/contacts records, each pointing
             # at my contact.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/identity/contacts'],
-                                             endkey=['rd/identity/contacts', {}],
+            key = ['rd/core/content', 'schema_id', 'rd/identity/contacts']
+            result = yield get_doc_model().open_view(key=key,
                                              reduce=False,
                                              include_docs=True)
 
@@ -157,11 +139,8 @@ class TestIDPipeline(TestIDPipelineBase):
         @defer.inlineCallbacks
         def check_it(result):
             # First determine the 2 contact IDs.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/contact'],
-                                             endkey=['rd/contact', {}],
-                                             reduce=False,
+            key = ['rd/core/content', 'schema_id', 'rd/contact']
+            result = yield get_doc_model().open_view(key=key, reduce=False,
                                              include_docs=True)
 
             rows = result['rows']
@@ -174,12 +153,9 @@ class TestIDPipeline(TestIDPipelineBase):
 
             # should be exact 3 rd/identity/contacts records, each pointing
             # at my contact.
-            result = yield get_doc_model().open_view('raindrop!content!all',
-                                             'by_raindrop_schema',
-                                             startkey=['rd/identity/contacts'],
-                                             endkey=['rd/identity/contacts', {}],
-                                             reduce=False,
-                                             include_docs=True)
+            key = ['rd/core/content', 'schema_id', 'rd/identity/contacts']
+            result = yield get_doc_model().open_view(key=key, reduce=False,
+                                                     include_docs=True)
 
             rows = result['rows']
             self.failUnlessEqual(len(rows), 3, str(rows))

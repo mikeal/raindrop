@@ -100,9 +100,9 @@ dojo.mixin(rd.identity, {
       identityIds = [identityIds];
     var keys = [];
     for (var i = 0, id; id = identityIds[i]; i++) {
-      keys.push(['rd/identity', ['identity', id]]);
+      keys.push(['rd/core/content', 'key-schema_id', [['identity', id], 'rd/identity']]);
     }
-    couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       keys: keys,
       include_docs: true,
       reduce: false,

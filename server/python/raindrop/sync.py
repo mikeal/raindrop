@@ -83,11 +83,9 @@ class SyncConductor(object):
 
   @defer.inlineCallbacks
   def sync(self, whateva=None):
-    result = yield self.doc_model.open_view('raindrop!content!all',
-                                            'by_raindrop_schema',
-                                            startkey=['rd/account'],
-                                            endkey=['rd/account', {}],
-                                            reduce=False,
+    # get all accounts from the couch.
+    key = ['rd/core/content', 'schema_id', 'rd/account']
+    result = yield self.doc_model.open_view(key=key, reduce=False,
                                             include_docs=True)
 
     # we don't use the cooperator here as we want them all to run in parallel.

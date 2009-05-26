@@ -92,17 +92,15 @@ class TwitterProcessor(object):
         this_tweets = {}
         keys = []
         for status in tl:
-            keys.append([["tweet", status.id], 'rd/msg/tweet/raw'])
+            keys.append(['rd/core/content', 'key-schema_id', [["tweet", status.id], 'rd/msg/tweet/raw']])
             this_tweets[status.id] = status
             this_users[status.user.screen_name] = status.user
 
         # execute a view to work out which of these tweets are new.
-        results = yield self.doc_model.open_view('raindrop!content!all',
-                                        'by_raindrop_key',
-                                        keys=keys)
+        results = yield self.doc_model.open_view(keys=keys, reduce=False)
         seen_tweets = set()
         for row in results['rows']:
-            seen_tweets.add(row['key'][0][1])
+            seen_tweets.add(row['value']['rd_key'][1])
 
         infos = []
         for tid in set(this_tweets.keys())-set(seen_tweets):
@@ -120,16 +118,14 @@ class TwitterProcessor(object):
         # accurate.
         keys = []
         for sn in this_users.iterkeys():
-            keys.append([["identity", ["twitter", sn]], 'rd/identity/twitter'])
+            keys.append(['rd/core/content', 'key-schema_id',
+                         [["identity", ["twitter", sn]], 'rd/identity/twitter']])
         # execute a view process these users.
-        results = yield self.doc_model.open_view('raindrop!content!all',
-                                        'by_raindrop_key',
-                                        keys=keys,
-                                        include_docs=True)
+        results = yield self.doc_model.open_view(keys=keys, reduce=False,
+                                                 include_docs=True)
         seen_users = {}
         for row in results['rows']:
-            rd_key, schema_id = row['key']
-            _, idid = rd_key
+            _, idid = row['value']['rd_key']
             _, name = idid
             seen_users[name] = row['doc']
 
@@ -188,9 +184,8 @@ def twitter_exists_id_converter(doc):
 
     # if we already have a twitter/raw schema for the user just skip it
     # XXX - later we should check the items are accurate...
-    results = open_view('raindrop!content!all',
-                        'by_raindrop_key',
-                        key=[doc['rd_key'], 'rd/identity/twitter'])
+    key = ['rd/core/content', 'key-schema_id', [doc['rd_key'], 'rd/identity/twitter']]
+    results = open_view(key=key, reduce=False)
     if results['rows']:
         logger.debug("already seen this twitter user - skipping")
         return

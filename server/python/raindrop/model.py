@@ -270,11 +270,11 @@ class DocumentModel(object):
         # reason than the logs etc are clearer...
         return quote(doc_id, safe="!")
 
-    def open_view(self, *args, **kwargs):
-        # A convenience method for completeness so consumers don't hit the
-        # DB directly (and to give a consistent 'style').  Is it worth it?
-        logger.debug("attempting to open view %r %r", args, kwargs)
-        return self.db.openView(*args, **kwargs)
+    def open_view(self, docId='raindrop!content!all', viewId='megaview',
+                  *args, **kwargs):
+        logger.debug("attempting to open view %s/%s - %r %r",
+                     docId, viewId, args, kwargs)
+        return self.db.openView(docId, viewId, *args, **kwargs)
 
     def open_document_by_id(self, doc_id, **kw):
         """Open a document by the already constructed docid"""

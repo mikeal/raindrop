@@ -212,11 +212,8 @@ def delete_docs(result, parser, options):
         parser.error("You must specify one or more --schema")
     deferreds = []
     for st in options.schemas:
-        d = model.get_doc_model().open_view('raindrop!content!all',
-                                            'by_raindrop_schema',
-                                            startkey=[st],
-                                            endkey=[st, {}],
-                                            reduce=False,
+        key = ['rd/core/content', 'schema_id', st]
+        d = model.get_doc_model().open_view(key=key, reduce=False
                 ).addCallback(_got_docs, st
                 ).addCallback(_del_docs
                 )

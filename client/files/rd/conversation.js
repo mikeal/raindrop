@@ -79,9 +79,9 @@ dojo._mixin(rd.conversation, {
     // XXX - this is duplicated below in byTimeStamp...
     var keys = [];
     for (var i = 0; i< ids.length; i++) {
-      keys.push(['rd/msg/conversation', ids[i]]);
+      keys.push(['rd/core/content', 'key-schema_id', [ids[i], 'rd/msg/conversation']]);
     }
-    couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       keys: keys,
       reduce: false,
       include_docs: true,
@@ -121,9 +121,9 @@ dojo._mixin(rd.conversation, {
         // convo ID.
         var keys = [];
         for (var i = 0, row; row = json.rows[i]; i++) {
-          keys.push(['rd/msg/conversation', row.value.rd_key]);
+          keys.push(['rd/core/content', 'key-schema_id', [row.value.rd_key, 'rd/msg/conversation']]);
         }
-        couch.db("raindrop").view("raindrop!content!all/_view/by_raindrop_schema", {
+        couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
           keys: keys,
           reduce: false,
           include_docs: true,

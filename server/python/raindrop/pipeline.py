@@ -113,11 +113,14 @@ class Pipeline(object):
         # Just nuke all items that have a 'rd_source' specified...
         # XXX - should do this in a loop with a limit to avoid chewing
         # all mem...
-        result = yield self.doc_model.open_view('raindrop!content!all',
-                                                'by_raindrop_source',
-                                                startkey=[]) # skip NULL rows.
+        result = yield self.doc_model.open_view(
+                            # skip NULL rows.
+                            startkey=['rd/core/content', 'source', ""],
+                            endkey=['rd/core/content', 'source', {}],
+                            reduce=False)
+
         docs = []
-        to_del = [(row['id'], row['value']) for row in result['rows']]
+        to_del = [(row['id'], row['value']['_rev']) for row in result['rows']]
         for id, rev in to_del:
             docs.append({'_id': id, '_rev': rev, '_deleted': True})
         logger.info('deleting %d messages', len(docs))
@@ -185,27 +188,28 @@ class Pipeline(object):
         # all mem...
         dm = self.doc_model
         def gen_em(this_result):
-            to_proc = [(row['id'], row['value']) for row in this_result['rows']]
-            i = 0
-            for id, rev in to_proc:
-                i+=1
-                if i % 500 == 0:
+            to_proc = [(row['id'], row['value']['_rev'])
+                       for row in this_result['rows']]
+            for i, (id, rev) in enumerate(to_proc):
+                if (i+1) % 500 == 0:
                     logger.info("processed %d documents...", i)
                 yield id, rev
 
         if not self.options.exts:
-            result = yield dm.open_view('raindrop!content!all',
-                                        'by_raindrop_source',
-                                        key=None) # only NULL rows.
+            # fetch all items with a null 'rd_source'
+            result = yield dm.open_view(
+                            key=['rd/core/content', 'source', None],
+                            reduce=False)
+            logger.info("reprocess found %d source documents",
+                        len(result['rows']))
             _ = yield self._reprocess_items(gen_em(result))
         else:
             # do each specified extension one at a time to avoid the races
             # if extensions depend on each other...
             for ext in self.get_extensions():
-                result = yield dm.open_view('raindrop!content!all',
-                                            'by_raindrop_schema',
-                                            startkey=[ext.source_schema],
-                                            endkey=[ext.source_schema, {}],
+                # fetch all items this extension says it depends on
+                key=['rd/core/content', 'schema_id', ext.source_schema]
+                result = yield dm.open_view(key=key,
                                             reduce=False)
                 logger.info("reprocessing %s - %d docs", get_extension_id(ext),
                             len(result['rows']))
@@ -220,12 +224,10 @@ class Pipeline(object):
         # This is easy - just look for rd/core/error records and re-process
         # them - the rd/core/error record will be auto-deleted as we
         # re-process
-        result = yield self.doc_model.open_view('raindrop!content!all',
-                                                'by_raindrop_schema',
-                                                startkey=['rd/core/error'],
-                                                endkey=['rd/core/error', {}],
-                                                reduce=False,
+        key = ["rd/core/content", "schema_id", "rd/core/error"]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
+        logger.info("found %d error records", len(result['rows']))
         def gen_em():
             for row in result['rows']:
                 src_id, src_rev = row['doc']['rd_source']
@@ -404,13 +406,12 @@ class MessageTransformerWQ(object):
 
         # We need to find *all* items previously written by this extension
         # so a 'reprocess' doesn't cause conflicts.
-        result = yield dm.open_view("raindrop!content!all",
-                                    "by_raindrop_source", startkey=[src_id],
-                                    endkey=[src_id, {}]);
+        result = yield dm.open_view(key=['rd/core/content', 'source', src_id],
+                                    reduce=False);
         to_del = []
         for row in result['rows']:
             to_del.append({'_id' : row['id'],
-                           '_rev' : row['value'],
+                           '_rev' : row['value']['_rev'],
                            '_deleted': True})
         logger.debug("deleting %d docs previously created by %r",
                      len(to_del), src_id)
