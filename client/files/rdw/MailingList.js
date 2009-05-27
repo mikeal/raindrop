@@ -7,6 +7,9 @@ dojo.require("rdw._Base");
 dojo.declare("rdw.MailingList", [rdw._Base], {
   id: "",
   name: "",
+  
+  //The limit of mailing list items to retrieve.
+  limit: 30,
 
   templatePath: dojo.moduleUrl("rdw.templates", "MailingList.html"),
 
@@ -38,6 +41,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       key: ["rd/msg/email/mailing-list", "id", id],
       reduce: false,
+      limit: this.limit,
       success: function(json) {
         //Get message keys
         var keys = [];

@@ -59,8 +59,9 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
             if (bag["rd/msg/body"]) {
               messageResults.push(bag);
               rd.message.onMessageLoaded(bag);
-              bag = {};
             }
+            //Reset the bag.
+            bag = {};
           }
         }
 
