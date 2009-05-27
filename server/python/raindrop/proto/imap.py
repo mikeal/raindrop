@@ -91,7 +91,7 @@ class ImapClient(imap4.IMAP4Client):
       msg_infos[get_rdkey_for_email(msg_id)] = msg_info
 
     # Get all messages that already have this schema
-    keys = [['rd/core/content', 'key', [k, 'rd/msg/rfc822']]
+    keys = [['rd/core/content', 'key-schema_id', [k, 'rd/msg/rfc822']]
             for k in msg_infos.keys()]
     return self.doc_model.open_view(keys=keys, reduce=False,
                 ).addCallback(self._gotSeen, folder_name, msg_infos
