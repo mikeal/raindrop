@@ -92,15 +92,15 @@ dojo.mixin(rd.contact, {
     //try to do rollbacks?
     var dfds = [];
     for (var i = 0, idty; idty = source.identities[i]; i++) {
-      var idtyMapDocId = this._idtyMapIds[idty.identity_id.join("|")];
+      var idtyMapDocId = this._idtyMapIds[idty.rd_key[1].join("|")];
       var dfd = new dojo.Deferred();
       couch.db("raindrop").openDoc(idtyMapDocId, {
         success: dojo.hitch(this, function(dfd, json) {
           //Update the contact ID field with the new field.
           var contacts = json.contacts;
           for (var i = 0; i < contacts.length; i++) {
-            if (contacts[i][0] == source.contact_id) {
-              contacts[i][0] = target.contact_id;
+            if (contacts[i][0] == source.rd_key[1]) {
+              contacts[i][0] = target.rd_key[1];
               break;
             }
           }
@@ -183,7 +183,7 @@ dojo.mixin(rd.contact, {
       // open all contacts - note this also includes contacts without
       // associated identities...
       couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-        key: ['rd/core/content', 'schema_id', 'rd/contact'],
+        key: ["rd/core/content", "schema_id", "rd/contact"],
         include_docs: true,
         reduce: false,
         success: dojo.hitch(this, function(json) {
@@ -213,8 +213,8 @@ dojo.mixin(rd.contact, {
     //summary: loads the contact-identity mapping.
 
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      startkey: ['rd/identity/contacts', 'contacts'],
-      endkey: ['rd/identity/contacts', 'contacts', {}],
+      startkey: ["rd/identity/contacts", "contacts"],
+      endkey: ["rd/identity/contacts", "contacts", {}],
       reduce: false,
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.
@@ -225,9 +225,9 @@ dojo.mixin(rd.contact, {
           for (var i = 0, row; row = json.rows[i]; i++) {
             // check we really have an identity record...
             rdkey = row.value.rd_key;
-            console.assert(rdkey[0] == 'identity', row);
-            var idid = rdkey[1]
-            var [cid, relationship] = row.key[2];
+            var idid = rdkey[1];
+            var cid = row.key[2][0];
+            var relationship = row.key[2][1];
             var idtyStringKey = idid.join("|");
 
             //Hold onto the document ID for this identity map,
@@ -342,7 +342,7 @@ dojo.mixin(rd.contact, {
     var contactIds = [];
     for (var i = 0, contact; contact = this._store[i]; i++) {
       if (!contact.identities) {
-        contactIds.push(contact.contact_id);
+        contactIds.push(contact.rd_key[1]);
       }
     }
 
