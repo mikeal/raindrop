@@ -66,11 +66,12 @@ def handler(doc):
         finally:
             # apparently skype still creates a 0-byte file when there
             # are no avatars...
-            try:
-                os.unlink(avfname)
-            except os.error, why:
-                logger.warning('failed to remove avatar file %r: %s',
-                               avfname, why)
+            if os.path.exists(avfname):
+                try:
+                    os.unlink(avfname)
+                except os.error, why:
+                    logger.warning('failed to remove avatar file %r: %s',
+                                   avfname, why)
         logger.debug("got an avatar for %r", iid)
         # the literal '1' reflects the 1-based indexing of skype..
         attachments = {'avatar1' :
