@@ -45,3 +45,8 @@ def handler(doc):
         if seen_ids is None or hid not in seen_ids:
             rdkey = ['email', hid]
             emit_schema('rd/msg/conversation', items, rd_key=rdkey)
+
+    # make sure current doc gets emitted in case it was
+    # not part of the uniq_header_message_ids
+    if doc['rd_key'][1] not in uniq_header_message_ids:
+        emit_schema('rd/msg/conversation', items, rd_key=doc['rd_key'])

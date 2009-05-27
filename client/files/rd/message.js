@@ -14,18 +14,10 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
     ids = [ids];
   }
 
-  // XXX - pass the schemas as a param???
-  var schemas = ['rd/msg/body', 'rd/msg/conversation', 'rd/tags'];
-  //Make sure keys are just the two first segments of the doc IDs.
-  var messageResults = []; // in order of input IDs.
-  var messageBags = {}; // keyed by rd_key for stitching results.
+  //Generate proper key for megaview lookup.
   var keys = [];
   for (var i = 0, id; id = ids[i]; i++) {
-    var this_bag = {};
-    messageResults.push(this_bag);
-    messageBags[id] = this_bag;
-    for (var j=0, schema; schema = schemas[j]; j++)
-      keys.push(['rd/core/content', 'key-schema_id', [id, schema]]);
+    keys.push(['rd/core/content', 'key', id]);
   }
 
   couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
@@ -36,26 +28,41 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
       if(!json.rows.length) {
         errback && errback(new Error("no message with ID: " + id));
       } else {
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          //Make sure we have the right aggregate to use for this row.
-          var this_rdkey = row.value.rd_key;
-          var this_sch = row.value.rd_schema_id;
-          var this_bag = messageBags[this_rdkey];
-          // Note that we may get many of the same schema, which implies
-          // we need to aggregate them - tags is a good example.  For
-          // now just make noise...
-          if (this_bag[this_sch])
-            console.warn("message", this_rdkey, "has multiple", this_sch, "schemas");
-          // for now it gets clobbered if it exists...
-          this_bag[this_sch] = row.doc;
-        }
+        var messageResults = [];
+        var bag = {};
 
-        //Now apply data extensions
-        // XXX - cowardly disabled by markh - do we want to pass them the
-        // consolidated set, or have them register for particular schemas?
-        //for (var i = 0, bag; bag = messageBags[i]; i++) {
-        //  rd.message.onMessageLoaded(bag);
-        //}
+        for (var i = 0, row, doc; ((row = json.rows[i]) && (doc = row.doc)); i++) {
+          //Make sure we have the right aggregate to use for this row.
+          var rdKey = doc.rd_key;
+          var schemaId = doc.rd_schema_id;
+
+          //Skip some schemas since it is extra stuff we do not need.
+          //Prefer a blacklist vs. a whitelist, since user extensions may add
+          //other things, and do not want to have extensions register extra stuff? TODO.
+          if (schemaId.indexOf("/rfc822") == -1 && schemaId.indexOf("/raw") == -1) {
+            // TODO: note that we may get many of the same schema, which implies
+            // we need to aggregate them - tags is a good example.  For
+            // now just make noise...
+            if (bag[schemaId]) {
+              console.warn("message", doc.rd_key, "has multiple", schemaId, "schemas");
+            }
+            // for now it gets clobbered if it exists...
+            bag[schemaId] = row.doc;
+          }
+
+          //See if all schemas are loaded for a message bag by checking the next
+          //document in the json results to see if it has a differen rd_key.
+          //If so, then tell any extensions about new message load.
+          var nextDoc = json.rows[i + 1] && json.rows[i + 1].doc;
+          if (!nextDoc || rdKey[1] != nextDoc.rd_key[1]) {
+            //Have a final bag. Make sure it is not a ghost
+            if (bag["rd/msg/body"]) {
+              messageResults.push(bag);
+              rd.message.onMessageLoaded(bag);
+              bag = {};
+            }
+          }
+        }
 
         if (isOne) {
           messageResults = messageResults[0];

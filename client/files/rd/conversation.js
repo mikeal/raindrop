@@ -57,6 +57,20 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
           conv.push(message);
         }
 
+        //Now sort the messages in each conversation by timestamp,
+        //earliest timestamp first.
+        for(var i = 0; i < conversations.length; i++) {
+          conversations[i].sort(function(a, b) {
+            return a["rd/msg/body"].timestamp > b["rd/msg/body"].timestamp ? 1 : -1;
+          });
+        }
+
+        //Now sort conversations so the conversation with a message that is most
+        //recent is first.
+        conversations.sort(function(a, b) {
+          return a[a.length - 1]["rd/msg/body"].timestamp > b[b.length - 1]["rd/msg/body"].timestamp ? -1 : 1;
+        });
+
         if (isOne) {
           conversations = conversations[0];
         }

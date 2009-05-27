@@ -15,7 +15,7 @@ rd.applyExtension("rd.message", {
     onMessageLoaded: function(/*Object*/messageBag) {
       //summary: add in data about a youtube link if one is
       //found in the message body.
-      var body = messageBag.message.body;
+      var body = messageBag["rd/msg/body"].body;
       if(!body) {
         return;
       }
@@ -23,7 +23,7 @@ rd.applyExtension("rd.message", {
       var youTubeMatch = body.match(/http:\/\/www.youtube.com\/watch\?v=(.+)/);
       if (youTubeMatch) {
         var videoId = youTubeMatch[1];
-        messageBag.rd_ext_youTubeMessage = {
+        messageBag["rdw/ext/youTubeMessage"] = {
           videoId: videoId
         };
       }
@@ -45,7 +45,7 @@ rd.applyExtension("rdw.Message", {
       //NOTE: the "this" in this function is the instance of rdw.Message.
 
       //Make sure we have a video ID.
-      var videoId = this.messageBag.rd_ext_youTubeMessage && this.messageBag.rd_ext_youTubeMessage.videoId;
+      var videoId = this.messageBag["rdw/ext/youTubeMessage"] && this.messageBag["rdw/ext/youTubeMessage"].videoId;
       if (!videoId) {
         return;
       }

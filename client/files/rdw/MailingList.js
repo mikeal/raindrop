@@ -34,8 +34,6 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
   },
 
   show: function(id) {
-    // XXX - this is broken - sorry about that :(
-    // I think we might need a tweak to the mega-view here...
     // Get the rd_key for all items in the mailing-list.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       key: ["rd/msg/email/mailing-list", "id", id],
@@ -54,10 +52,14 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
           include_docs: true,
           success: function(json) {
             //Get conversation IDs.
-            // XXX - this isn't working yet :(
             var convIds = [];
+            var seen = {}
             for (var i = 0, row; row = json.rows[i]; i++) {
-              convIds.push(row.doc.conversation_id);
+              var cId = row.doc.conversation_id;
+              if (!seen[cId]) {
+                convIds.push(row.doc.conversation_id);
+                seen[cId] = true;
+              }
             }
             //Load up conversations and ask for them to be displayed.
             rd.conversation(convIds, function(conversations) {
