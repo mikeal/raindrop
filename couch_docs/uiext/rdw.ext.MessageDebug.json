@@ -1,6 +1,9 @@
 {
-  "_id": "uiext!rdw.ext.MessageDebug",
-  "exts": {
-    "rdw.Message": "rdw.ext.MessageDebug"
+  "schemas" : {
+    "rd/ext/uiext" : {
+      "exts": {
+        "rdw.Message": "rdw.ext.MessageDebug"
+      }
+    }
   }
 }

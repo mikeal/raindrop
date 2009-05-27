@@ -1,71 +1,19 @@
 """ This is the raindrop pipeline; it moves messages from their most raw
 form to their most useful form.
 """
-import sys
-import types
 import uuid
 
-from twisted.internet import defer, task, threads
+from twisted.internet import defer, threads
 from twisted.python.failure import Failure
 from twisted.internet import reactor
-import twisted.web.error
 from urllib import unquote
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-from .proc import base
-
-# XXX - we need to load this info - including the code - from the couch...
-# We search the modules for decorated functions.
-extension_modules = [
-    'raindrop.proto.test',
-    'raindrop.proto.skype',
-    'raindrop.proto.imap',
-    'raindrop.proto.twitter',
-    'raindrop.ext.message.rfc822',
-    'raindrop.ext.message.mailinglist',
-    'raindrop.ext.message.convos',
-]
-
-# A set of extensions...
-extensions = set()
-
-def find_exts_in_module(mod_name, special_attr):
-    try:
-        __import__(mod_name)
-        mod = sys.modules[mod_name]
-    except:
-        logger.exception("Failed to load extension %r", mod_name)
-        return
-    for ob in mod.__dict__.itervalues():
-        if callable(ob) and hasattr(ob, special_attr):
-            yield ob
-
-def get_extension_id(ext):
-    return ext.extension_id
-
-def find_specified_extensions(special_attr, exts=None):
-    ret = set()
-    ret_names = set()
-    for ext in extensions:
-        if not hasattr(ext, special_attr):
-            continue
-        if exts is None:
-            ret.add(ext)
-        else:
-            name = get_extension_id(ext)
-            if name in exts:
-                ret.add(ext)
-                ret_names.add(name)
-    if __debug__ and exts:
-        missing = set(exts) - set(ret_names)
-        if missing:
-            logger.error("The following extensions are unknown: %s",
-                         missing)
-    return ret
-
+# A set of extensions keyed by ext ID.
+extensions = {}
 
 def split_rc_docid(doc_id):
     if not doc_id.startswith('rc!'):
@@ -74,28 +22,78 @@ def split_rc_docid(doc_id):
     rt, rdkey, ext, schema = doc_id.split("!", 4)
     return rt, rdkey, ext, schema
 
+class Extension:
+    def __init__(self, id, info, source_schema, handler, globs):
+        self.id = id
+        self.info = info
+        self.source_schema = source_schema
+        self.handler = handler
+        self.globs = globs
+
+@defer.inlineCallbacks
 def load_extensions(doc_model):
-    # still a little confused - this should load more types...
-    for mod_name in extension_modules:
-        for cvtr in find_exts_in_module(mod_name, 'extension_id'):
-            extensions.add(cvtr)
+    # now try the DB - load everything with a rd/ext/workqueue schema
+    key = ["rd/core/content","schema_id", "rd/ext/workqueue"]
+    ret = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
+    for row in ret['rows']:
+        doc = row['doc']
+        ext_id = doc['rd_key'][1]
+        info = doc.get('info')
+        src = doc['code']
+        src_schema = doc['source_schema']
+        ct = doc.get('content_type')
+        if ct != "application/x-python":
+            logger.error("Content-type of %r is not supported", ct)
+            continue
+        try:
+            co = compile(src, "<%s>" % ext_id, "exec")
+        except SyntaxError, exc:
+            logger.error("Failed to compile %r: %s", ext_id, exc)
+            continue
+        globs = {}
+        try:
+            exec co in globs
+        except:
+            logger.exception("Failed to execute %r", ext_id)
+            continue
+        handler = globs.get('handler')
+        if handler is None or not callable(handler):
+            logger.error("source-code in extension %r doesn't have a 'handler' function",
+                         ext_id)
+            continue
+        assert ext_id not in extensions, ext_id # another with this ID??
+        extensions[ext_id] = Extension(ext_id, info, src_schema, handler, globs)
 
 
 class Pipeline(object):
     def __init__(self, doc_model, options):
         self.doc_model = doc_model
         self.options = options
-        # use a cooperator to do the work via a generator.
-        # XXX - should we own the cooperator or use our parents?
-        self.coop = task.Cooperator()
+
+    @defer.inlineCallbacks
+    def initialize(self):
         if not extensions:
-            load_extensions(doc_model)
+            _ = yield load_extensions(self.doc_model)
             assert extensions # this can't be good!
 
     def get_extensions(self, spec_exts=None):
         if spec_exts is None:
             spec_exts = self.options.exts
-        return find_specified_extensions('extension_id', spec_exts)
+        ret = set()
+        ret_names = set()
+        for ext_id, ext in extensions.items():
+            if spec_exts is None:
+                ret.add(ext)
+            else:
+                if ext_id in spec_exts:
+                    ret.add(ext)
+                    ret_names.add(ext_id)
+        if __debug__ and spec_exts:
+            missing = set(spec_exts) - set(ret_names)
+            if missing:
+                logger.error("The following extensions are unknown: %s",
+                             missing)
+        return ret
 
     def get_work_queues(self, spec_exts=None):
         """Get all the work-queues we know about - later this might be
@@ -157,6 +155,7 @@ class Pipeline(object):
         # build a map of extensions keyed by src schema.
         qs_by_schema = {}
         for q in self.get_work_queues():
+            q.options['force'] = True
             qs_by_schema.setdefault(q.ext.source_schema, []).append(q)
         for id, rev in items:
             try:
@@ -211,7 +210,7 @@ class Pipeline(object):
                 key=['rd/core/content', 'schema_id', ext.source_schema]
                 result = yield dm.open_view(key=key,
                                             reduce=False)
-                logger.info("reprocessing %s - %d docs", get_extension_id(ext),
+                logger.info("reprocessing %s - %d docs", ext.id,
                             len(result['rows']))
                 _ = yield self._reprocess_items(gen_em(result))
 
@@ -341,13 +340,13 @@ class MessageTransformerWQ(object):
     def __init__(self, doc_model, ext, options={}):
         self.ext = ext
         self.doc_model = doc_model
-        self.options = options
+        self.options = options.copy()
 
     def get_queue_id(self):
-        return 'workqueue!msg!' + get_extension_id(self.ext)
+        return 'workqueue!msg!' + self.ext.id
 
     def get_queue_name(self):
-        return get_extension_id(self.ext)
+        return self.ext.id
 
     def _get_ext_env(self, new_items, src_doc):
         # Hack together an environment for the extension to run in
@@ -357,7 +356,7 @@ class MessageTransformerWQ(object):
         def emit_schema(schema_id, items, rd_key=None, confidence=None):
             ni = {'schema_id': schema_id,
                   'items': items,
-                  'ext_id' : self.ext.extension_id,
+                  'ext_id' : self.ext.id,
                   }
             if rd_key is None:
                 ni['rd_key'] = src_doc['rd_key']
@@ -373,7 +372,7 @@ class MessageTransformerWQ(object):
             for item in items_from_related_identities(self.doc_model,
                                                  identity_ids,
                                                  def_contact_props,
-                                                 self.ext.extension_id):
+                                                 self.ext.id):
                 item['rd_source'] = [src_doc['_id'], src_doc['_rev']]
                 new_items.append(item)
 
@@ -389,30 +388,43 @@ class MessageTransformerWQ(object):
         def open_view(*args, **kw):
             return threads.blockingCallFromThread(reactor,
                         self.doc_model.open_view, *args, **kw)
-            
-        new_globs = self.ext.func_globals.copy()
+
+        new_globs = {}
         new_globs['emit_schema'] = emit_schema
         new_globs['emit_related_identities'] = emit_related_identities
         new_globs['open_schema_attachment'] = open_schema_attachment
         new_globs['open_view'] = open_view
-        func = self.ext
-        return types.FunctionType(func.func_code, new_globs,
-                                  func.func_name)
+        new_globs['logger'] = logging.getLogger('raindrop.ext.'+self.ext.id)
+        self.ext.globs.update(new_globs)
+        return self.ext.handler
 
     @defer.inlineCallbacks
     def process(self, src_id, src_rev):
         dm = self.doc_model
         cvtr = self.ext
+        force = self.options.get('force')
 
         # We need to find *all* items previously written by this extension
         # so a 'reprocess' doesn't cause conflicts.
-        result = yield dm.open_view(key=['rd/core/content', 'source', src_id],
-                                    reduce=False);
+        key = ['rd/core/content', 'ext_id-source', [cvtr.id, src_id]]
+        result = yield dm.open_view(key=key, reduce=False)
+        rows = result['rows']
+        if rows:
+            dirty = False
+            for row in result['rows']:
+                if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
+                    dirty = True
+                    break
+        else:
+            dirty = True
+        if not dirty and not force:
+            defer.returnValue(0)
         to_del = []
         for row in result['rows']:
-            to_del.append({'_id' : row['id'],
-                           '_rev' : row['value']['_rev'],
-                           '_deleted': True})
+            if 'error' not in row:
+                to_del.append({'_id' : row['id'],
+                               '_rev' : row['value']['_rev'],
+                               '_deleted': True})
         logger.debug("deleting %d docs previously created by %r",
                      len(to_del), src_id)
         if to_del:
@@ -467,7 +479,7 @@ class MessageTransformerWQ(object):
             new_items[:] = [{'rd_key' : src_doc['rd_key'],
                              'rd_source': [src_doc['_id'], src_doc['_rev']],
                              'schema_id': 'rd/core/error',
-                             'ext_id' : self.ext.extension_id,
+                             'ext_id' : self.ext.id,
                              'items' : edoc,
                              }]
         else:
@@ -586,6 +598,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
 @defer.inlineCallbacks
 def prepare_work_queue(doc_model, wq, force=False):
     # first open our 'state' document
+    # XXX - make this 'schema' based too!
     state_doc = {'_id': wq.get_queue_id(),
                  'type': wq.get_queue_id(),
                  'seq': 0}
@@ -659,7 +672,7 @@ def process_work_queue(doc_model, wq, state_doc, num_to_process=5000):
     logger.debug("finished processing %r to %r - %d processed",
                  wq.get_queue_name(), state_doc['seq'], num_processed)
 
-    # We can chew 5000 docs quickly next time...
+    # We can chew 5000 'nothing to do' docs quickly next time...
     last_saved = state_doc['last_saved_seq']
     if num_processed or (state_doc['seq']-last_saved) > 5000:
         logger.debug("flushing state doc at end of run...")

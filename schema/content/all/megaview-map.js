@@ -8,6 +8,7 @@ function(doc) {
                    'rd_key' : doc.rd_key,
                    'rd_ext' : doc.rd_ext_id,
                    'rd_schema_id' : doc.rd_schema_id,
+                   'rd_source' : doc.rd_source,
                   }
     // first emit some core 'pseudo-schemas'.
     emit(['rd/core/content', 'key', doc.rd_key], row_val);
@@ -15,12 +16,16 @@ function(doc) {
     emit(['rd/core/content', 'key-schema_id', [doc.rd_key, doc.rd_schema_id]], row_val);
     emit(['rd/core/content', 'ext_id', doc.rd_ext_id], row_val);
     emit(['rd/core/content', 'ext_id-schema_id', [doc.rd_ext_id, doc.rd_schema_id]], row_val);
-    // don't emit the revision from the source...
+    // don't emit the revision from the source in the key.
+    var src_val;
     if (doc.rd_source)
-      emit(['rd/core/content', 'source', doc.rd_source[0]], row_val);
+      src_val = doc.rd_source[0];
     else
-      emit(['rd/core/content', 'source', null], row_val);
-    
+      src_val = null;
+      
+    emit(['rd/core/content', 'source', src_val], row_val);
+    emit(['rd/core/content', 'ext_id-source', [doc.rd_ext_id, src_val]], row_val);
+
     if (doc.rd_schema_confidence)
       emit(['rd/core/content', 'rd_schema_confidence', doc.rd_schema_confidence],
            row_val);

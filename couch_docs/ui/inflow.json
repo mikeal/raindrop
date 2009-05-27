@@ -1,5 +1,9 @@
 {
-  "_id": "ui!inflow",
-  "name": "Inflow",
-  "location": "/raindrop/files/inflow/index.html"
+  "schemas" : {
+    "rd/ext/ui" : {
+      "name" : "Inflow",
+      "info" : "The inflow thingy",
+      "location" : "/raindrop/files/inflow/index.html"
+    }
+  }
 }

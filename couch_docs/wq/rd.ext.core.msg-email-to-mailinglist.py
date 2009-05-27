@@ -31,14 +31,8 @@
 # <http://groups.google.com/group/raindrop-core/web/life-cycle-of-a-message-2---documents-and-states>.
 
 import re
-import logging
 
-logger = logging.getLogger(__name__)
-
-from ...proc import base
-
-@base.raindrop_extension('rd/msg/email')
-def list_converter(doc):
+def handler(doc):
     if 'list-id' not in doc['headers']:
         return
 

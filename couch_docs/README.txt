@@ -1,7 +1,11 @@
 This directory contains couch documents in JSON format that should be
 automatically inserted into the couch as part of a run-raindrop.py call.
 
-The files should be in a directory and file name structure that matches
-the _id of the couch document, with directories indicated by the ! signs
-in the _id. For instance, for a doc with _id "ui!inflow", it should be
-placed in  couch_docs/ui/inflow.json
+The documents aren't in the exact format sent to the couch - each .json
+document must at least have a 'schemas' attribute, then object detailing
+the 'rd/ext/*' schemas implemented.  The extension ID and everything else
+is deduced from the filename etc.
+
+In particular, some things get magic substitutions - check out bootstrap.py
+for all the gory details...
+

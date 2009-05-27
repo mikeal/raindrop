@@ -1,14 +1,5 @@
-# This is an extension which converts a message/raw/rfc822 to a
-# message/raw/rfc822
-
-import logging
-from ...proc import base
-
-logger = logging.getLogger(__name__)
-
 # Creates 'rd/msg/conversation' schemas for emails...
-@base.raindrop_extension('rd/msg/email')
-def mail_convo_converter(doc):
+def handler(doc):
     headers = doc['headers']
     self_header_message_id = headers.get('message-id')
     if not self_header_message_id:
@@ -35,8 +26,9 @@ def mail_convo_converter(doc):
     result = open_view(keys=keys, reduce=False,
                        include_docs=True)
     # build a map of the keys we actually got back.
-    rows = result['rows']
+    rows = [r for r in result['rows'] if 'error' not in r]
     if rows:
+        assert 'doc' in rows[0], rows
         convo_id = rows[0]['doc']['conversation_id']
         logger.debug("FOUND CONVERSATION header_message_id %s with conversation_id %s",
                      self_header_message_id, convo_id)

@@ -5,31 +5,21 @@ from twisted.internet import task, defer
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
 from raindrop.model import get_doc_model
 from raindrop.proto import test as test_proto
-from raindrop import pipeline
 
 import logging
 logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
     simple_exts = [
-            'raindrop.proto.test.test_converter',
-            'raindrop.ext.message.rfc822.rfc822_converter',
-            'raindrop.ext.message.rfc822.email_converter',
+            'rd.test.core.test_converter',
+            'rd.ext.core.msg-rfc-to-email',
+            'rd.ext.core.msg-email-to-body',
         ]
-
-    def get_pipeline(self):
-        opts = FakeOptions()
-        dm = get_doc_model()
-        return pipeline.Pipeline(dm, opts)
 
     def process_doc(self, exts = None):
         doc_model = get_doc_model()
-        if not pipeline.extensions: # XXX - *sob* - misplaced...
-            pipeline.load_extensions(doc_model)
-
-        p = self.get_pipeline()
-        p.options.exts = exts
-        return p.start()
+        self.pipeline.options.exts = exts
+        return self.pipeline.start()
 
 
 class TestPipeline(TestPipelineBase):
@@ -40,7 +30,7 @@ class TestPipeline(TestPipelineBase):
 
         def check_targets_last(lasts_by_seq, target_types):
             docs = [row['doc'] for row in lasts_by_seq if row['doc']['_id'].startswith('rc!')]
-            db_types = set(doc['rd_schema_id'] for doc in docs)
+            db_types = set(doc['rd_schema_id'] for doc in docs[:len(target_types)])
             self.failUnlessEqual(db_types, target_types)
             return docs
 
@@ -90,11 +80,11 @@ class TestErrors(TestPipelineBase):
 
         def check_target_last(lasts):
             expected = set(('core/error/msg',
-                            'workqueue!msg!raindrop.proto.test.TestConverter'))
+                            'workqueue!msg!rd.test.core.test_converter'))
             types = set([row['doc']['type'] for row in lasts])
             self.failUnlessEqual(types, expected)
 
-        exts = ['raindrop.proto.test.TestConverter']
+        exts = ['rs.test.core.test_converter']
 
         # open the test document to get its ID and _rev.
         dm = get_doc_model()
@@ -114,7 +104,7 @@ class TestErrors(TestPipelineBase):
         def start_retry(result):
             test_proto.test_next_convert_fails = False
             logger.info('starting retry for %r', result)
-            return self.get_pipeline().start_retry_errors()
+            return self.pipeline.start_retry_errors()
 
         expected = set(('raw/message/rfc822',))
         return self.test_error_stub(
@@ -128,7 +118,7 @@ class TestErrors(TestPipelineBase):
         # when our test converter throws an error.
         def check_last_doc(lasts):
             # The tail of the DB should be as below:
-            expected = set(['workqueue!msg!raindrop.proto.test.TestConverter', 
+            expected = set(['workqueue!msg!rs.test.core.test_converter',
                             'core/error/msg', 'proto/test'])
             # Note the 'core/error/msg' is the failing conversion (ie, the
             # error stub for the rfc822 message), and no 'email' record exists
@@ -137,9 +127,8 @@ class TestErrors(TestPipelineBase):
             self.failUnlessEqual(got, expected)
 
         test_proto.test_next_convert_fails = True
-        p = self.get_pipeline()
-        p.options.exts = self.simple_exts
-        return p.start(
+        self.pipeline.options.exts = self.simple_exts
+        return self.pipeline.start(
                 ).addCallback(lambda whateva: self.get_last_by_seq(3)
                 ).addCallback(check_last_doc
                 )

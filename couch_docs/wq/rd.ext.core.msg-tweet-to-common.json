@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd/ext/workqueue" : {
+        "source_schema" : "rd/msg/tweet/raw",
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates 'rd/msg/body' and convo schemas for skype msgs"
+    }
+  }
+}

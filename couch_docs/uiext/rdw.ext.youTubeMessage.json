@@ -1,7 +1,10 @@
 {
-  "_id": "uiext!rdw.ext.youTubeMessage",
-  "exts": {
-    "rd.message": "rdw.ext.youTubeMessage",
-    "rdw.Message": "rdw.ext.youTubeMessage"
+  "schemas" : {
+    "rd/ext/uiext" : {
+      "exts": {
+        "rd.message": "rdw.ext.youTubeMessage",
+        "rdw.Message": "rdw.ext.youTubeMessage"
+      }
+    }
   }
 }

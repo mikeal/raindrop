@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd/ext/workqueue" : {
+        "source_schema" : "rd/identity/skype",
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Emits identities and relationships to a skype contact"
+    }
+  }
+}

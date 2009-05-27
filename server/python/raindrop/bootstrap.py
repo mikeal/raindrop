@@ -223,73 +223,121 @@ def install_client_files(whateva, options):
 
     return defer.DeferredList(dl)
 
-
+@defer.inlineCallbacks
 def insert_default_docs(whateva, options):
     """
     Inserts documents from the couch_docs directory into the couch.
     """
+    dm = get_doc_model()
 
-    def collect_docs(docs, dr, file_list):
+    def items_from_json(filename, data, fingerprinter):
+        "Builds raindrop 'schema items' from a json file"
+
+        try:
+            src = json.loads(data)
+        except ValueError, exc:
+            logger.error("Failed to load %r: %s", filename, exc)
+            return []
+
+        assert '_id' not in src, src # "we build all that!"
+        # a generic json document with a set of schemas etc...
+        assert 'schemas' in src, 'no schemas - dunno what to do!'
+        # Need to allow docs to override this - later...
+        ext_id = os.path.splitext(os.path.basename(filename))[0]
+        rd_key = ['ext', ext_id]
+        ret = []
+
+        finger = fingerprinter.get_finger("!".join(rd_key))
+        finger.update(data)
+
+        for name, fields in src['schemas'].items():
+            for fname, fval in fields.items():
+                if isinstance(fval, basestring) and fval.startswith("RDFILE:"):
+                    sname = fval[7:].strip()
+                    if sname.startswith("*."):
+                        # a special case - means use the same base name but
+                        # the new ext.
+                        path = os.path.splitext(filename)[0] + sname[1:]
+                    else:
+                        path = os.path.join(os.path.dirname(filename), sname)
+                    try:
+                        with open(path) as f:
+                            fval = f.read()
+                            finger.update(fval)
+                    except (OSError, IOError):
+                        logger.warning("can't open RDFILE: file %r - skipping it",
+                                       path)
+                    fields[fname] = fval
+            sch_item = {
+                'rd_key': rd_key,
+                'schema_id': name,
+                'items': fields,
+                'ext_id': 'rd.core',
+            }
+            ret.append(sch_item);
+
+        # hack our fingerprinter in...
+        for sch_item in ret:
+            sch_item['items']['fingerprints'] = fingerprinter.get_prints()
+
+        return ret
+
+    def collect_docs(items, dr, file_list):
         """
-        Helper function used by os.walk call to recursively collect files
+        Helper function used by os.walk call to recursively collect files.
+
+        It collects normal 'schema items' as used by the rest of the
+        back end and as passed to doc_model.emit_schema_items.
         """
         for f in file_list:
             path = os.path.join(dr, f)
             if os.path.isfile(path) and path.endswith(".json"):
+                fprinter = Fingerprinter()
                 #Open the file and collect the contents.
                 try:
                     with open(path) as contents:
-                        fprinter = Fingerprinter()
                         data = contents.read()
-                        doc = json.loads(data)
-                        #print json.dumps(doc)
-                        fprinter.get_finger(doc['_id']).update(data)
-                        doc['fingerprints'] = fprinter.get_prints()
-                        docs[doc['_id']] = doc
+                        sch_items = items_from_json(path, data, fprinter)
+                        items.extend(sch_items)
                 except (OSError, IOError):
                     logger.warning("can't open file %r - skipping it", path)
                     continue
 
-    def _doc_not_found(failure):
-        return None
-
-    def _got_existing_docs(results, docs):
-        put_docs = []
-        for (whateva, existing), doc_id in zip(results, docs):
-            doc = docs[doc_id]
-            if existing:
-                assert existing['_id']==doc['_id']
-                assert '_rev' not in doc
-                if not options.force and \
-                    doc['fingerprints'] == existing.get('fingerprints'):
-                    logger.debug("couch doc %r hasn't changed - skipping",
-                                 doc['_id'].encode('utf8'))
-                    continue
-                existing.update(doc)
-                doc = existing
-            logger.info("couch doc %r has changed - updating", doc['_id'].encode('utf8'))
-            put_docs.append(doc)
-        return get_db().updateDocuments(put_docs)
-   
     # we cannot go in a zipped egg...
     root_dir = path_part_nuke(model.__file__, 4)
     doc_dir = os.path.join(root_dir, 'couch_docs')
     logger.debug("listing contents of '%s' to look for couch docs", doc_dir)
 
     # load all the .json files, searching recursively in directories
-    docs = {}
-    os.path.walk(doc_dir, collect_docs, docs)
-    
-    #For all the docs loaded from disk, fetch the docs from
-    #the couch, then compare to see if any need to be updated.
-    dl = []
-    for doc_id in docs:
-        doc = docs[doc_id]
-        deferred = get_db().openDoc(doc['_id'].encode('utf8')
-).addErrback(_doc_not_found)
-        dl.append(deferred)
+    items = []
+    os.path.walk(doc_dir, collect_docs, items)
 
-    return defer.DeferredList(dl).addCallback(_got_existing_docs, docs)
+    #For all the schema items loaded from disk, fetch the docs from
+    #the couch, then compare to see if any need to be updated.
+    dids = [dm.get_doc_id_for_schema_item(i).encode('utf-8') for i in items]
+
+    result = yield dm.db.listDoc(keys=dids, include_docs=True)
+    updates = []
+    for did, item, r in zip(dids, items, result['rows']):
+        if 'error' in r or 'deleted' in r['value']:
+            # need to create a new item...
+            logger.info("couch doc %r doesn't exist or is deleted - updating",
+                        did)
+            updates.append(item)
+        else:
+            fp = item['items']['fingerprints']
+            existing = r['doc']
+            assert existing['_id']==did
+            if not options.force and fp == existing.get('fingerprints'):
+                logger.debug("couch doc %r hasn't changed - skipping", did)
+            else:
+                logger.info("couch doc %r has changed - updating", did)
+                item['items']['_id'] = did
+                item['items']['_rev'] = existing['_rev']
+                updates.append(item)
+    if updates:
+        _ = yield dm.create_schema_items(updates)
+
 
 @defer.inlineCallbacks
 def update_apps(whateva):
@@ -297,6 +345,7 @@ def update_apps(whateva):
        Should be run after a UI app/extension is added or removed from the couch.
     """
     db = get_db()
+    dm = get_doc_model()
     replacements = {}
 
     # Convert couch config value for module paths
@@ -314,12 +363,12 @@ def update_apps(whateva):
 
     replacements["module_paths"] = module_paths
 
-    # XXX - we probably want to unify this with the schema model...
-    uiext_docs = yield db.listDoc(startkey="uiext!", endkey="uiext#",
-                                  include_docs=True)
-    ui_docs = yield db.listDoc(startkey="ui!", endkey="ui#",
-                               include_docs=True)
-    all_rows = uiext_docs['rows'] + ui_docs['rows']
+    keys = [
+        ["rd/core/content", "schema_id", "rd/ext/ui"],
+        ["rd/core/content", "schema_id", "rd/ext/uiext"],
+    ]
+    results = yield dm.open_view(keys=keys, include_docs=True, reduce=False)
+    all_rows = results['rows']
 
     # Convert couch config value for module paths
     # to a JS string to be used in config.js

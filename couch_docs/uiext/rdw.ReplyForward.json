@@ -1,7 +1,10 @@
 {
-  "_id": "uiext!rdw.ReplyForward",
-  "subscriptions": [
-    {"rdw.Message-reply": "rdw.ReplyForward"},
-    {"rdw.Message-forward": "rdw.ReplyForward"}
-  ]
+  "schemas" : {
+    "rd/ext/uiext" : {
+      "subscriptions": [
+        {"rdw.Message-reply": "rdw.ReplyForward"},
+        {"rdw.Message-forward": "rdw.ReplyForward"}
+      ]
+    }
+  }
 }

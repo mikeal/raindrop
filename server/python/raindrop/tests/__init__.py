@@ -5,6 +5,7 @@ from twisted.trial import unittest
 from raindrop.config import get_config
 from raindrop.model import get_db, fab_db, get_doc_model
 from raindrop.proto import test as test_proto
+from ..pipeline import Pipeline
 from raindrop import bootstrap
 from raindrop import sync
 
@@ -92,12 +93,18 @@ class TestCaseWithDB(TestCase):
                 # necessary yet...
                 #).addCallback(bootstrap.install_client_files, FakeOptions()
                 #).addCallback(bootstrap.update_apps
+                ).addCallback(bootstrap.insert_default_docs, FakeOptions()
                 ).addCallback(bootstrap.install_views, FakeOptions()
                 )
 
     def setUp(self):
         self.prepare_config()
-        return self.prepare_test_db()
+        opts = FakeOptions()
+        self.pipeline = Pipeline(get_doc_model(), opts)
+
+        return self.prepare_test_db(
+            ).addCallback(lambda _: self.pipeline.initialize()
+            )
 
     def get_last_by_seq(self, n=1):
         def extract_row(result):

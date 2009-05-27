@@ -15,6 +15,8 @@ from raindrop.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
 
+g_pipeline = None
+
 class HelpFormatter(optparse.IndentedHelpFormatter):
     def format_description(self, description):
         return description
@@ -42,11 +44,10 @@ def install_accounts(result, parser, options):
 
 def show_info(result, parser, options):
     """Print a list of all extensions, loggers etc"""
-    if not pipeline.extensions:
-        pipeline.load_extensions(model.get_doc_model())
     print "Raindrop extensions:"
-    for ext in pipeline.extensions:
-        print "%s: %s" % (ext.extension_id, ext.__doc__)
+    exts = sorted(pipeline.extensions.items()) # sort by ID.
+    for _, ext in exts:
+        print "%s: %s" % (ext.id, ext.info)
     print
     print "Loggers"
     # yuck - reach into impl - and hope all have been initialized by now
@@ -61,13 +62,12 @@ def show_info(result, parser, options):
 def _process_until_deferred(defd, options):
     state = {'fired': False,
              'delayed_call': None}
-    p = pipeline.Pipeline(model.get_doc_model(), options)
     def_done = defer.Deferred()
 
     def do_start():
         # can't use Force or it will just restart each time...
         state['delayed_call'] = None
-        p.start().addBoth(proc_done)
+        g_pipeline.start().addBoth(proc_done)
 
     def defd_fired(result):
         state['fired'] = True
@@ -107,16 +107,14 @@ def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
         print "Message pipeline has finished..."
-    p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.start().addCallback(done)
+    return g_pipeline.start().addCallback(done)
 
 @asynch_command
 def reprocess(result, parser, options):
     """Reprocess all messages even if they are up to date."""
     def done(result):
         print "Message pipeline has finished..."
-    p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.reprocess().addCallback(done)
+    return g_pipeline.reprocess().addCallback(done)
 
 @asynch_command
 def retry_errors(result, parser, options):
@@ -124,8 +122,7 @@ def retry_errors(result, parser, options):
     def done_errors(result):
         print "Error retry pipeline has finished - processing work queue..."
         return result
-    p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.start_retry_errors(
+    return g_pipeline.start_retry_errors(
                 ).addCallback(done_errors
                 ).addCallback(process, parser, options)
 
@@ -186,9 +183,7 @@ def unprocess(result, parser, options):
     """
     def done(result):
         print "unprocess has finished..."
-    # XXX - pipeline should probably be a singleton?
-    p = pipeline.Pipeline(model.get_doc_model(), options)
-    return p.unprocess().addCallback(done)
+    return g_pipeline.unprocess().addCallback(done)
 
 def delete_docs(result, parser, options):
     """Delete all documents of a particular type.  Use with caution or see
@@ -344,6 +339,14 @@ def main():
     d.addCallback(bootstrap.insert_default_docs, options)
     d.addCallback(bootstrap.install_views, options)
     d.addCallback(bootstrap.update_apps)
+
+    @defer.inlineCallbacks
+    def setup_pipeline(whateva):
+        global g_pipeline
+        if g_pipeline is None:
+            g_pipeline = pipeline.Pipeline(model.get_doc_model(), options)
+            _ = yield g_pipeline.initialize()
+    d.addCallback(setup_pipeline)
 
     # Now process the args specified.
     for i, arg in enumerate(args):

@@ -11,7 +11,6 @@ import sys
 import re
 import twisted.python.log
 from twisted.internet import defer, threads
-from urllib2 import HTTPError # errors thrown by twitter...
 
 from ..proc import base
 
@@ -142,101 +141,6 @@ class TwitterProcessor(object):
                           'items': items})
 
         _ = yield self.doc_model.create_schema_items(infos)
-
-
-# A 'converter' - takes a rd/msg/tweet/raw as input and creates various
-# schema outputs for that message
-re_tags = re.compile(r'#(\w+)')
-
-@base.raindrop_extension('rd/msg/tweet/raw')
-def tweet_converter(doc):
-    # body schema
-    body = doc['twitter_text']
-    bdoc = {'from': ['twitter', doc['twitter_user']],
-            'body': body,
-            'body_preview': body[:140],
-            # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 
-            # to fake having this property that doesn't come with AsDict
-            'timestamp': doc['twitter_created_at_in_seconds']
-    }
-    emit_schema('rd/msg/body', bdoc)
-    # and a conversation schema
-    conversation_id = 'twitter-%s' % doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])
-    cdoc = {'conversation_id': conversation_id}
-    emit_schema('rd/msg/conversation', cdoc)
-    # and tags
-    tags = re_tags.findall(body)
-    if tags:
-        tdoc = {'tags': tags}
-        emit_schema('rd/tags', tdoc)
-
-
-# Twitter identities...
-_twitter_id_converter = None
-
-@base.raindrop_extension('rd/identity/exists')
-def twitter_exists_id_converter(doc):
-    typ, (id_type, id_id) = doc['rd_key']
-    assert typ=='identity' # Must be an 'identity' to have this schema type!
-    if id_type != 'twitter':
-        # Not a twitter ID.
-        return
-
-    # if we already have a twitter/raw schema for the user just skip it
-    # XXX - later we should check the items are accurate...
-    key = ['rd/core/content', 'key-schema_id', [doc['rd_key'], 'rd/identity/twitter']]
-    results = open_view(key=key, reduce=False)
-    if results['rows']:
-        logger.debug("already seen this twitter user - skipping")
-        return
-    
-    # Is a new twitter ID - attach to twitter and process it.
-    global _twitter_id_converter
-    if _twitter_id_converter is None:
-        _twitter_id_converter = twitter.Api()
-    twit = _twitter_id_converter
-
-    try:
-        user = twit.GetUser(id_id)
-    # *sob* - twitter package causes urllib2 errors :(
-    except HTTPError, exc:
-        if exc.code == 400:
-            raise RuntimeError("we seem to have saturated twitter - "
-                               "please try again in an hour or so...")
-        elif exc.code == 404:
-            logger.info("twitter user %r does not exist", id_id)
-            return
-        else:
-            raise
-
-    items = user_to_raw(user)
-    emit_schema('rd/identity/twitter', items)
-
-@base.raindrop_extension('rd/identity/twitter')
-def twitter_id_converter(doc):
-    # emit the normalized identity schema
-    items = {'nickname': doc['twitter_screen_name']}
-    # the rest are optional...
-    for dest, src in [
-        ('name', 'name'),
-        ('url', 'url'),
-        ('image', 'profile_image_url'),
-        ]:
-        val = doc.get('twitter_' + src)
-        if val:
-            items[dest] = val
-    emit_schema('rd/identity', items)
-
-    # and we use the same extension to emit the 'known identities' too...
-    def gen_em():
-        # the primary 'twitter' one first...
-        yield ('twitter', doc['twitter_screen_name']), None
-        v = doc.get('twitter_url')
-        if v:
-            yield ('url', v.rstrip('/')), 'homepage'
-
-    def_contact_props = {'name': doc['twitter_name'] or doc['twitter_screen_name']}
-    emit_related_identities(gen_em(), def_contact_props)
 
 
 class TwitterAccount(base.AccountBase):
