@@ -258,8 +258,6 @@ class DocumentModel(object):
     def __init__(self, db):
         self.db = db
         self._important_views = None # views we update periodically
-        self._docs_since_view_update = 0
-        self._def_important_views_done = None
 
     @classmethod
     def quote_id(cls, doc_id):
@@ -434,7 +432,6 @@ class DocumentModel(object):
     def _cb_saved_docs(self, result, item_defs, attachments):
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
         logger.debug("saved %d documents", len(result))
-        self._docs_since_view_update += len(result)
         ds = []
         assert len(result)==len(attachments) and len(result)==len(item_defs)
         for dinfo, dattach, item_def in zip(result, attachments, item_defs):
@@ -451,19 +448,6 @@ class DocumentModel(object):
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
-
-        def views_done(result):
-            self._def_important_views_done = None
-
-        if self._def_important_views_done is None and \
-           self._need_update_important_views():
-            self._def_important_views_done = self._update_important_views(
-                        ).addCallback(views_done
-                        )
-            
-
-        if self._def_important_views_done is not None:
-            ds.append(self._def_important_views_done)
 
         def return_orig(ignored_result):
             return result
@@ -507,12 +491,8 @@ class DocumentModel(object):
         logger.error("Failed to save attachment (%r): %s", ids, failure)
         failure.raiseException()
 
-    def _need_update_important_views(self):
-        return self._docs_since_view_update > 1000
-
     def _update_important_views(self):
         # Something else periodically updates our important views.
-        self._docs_since_view_update = 0
         if not self._important_views:
             # these keys come from jquery.couch.js
             return self.db.listDoc(startkey="_design", endkey="_design0",
