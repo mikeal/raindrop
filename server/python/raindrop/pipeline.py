@@ -6,7 +6,6 @@ import uuid
 from twisted.internet import defer, threads
 from twisted.python.failure import Failure
 from twisted.internet import reactor
-from urllib import unquote
 
 import logging
 
@@ -152,10 +151,13 @@ class Pipeline(object):
                 logger.warning("reprocess has bad docid %r: %s", id, why)
                 continue
 
-            qs = qs_by_schema.get(unquote(schema), [])
+            qs = qs_by_schema.get(schema, [])
             num_processed = 0
             for wq in qs:
-                num_processed += yield wq.process(id, rev)
+                got = yield wq.process(id, rev)
+                if got:
+                    num_processed += len(got)
+                    _ = yield self.doc_model.create_schema_items(got)
             logger.debug('reprocess of %r created %d docs', id, num_processed)
             # now let the normal queue processing do the rest...
         # and run the normal queue to continue off...
@@ -246,7 +248,7 @@ class QueueRunner(object):
         nfailed = 0
         for qlook, silook in zip(self.queues, self.state_infos):
             sdlook = silook['items']
-            if qlook.failed:
+            if qlook.failure:
                 nfailed += 1
                 continue
             this = sdlook['seq'], qlook.get_queue_name()
@@ -270,14 +272,14 @@ class QueueRunner(object):
         failed = isinstance(result, Failure)
         if failed:
             logger.error("queue %r failed: %s", q.get_queue_name(), result)
-            q.failed = True
+            q.failure = result
         else:
             logger.debug('queue reports it is complete: %s', state_doc)
             assert result in (True, False), repr(result)
         # First check for any other queues which are no longer running
         # but have a sequence less than ours.
         still_going = False
-        nerrors = len([tq for tq in self.queues if tq.failed])
+        nerrors = len([tq for tq in self.queues if tq.failure])
         stop_all = nerrors and self.options.stop_on_error
         for qlook, silook in zip(self.queues, self.state_infos):
             sdlook = silook['items']
@@ -287,7 +289,7 @@ class QueueRunner(object):
             if stop_all:
                 qlook.stopping = True
                 continue
-            if qlook is not q and not qlook.running and not qlook.failed and \
+            if qlook is not q and not qlook.running and not qlook.failure and \
                sdlook['seq'] < state_doc['seq']:
                 still_going = True
                 self._start_q(qlook, silook, def_done)
@@ -315,8 +317,6 @@ class QueueRunner(object):
         self.dc_status = reactor.callLater(10, self._q_status)
         def_done = defer.Deferred()
         for q, state_info in zip(self.queues, state_infos):
-            q.failed = False
-            q.running = False
             self._start_q(q, state_info, def_done)
         _ = yield def_done
         self.dc_status.cancel()
@@ -334,6 +334,7 @@ class MessageTransformerWQ(object):
         self.options = options.copy()
         self.running = None
         self.stopping = False
+        self.failure = None
 
     def get_queue_id(self):
         return 'workqueue!msg!' + self.ext.id
@@ -392,59 +393,72 @@ class MessageTransformerWQ(object):
         return self.ext.handler
 
     @defer.inlineCallbacks
-    def process(self, src_id, src_rev):
+    def process(self, sources):
+        ret = []
         dm = self.doc_model
         cvtr = self.ext
         force = self.options.get('force')
-
-        # We need to find *all* items previously written by this extension
-        # so a 'reprocess' doesn't cause conflicts.
-        key = ['rd.core.content', 'ext_id-source', [cvtr.id, src_id]]
-        result = yield dm.open_view(key=key, reduce=False)
-        rows = result['rows']
-        if rows:
-            dirty = False
+        for src_id, src_rev in sources:
+            # We need to find *all* items previously written by this extension
+            # so a 'reprocess' doesn't cause conflicts.
+            key = ['rd.core.content', 'ext_id-source', [cvtr.id, src_id]]
+            result = yield dm.open_view(key=key, reduce=False)
+            rows = result['rows']
+            if rows:
+                dirty = False
+                for row in result['rows']:
+                    if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
+                        dirty = True
+                        break
+            else:
+                dirty = True
+            if not dirty and not force:
+                continue # try the next one...
+            to_del = []
             for row in result['rows']:
-                if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
-                    dirty = True
-                    break
-        else:
-            dirty = True
-        if not dirty and not force:
-            defer.returnValue(0)
-        to_del = []
-        for row in result['rows']:
-            if 'error' not in row:
-                to_del.append({'_id' : row['id'],
-                               '_rev' : row['value']['_rev'],
-                               '_deleted': True})
-        logger.debug("deleting %d docs previously created by %r",
-                     len(to_del), src_id)
-        if to_del:
-            _ = dm.db.updateDocuments(to_del)
+                if 'error' not in row:
+                    to_del.append({'_id' : row['id'],
+                                   '_rev' : row['value']['_rev'],
+                                   '_deleted': True})
+            logger.debug("deleting %d docs previously created by %r",
+                         len(to_del), src_id)
+            if to_del:
+                _ = yield dm.db.updateDocuments(to_del)
 
-        # Get the source-doc and process it.
-        src_doc = yield dm.open_document_by_id(src_id)
-        # Although we got this doc id directly from the _all_docs_by_seq view,
-        # it is quite possible that the doc was deleted since we read that
-        # view.  It could even have been updated - so if its not the exact
-        # revision we need we just skip it - it will reappear later...
-        if src_doc is None or src_doc['_rev'] != src_rev:
-            logger.debug("skipping document - it's changed since we read the queue")
-            defer.returnValue(0)
+            # Get the source-doc and process it.
+            src_doc = yield dm.open_document_by_id(src_id)
+            # Although we got this doc id directly from the _all_docs_by_seq view,
+            # it is quite possible that the doc was deleted since we read that
+            # view.  It could even have been updated - so if its not the exact
+            # revision we need we just skip it - it will reappear later...
+            if src_doc is None or src_doc['_rev'] != src_rev:
+                logger.debug("skipping document - it's changed since we read the queue")
+                continue
 
-        # Now process it
-        new_items = []
-        func = self._get_ext_env(new_items, src_doc)
-        logger.debug("calling %r with doc %r, rev %s", self.ext,
-                     src_doc['_id'], src_doc['_rev'])
+            # Now process it
+            new_items = []
+            func = self._get_ext_env(new_items, src_doc)
+            logger.debug("calling %r with doc %r, rev %s", self.ext,
+                         src_doc['_id'], src_doc['_rev'])
 
-        # Our extensions are 'blocking', so use a thread...
-        _ = yield threads.deferToThread(func, src_doc
-                    ).addBoth(self._cb_converted_or_not, src_doc, new_items)
-        logger.debug("extension %r generated %d new schemas", self.ext, len(new_items))
-        _ = yield self.doc_model.create_schema_items(new_items)
-        defer.returnValue(len(new_items))
+            # Our extensions are 'blocking', so use a thread...
+            _ = yield threads.deferToThread(func, src_doc
+                        ).addBoth(self._cb_converted_or_not, src_doc, new_items)
+            logger.debug("extension %r generated %d new schemas", self.ext, len(new_items))
+            # If extensions only created schemas for the same bit of content,
+            # then we are safe to defer the writing of these docs...
+            # (In theory, if they wrote a different rd_key, they must have done
+            # a query etc to find it, and thus they may need that record written
+            # before they are executed again...)
+            must_save = False
+            for i in new_items:
+                if i['rd_key'] != src_doc['rd_key']:
+                    must_save = True
+                ret.append(i)
+            # 20 seems a nice sweet-spot to see reasonable perf...
+            if self.stopping or must_save or len(ret) > 20:
+                break
+        defer.returnValue(ret)
 
     def _cb_converted_or_not(self, result, src_doc, new_items):
         # This is both a callBack and an errBack.  If a converter fails to
@@ -458,12 +472,16 @@ class MessageTransformerWQ(object):
             #    # connection failure details (but worse, that record might
             #    # actually be written - we might just be out of sockets...)
             #    result.raiseException()
-
             logger.warn("Failed to process document %r: %s", src_doc['_id'],
                         result)
             if self.options.get('stop_on_error', False):
-                logger.info("--stop-on-error specified - re-throwing error")
-                result.raiseException()
+                logger.info("--stop-on-error specified - stopping queue")
+                self.failure = result
+                self.stopping = True
+                # Throw away any records emitted by *this* failure.
+                new_items[:] = []
+                return
+
             # and make the error record
             edoc = {'error_details': unicode(result)}
             if new_items:
@@ -617,6 +635,38 @@ def prepare_work_queue(doc_model, wq, force=False):
     state_info['last_saved_seq'] = state_info['items']['seq']
     defer.returnValue(state_info)
 
+
+def gen_queue_sources(rows, wq, state_doc):
+    # Find the next row this queue can use.
+    while rows and not wq.stopping:
+        row = rows.pop(0)
+        # Update the state-doc now (it's not saved until we get to the end tho..)
+        state_doc['seq'] = row['key']
+        if 'error' in row:
+            # This is usually a simple 'not found' error; it doesn't
+            # mean an 'error record'
+            logger.debug('skipping document %(key)s - %(error)s', row)
+            continue
+        if 'deleted' in row['value']:
+            logger.debug('skipping document %s - deleted', row['key'])
+            continue
+        src_id = row['id']
+        src_rev = row['value']['rev']
+
+        try:
+            rt, rdkey, ext, schema = split_rc_docid(src_id)
+        except ValueError, why:
+            logger.debug('skipping document %r: %s', src_id, why)
+            continue
+
+        if schema != wq.ext.source_schema:
+            logger.debug("skipping document %r - has schema %r but we want %r",
+                         src_id, schema, wq.ext.source_schema)
+            continue
+        # finally we have one!
+        yield src_id, src_rev
+
+
 @defer.inlineCallbacks
 def process_work_queue(doc_model, wq, state_info, num_to_process=5000):
     """processes a number of items in a work-queue.
@@ -627,52 +677,24 @@ def process_work_queue(doc_model, wq, state_info, num_to_process=5000):
 
     logger.debug('opening by_seq view for work queue...')
 
-    num_processed = 0
     start_seq = state_doc['seq']
     result = yield doc_model.db.listDocsBySeq(limit=num_to_process,
                                            startkey=state_doc['seq'])
     rows = result['rows']
     logger.debug('work queue has %d items to check.', len(rows))
-
     # no rows == we are at the end.
     if not rows:
         defer.returnValue(True)
-    # Find the next row this queue can use.
-    while rows and not wq.stopping:
-        while rows and not wq.stopping:
-            row = rows.pop(0)
-            # Update the state-doc now (it's not saved until we get to the end tho..)
-            state_doc['seq'] = row['key']
-            if 'error' in row:
-                # This is usually a simple 'not found' error; it doesn't
-                # mean an 'error record'
-                logger.debug('skipping document %(key)s - %(error)s', row)
-                continue
-            if 'deleted' in row['value']:
-                logger.debug('skipping document %s - deleted', row['key'])
-                continue
-            src_id = row['id']
-            src_rev = row['value']['rev']
 
-            try:
-                rt, rdkey, ext, schema = split_rc_docid(src_id)
-            except ValueError, why:
-                logger.debug('skipping document %r: %s', src_id, why)
-                continue
-
-            schema = unquote(schema)
-
-            if schema != wq.ext.source_schema:
-                logger.debug("skipping document %r - has schema %r but we want %r",
-                             src_id, schema, wq.ext.source_schema)
-                continue
-            # finally we have one!
+    src_gen = gen_queue_sources(rows, wq, state_doc)
+    num_processed = 0
+    # process until we run out.
+    while True:
+        got = yield wq.process(src_gen)
+        if not got:
             break
-        else:
-            break
-
-        # process it.
-        num_processed += yield wq.process(src_id, src_rev)
+        num_processed += len(got)
+        _ = yield doc_model.create_schema_items(got)
 
     logger.debug("finished processing %r to %r - %d processed",
                  wq.get_queue_name(), state_doc['seq'], num_processed)
