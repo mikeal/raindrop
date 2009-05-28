@@ -58,14 +58,6 @@ class ImapClient(imap4.IMAP4Client):
         logger.debug("'%s' is unselectable - skipping", name)
         continue
 
-      # XXX - sob - markh sees:
-      # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven't seen'
-      # although we obviously have seen them already in the other folders.
-      # XXX - but should not be necessary now we are using message-id.
-      if name and name.startswith('['):
-        logger.info("'%s' appears special -skipping", name)
-        continue
-
       yield self.examine(name
                  ).addCallback(self._examineFolder, name
                  ).addErrback(self._cantExamineFolder, name)
