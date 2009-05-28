@@ -22,11 +22,12 @@ def split_rc_docid(doc_id):
     rt, rdkey, ext, schema = doc_id.split("!", 4)
     return rt, rdkey, ext, schema
 
-class Extension:
-    def __init__(self, id, info, source_schema, handler, globs):
+class Extension(object):
+    def __init__(self, id, doc, handler, globs):
         self.id = id
-        self.info = info
-        self.source_schema = source_schema
+        self.doc = doc
+        # make the source schema more convenient to use...
+        self.source_schema = doc['source_schema']
         self.handler = handler
         self.globs = globs
 
@@ -38,9 +39,7 @@ def load_extensions(doc_model):
     for row in ret['rows']:
         doc = row['doc']
         ext_id = doc['rd_key'][1]
-        info = doc.get('info')
         src = doc['code']
-        src_schema = doc['source_schema']
         ct = doc.get('content_type')
         if ct != "application/x-python":
             logger.error("Content-type of %r is not supported", ct)
@@ -62,7 +61,7 @@ def load_extensions(doc_model):
                          ext_id)
             continue
         assert ext_id not in extensions, ext_id # another with this ID??
-        extensions[ext_id] = Extension(ext_id, info, src_schema, handler, globs)
+        extensions[ext_id] = Extension(ext_id, doc, handler, globs)
 
 
 class Pipeline(object):
@@ -111,11 +110,17 @@ class Pipeline(object):
         # Just nuke all items that have a 'rd_source' specified...
         # XXX - should do this in a loop with a limit to avoid chewing
         # all mem...
-        result = yield self.doc_model.open_view(
-                            # skip NULL rows.
-                            startkey=['rd.core.content', 'source', ""],
-                            endkey=['rd.core.content', 'source', {}],
-                            reduce=False)
+        if self.options.exts:
+            exts = self.get_extensions()
+            keys = [['rd.core.content', 'ext_id', e.id] for e in exts]
+            result = yield self.doc_model.open_view(
+                                keys=keys, reduce=False)
+        else:
+            result = yield self.doc_model.open_view(
+                                # skip NULL rows.
+                                startkey=['rd.core.content', 'source', ""],
+                                endkey=['rd.core.content', 'source', {}],
+                                reduce=False)
 
         docs = []
         to_del = [(row['id'], row['value']['_rev']) for row in result['rows']]
@@ -124,23 +129,6 @@ class Pipeline(object):
         logger.info('deleting %d messages', len(docs))
         _ = yield self.doc_model.db.updateDocuments(docs)
 
-        # and our work-queue docs - they aren't seen by the view, so
-        # just delete them by ID.
-        exts = self.options.exts
-        if not exts:
-            queues = self.get_work_queues()
-        else:
-            queues = [f for f in self.get_work_queues()
-                      if f.get_queue_name() in exts]
-
-        del_types = [q.get_queue_id() for q in queues]
-        for rid in del_types:
-            doc = yield self.doc_model.open_document_by_id(rid)
-            if doc is None:
-                logger.debug("can't delete document %r - it doesn't exist", rid)
-            else:
-                logger.info("deleting document %(_id)r (rev %(_rev)s)", doc)
-                _ = yield self.doc_model.db.deleteDoc(doc['_id'], doc['_rev'])
         # and rebuild our views
         logger.info("rebuilding all views...")
         _ = yield self.doc_model._update_important_views()
@@ -241,22 +229,23 @@ class QueueRunner(object):
         self.queues = qs
         assert qs, "nothing to do?"
         self.options = options
-        self.state_docs = None # set as we run.
+        self.state_infos = None # set as we run.
         self.dc_status = None # a 'delayed call'
         self.status_msg_last = None
 
-    def _start_q(self, q, sd, def_done):
+    def _start_q(self, q, si, def_done):
         assert not q.running, q
         q.running = True
-        process_work_queue(self.doc_model, q, sd
-                ).addBoth(self._q_done, q, sd, def_done
+        process_work_queue(self.doc_model, q, si
+                ).addBoth(self._q_done, q, si, def_done
                 )
 
     def _q_status(self):
         lowest = (0xFFFFFFFFFFFF, None)
         highest = (0, None)
         nfailed = 0
-        for qlook, sdlook in zip(self.queues, self.state_docs):
+        for qlook, silook in zip(self.queues, self.state_infos):
+            sdlook = silook['items']
             if qlook.failed:
                 nfailed += 1
                 continue
@@ -275,7 +264,8 @@ class QueueRunner(object):
             self.status_msg_last = msg
         self.dc_status = reactor.callLater(10, self._q_status)
 
-    def _q_done(self, result, q, state_doc, def_done):
+    def _q_done(self, result, q, state_info, def_done):
+        state_doc = state_info['items']
         q.running = False
         failed = isinstance(result, Failure)
         if failed:
@@ -288,21 +278,24 @@ class QueueRunner(object):
         # but have a sequence less than ours.
         still_going = False
         nerrors = len([tq for tq in self.queues if tq.failed])
-        for qlook, sdlook in zip(self.queues, self.state_docs):
+        stop_all = nerrors and self.options.stop_on_error
+        for qlook, silook in zip(self.queues, self.state_infos):
+            sdlook = silook['items']
             if qlook.running:
                 still_going = True
             # only restart queues if stop_on_error isn't specified.
-            if nerrors and self.options.stop_on_error:
+            if stop_all:
+                qlook.stopping = True
                 continue
             if qlook is not q and not qlook.running and not qlook.failed and \
                sdlook['seq'] < state_doc['seq']:
                 still_going = True
-                self._start_q(qlook, sdlook, def_done)
+                self._start_q(qlook, silook, def_done)
 
-        if not failed and not result:
+        if not stop_all and not failed and not result:
             # The queue which called us back hasn't actually finished yet...
             still_going = True
-            self._start_q(q, state_doc, def_done)
+            self._start_q(q, state_info, def_done)
 
         if not still_going:
             # All done.
@@ -317,14 +310,14 @@ class QueueRunner(object):
                     prepare_work_queue(dm, q)
                     for q in self.queues])
 
-        state_docs = self.state_docs = [r[1] for r in result]
+        state_infos = self.state_infos = [r[1] for r in result]
 
         self.dc_status = reactor.callLater(10, self._q_status)
         def_done = defer.Deferred()
-        for q, state_doc in zip(self.queues, state_docs):
+        for q, state_info in zip(self.queues, state_infos):
             q.failed = False
             q.running = False
-            self._start_q(q, state_doc, def_done)
+            self._start_q(q, state_info, def_done)
         _ = yield def_done
         self.dc_status.cancel()
         # update the views now...
@@ -335,12 +328,12 @@ class MessageTransformerWQ(object):
     """A queue which uses extensions to create new schema instances for
     raindrop content items
     """
-    queue_state_doc_id = 'workqueue!msg'
-
     def __init__(self, doc_model, ext, options={}):
         self.ext = ext
         self.doc_model = doc_model
         self.options = options.copy()
+        self.running = None
+        self.stopping = False
 
     def get_queue_id(self):
         return 'workqueue!msg!' + self.ext.id
@@ -597,26 +590,38 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
 
 @defer.inlineCallbacks
 def prepare_work_queue(doc_model, wq, force=False):
-    # first open our 'state' document
-    # XXX - make this 'schema' based too!
-    state_doc = {'_id': wq.get_queue_id(),
-                 'type': wq.get_queue_id(),
-                 'seq': 0}
-    result = yield doc_model.open_document_by_id(state_doc['_id'])
-
-    if result is not None:
-        assert state_doc['_id'] == result['_id'], result
-        state_doc.update(result)
-    # else no doc exists - the '_id' remains in the default though.
+    # first open our 'state' schema
+    rd_key = ['ext', wq.ext.id] # same rd used to save the extension source etc
+    key = ['rd.core.content', 'key-schema_id', [rd_key, 'rd.core.workqueue-state']]
+    result = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
+    rows = result['rows']
+    assert len(rows) in (0,1), result
+    state_info = {'rd_key' : rd_key,
+                  # We set rd_source to the _id/_rev of the extension doc
+                  # itself - that way 'unprocess' etc all see these as
+                  # 'derived'...
+                  'rd_source': [wq.ext.doc['_id'], wq.ext.doc['_rev']],
+                  # and similarly, say it was created by the extension itself.
+                  'ext_id': wq.ext.id,
+                  'schema_id': 'rd.core.workqueue-state',
+                  }
+    if len(rows) and 'doc' in rows[0]:
+        doc = rows[0]['doc']
+        state_info['_id'] = doc['_id']
+        state_info['_rev'] = doc['_rev']
+        state_info['items'] = {'seq' : doc.get('seq', 0)}
+    else:
+        state_info['items'] = {'seq': 0}
     if force:
-        state_doc['seq'] = 0
-    state_doc['last_saved_seq'] = state_doc['seq']
-    defer.returnValue(state_doc)
+        state_info['items']['seq'] = 0
+    state_info['last_saved_seq'] = state_info['items']['seq']
+    defer.returnValue(state_info)
 
 @defer.inlineCallbacks
-def process_work_queue(doc_model, wq, state_doc, num_to_process=5000):
+def process_work_queue(doc_model, wq, state_info, num_to_process=5000):
     """processes a number of items in a work-queue.
     """
+    state_doc = state_info['items']
     logger.debug("Work queue %r starting with sequence ID %d",
                  wq.get_queue_name(), state_doc['seq'])
 
@@ -633,8 +638,8 @@ def process_work_queue(doc_model, wq, state_doc, num_to_process=5000):
     if not rows:
         defer.returnValue(True)
     # Find the next row this queue can use.
-    while rows:
-        while rows:
+    while rows and not wq.stopping:
+        while rows and not wq.stopping:
             row = rows.pop(0)
             # Update the state-doc now (it's not saved until we get to the end tho..)
             state_doc['seq'] = row['key']
@@ -673,18 +678,17 @@ def process_work_queue(doc_model, wq, state_doc, num_to_process=5000):
                  wq.get_queue_name(), state_doc['seq'], num_processed)
 
     # We can chew 5000 'nothing to do' docs quickly next time...
-    last_saved = state_doc['last_saved_seq']
+    last_saved = state_info['last_saved_seq']
     if num_processed or (state_doc['seq']-last_saved) > 5000:
         logger.debug("flushing state doc at end of run...")
-        # API mis-match here - the state doc isn't an 'extension'
-        # doc - but create_ext_documents is the easy option...
         try:
-            del state_doc['last_saved_seq']
+            del state_info['last_saved_seq']
         except KeyError:
             pass
-        docs = yield doc_model.create_ext_documents([state_doc])
-        state_doc['_rev'] = docs[0]['rev']
-        state_doc['last_saved_seq'] = state_doc['seq']
+
+        docs = yield doc_model.create_schema_items([state_info])
+        state_info['_rev'] = docs[0]['rev']
+        state_info['last_saved_seq'] = state_doc['seq']
     else:
         logger.debug("no need to flush state doc")
     defer.returnValue(False)

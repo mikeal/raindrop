@@ -47,7 +47,7 @@ def show_info(result, parser, options):
     print "Raindrop extensions:"
     exts = sorted(pipeline.extensions.items()) # sort by ID.
     for _, ext in exts:
-        print "%s: %s" % (ext.id, ext.info)
+        print "%s: %s" % (ext.id, ext.doc['info'])
     print
     print "Loggers"
     # yuck - reach into impl - and hope all have been initialized by now

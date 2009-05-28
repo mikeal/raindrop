@@ -1,7 +1,6 @@
 function(doc) {
   if (doc.rd_schema_id
     && !doc.rd_ignore_megaview // XXX - afaik this is never set by anyone...
-    && doc.rd_schema_id.indexOf("workqueue") != 0
     && doc.rd_schema_id.indexOf("ui") != 0) { // ui extensions should be ok here?
     // every row we emit for this doc uses an identical 'value'.
     var row_val = {'_rev': doc._rev,

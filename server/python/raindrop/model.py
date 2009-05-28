@@ -323,15 +323,17 @@ class DocumentModel(object):
                 doc.update(si['items'])
             docs.append(doc)
             # If the extension needs to update an existing record it must
-            # give the id and rev.
+            # give _rev.
             # NOTE: _id doesn't need quoting when used via a PUT...
             if '_id' in si:
+                # XXXX - remove this - don't force them to specify the _id!!
+                # there is no way it can ever be different!!
                 id = si['_id']
-                # Only look for '_rev' if they supplied '_id'
-                if '_rev' in si:
-                    doc['_rev'] = si['_rev']
+                assert id == self.get_doc_id_for_schema_item(si)
             else:
                 id = self.get_doc_id_for_schema_item(si)
+            if '_rev' in si:
+                doc['_rev'] = si['_rev']
             doc['_id'] = id
             doc['rd_key'] = si['rd_key']
             # always emit rd_source - an explicit NULL means this is a
@@ -409,22 +411,6 @@ class DocumentModel(object):
                 all_attachments.append(None)
         assert len(all_attachments)==len(docs)
         return all_attachments
-
-    def create_ext_documents(self, docs):
-        for doc in docs:
-            assert '_id' in doc, doc
-        attachments = self._prepare_attachments(docs)
-        # save the document.
-        logger.debug('saving %d extension documents', len(docs))
-        def log_error_info(failure):
-            failure.trap(twisted.web.error.Error)
-            logger.error("Server error response is %s", failure.value.response)
-            failure.raiseException()
-        
-        defs = [None] * len(docs)
-        return self.db.updateDocuments(docs,
-                    ).addCallback(self._cb_saved_docs, defs, attachments
-                    ).addErrback(log_error_info)
 
     def _cb_saved_docs(self, result, item_defs, attachments):
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
