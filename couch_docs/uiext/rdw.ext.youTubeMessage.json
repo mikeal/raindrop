@@ -1,6 +1,6 @@
 {
   "schemas" : {
-    "rd/ext/uiext" : {
+    "rd.ext.uiext" : {
       "exts": {
         "rd.message": "rdw.ext.youTubeMessage",
         "rdw.Message": "rdw.ext.youTubeMessage"

@@ -52,8 +52,8 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      startkey: ['rd/msg/email/mailing-list', 'id'],
-      endkey: ['rd/msg/email/mailing-list', 'id', {}],
+      startkey: ['rd.msg.email.mailing-list', 'id'],
+      endkey: ['rd.msg.email.mailing-list', 'id', {}],
       group_level: 3,
       success: dojo.hitch(this, function(json) {
         var lists = [];

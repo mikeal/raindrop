@@ -7,10 +7,10 @@ test_emit_common_identities = False
 
 
 # A 'converter' - takes a proto/test as input and creates a
-# 'rd/msg/rfc822 schema as output, which in turn will force the
+# 'rd.msg.rfc822 schema as output, which in turn will force the
 # email schema converters to run to create body etc schemas.
 def handler(src):
-    """Takes a 'proto/test' as input and creates a 'rd/msg/rfc822' schema"""
+    """Takes a 'proto/test' as input and creates a 'rd.msg.rfc822' schema"""
     # for the sake of testing the error queue, we cause an error on
     # every 3rd message we process.
     global num_converted
@@ -44,10 +44,10 @@ def handler(src):
     
     data = {}
     data['_attachments'] = attachments
-    emit_schema('rd/msg/rfc822', data)
+    emit_schema('rd.msg.rfc822', data)
 
     # emit a 'flags' schema too just for fun
-    emit_schema('rd/msg/flags', {'seen': False})
+    emit_schema('rd.msg.flags', {'seen': False})
 
     if test_emit_identities:
         # and assertions about the existance of a couple of identities...

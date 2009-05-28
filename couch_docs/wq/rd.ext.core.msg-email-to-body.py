@@ -94,4 +94,4 @@ def handler(doc):
         ret['tags'] = doc['tags']
     except KeyError:
         pass
-    emit_schema('rd/msg/body', ret)
+    emit_schema('rd.msg.body', ret)

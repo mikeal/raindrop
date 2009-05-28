@@ -28,7 +28,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
   // keys we can use to query a megaview.
   var queryKeys = [];
   for (var i = 0, id; id = ids[i]; i++) {
-    queryKeys.push(["rd/msg/conversation", "conversation_id", id]);
+    queryKeys.push(["rd.msg.conversation", "conversation_id", id]);
   }
   couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
     reduce: false,
@@ -48,7 +48,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
         var conversations = [];
         
         for (var i = 0, message; message = messages[i]; i++) {
-          var convId = message['rd/msg/conversation'].conversation_id;
+          var convId = message['rd.msg.conversation'].conversation_id;
           var conv = conversations["cId:" + convId];
           if (!conv) {
             conv = conversations["cId:" + convId] = [];
@@ -61,14 +61,14 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
         //earliest timestamp first.
         for(var i = 0; i < conversations.length; i++) {
           conversations[i].sort(function(a, b) {
-            return a["rd/msg/body"].timestamp > b["rd/msg/body"].timestamp ? 1 : -1;
+            return a["rd.msg.body"].timestamp > b["rd.msg.body"].timestamp ? 1 : -1;
           });
         }
 
         //Now sort conversations so the conversation with a message that is most
         //recent is first.
         conversations.sort(function(a, b) {
-          return a[a.length - 1]["rd/msg/body"].timestamp > b[b.length - 1]["rd/msg/body"].timestamp ? -1 : 1;
+          return a[a.length - 1]["rd.msg.body"].timestamp > b[b.length - 1]["rd.msg.body"].timestamp ? -1 : 1;
         });
 
         if (isOne) {
@@ -93,7 +93,7 @@ dojo._mixin(rd.conversation, {
     // XXX - this is duplicated below in byTimeStamp...
     var keys = [];
     for (var i = 0; i< ids.length; i++) {
-      keys.push(['rd/core/content', 'key-schema_id', [ids[i], 'rd/msg/conversation']]);
+      keys.push(['rd.core.content', 'key-schema_id', [ids[i], 'rd.msg.conversation']]);
     }
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       keys: keys,
@@ -125,17 +125,17 @@ dojo._mixin(rd.conversation, {
     // fetching all in the convo.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       reduce: false,
-      startkey: ["rd/msg/body", "timestamp", {}],
-      endkey: ["rd/msg/body", "timestamp"],
+      startkey: ["rd.msg.body", "timestamp", {}],
+      endkey: ["rd.msg.body", "timestamp"],
       limit: limit,
       descending: true,
       success: dojo.hitch(this, function(json) {
         // so we now have the rd_key for messages in timestamp order;
-        // now we need to fetch the 'rd/msg/conversation' schema to fetch the
+        // now we need to fetch the 'rd.msg.conversation' schema to fetch the
         // convo ID.
         var keys = [];
         for (var i = 0, row; row = json.rows[i]; i++) {
-          keys.push(['rd/core/content', 'key-schema_id', [row.value.rd_key, 'rd/msg/conversation']]);
+          keys.push(['rd.core.content', 'key-schema_id', [row.value.rd_key, 'rd.msg.conversation']]);
         }
         couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
           keys: keys,
@@ -169,7 +169,7 @@ dojo._mixin(rd.conversation, {
       //Use megaview to select all messages based on the identity
       //IDs.
       var keys = rd.map(contact.identities, function(identity) {
-        return ["rd/msg/body", "from", identity.rd_key[1]];
+        return ["rd.msg.body", "from", identity.rd_key[1]];
       });
       if (!keys) {
         console.error("seem to have no identities for this contact??");
@@ -197,7 +197,7 @@ dojo._mixin(rd.conversation, {
           rd.conversation.byMessageKey(messageKeys, function(conversations) {
             //Sort the conversations.
             conversations.sort(function(a, b) {
-              return a[0]['rd/msg/body'].timestamp > b[0]['rd/msg/body'].timestamp ? -1 : 1;
+              return a[0]['rd.msg.body'].timestamp > b[0]['rd.msg.body'].timestamp ? -1 : 1;
             });
 
             callback(conversations);

@@ -10,7 +10,7 @@ def handler(doc):
         val = doc.get('twitter_' + src)
         if val:
             items[dest] = val
-    emit_schema('rd/identity', items)
+    emit_schema('rd.identity', items)
 
     # and we use the same extension to emit the 'known identities' too...
     def gen_em():

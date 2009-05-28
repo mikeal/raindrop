@@ -183,7 +183,7 @@ dojo.mixin(rd.contact, {
       // open all contacts - note this also includes contacts without
       // associated identities...
       couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-        key: ["rd/core/content", "schema_id", "rd/contact"],
+        key: ["rd.core.content", "schema_id", "rd.contact"],
         include_docs: true,
         reduce: false,
         success: dojo.hitch(this, function(json) {
@@ -213,8 +213,8 @@ dojo.mixin(rd.contact, {
     //summary: loads the contact-identity mapping.
 
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      startkey: ["rd/identity/contacts", "contacts"],
-      endkey: ["rd/identity/contacts", "contacts", {}],
+      startkey: ["rd.identity.contacts", "contacts"],
+      endkey: ["rd.identity.contacts", "contacts", {}],
       reduce: false,
       success: dojo.hitch(this, function(json) {
         //Error out if no rows return.

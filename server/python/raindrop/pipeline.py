@@ -32,8 +32,8 @@ class Extension:
 
 @defer.inlineCallbacks
 def load_extensions(doc_model):
-    # now try the DB - load everything with a rd/ext/workqueue schema
-    key = ["rd/core/content","schema_id", "rd/ext/workqueue"]
+    # now try the DB - load everything with a rd.ext.workqueue schema
+    key = ["rd.core.content","schema_id", "rd.ext.workqueue"]
     ret = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
     for row in ret['rows']:
         doc = row['doc']
@@ -113,8 +113,8 @@ class Pipeline(object):
         # all mem...
         result = yield self.doc_model.open_view(
                             # skip NULL rows.
-                            startkey=['rd/core/content', 'source', ""],
-                            endkey=['rd/core/content', 'source', {}],
+                            startkey=['rd.core.content', 'source', ""],
+                            endkey=['rd.core.content', 'source', {}],
                             reduce=False)
 
         docs = []
@@ -197,7 +197,7 @@ class Pipeline(object):
         if not self.options.exts:
             # fetch all items with a null 'rd_source'
             result = yield dm.open_view(
-                            key=['rd/core/content', 'source', None],
+                            key=['rd.core.content', 'source', None],
                             reduce=False)
             logger.info("reprocess found %d source documents",
                         len(result['rows']))
@@ -207,7 +207,7 @@ class Pipeline(object):
             # if extensions depend on each other...
             for ext in self.get_extensions():
                 # fetch all items this extension says it depends on
-                key=['rd/core/content', 'schema_id', ext.source_schema]
+                key=['rd.core.content', 'schema_id', ext.source_schema]
                 result = yield dm.open_view(key=key,
                                             reduce=False)
                 logger.info("reprocessing %s - %d docs", ext.id,
@@ -220,10 +220,10 @@ class Pipeline(object):
         """Attempt to re-process all messages for which our previous
         attempt generated an error.
         """
-        # This is easy - just look for rd/core/error records and re-process
-        # them - the rd/core/error record will be auto-deleted as we
+        # This is easy - just look for rd.core.error records and re-process
+        # them - the rd.core.error record will be auto-deleted as we
         # re-process
-        key = ["rd/core/content", "schema_id", "rd/core/error"]
+        key = ["rd.core.content", "schema_id", "rd.core.error"]
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
         logger.info("found %d error records", len(result['rows']))
@@ -406,7 +406,7 @@ class MessageTransformerWQ(object):
 
         # We need to find *all* items previously written by this extension
         # so a 'reprocess' doesn't cause conflicts.
-        key = ['rd/core/content', 'ext_id-source', [cvtr.id, src_id]]
+        key = ['rd.core.content', 'ext_id-source', [cvtr.id, src_id]]
         result = yield dm.open_view(key=key, reduce=False)
         rows = result['rows']
         if rows:
@@ -478,7 +478,7 @@ class MessageTransformerWQ(object):
                             len(new_items))
             new_items[:] = [{'rd_key' : src_doc['rd_key'],
                              'rd_source': [src_doc['_id'], src_doc['_rev']],
-                             'schema_id': 'rd/core/error',
+                             'schema_id': 'rd.core.error',
                              'ext_id' : self.ext.id,
                              'items' : edoc,
                              }]
@@ -506,7 +506,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
     # one if it doesn't already exist.
     for iid, rel in idrels:
         yield {'rd_key' : ['identity', iid],
-               'schema_id' : 'rd/identity/exists',
+               'schema_id' : 'rd.identity.exists',
                'items': None,
                'ext_id' : ext_id,
                }
@@ -520,7 +520,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
         # the identity itself.
         rdkey = ['identity', iid]
         dl.append(
-            doc_model.open_schemas(rdkey, 'rd/identity/contacts'))
+            doc_model.open_schemas(rdkey, 'rd.identity.contacts'))
     results = threads.blockingCallFromThread(reactor,
                     defer.DeferredList, dl)
     assert len(results)==len(idrels), (results, idrels)
@@ -549,7 +549,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
         cdoc.update(def_contact_props)
         logger.debug("Will create new contact %r", contact_id)
         yield {'rd_key' : ['contact', contact_id],
-               'schema_id' : 'rd/contact',
+               'schema_id' : 'rd.contact',
                # ext_id might be wrong here - maybe it should be 'us'?
                'ext_id' : ext_id,
                'items' : cdoc,
@@ -589,7 +589,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
                 doc_rev = sch['_rev']
         if new_rel_fields is not None:
             yield {'rd_key' : ['identity', iid],
-                   'schema_id' : 'rd/identity/contacts',
+                   'schema_id' : 'rd.identity.contacts',
                    'ext_id' : ext_id,
                    'items' : new_rel_fields,
             }

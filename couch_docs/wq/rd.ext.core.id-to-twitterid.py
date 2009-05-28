@@ -14,9 +14,9 @@ def handler(doc):
         # Not a twitter ID.
         return
 
-    # if we already have a twitter/raw schema for the user just skip it
+    # if we already have a twitter.raw schema for the user just skip it
     # XXX - later we should check the items are accurate...
-    key = ['rd/core/content', 'key-schema_id', [doc['rd_key'], 'rd/identity/twitter']]
+    key = ['rd.core.content', 'key-schema_id', [doc['rd_key'], 'rd.identity.twitter']]
     results = open_view(key=key, reduce=False)
     if results['rows']:
         logger.debug("already seen this twitter user - skipping")
@@ -42,4 +42,4 @@ def handler(doc):
             raise
 
     items = user_to_raw(user)
-    emit_schema('rd/identity/twitter', items)
+    emit_schema('rd.identity.twitter', items)

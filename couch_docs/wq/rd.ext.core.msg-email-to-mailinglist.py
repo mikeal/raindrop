@@ -1,5 +1,5 @@
-# This is an extension that converts a raw/message/email
-# to a raw/message/email/mailing-list-extracted, i.e. an email message
+# This is an extension that converts a raw.message.email
+# to a raw.message.email.mailing-list-extracted, i.e. an email message
 # that contains information about the mailing list to which the message
 # was sent, if any.
 
@@ -65,4 +65,4 @@ def handler(doc):
         if key in doc['headers']:
             mailing_list[key[5:]] = doc['headers'][key]
             logger.debug("set %s to %s", key[5:], doc['headers'][key])
-    emit_schema('rd/msg/email/mailing-list', mailing_list)
+    emit_schema('rd.msg.email.mailing-list', mailing_list)

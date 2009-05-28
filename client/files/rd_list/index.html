@@ -32,7 +32,7 @@
     rd.addOnLoad(function(){
       //http://127.0.0.1:5984/raindrop/_design/raindrop!apps!all/_view/all?limit=11
       couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-        key: ['rd/core/content', 'ext_id-schema_id', ["rd.core","rd/ext/ui"]],
+        key: ['rd.core.content', 'ext_id-schema_id', ["rd.core","rd.ext.ui"]],
         include_docs: true,
         reduce : false,
         success: rd.hitch(this, function(json) {

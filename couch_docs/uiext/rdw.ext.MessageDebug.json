@@ -1,6 +1,6 @@
 {
   "schemas" : {
-    "rd/ext/uiext" : {
+    "rd.ext.uiext" : {
       "exts": {
         "rdw.Message": "rdw.ext.MessageDebug"
       }

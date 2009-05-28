@@ -364,8 +364,8 @@ def update_apps(whateva):
     replacements["module_paths"] = module_paths
 
     keys = [
-        ["rd/core/content", "schema_id", "rd/ext/ui"],
-        ["rd/core/content", "schema_id", "rd/ext/uiext"],
+        ["rd.core.content", "schema_id", "rd.ext.ui"],
+        ["rd.core.content", "schema_id", "rd.ext.uiext"],
     ]
     results = yield dm.open_view(keys=keys, include_docs=True, reduce=False)
     all_rows = results['rows']
@@ -462,7 +462,7 @@ def install_accounts(whateva):
         logger.info("Adding account '%s'", acct_id)
         rd_key = ['raindrop-account', acct_id]
 
-        infos = yield dm.open_schemas(rd_key, 'rd/account')
+        infos = yield dm.open_schemas(rd_key, 'rd.account')
 
         assert len(infos) in [0, 1]
         acct_info = acct_info.copy()
@@ -471,7 +471,7 @@ def install_accounts(whateva):
         except KeyError:
             pass
         new_info = {'rd_key' : rd_key,
-                    'schema_id': 'rd/account',
+                    'schema_id': 'rd.account',
                     'ext_id': 'raindrop.core',
                     'items': acct_info}
         if len(infos)==1:

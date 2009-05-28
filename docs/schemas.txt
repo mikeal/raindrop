@@ -5,7 +5,7 @@ But for now, this is where the schema are defined.
 
 COMMON:
 =======
-rd/tags:
+rd.tags:
 --------
 ** Notes **
 Anything can have tags!
@@ -16,7 +16,7 @@ tags: a list of tags!
 MESSAGES:
 =========
 
-rd/msg/body
+rd.msg.body
 -----------
 ** Notes **
 This is named 'body' in anticipation of splitting the envelope related
@@ -30,7 +30,7 @@ body: the body
 
 body_preview:
 
-rd/msg/rfc822:
+rd.msg.rfc822:
 --------------
 ** Notes **
 A schema designed to store a raw RFC822 stream
@@ -39,12 +39,12 @@ A schema designed to store a raw RFC822 stream
 
 rfc822: attachment holding a raw rfc822 message stream.
 
-rd/msg/email:
+rd.msg.email:
 --------------
 ** Notes **
 A deconstructed email message.  Note that body and envelope information
 isn't stored here - extensions emiting one of these schemas will almost
-certainly also emit a rd/msg/body schema which should be used.
+certainly also emit a rd.msg.body schema which should be used.
 
 ** Fields **
 
@@ -58,13 +58,13 @@ multipart_info: A list of dictionaries, with each element having elements:
   headers: A dictionary holding the headers for this sub-part.
   content_type: The type of the content stored in the attachment
 
-rd/msg/conversation:
+rd.msg.conversation:
 --------------------
 ** Fields**
 
 conversation_id: a string which identifies the conversation.
 
-rd/msg/email/mailing-list:
+rd.msg.email.mailing-list:
 --------------------
 ** Fields**
 id:
@@ -78,12 +78,12 @@ unsubscribe:
 IDENTITIES AND CONTACTS:
 ========================
 
-rd/contact:
+rd.contact:
 ** Fields **
 name:
 
 
-rd/identity/exists:
+rd.identity.exists:
 -------------------
 ** Fields **
 
@@ -94,7 +94,7 @@ NOTE: Schemas with no fields are treated specially by the framework; such
 records are considered an 'assertion' the object key exists, so conflict
 errors are ignored when attempting to write them.
 
-rd/identity:
+rd.identity:
 ------------
 ** Notes **
 This is a 'normalized schema' - its a set of fields that any identity provider
@@ -107,7 +107,7 @@ nickname: nickname
 url: user's home page
 image: Either a URL or reference to an attachment.
 
-rd/identity/contacts:
+rd.identity.contacts:
 ---------------------
 ** Fields **
 contacts: A list of (contact_id, relationship_name) tuples, where
@@ -115,8 +115,8 @@ contacts: A list of (contact_id, relationship_name) tuples, where
 numbers or email addresses.
 
 
-rd/identity/skype:
-rd/identity/twitter:
+rd.identity.skype:
+rd.identity.twitter:
 --------------------
 
 "Private" schemas - whatever the identity fetchers want to store.

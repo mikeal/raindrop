@@ -1,10 +1,10 @@
 {
   "schemas" : {
-    "rd/ext/workqueue" : {
-        "source_schema" : "rd/identity/exists",
+    "rd.ext.workqueue" : {
+        "source_schema" : "rd.identity.exists",
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
-        "info": "Creates 'rd/identity/twitter' schema"
+        "info": "Creates 'rd.identity.twitter' schema"
     }
   }
 }

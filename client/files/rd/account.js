@@ -21,7 +21,7 @@ dojo.mixin(rd.account, {
   _load: function() {
     //summary: rd._api trigger for loading api data.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      key: ["rd/core/content", "schema_id", "rd/account"],
+      key: ["rd.core.content", "schema_id", "rd.account"],
       reduce: false,
       include_docs: true,
       success: dojo.hitch(this, function(json) {

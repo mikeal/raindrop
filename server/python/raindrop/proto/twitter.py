@@ -91,7 +91,7 @@ class TwitterProcessor(object):
         this_tweets = {}
         keys = []
         for status in tl:
-            keys.append(['rd/core/content', 'key-schema_id', [["tweet", status.id], 'rd/msg/tweet/raw']])
+            keys.append(['rd.core.content', 'key-schema_id', [["tweet", status.id], 'rd.msg.tweet.raw']])
             this_tweets[status.id] = status
             this_users[status.user.screen_name] = status.user
 
@@ -109,7 +109,7 @@ class TwitterProcessor(object):
             rdkey = ['tweet', tid]
             infos.append({'rd_key' : rdkey,
                           'ext_id': self.rd_extension_id,
-                          'schema_id': 'rd/msg/tweet/raw',
+                          'schema_id': 'rd.msg.tweet.raw',
                           'items': fields})
 
         # now the same treatment for the users we found; although for users
@@ -117,8 +117,8 @@ class TwitterProcessor(object):
         # accurate.
         keys = []
         for sn in this_users.iterkeys():
-            keys.append(['rd/core/content', 'key-schema_id',
-                         [["identity", ["twitter", sn]], 'rd/identity/twitter']])
+            keys.append(['rd.core.content', 'key-schema_id',
+                         [["identity", ["twitter", sn]], 'rd.identity.twitter']])
         # execute a view process these users.
         results = yield self.doc_model.open_view(keys=keys, reduce=False,
                                                  include_docs=True)
@@ -137,7 +137,7 @@ class TwitterProcessor(object):
             rdkey = ['identity', ['twitter', sn]]
             infos.append({'rd_key' : rdkey,
                           'ext_id': self.rd_extension_id,
-                          'schema_id': 'rd/identity/twitter',
+                          'schema_id': 'rd.identity.twitter',
                           'items': items})
 
         _ = yield self.doc_model.create_schema_items(infos)

@@ -1,4 +1,4 @@
-# A 'converter' - takes a rd/msg/skypemsg/raw as input and creates various
+# A 'converter' - takes a rd.msg.skypemsg.raw as input and creates various
 # schema outputs for that message - specifically 'body' and 'conversation'
 def handler(doc):
     subject = doc['skype_chat_friendlyname']
@@ -9,7 +9,7 @@ def handler(doc):
             'body_preview': doc['skype_body'][:140],
             'timestamp': doc['skype_timestamp'], # skype's works ok here?
             }
-    emit_schema('rd/msg/body', bdoc)
+    emit_schema('rd.msg.body', bdoc)
     # and a conversation schema
     cdoc = {'conversation_id': doc['skype_chatname']}
-    emit_schema('rd/msg/conversation', cdoc)
+    emit_schema('rd.msg.conversation', cdoc)

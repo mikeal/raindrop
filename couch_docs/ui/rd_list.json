@@ -1,6 +1,6 @@
 {
   "schemas" : {
-    "rd/ext/ui" : {
+    "rd.ext.ui" : {
       "name" : "App Listing",
       "info" : "Lists all of the applications",
       "location" : "/raindrop/files/rd_list/index.html"

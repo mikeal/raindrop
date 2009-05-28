@@ -84,7 +84,7 @@ class SyncConductor(object):
   @defer.inlineCallbacks
   def sync(self, whateva=None):
     # get all accounts from the couch.
-    key = ['rd/core/content', 'schema_id', 'rd/account']
+    key = ['rd.core.content', 'schema_id', 'rd.account']
     result = yield self.doc_model.open_view(key=key, reduce=False,
                                             include_docs=True)
 

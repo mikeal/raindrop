@@ -44,7 +44,7 @@ class TestMessageProvider(object):
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
         rd_key = ['raindrop-test-message', i]
-        return self.doc_model.open_schemas(rd_key, "rd/msg/test/raw"
+        return self.doc_model.open_schemas(rd_key, "rd.msg.test.raw"
                         ).addCallback(self.process_test_message, i)
 
     def process_test_message(self, schemas, doc_num):
@@ -59,7 +59,7 @@ class TestMessageProvider(object):
               storage_key=doc_num,
               _attachments=attachments,
               )
-            info = {'schema_id': 'rd/msg/test/raw',
+            info = {'schema_id': 'rd.msg.test.raw',
                     'ext_id': self.rd_extension_id,
                     'rd_source': None,
                     'rd_key': rd_key,
@@ -70,14 +70,14 @@ class TestMessageProvider(object):
             # our test message and one common for all.
             if test_emit_identities:
                 self.bulk_docs.append({
-                        'schema_id': 'rd/identity/exists',
+                        'schema_id': 'rd.identity.exists',
                         'ext_id': self.rd_extension_id,
                         'rd_source': None,
                         'rd_key': ['identity', ['test_identity', str(doc_num)]],
                         'items': None,
                     })
                 self.bulk_docs.append({
-                        'schema_id': 'rd/identity/exists',
+                        'schema_id': 'rd.identity.exists',
                         'ext_id': self.rd_extension_id,
                         'rd_source': None,
                         'rd_key': ['identity', ['test_identity', 'common']],

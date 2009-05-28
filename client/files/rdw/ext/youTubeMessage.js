@@ -15,7 +15,7 @@ rd.applyExtension("rd.message", {
     onMessageLoaded: function(/*Object*/messageBag) {
       //summary: add in data about a youtube link if one is
       //found in the message body.
-      var body = messageBag["rd/msg/body"].body;
+      var body = messageBag["rd.msg.body"].body;
       if(!body) {
         return;
       }

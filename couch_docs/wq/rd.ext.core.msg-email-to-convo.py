@@ -1,4 +1,4 @@
-# Creates 'rd/msg/conversation' schemas for emails...
+# Creates 'rd.msg.conversation' schemas for emails...
 def handler(doc):
     headers = doc['headers']
     self_header_message_id = headers.get('message-id')
@@ -21,7 +21,7 @@ def handler(doc):
     logger.debug("references: %s", '\n\t'.join(references))
     # Open a view trying to locate an existing conversation for any of these
     # headers.
-    keys = [['rd/core/content', 'key-schema_id', [['email', mid], 'rd/msg/conversation']]
+    keys = [['rd.core.content', 'key-schema_id', [['email', mid], 'rd.msg.conversation']]
             for mid in uniq_header_message_ids]
     result = open_view(keys=keys, reduce=False,
                        include_docs=True)
@@ -44,9 +44,9 @@ def handler(doc):
     for hid in uniq_header_message_ids:
         if seen_ids is None or hid not in seen_ids:
             rdkey = ['email', hid]
-            emit_schema('rd/msg/conversation', items, rd_key=rdkey)
+            emit_schema('rd.msg.conversation', items, rd_key=rdkey)
 
     # make sure current doc gets emitted in case it was
     # not part of the uniq_header_message_ids
     if doc['rd_key'][1] not in uniq_header_message_ids:
-        emit_schema('rd/msg/conversation', items, rd_key=doc['rd_key'])
+        emit_schema('rd.msg.conversation', items, rd_key=doc['rd_key'])

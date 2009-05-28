@@ -45,8 +45,8 @@ dojo.mixin(rd.identity, {
     } else {
       couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
         reduce: false,
-        startkey: ['rd/identity', 'image'],
-        endkey: ['rd/identity', 'image', {}],
+        startkey: ['rd.identity', 'image'],
+        endkey: ['rd.identity', 'image', {}],
         success: function(json) {
           // We have all identities with images - now find out which of these
           // identities have sent a message...
@@ -54,7 +54,7 @@ dojo.mixin(rd.identity, {
           for (var i = 0, row; row = json.rows[i]; i++) {
             var rd_key = row.value.rd_key;
             // rd_key is ['identity', identity_id]
-            keys.push(["rd/msg/body", "from", rd_key[1]]);
+            keys.push(["rd.msg.body", "from", rd_key[1]]);
           }
           couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
             keys: keys,
@@ -100,7 +100,7 @@ dojo.mixin(rd.identity, {
       identityIds = [identityIds];
     var keys = [];
     for (var i = 0, id; id = identityIds[i]; i++) {
-      keys.push(['rd/core/content', 'key-schema_id', [['identity', id], 'rd/identity']]);
+      keys.push(['rd.core.content', 'key-schema_id', [['identity', id], 'rd.identity']]);
     }
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       keys: keys,
@@ -136,7 +136,7 @@ dojo.mixin(rd.identity, {
                 // it't not clear if we should use a 'real' identity ID here?
                 // theoretically all the fields being empty should be enough...
                 rd_key: ['identity', idty],
-                rd_schema: 'rd/identity',
+                rd_schema: 'rd.identity',
               }
             }
           }

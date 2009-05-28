@@ -17,7 +17,7 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
   //Generate proper key for megaview lookup.
   var keys = [];
   for (var i = 0, id; id = ids[i]; i++) {
-    keys.push(['rd/core/content', 'key', id]);
+    keys.push(['rd.core.content', 'key', id]);
   }
 
   couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
@@ -56,7 +56,7 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
           var nextDoc = json.rows[i + 1] && json.rows[i + 1].doc;
           if (!nextDoc || rdKey[1] != nextDoc.rd_key[1]) {
             //Have a final bag. Make sure it is not a ghost
-            if (bag["rd/msg/body"]) {
+            if (bag["rd.msg.body"]) {
               messageResults.push(bag);
               rd.message.onMessageLoaded(bag);
             }

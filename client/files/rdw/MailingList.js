@@ -39,15 +39,15 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
   show: function(id) {
     // Get the rd_key for all items in the mailing-list.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      key: ["rd/msg/email/mailing-list", "id", id],
+      key: ["rd.msg.email.mailing-list", "id", id],
       reduce: false,
       limit: this.limit,
       success: function(json) {
         //Get message keys
         var keys = [];
         for (var i = 0, row; row = json.rows[i]; i++) {
-          keys.push(['rd/core/content', 'key-schema_id',
-                     [row.value.rd_key, "rd/msg/conversation"]]);
+          keys.push(['rd.core.content', 'key-schema_id',
+                     [row.value.rd_key, "rd.msg.conversation"]]);
         }
         // and yet another view to fetch the convo IDs for these messages.
         couch.db("raindrop").view("raindrop!content!all/_view/megaview", {

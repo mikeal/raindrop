@@ -91,7 +91,7 @@ class ImapClient(imap4.IMAP4Client):
       msg_infos[get_rdkey_for_email(msg_id)] = msg_info
 
     # Get all messages that already have this schema
-    keys = [['rd/core/content', 'key-schema_id', [k, 'rd/msg/rfc822']]
+    keys = [['rd.core.content', 'key-schema_id', [k, 'rd.msg.rfc822']]
             for k in msg_infos.keys()]
     return self.doc_model.open_view(keys=keys, reduce=False,
                 ).addCallback(self._gotSeen, folder_name, msg_infos
@@ -147,12 +147,12 @@ class ImapClient(imap4.IMAP4Client):
       items = {'_attachments': attachments}
       infos.append({'rd_key' : rdkey,
                     'ext_id': self.rd_extension_id,
-                    'schema_id': 'rd/msg/rfc822',
+                    'schema_id': 'rd.msg.rfc822',
                     'items': items})
       items = {'flags' : flags}
       infos.append({'rd_key' : rdkey,
                     'ext_id': self.rd_extension_id,
-                    'schema_id': 'rd/msg/imap/flags',
+                    'schema_id': 'rd.msg.imap.flags',
                     'items': items})
       # could add other schemas with info from the 'body'?
 

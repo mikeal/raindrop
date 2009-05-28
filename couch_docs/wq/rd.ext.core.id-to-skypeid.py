@@ -1,7 +1,6 @@
 import Skype4Py
 import os
 import tempfile
-from urllib import quote
 from raindrop.proto.skype import simple_convert
 
 
@@ -91,7 +90,7 @@ def handler(doc):
         else:
             logger.warning("Cannot save avatar for skype user %s", iid)
 
-    did = emit_schema('rd/identity/skype', props)
+    did = emit_schema('rd.identity.skype', props)
 
     # emit one for the normalized identity schema
     props = {
@@ -103,5 +102,5 @@ def handler(doc):
         props['url'] = user_homepage
 
     if has_avatar:
-        props['image'] = '/%s/avatar1' % quote(did, safe="")
-    emit_schema('rd/identity', props)
+        props['image'] = '/%s/avatar1' % did
+    emit_schema('rd.identity', props)

@@ -107,8 +107,8 @@ class TwistySkype(object):
 
 
     def _cb_got_chats(self, chats):
-        keys = [['rd/core/content', 'key-schema_id',
-                 [self.get_rdkey_for_chat(c), 'rd/msg/skypechat/raw']]
+        keys = [['rd.core.content', 'key-schema_id',
+                 [self.get_rdkey_for_chat(c), 'rd.msg.skypechat.raw']]
                 for c in chats]
         return self.doc_model.open_view(keys=keys, reduce=False
                     ).addCallback(self._cb_got_seen_chats, chats
@@ -138,8 +138,8 @@ class TwistySkype(object):
         # determine which we have seen (note that we obviously could just
         # fetch the *entire* chats+msgs view once - but we do it this way on
         # purpose to ensure we remain scalable...)
-        keys = [['rd/core/content', 'key-schema_id',
-                 [self.get_rdkey_for_msg(m), 'rd/msg/skypemsg/raw']]
+        keys = [['rd.core.content', 'key-schema_id',
+                 [self.get_rdkey_for_msg(m), 'rd.msg.skypemsg.raw']]
                  for m in messages]
         return self.doc_model.open_view(keys=keys, reduce=False
                     ).addCallback(self._cb_got_seen, chat, messages, seen_chats,
@@ -203,7 +203,7 @@ class TwistySkype(object):
         rdkey = self.get_rdkey_for_chat(chat)
         pending.append({'rd_key' : rdkey,
                         'ext_id': self.rd_extension_id,
-                        'schema_id': 'rd/msg/skypechat/raw',
+                        'schema_id': 'rd.msg.skypechat.raw',
                         'items': doc})
 
     def _cb_got_msg_props(self, results, chat, msg, pending):
@@ -222,7 +222,7 @@ class TwistySkype(object):
         rdkey = self.get_rdkey_for_msg(msg)
         pending.append({'rd_key' : rdkey,
                         'ext_id': self.rd_extension_id,
-                        'schema_id': 'rd/msg/skypemsg/raw',
+                        'schema_id': 'rd.msg.skypemsg.raw',
                         'items': doc})
 
     # friends...
@@ -235,9 +235,9 @@ class TwistySkype(object):
             # just an 'assertion' the identity exists - the framework
             # will take care of handling the fact it may already exist.
             rdkey = ('identity', ('skype', friend._Handle))
-            item = rdkey, self.rd_extension_id, 'rd/identity', None, None
+            item = rdkey, self.rd_extension_id, 'rd.identity', None, None
             schemas.append({'rd_key' : rdkey,
-                            'schema_id' : 'rd/identity/exists',
+                            'schema_id' : 'rd.identity.exists',
                             'items' : None,
                             'ext_id': self.rd_extension_id})
         return self.doc_model.create_schema_items(schemas)

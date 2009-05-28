@@ -1,6 +1,6 @@
 {
   "schemas" : {
-    "rd/ext/ui" : {
+    "rd.ext.ui" : {
       "name" : "Inflow",
       "info" : "The inflow thingy",
       "location" : "/raindrop/files/inflow/index.html"

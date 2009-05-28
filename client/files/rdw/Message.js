@@ -28,7 +28,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //TODO: some of these need more info from backend.    
     // XXX: these are a couple hacks to get the UI looking more like we want
     var msgBag = this.messageBag;
-    var msgDoc = msgBag['rd/msg/body'];
+    var msgDoc = msgBag['rd.msg.body'];
 
     this.fromName = msgDoc.from[1];
     try {
@@ -79,7 +79,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
     //If twitter user, get their profile pic.
     var msgBag = this.messageBag;
-    var msgDoc = msgBag['rd/msg/body'];
+    var msgDoc = msgBag['rd.msg.body'];
     var from = msgDoc.from;
     rd.identity.get(from, dojo.hitch(this, function(user) {
       if (user.image) {

@@ -149,4 +149,4 @@ def doc_from_bytes(docid, b):
 def handler(doc):
     # I need the binary attachment.
     content = open_schema_attachment(doc, "rfc822")
-    emit_schema('rd/msg/email', doc_from_bytes(doc['_id'], content))
+    emit_schema('rd.msg.email', doc_from_bytes(doc['_id'], content))

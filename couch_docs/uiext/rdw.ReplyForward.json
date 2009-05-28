@@ -1,6 +1,6 @@
 {
   "schemas" : {
-    "rd/ext/uiext" : {
+    "rd.ext.uiext" : {
       "subscriptions": [
         {"rdw.Message-reply": "rdw.ReplyForward"},
         {"rdw.Message-forward": "rdw.ReplyForward"}

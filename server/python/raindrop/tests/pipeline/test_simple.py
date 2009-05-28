@@ -40,8 +40,8 @@ class TestPipeline(TestPipelineBase):
                         ).addCallback(check_targets_last, target_types
                         )
 
-        targets = set(('rd/msg/body', 'rd/msg/email', 'rd/msg/flags',
-                       'rd/msg/rfc822', 'rd/msg/test/raw'))
+        targets = set(('rd.msg.body', 'rd.msg.email', 'rd.msg.flags',
+                       'rd.msg.rfc822', 'rd.msg.test.raw'))
         dm = get_doc_model()
         return self.process_doc(self.simple_exts
                 ).addCallback(check_targets, targets

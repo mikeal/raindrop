@@ -46,8 +46,8 @@ else:
 # the couch doc that holds the schema definition.
 # For now it is hard-coded.
 megaview_schemas_expandable_values = {
-    'rd/tags' : ['tags'],
-    'rd/identity/contacts' : ['contacts'],
+    'rd.tags' : ['tags'],
+    'rd.identity.contacts' : ['contacts'],
 }
 
 def encode_provider_id(proto_id):
@@ -261,12 +261,9 @@ class DocumentModel(object):
 
     @classmethod
     def quote_id(cls, doc_id):
-        # A '/' should be impossible now we base64 encode the string given
-        # by an extension - but it doesn't hurt.
-        # Note the '!' character seems to work fine with couch (ie, we use it
-        # unquoted when constructing views), so we allow that for no better
-        # reason than the logs etc are clearer...
-        return quote(doc_id, safe="!")
+        # Our IDs should now be formed purely from chars which are valid in 
+        # URLs.
+        return doc_id
 
     def open_view(self, docId='raindrop!content!all', viewId='megaview',
                   *args, **kwargs):
@@ -301,7 +298,7 @@ class DocumentModel(object):
         # only use the extension_id when items were provided (ie, its not
         # an 'exists' schema.)
         if si['items'] is None:
-            assert sch_id.endswith('/exists'), sch_id
+            assert sch_id.endswith('.exists'), sch_id
             ext_id = ''
         else:
             ext_id = si['ext_id']
@@ -318,7 +315,7 @@ class DocumentModel(object):
             if items is None:
                 # None presumably means an 'exists' schema ID - assert for
                 # now incase it helps detect confusion...
-                assert schema_id.endswith("/exists"), schema_id
+                assert schema_id.endswith(".exists"), schema_id
             elif not items:
                 logger.warning("Got an empty schema - ignoring!")
                 continue

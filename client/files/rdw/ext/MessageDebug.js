@@ -9,7 +9,7 @@ rd.applyExtension("rdw.Message", {
       //NOTE: the "this" in this function is the instance of rdw.Message.
 
       var msgBag = this.messageBag;
-      var id = msgBag['rd/msg/body'].rd_key;
+      var id = msgBag['rd.msg.body'].rd_key;
       var idName = id;
 
       //Create a node to hold the debug links

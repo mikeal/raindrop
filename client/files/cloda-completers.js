@@ -33,8 +33,8 @@ var TagCompleter = {
     console.log("Tag completer firing on", aText);
     Gloda.dbMessages.view("raindrop!content!all/megaview", {
       group: true,
-      startkey: ['rd/tags', 'tags']
-      endkey: ['rd/tags', 'tags', {}]
+      startkey: ['rd.tags', 'tags']
+      endkey: ['rd.tags', 'tags', {}]
       success: function(result) {
         var nodes = [];
         if (result.rows.length==0) {

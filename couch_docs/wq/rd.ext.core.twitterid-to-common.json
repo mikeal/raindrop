@@ -1,7 +1,7 @@
 {
   "schemas" : {
-    "rd/ext/workqueue" : {
-        "source_schema" : "rd/identity/twitter",
+    "rd.ext.workqueue" : {
+        "source_schema" : "rd.identity.twitter",
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "Emits identities and relationships for a twitter contact"
