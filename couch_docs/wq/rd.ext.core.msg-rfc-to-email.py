@@ -84,7 +84,7 @@ def sanitize_attach_name(name):
 
 def attach_from_msg(msg):
     ct = msg.get_content_type()
-    cs = msg.get_charset()
+    cs = msg.get_content_charset()
     if cs:
         ct += "; charset=" + cs
     return {'content_type': ct,

@@ -1,7 +1,5 @@
 from email.utils import mktime_tz, parsedate_tz
-# Although _splitparam() *seems* simple enough to clone here, the comments
-# in the email module implies it may later get much smarter...
-from email.message import _splitparam
+from email.message import Message
 
 def decode_body_part(docid, body_bytes, charset=None):
     # Convert a 'text/*' encoded byte string to *some* unicode object,
@@ -10,15 +8,13 @@ def decode_body_part(docid, body_bytes, charset=None):
     try:
         body = body_bytes.decode(charset or 'ascii')
     except UnicodeError, exc:
-        logger.warning("Failed to decode body in document %r from %r: %s",
-                       docid, charset, exc)
-        # no charset failed to decode as declared - try utf8
-        try:
-            body = body_bytes.decode('utf-8')
-        except UnicodeError, exc:
-            logger.warning("Failed to fallback decode body in document %r"
-                           " from utf8: %s", docid, exc)
-            body = body_bytes.decode('latin-1', 'ignore')
+        # No need to make lots of log noise for something beyond our
+        # control...
+        logger.debug("Failed to decode body in document %r from %r: %s",
+                     docid, charset, exc)
+        # no charset failed to decode as declared - just go straight to
+        # latin-1! (is 'ignore' needed here?)
+        body = body_bytes.decode('latin-1', 'ignore')
     return body
 
 
@@ -61,8 +57,8 @@ def handler(doc):
             try:
                 ret['timestamp'] = mktime_tz(parsedate_tz(dval))
             except (ValueError, TypeError), exc:
-                logger.warning('Failed to parse date %r in doc %r: %s',
-                               dval, doc['_id'], exc)
+                logger.debug('Failed to parse date %r in doc %r: %s',
+                             dval, doc['_id'], exc)
                 # later extensions will get upset if no attr exists
                 # XXX - is this still true?  We should fix those extensions!
                 ret['timestamp'] = 0
@@ -78,7 +74,11 @@ def handler(doc):
     parts = []
     docid = doc['_id']
     for info in infos:
-        ct, charset = _splitparam(info['content_type'])
+        # Use the email package to help parse the charset...
+        m = Message()
+        m['content-type'] = info['content_type']
+        charset = m.get_content_charset()
+        ct = m.get_content_type()
         if ct == 'text/plain':
             name = info['name']
             content = open_schema_attachment(doc, name)
