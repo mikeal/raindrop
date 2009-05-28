@@ -154,14 +154,12 @@ class Pipeline(object):
             qs = qs_by_schema.get(schema, [])
             num_processed = 0
             for wq in qs:
-                got = yield wq.process(id, rev)
+                got = yield wq.process([(id, rev)])
                 if got:
                     num_processed += len(got)
                     _ = yield self.doc_model.create_schema_items(got)
             logger.debug('reprocess of %r created %d docs', id, num_processed)
             # now let the normal queue processing do the rest...
-        # and run the normal queue to continue off...
-        _ = yield self.start()
 
     @defer.inlineCallbacks
     def reprocess(self):
@@ -197,8 +195,14 @@ class Pipeline(object):
             # if extensions depend on each other...
             for ext in self.get_extensions():
                 # fetch all items this extension says it depends on
-                key=['rd.core.content', 'schema_id', ext.source_schema]
-                result = yield dm.open_view(key=key,
+                if self.options.keys:
+                    # But only for the specified rd_keys
+                    keys=[['rd.core.content', 'key-schema_id', [k, ext.source_schema]]
+                          for k in self.options.keys]
+                else:
+                    # all rd_keys...
+                    keys=[['rd.core.content', 'schema_id', ext.source_schema]]
+                result = yield dm.open_view(keys=keys,
                                             reduce=False)
                 logger.info("reprocessing %s - %d docs", ext.id,
                             len(result['rows']))

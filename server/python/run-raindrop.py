@@ -4,6 +4,7 @@
 import sys
 import optparse
 import logging
+import json
 
 from twisted.internet import reactor, defer, task
 from twisted.python.failure import Failure
@@ -280,6 +281,10 @@ def main():
                       help="Specifies the schema ids to use for some "
                            "operations.")
 
+    parser.add_option("", "--key", action="append", dest='keys',
+                      help="Specifies the 'raindrop key' to use for some "
+                           "operations.")
+
     parser.add_option("", "--force", action="store_true",
                       help="Forces some operations which would otherwise not "
                            "be done.")
@@ -298,6 +303,23 @@ def main():
 
     # do this very early just to set the options
     get_conductor(options)
+
+    # patch up keys.
+    if options.keys:
+        def _fix_unicode(result):
+            if isinstance(result, list):
+                for i, v in enumerate(result):
+                    result[i] = _fix_unicode(result[i])
+            elif isinstance(result, unicode):
+                result = result.encode('utf-8')
+            return result
+        for i, val in enumerate(options.keys):
+            try:
+                # help windows - replace single quote with double...
+                val = val.replace("'", '"')
+                options.keys[i] = _fix_unicode(json.loads(val))
+            except ValueError, why:
+                parser.error("Invalid key value %r: %s" % (val, why))
 
     if args and args[0]=='help':
         if args[1:]:
