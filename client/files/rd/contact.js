@@ -345,19 +345,23 @@ dojo.mixin(rd.contact, {
         contactIds.push(contact.rd_key[1]);
       }
     }
-
-    //Load the identities.
-    this._loadIdtys(
-      contactIds,
-      dojo.hitch(this, function(contacts) {
-        this._listStatus = "done";
-        this._onload();
-      }),
-      dojo.hitch(this, function(err) {
-          this._error = err;
+    if(!contactIds.length) {
+      this._listStatus = "done";
+      this._onload();
+    } else {
+      //Load the identities.
+      this._loadIdtys(
+        contactIds,
+        dojo.hitch(this, function(contacts) {
+          this._listStatus = "done";
           this._onload();
-      })
-    );
+        }),
+        dojo.hitch(this, function(err) {
+            this._error = err;
+            this._onload();
+        })
+      );
+    }
   }
 });
 
