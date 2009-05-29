@@ -1,0 +1,43 @@
+.Extender {
+  width: 370px;
+  padding: 10px;
+  background-color: #AFAFAF;
+  -moz-border-radius: 10px;
+  border-radius: 10px;
+  font-size: small;
+}
+
+.Extender h1,
+.Extender h2,
+.Extender h3 {
+  font-weight: bold;
+  font-size: 100%;
+}
+
+.Extender .disabled {
+  color: gray;
+}
+
+.Extender .actions {
+  position: relative;
+}
+
+.Extender .actions .close {
+  position: absolute;
+  right: 0;
+}
+
+.Extender .panelContainer {
+  overflow: hidden;
+}
+
+.Extender .panels {
+  width: 4000px;
+  overflow: auto;
+}
+
+.Extender .panel {
+  display: block;
+  float: left;
+  width: 370px;
+}

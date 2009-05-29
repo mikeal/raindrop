@@ -105,11 +105,17 @@ dojo._listener.getDispatcher = function(){
       var link = dojo.create("link", {
         type: "text/css",
         rel: "stylesheet",
+        "data-rdstylename": modulePath,
         href: url
       });
       dojo.doc.getElementsByTagName("head")[0].appendChild(link);
     },
-  
+
+    removeStyle: function(/*String*/modulePath) {
+      //summary: removes the link tag that was associated with the modulePath.
+      dojo.query('[data-rdstylename="' + modulePath + '"]').orphan();
+    },
+
     onExtPublish: function() {
       //summary: handles rd.pub calls to extensions for the first time.
       //This function will unregister itself after loading the extension
@@ -263,6 +269,37 @@ dojo._listener.getDispatcher = function(){
     _ext_replace: function(propName, obj, oldValue, newValue) {
       //summary: Replaces the named property with the new value.
       obj[propName] = newValue;
+    },
+    
+    _extender: null,
+
+    showExtender: function() {
+      //summary: launches the extension tool.
+      if (!this._extender) {
+        rd.addStyle("rd.css.extender"); 
+
+        //Using funky require call syntax to avoid
+        //detection by build tools/loader so it is not
+        //loaded when the page loads but waits until the
+        //extender is shown.
+        dojo["require"]("rdw.Extender");
+        dojo.addOnLoad(dojo.hitch(this, function(){
+          var div = dojo.create("div", {
+            "class": "extender"
+          }, dojo.body());
+
+          this._extender = new rdw.Extender({}, div);
+        }));
+      }
+    },
+
+    hideExtender: function() {
+      //summary: hides the extension tool.
+      if(this._extender) {
+        rd.removeStyle("rd.css.extender");
+        this._extender.destroy();
+        this._extender = null;
+      }
     }
   });
 
@@ -297,7 +334,6 @@ dojo._listener.getDispatcher = function(){
       for (var i = 0, ext; ext = exts[i]; i++) {
         dojo["require"](ext);
       }
-      delete reqExts[resourceName];
     }
 
     //Do the normal dojo.require work.
@@ -305,6 +341,9 @@ dojo._listener.getDispatcher = function(){
     return ret;
   }
 })();
+
+//Subscribe to extend topic notification.
+rd.subscribe("rd-protocol-extend", rd, "showExtender");
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.

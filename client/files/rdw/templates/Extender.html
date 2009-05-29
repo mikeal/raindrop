@@ -1,0 +1,39 @@
+<div class="Extender" dojoAttachEvent="onclick: onClick">
+  <div class="actions">
+    <a dojoAttachPoint="backNode" href="#extender-back">&lt; Back</a>
+    <a dojoAttachPoint="forwardNode" href="#extender-forward">Forward &gt;</a>
+    <a class="close" href="#extender-close">Close</a>
+  </div>
+  <div class="panelContainer" dojoAttachPoint="panelContainerNode">
+    <div class="panels" dojoAttachPoint="panelsNode">
+      <div class="panel" dojoAttachPoint="panelNode">
+        <h1>How do you want to extend raindrop?</h1>
+  
+        <h2>Change the UI</h2>
+          <h3><a class="disabled" href="#extender-ui-css">Extend the CSS</a></h3>
+          <p>Use a tool like firebug to inspect the page then add your
+          style overrides in a custom style sheet.</p>
+    
+          <h3><a class="disabled" href="#extender-ui-extendWidget">Extend a Widget</a></h3>
+          <p>Inspect widgets on the page, select one and extend it. If you Extend the Widget Data, then you can extend a widget to display the new data.</p>
+    
+          <h3><a class="disabled" href="#extender-ui-data">Extend the Widget Data</a></h3>
+          <p>Add or modify the data objects used by widgets. You can add new data properties, then Extend a Widget to display the new data.</p>
+    
+          <h3><a class="disabled" href="#extender-ui-createWidget">Create A Widget</a></h3>
+          <p>Create a widget and specify where it should show up on the page.</p>
+    
+          <h3><a href="#extender-ui-viewAll">View all extensions</a></h3>
+          <p>Show all the extensions used by the UI. Modify, remove or copy extensions here.</p>
+        </ul>
+    
+        <h2>Change how data is stored</h2>
+          <h3><a class="disabled" href="#extender-be-create">Create extension</a></h3>
+          <p>Create a new extension that runs in the background as new data is stored in raindrop</p>
+    
+          <h3><a class="disabled" href="#extender-be-viewAll">View all extensions</a></h3>
+          <p>Show all data storage extensions. Modify, remove or copy extensions here.</p>
+      </div>
+    </div>
+  </div>
+</div>

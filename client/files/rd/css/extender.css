@@ -1,0 +1,9 @@
+html body {
+  margin-left: 400px !important;
+}
+
+.Extender {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+}
