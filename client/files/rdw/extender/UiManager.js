@@ -1,8 +1,7 @@
 dojo.provide("rdw.extender.UiManager");
 
-dojo.require("dijit.form.Textarea");
-
 dojo.require("rdw._Base");
+dojo.require("rdw.extender.Editor");
 
 rd.addStyle("rdw.extender.css.UiManager");
 
@@ -10,8 +9,6 @@ dojo.declare("rdw.extender.UiManager", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.extender.templates", "UiManager.html"),
 
   extTemplate: '<li><a href="#uimanager-ext-${source}">${source}</a> extends: ${targets}</li>',
-
-  widgetsInTemplate: true,
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
@@ -62,13 +59,9 @@ dojo.declare("rdw.extender.UiManager", [rdw._Base], {
         //Get the module name and get the text for the module.
         var moduleName = linkId.split("-")[2];
         
-        //Some hackery to get .js path from Dojo code.
-        //TODO: does not work with xdomain loaded modules.
-        var parts = moduleName.split(".");
-        var path = dojo.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
-        var text = dojo._getText(path + "?nocache=" + ((new Date()).getTime()));
-        
-        this.textArea.attr("value", text);
+        this.extender.add(new rdw.extender.Editor({
+          moduleName: moduleName
+        }));
       }
       dojo.stopEvent(evt);
     }

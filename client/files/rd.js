@@ -272,12 +272,11 @@ dojo._listener.getDispatcher = function(){
     },
     
     _extender: null,
+    _isExtenderVisible: false,
 
     showExtender: function() {
       //summary: launches the extension tool.
       if (!this._extender) {
-        rd.addStyle("rd.css.extender"); 
-
         //Using funky require call syntax to avoid
         //detection by build tools/loader so it is not
         //loaded when the page loads but waits until the
@@ -291,14 +290,24 @@ dojo._listener.getDispatcher = function(){
           this._extender = new rdw.Extender({}, div);
         }));
       }
+
+      if (!this._isExtenderVisible) {
+        rd.addStyle("rd.css.extender");
+        if (this._extender) {
+          this._extender.domNode.style.display = "block";
+        }
+        this._isExtenderVisible = true;
+      }
     },
 
     hideExtender: function() {
       //summary: hides the extension tool.
-      if(this._extender) {
+      if (this._isExtenderVisible) {
         rd.removeStyle("rd.css.extender");
-        this._extender.destroy();
-        this._extender = null;
+        if (this._extender) {
+          this._extender.domNode.style.display = "none";
+        }
+        this._isExtenderVisible = false;
       }
     }
   });

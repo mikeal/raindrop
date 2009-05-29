@@ -19,6 +19,9 @@ dojo.declare("rdw.Extender", [rdw._Base], {
     
     this.backNode.style.visibility = "hidden";
     this.forwardNode.style.visibility = "hidden";
+
+    //Make sure we are scrolled to the right position.
+    this.panelContainerNode.scrollLeft = 0;
   },
 
   destroy: function() {
@@ -34,6 +37,17 @@ dojo.declare("rdw.Extender", [rdw._Base], {
 
   add: function(/*Object*/widget) {
     //summary: adds a widget to the history and trims any forward history.
+    
+    //Store the extender on the widget, so widget can send commands to it.
+    widget.extender = this;
+
+    //Add the widget to the DOM
+    var panel = dojo.create("div", {
+      "class": "panel"
+    }, this.panelsNode);
+
+    panel.appendChild(widget.domNode);
+
     this.history[this.historyIndex + 1] = widget;
 
     //Trim forward history.
@@ -97,11 +111,7 @@ dojo.declare("rdw.Extender", [rdw._Base], {
         //Show all UI extensions
         dojo["require"]("rdw.extender.UiManager");
         dojo.addOnLoad(dojo.hitch(this, function(){
-          var panel = dojo.create("div", {
-            "class": "panel",
-            innerHTML: '<div></div>'
-          }, this.panelsNode);
-          this.add(new rdw.extender.UiManager({}, panel.firstChild));
+          this.add(new rdw.extender.UiManager({}));
         }));
       }
       dojo.stopEvent(evt);
