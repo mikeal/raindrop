@@ -8,7 +8,7 @@ def handler(doc):
     matches = re.findall("http\:\/\/www.youtube.com\/watch\?v=(\w+)", body)
     if len(matches) > 0:
         for videoId in matches:
-            logger.info("found the youtube vidoe http://www.youtube.com/watch?v=%s ", videoId)
+            logger.debug("found the youtube video http://www.youtube.com/watch?v=%s ", videoId)
             youTubeDataURL = "http://gdata.youtube.com/feeds/api/videos/%s" % videoId
             try:
                 opener = urllib2.build_opener()
@@ -27,6 +27,7 @@ def handler(doc):
             ytp = YouTubeParser(youTubeDataXML)
             ytp.parse()
             ret = ytp.get_return()
+            ret["video_id"] = videoId
             emit_schema('rd.msg.body.youtubed', ret)
 
 
@@ -49,7 +50,13 @@ class YouTubeParser:
         return self.ret
 
     def start_element(self, name, attrs):
-        self.ret[name] = attrs
+        if self.ret.has_key(name):
+            if type(self.ret[name]) == list:
+                self.ret[name].append(attrs)
+            else:
+                self.ret[name] = [self.ret[name], attrs]
+        else:
+            self.ret[name] = attrs
 
     def end_element(self, name):
         if self._buff != "":
