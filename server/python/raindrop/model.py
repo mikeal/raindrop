@@ -30,6 +30,9 @@ DBs = {}
 class DocumentSaveError(Exception):
     pass
 
+class DocumentOpenError(Exception):
+    pass
+
 # XXXX - this relies on couch giving us some kind of 'sequence id'.  For
 # now we use a timestamp, but that obviously sucks in many scenarios.
 if sys.platform == 'win32':
@@ -257,13 +260,20 @@ class DocumentModel(object):
     """
     def __init__(self, db):
         self.db = db
+        self._new_item_listeners = []
         self._important_views = None # views we update periodically
+
+    def listen_new_items(self, listener):
+        assert listener not in self._new_item_listeners # already listening?
+        self._new_item_listeners.append(listener)
+
+    def unlisten_new_items(self, listener):
+        self._new_item_listeners.remove(listener)
 
     @classmethod
     def quote_id(cls, doc_id):
-        # Our IDs should now be formed purely from chars which are valid in 
-        # URLs.
-        return doc_id
+        # couch doesn't mind '!' or '=' and makes reading logs etc easier
+        return quote(doc_id, safe="!=")
 
     def open_view(self, docId='raindrop!content!all', viewId='megaview',
                   *args, **kwargs):
@@ -271,23 +281,26 @@ class DocumentModel(object):
                      docId, viewId, args, kwargs)
         return self.db.openView(docId, viewId, *args, **kwargs)
 
-    def open_document_by_id(self, doc_id, **kw):
-        """Open a document by the already constructed docid"""
-        logger.debug("attempting to open document %r", doc_id)
-        return self.db.openDoc(self.quote_id(doc_id), **kw
-                    ).addBoth(self._cb_doc_opened)
-
-    def _cb_doc_opened(self, result):
-        if isinstance(result, Failure):
-            result.trap(twisted.web.error.Error)
-            if result.value.status != '404': # not found
-                result.raiseException()
-            result = None # indicate no doc exists.
-            logger.debug("no document of that ID exists")
-        else:
-            logger.debug("opened document %(_id)r at revision %(_rev)s",
-                         result)
-        return result
+    @defer.inlineCallbacks
+    def open_documents_by_id(self, doc_ids):
+        """Open documents by the already constructed docid"""
+        logger.debug("attempting to open documents %r", doc_ids)
+        results = yield self.db.listDoc(keys=doc_ids, include_docs=True)
+        rows = results['rows']
+        assert len(rows)==len(doc_ids)
+        ret = []
+        for row in rows:
+            if 'error' in row:
+                if row['error']=='missing':
+                    logger.debug("document %r does not exist", row['key'])
+                    ret.append(None)
+                else:
+                    raise DocumentOpenError(row['error'])
+            else:
+                logger.debug("opened document %(_id)r at revision %(_rev)s",
+                             row['doc'])
+                ret.append(row['doc'])
+        defer.returnValue(ret)
 
     def get_doc_id_for_schema_item(self, si):
         """Returns an *unquoted* version of the doc ID"""
@@ -417,27 +430,41 @@ class DocumentModel(object):
         logger.debug("saved %d documents", len(result))
         ds = []
         assert len(result)==len(attachments) and len(result)==len(item_defs)
+        new_items = []
         for dinfo, dattach, item_def in zip(result, attachments, item_defs):
             if 'error' in dinfo:
                 # If no 'schema_id' was specified then this is OK - the
                 # extension is just noting the ID exists and it already does.
-                if item_def and dinfo.get('error')=='conflict' and \
-                   item_def['items'] is None:
+                if dinfo.get('error')=='conflict' and item_def['items'] is None:
                     logger.debug('ignoring conflict error when asserting %r exists',
                                  dinfo['id'])
                 else:
                     # presumably an unexpected error :(
                     raise DocumentSaveError(dinfo)
+            else:
+                # Give the ID and revision info back incase they need to
+                # know...
+                item_def['_id'] = dinfo['id']
+                # XXX - is this correct when there are attachments?
+                item_def['_rev'] = dinfo['rev']
+                new_items.append(item_def)
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
 
-        def return_orig(ignored_result):
+        # If anyone is listening for new items, call them now.
+        for listener in self._new_item_listeners:
+            ds.append(defer.maybeDeferred(listener, new_items))
+
+        def return_orig(dl_results):
+            for ok, real_ret in dl_results:
+                if not ok:
+                    real_ret.raiseException()
             return result
         # XXX - the result set will *not* have the correct _rev if there are
         # attachments :(
         return defer.DeferredList(ds
-                    ).addCallback(return_orig)
+                    ).addBoth(return_orig)
 
     def _cb_save_attachments(self, saved_doc, attachments):
         if not attachments:

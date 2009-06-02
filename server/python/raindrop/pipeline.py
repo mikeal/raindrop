@@ -67,6 +67,8 @@ class Pipeline(object):
     def __init__(self, doc_model, options):
         self.doc_model = doc_model
         self.options = options
+        self.runner = None
+        self.sync_processor = None
 
     @defer.inlineCallbacks
     def initialize(self):
@@ -104,6 +106,38 @@ class Pipeline(object):
             ret.append(inst)
         return ret
 
+    def prepare_sync_processor(self):
+        assert self.runner is None, "already doing an async process"
+        assert self.sync_processor is None, "already doing a sync process"
+        qs = self.get_work_queues()
+        self.sync_processor = NewItemProcessor(self.doc_model, qs)
+        self.doc_model.listen_new_items(self.sync_processor.on_new_items)
+
+    def finish_sync_processor(self):
+        self.doc_model.unlisten_new_items(self.sync_processor.on_new_items)
+        ret = self.sync_processor.total
+        self.sync_processor = None
+        return ret
+
+    @defer.inlineCallbacks
+    def start(self):
+        state = {'total': 0}
+        def on_new_items(new_items):
+            state['total'] += len(new_items)
+
+        assert self.runner is None, "already doing an async process"
+        assert self.sync_processor is None, "already doing a sync process"
+        runner = QueueRunner(self.doc_model, self.get_work_queues(),
+                             self.options)
+        self.runner = runner
+        self.doc_model.listen_new_items(on_new_items)
+        try:
+            _ = yield runner.run()
+        finally:
+            self.runner = None
+            self.doc_model.unlisten_new_items(on_new_items)
+        defer.returnValue(state['total'])
+
     @defer.inlineCallbacks
     def unprocess(self):
         # Just nuke all items that have a 'rd_source' specified...
@@ -132,35 +166,6 @@ class Pipeline(object):
         logger.info("rebuilding all views...")
         _ = yield self.doc_model._update_important_views()
 
-    def start(self):
-        runner = QueueRunner(self.doc_model, self.get_work_queues(),
-                             self.options)
-        return runner.run()
-
-    @defer.inlineCallbacks
-    def _reprocess_items(self, items):
-        # build a map of extensions keyed by src schema.
-        qs_by_schema = {}
-        for q in self.get_work_queues():
-            q.options['force'] = True
-            qs_by_schema.setdefault(q.ext.source_schema, []).append(q)
-        for id, rev in items:
-            try:
-                rt, rdkey, ext, schema = split_rc_docid(id)
-            except ValueError, why:
-                logger.warning("reprocess has bad docid %r: %s", id, why)
-                continue
-
-            qs = qs_by_schema.get(schema, [])
-            num_processed = 0
-            for wq in qs:
-                got = yield wq.process([(id, rev)])
-                if got:
-                    num_processed += len(got)
-                    _ = yield self.doc_model.create_schema_items(got)
-            logger.debug('reprocess of %r created %d docs', id, num_processed)
-            # now let the normal queue processing do the rest...
-
     @defer.inlineCallbacks
     def reprocess(self):
         # We can't just reset all work-queues as there will be a race
@@ -182,7 +187,7 @@ class Pipeline(object):
                     logger.info("processed %d documents...", i)
                 yield id, rev
 
-        if not self.options.exts:
+        if not self.options.exts and not self.options.keys:
             # fetch all items with a null 'rd_source'
             result = yield dm.open_view(
                             key=['rd.core.content', 'source', None],
@@ -190,6 +195,21 @@ class Pipeline(object):
             logger.info("reprocess found %d source documents",
                         len(result['rows']))
             _ = yield self._reprocess_items(gen_em(result))
+        elif not self.options.exts and self.options.keys:
+            # no extensions, but a key - find the 'source' for this key
+            # then walk it though all extensions...
+            keys = [['rd.core.content', 'key-source', [k, None]]
+                    for k in self.options.keys]
+            result = yield dm.open_view(keys=keys, reduce=False)
+            qs = self.get_work_queues()
+            for q in qs:
+                q.options['force'] = True
+            chugger = NewItemProcessor(self.doc_model, qs)
+            for row in result['rows']:
+                val = row['value']
+                chugger._add_new_src(row['id'], val['_rev'], val['rd_schema_id'])
+            num = yield chugger._process_all()
+            logger.info("reprocess made %d new docs", num)
         else:
             # do each specified extension one at a time to avoid the races
             # if extensions depend on each other...
@@ -229,6 +249,63 @@ class Pipeline(object):
         _ = yield self._reprocess_items(gen_em())
 
 
+def list_popping_gen(lst):
+    while lst:
+        item = lst.pop(0)
+        yield item
+
+
+# Used to synchronously process items as they are created.  In theory, this
+# means the pipe-lines are automatically up-to-date at the expense of speed
+# adding items.
+class NewItemProcessor(object):
+    def __init__(self, doc_model, work_queues):
+        # build a map of extensions keyed by src schema.
+        self.doc_model = doc_model
+        self.qs_by_schema = {}
+        for q in work_queues:
+            self.qs_by_schema.setdefault(q.ext.source_schema, []).append(q)
+        self.total = 0
+
+    @defer.inlineCallbacks
+    def on_new_items(self, items):
+        logger.debug("on_new_items with %d new items", len(items))
+
+        todo_by_schema = {}
+        for item in items:
+            src = item['_id'], item['_rev']
+            src_schema = item['schema_id']
+            todo_by_schema.setdefault(src_schema, []).append(src)
+
+        # Pick all schemas in any order, then ask the extension to process
+        # them in a batch, each time
+        num = 0
+        while todo_by_schema:
+            sch_id, sch_items = todo_by_schema.popitem()
+            qs = self.qs_by_schema.get(sch_id)
+            if qs is None:
+                logger.debug("No extension processes schema %r", sch_id)
+                continue
+            logger.debug('schema %r has %d queues, %d items', sch_id,
+                         len(qs), len(sch_items))
+            for q in qs:
+                ext_items = sch_items[:]
+                gen = list_popping_gen(ext_items)
+                while ext_items:
+                    new_items = yield q.process(gen)
+                    # XXX - this is recursive!  It would be possible to avoid this
+                    # recursion, but the cost would be letting things still get behind...
+                    # the doc_model will again notify us of the new items...
+                    if new_items:
+                        _ = yield self.doc_model.create_schema_items(new_items)
+                        num += len(new_items)
+
+        self.total += num
+        logger.debug("processing %d new items created %d documents",
+                     len(items), num)
+
+# Runs all of the 'work queues', restarting them as necessary and detecting
+# when all are complete.
 class QueueRunner(object):
     def __init__(self, dm, qs, options):
         self.doc_model = dm
@@ -242,7 +319,7 @@ class QueueRunner(object):
     def _start_q(self, q, si, def_done):
         assert not q.running, q
         q.running = True
-        process_work_queue(self.doc_model, q, si
+        q.process_queue(si
                 ).addBoth(self._q_done, q, si, def_done
                 )
 
@@ -313,7 +390,7 @@ class QueueRunner(object):
     def run(self):
         dm = self.doc_model
         result = yield defer.DeferredList([
-                    prepare_work_queue(dm, q)
+                    self.prepare_work_queue(q)
                     for q in self.queues])
 
         state_infos = self.state_infos = [r[1] for r in result]
@@ -326,7 +403,37 @@ class QueueRunner(object):
         self.dc_status.cancel()
         # update the views now...
         _ = yield self.doc_model._update_important_views()
-    
+
+    @defer.inlineCallbacks
+    def prepare_work_queue(self, wq):
+        # first open our 'state' schema
+        rd_key = ['ext', wq.ext.id] # same rd used to save the extension source etc
+        key = ['rd.core.content', 'key-schema_id', [rd_key, 'rd.core.workqueue-state']]
+        result = yield self.doc_model.open_view(key=key, reduce=False, include_docs=True)
+        rows = result['rows']
+        assert len(rows) in (0,1), result
+        state_info = {'rd_key' : rd_key,
+                      # We set rd_source to the _id/_rev of the extension doc
+                      # itself - that way 'unprocess' etc all see these as
+                      # 'derived'...
+                      'rd_source': [wq.ext.doc['_id'], wq.ext.doc['_rev']],
+                      # and similarly, say it was created by the extension itself.
+                      'ext_id': wq.ext.id,
+                      'schema_id': 'rd.core.workqueue-state',
+                      }
+        if len(rows) and 'doc' in rows[0]:
+            doc = rows[0]['doc']
+            state_info['_id'] = doc['_id']
+            state_info['_rev'] = doc['_rev']
+            state_info['items'] = {'seq' : doc.get('seq', 0)}
+        else:
+            state_info['items'] = {'seq': 0}
+        #if force:
+        #    state_info['items']['seq'] = 0
+        state_info['last_saved_seq'] = state_info['items']['seq']
+        defer.returnValue(state_info)
+
+
 
 class MessageTransformerWQ(object):
     """A queue which uses extensions to create new schema instances for
@@ -400,12 +507,12 @@ class MessageTransformerWQ(object):
     def process(self, sources):
         ret = []
         dm = self.doc_model
-        cvtr = self.ext
+        ext_id = self.ext.id
         force = self.options.get('force')
         for src_id, src_rev in sources:
             # We need to find *all* items previously written by this extension
             # so a 'reprocess' doesn't cause conflicts.
-            key = ['rd.core.content', 'ext_id-source', [cvtr.id, src_id]]
+            key = ['rd.core.content', 'ext_id-source', [ext_id, src_id]]
             result = yield dm.open_view(key=key, reduce=False)
             rows = result['rows']
             if rows:
@@ -417,6 +524,7 @@ class MessageTransformerWQ(object):
             else:
                 dirty = True
             if not dirty and not force:
+                logger.debug("document %r is up-to-date", src_id)
                 continue # try the next one...
             to_del = []
             for row in result['rows']:
@@ -430,7 +538,7 @@ class MessageTransformerWQ(object):
                 _ = yield dm.db.updateDocuments(to_del)
 
             # Get the source-doc and process it.
-            src_doc = yield dm.open_document_by_id(src_id)
+            src_doc = (yield dm.open_documents_by_id([src_id]))[0]
             # Although we got this doc id directly from the _all_docs_by_seq view,
             # it is quite possible that the doc was deleted since we read that
             # view.  It could even have been updated - so if its not the exact
@@ -442,13 +550,13 @@ class MessageTransformerWQ(object):
             # Now process it
             new_items = []
             func = self._get_ext_env(new_items, src_doc)
-            logger.debug("calling %r with doc %r, rev %s", self.ext,
+            logger.debug("calling %r with doc %r, rev %s", ext_id,
                          src_doc['_id'], src_doc['_rev'])
 
             # Our extensions are 'blocking', so use a thread...
             _ = yield threads.deferToThread(func, src_doc
                         ).addBoth(self._cb_converted_or_not, src_doc, new_items)
-            logger.debug("extension %r generated %d new schemas", self.ext, len(new_items))
+            logger.debug("extension %r generated %d new schemas", ext_id, len(new_items))
             # If extensions only created schemas for the same bit of content,
             # then we are safe to defer the writing of these docs...
             # (In theory, if they wrote a different rd_key, they must have done
@@ -503,6 +611,86 @@ class MessageTransformerWQ(object):
                 # confused?
                 logger.warn("extension %r returned value %r which is ignored",
                             self.ext, result)
+
+    @defer.inlineCallbacks
+    def process_queue(self, state_info, num_to_process=5000):
+        """processes a number of items in a work-queue.
+        """
+        doc_model = self.doc_model
+        state_doc = state_info['items']
+        logger.debug("Work queue %r starting with sequence ID %d",
+                     self.get_queue_name(), state_doc['seq'])
+
+        logger.debug('opening by_seq view for work queue...')
+
+        start_seq = state_doc['seq']
+        result = yield doc_model.db.listDocsBySeq(limit=num_to_process,
+                                               startkey=state_doc['seq'])
+        rows = result['rows']
+        logger.debug('work queue has %d items to check.', len(rows))
+        # no rows == we are at the end.
+        if not rows:
+            defer.returnValue(True)
+
+        src_gen = self.gen_queue_sources(rows, state_doc)
+        num_processed = 0
+        # process until we run out.
+        while True:
+            got = yield self.process(src_gen)
+            if not got:
+                break
+            num_processed += len(got)
+            _ = yield doc_model.create_schema_items(got)
+
+        logger.debug("finished processing %r to %r - %d processed",
+                     self.get_queue_name(), state_doc['seq'], num_processed)
+
+        # We can chew 5000 'nothing to do' docs quickly next time...
+        last_saved = state_info['last_saved_seq']
+        if num_processed or (state_doc['seq']-last_saved) > 5000:
+            logger.debug("flushing state doc at end of run...")
+            try:
+                del state_info['last_saved_seq']
+            except KeyError:
+                pass
+
+            docs = yield doc_model.create_schema_items([state_info])
+            state_info['_rev'] = docs[0]['rev']
+            state_info['last_saved_seq'] = state_doc['seq']
+        else:
+            logger.debug("no need to flush state doc")
+        defer.returnValue(False)
+
+    def gen_queue_sources(self, rows, state_doc):
+        mutter = lambda *args: None # might be useful one day for debugging...
+        # Find the next row this queue can use.
+        while rows and not self.stopping:
+            row = rows.pop(0)
+            # Update the state-doc now (it's not saved until we get to the end tho..)
+            state_doc['seq'] = row['key']
+            if 'error' in row:
+                # This is usually a simple 'not found' error; it doesn't
+                # mean an 'error record'
+                mutter('skipping document %(key)s - %(error)s', row)
+                continue
+            if 'deleted' in row['value']:
+                mutter('skipping document %s - deleted', row['key'])
+                continue
+            src_id = row['id']
+            src_rev = row['value']['rev']
+    
+            try:
+                rt, rdkey, ext, schema = split_rc_docid(src_id)
+            except ValueError, why:
+                mutter('skipping document %r: %s', src_id, why)
+                continue
+    
+            if schema != self.ext.source_schema:
+                mutter("skipping document %r - has schema %r but we want %r",
+                       src_id, schema, self.ext.source_schema)
+                continue
+            # finally we have one!
+            yield src_id, src_rev
 
 
 # NOTE: called from a background thread by extensions, so we can block :)
@@ -610,111 +798,4 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
             }
 
 
-@defer.inlineCallbacks
-def prepare_work_queue(doc_model, wq, force=False):
-    # first open our 'state' schema
-    rd_key = ['ext', wq.ext.id] # same rd used to save the extension source etc
-    key = ['rd.core.content', 'key-schema_id', [rd_key, 'rd.core.workqueue-state']]
-    result = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
-    rows = result['rows']
-    assert len(rows) in (0,1), result
-    state_info = {'rd_key' : rd_key,
-                  # We set rd_source to the _id/_rev of the extension doc
-                  # itself - that way 'unprocess' etc all see these as
-                  # 'derived'...
-                  'rd_source': [wq.ext.doc['_id'], wq.ext.doc['_rev']],
-                  # and similarly, say it was created by the extension itself.
-                  'ext_id': wq.ext.id,
-                  'schema_id': 'rd.core.workqueue-state',
-                  }
-    if len(rows) and 'doc' in rows[0]:
-        doc = rows[0]['doc']
-        state_info['_id'] = doc['_id']
-        state_info['_rev'] = doc['_rev']
-        state_info['items'] = {'seq' : doc.get('seq', 0)}
-    else:
-        state_info['items'] = {'seq': 0}
-    if force:
-        state_info['items']['seq'] = 0
-    state_info['last_saved_seq'] = state_info['items']['seq']
-    defer.returnValue(state_info)
 
-
-def gen_queue_sources(rows, wq, state_doc):
-    # Find the next row this queue can use.
-    while rows and not wq.stopping:
-        row = rows.pop(0)
-        # Update the state-doc now (it's not saved until we get to the end tho..)
-        state_doc['seq'] = row['key']
-        if 'error' in row:
-            # This is usually a simple 'not found' error; it doesn't
-            # mean an 'error record'
-            logger.debug('skipping document %(key)s - %(error)s', row)
-            continue
-        if 'deleted' in row['value']:
-            logger.debug('skipping document %s - deleted', row['key'])
-            continue
-        src_id = row['id']
-        src_rev = row['value']['rev']
-
-        try:
-            rt, rdkey, ext, schema = split_rc_docid(src_id)
-        except ValueError, why:
-            logger.debug('skipping document %r: %s', src_id, why)
-            continue
-
-        if schema != wq.ext.source_schema:
-            logger.debug("skipping document %r - has schema %r but we want %r",
-                         src_id, schema, wq.ext.source_schema)
-            continue
-        # finally we have one!
-        yield src_id, src_rev
-
-
-@defer.inlineCallbacks
-def process_work_queue(doc_model, wq, state_info, num_to_process=5000):
-    """processes a number of items in a work-queue.
-    """
-    state_doc = state_info['items']
-    logger.debug("Work queue %r starting with sequence ID %d",
-                 wq.get_queue_name(), state_doc['seq'])
-
-    logger.debug('opening by_seq view for work queue...')
-
-    start_seq = state_doc['seq']
-    result = yield doc_model.db.listDocsBySeq(limit=num_to_process,
-                                           startkey=state_doc['seq'])
-    rows = result['rows']
-    logger.debug('work queue has %d items to check.', len(rows))
-    # no rows == we are at the end.
-    if not rows:
-        defer.returnValue(True)
-
-    src_gen = gen_queue_sources(rows, wq, state_doc)
-    num_processed = 0
-    # process until we run out.
-    while True:
-        got = yield wq.process(src_gen)
-        if not got:
-            break
-        num_processed += len(got)
-        _ = yield doc_model.create_schema_items(got)
-
-    logger.debug("finished processing %r to %r - %d processed",
-                 wq.get_queue_name(), state_doc['seq'], num_processed)
-
-    # We can chew 5000 'nothing to do' docs quickly next time...
-    last_saved = state_info['last_saved_seq']
-    if num_processed or (state_doc['seq']-last_saved) > 5000:
-        logger.debug("flushing state doc at end of run...")
-        try:
-            del state_info['last_saved_seq']
-        except KeyError:
-            pass
-
-        docs = yield doc_model.create_schema_items([state_info])
-        state_info['_rev'] = docs[0]['rev']
-        state_info['last_saved_seq'] = state_doc['seq']
-    else:
-        logger.debug("no need to flush state doc")
-    defer.returnValue(False)

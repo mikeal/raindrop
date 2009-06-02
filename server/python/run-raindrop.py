@@ -23,11 +23,6 @@ class HelpFormatter(optparse.IndentedHelpFormatter):
         return description
 
 # decorators for our global functions:
-#  so they can insist they complete before the next command executes
-def asynch_command(f):
-    f.asynch = True
-    return f
-
 #  so they can consume the rest of the args
 def allargs_command(f):
     f.allargs = True
@@ -43,81 +38,72 @@ def install_accounts(result, parser, options):
     """Install accounts in the database from the config file"""
     return bootstrap.install_accounts(None)
 
+@defer.inlineCallbacks
 def show_info(result, parser, options):
     """Print a list of all extensions, loggers etc"""
+    dm = model.get_doc_model()
+    print "Database:"
+    info = yield dm.db.infoDB()
+    fmt = "  %(doc_count)d docs total, %(doc_del_count)d deleted, " \
+          "update seq at %(update_seq)d, %(disk_size)d bytes."
+    print fmt % info
+    results = yield dm.open_view(
+                startkey=["rd.core.content", "key"],
+                endkey=["rd.core.content", "key", {}],
+                group_level=2)
+    print "  %d unique raindrop keys" % results['rows'][0]['value']
+    print "  (the above seems wrong - what am I doing wrong??)"
+
+    print "Document counts by schema:"
+    results = yield dm.open_view(
+                startkey=["rd.core.content", "schema_id"],
+                endkey=["rd.core.content", "schema_id", {}],
+                group_level=3)
+    infos = []
+    for row in results['rows']:
+        sch_id = row['key'][-1]
+        infos.append((sch_id, row['value']))
+    for sch_id, count in sorted(infos):
+        print "  %s: %d" % (sch_id, count)
+    print
+
     print "Raindrop extensions:"
     exts = sorted(pipeline.extensions.items()) # sort by ID.
     for _, ext in exts:
-        print "%s: %s" % (ext.id, ext.doc['info'])
+        print "  %s: %s" % (ext.id, ext.doc['info'])
     print
     print "Loggers"
     # yuck - reach into impl - and hope all have been initialized by now
     # (they should have been as we loaded the extensions above)
     for name in logging.Logger.manager.loggerDict:
-        print name
+        print " ", name
 
     
-# A helper function that arranges to continually perform a 'process' until
-# the passed deferred has fired.  Mainly used so we can 'process' at the same
-# time as 'sync-messages'
-def _process_until_deferred(defd, options):
-    state = {'fired': False,
-             'delayed_call': None}
-    def_done = defer.Deferred()
-
-    def do_start():
-        # can't use Force or it will just restart each time...
-        state['delayed_call'] = None
-        g_pipeline.start().addBoth(proc_done)
-
-    def defd_fired(result):
-        state['fired'] = True
-        dc = state['delayed_call']
-        if dc is not None:
-            # cancel the delayed call and call it now.
-            dc.cancel()
-            do_start()
-        if isinstance(result, Failure):
-            result.raiseException()
-
-    def proc_done(result):
-        if state['fired']:
-            print "Message pipeline has caught-up..."
-            def_done.callback(None)
-
-        dc = reactor.callLater(5, do_start)
-        state['delayed_call'] = dc
-
-    do_start()
-    defd.addCallback(defd_fired)
-    
-    return def_done
-    
-
-@asynch_command
+@defer.inlineCallbacks
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
-    ret = conductor.sync(None)
     if not options.no_process:
-        ret = _process_until_deferred(ret, options)
-    return ret
+        g_pipeline.prepare_sync_processor()
+    try:
+        _ = yield conductor.sync(None)
+    finally:
+        if not options.no_process:
+            num = g_pipeline.finish_sync_processor()
+            logger.info("generated %d documents", num)
 
-@asynch_command
 def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
-        print "Message pipeline has finished..."
+        print "Message pipeline has finished - created", result, "docs"
     return g_pipeline.start().addCallback(done)
 
-@asynch_command
 def reprocess(result, parser, options):
     """Reprocess all messages even if they are up to date."""
     def done(result):
         print "Message pipeline has finished..."
     return g_pipeline.reprocess().addCallback(done)
 
-@asynch_command
 def retry_errors(result, parser, options):
     """Reprocess all conversions which previously resulted in an error."""
     def done_errors(result):
@@ -200,7 +186,7 @@ def delete_docs(result, parser, options):
         return model.get_db().updateDocuments(docs)
 
     def _got_docs(result, dt):
-        to_del = [(row['id'], row['value']) for row in result['rows']]
+        to_del = [(row['id'], row['value']['_rev']) for row in result['rows']]
         logger.info("Deleting %d documents of type %r", len(to_del), dt)
         return to_del
 
@@ -297,6 +283,9 @@ def main():
     parser.add_option("", "--no-process", action="store_true",
                       help="Don't process the work-queue.")
 
+    parser.add_option("", "--max-age", type="int",
+                      help="Maximum age of an item to fetch, in seconds.")
+
     options, args = parser.parse_args()
 
     _setup_logging(options)
@@ -343,7 +332,6 @@ def main():
 
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
-    asynch_tasks = []
     d = defer.Deferred()
     def mutter(whateva):
         print "Raindrops keep falling on my head..."
@@ -377,39 +365,25 @@ def main():
         except KeyError:
             parser.error("Invalid command: " + arg)
 
-        asynch = getattr(func, 'asynch', False)
-        if asynch:
-            asynch_tasks.append(func)
+        consumes_args = getattr(func, 'allargs', False)
+        if consumes_args:
+            d.addCallback(func, parser, options, args[i+1:])
+            break
         else:
-            consumes_args = getattr(func, 'allargs', False)
-            if consumes_args:
-                d.addCallback(func, parser, options, args[i+1:])
-                break
-            else:
-                d.addCallback(func, parser, options)
+            d.addCallback(func, parser, options)
 
     # and some final deferreds to control the process itself.
     def done(whateva):
         print "Apparently everything is finished - terminating."
         reactor.stop()
 
-    def start(whateva):
-        if not asynch_tasks:
-            print "Nothing left to do - terminating."
-            reactor.stop()
-            return
-        print "Startup complete - running tasks..."
-        dl = defer.DeferredList([f(None, parser, options) for f in asynch_tasks])
-        dl.addCallback(done)
-        return dl
-
     def error(*args, **kw):
         from twisted.python import log
         log.err(*args, **kw)
-        print "A startup task failed - not executing servers."
+        print "A command failed - terminating."
         reactor.stop()
 
-    d.addCallbacks(start, error)
+    d.addCallbacks(done, error)
 
     reactor.callWhenRunning(d.callback, None)
 

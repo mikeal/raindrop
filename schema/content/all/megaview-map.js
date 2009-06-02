@@ -23,6 +23,7 @@ function(doc) {
       src_val = null;
       
     emit(['rd.core.content', 'source', src_val], row_val);
+    emit(['rd.core.content', 'key-source', [doc.rd_key, src_val]], row_val);
     emit(['rd.core.content', 'ext_id-source', [doc.rd_ext_id, src_val]], row_val);
 
     if (doc.rd_schema_confidence)

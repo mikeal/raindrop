@@ -10,16 +10,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
+    use_chasing_pipeline = True
     simple_exts = [
             'rd.test.core.test_converter',
             'rd.ext.core.msg-rfc-to-email',
             'rd.ext.core.msg-email-to-body',
         ]
 
+
+    @defer.inlineCallbacks
     def process_doc(self, exts = None):
-        doc_model = get_doc_model()
         self.pipeline.options.exts = exts
-        return self.pipeline.start()
+        if self.use_chasing_pipeline:
+            doc_model = get_doc_model()
+            # populate our test DB with the raw message(s).
+            _ = yield self.deferMakeAnotherTestMessage(None)
+            # execute our pipeline
+            _ = self.pipeline.start()
+        else:
+            self.pipeline.prepare_sync_processor()
+            # make the test message - this should have done everything when
+            # it returns.
+            _ = yield self.deferMakeAnotherTestMessage(None)
+            self.pipeline.finish_sync_processor()
 
 
 class TestPipeline(TestPipelineBase):
@@ -71,6 +84,8 @@ class TestPipeline(TestPipelineBase):
                 ).addCallback(reprocess
                 )
 
+class TestPipelineSync(TestPipeline):
+    use_chasing_pipeline = False
 
 class TestErrors(TestPipelineBase):
     def test_error_stub(self):
@@ -132,3 +147,6 @@ class TestErrors(TestPipelineBase):
                 ).addCallback(lambda whateva: self.get_last_by_seq(3)
                 ).addCallback(check_last_doc
                 )
+
+class TestErrorsSync(TestErrors):
+    use_chasing_pipeline = False

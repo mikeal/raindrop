@@ -155,9 +155,3 @@ class TestCaseWithTestDB(TestCaseWithDB):
         test_proto.test_num_test_docs += 1
         sync._conductor = None # hack away the singleton...        
         return sync.get_conductor(FakeOptions()).sync()
-
-    def setUp(self):
-        # After setting up, populate our test DB with the raw messages.
-        return super(TestCaseWithTestDB, self).setUp(
-                ).addCallback(self.deferMakeAnotherTestMessage
-                )
