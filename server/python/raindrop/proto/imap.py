@@ -56,7 +56,6 @@ class ImapClient(imap4.IMAP4Client):
                  brat.SERVER, brat.BAD, brat.PASSWORD, brat.PERMANENT)
     return d
 
-
   def _doLogin(self, *args, **kwargs):
     return self.login(self.account.details['username'],
                       self.account.details['password'])
@@ -65,12 +64,20 @@ class ImapClient(imap4.IMAP4Client):
     self.account.reportStatus(brat.EVERYTHING, brat.GOOD)
     return self.list('', '*').addCallback(self._procList)
 
+  @defer.inlineCallbacks
   def _procList(self, result, *args, **kwargs):
-    return self.conductor.coop.coiterate(self.gen_folder_list(result))
-
-  def gen_folder_list(self, result):
+    # quickly scan through the folders list building the ones we will
+    # process and the order.
+    logger.info("examining folders")
+    done_recent = {}
+    # First zoom over the list looking for top-level folders.
+    has_inbox = False
+    todo_first = []
+    todo_second = []
+    all_folders = []
+    logger.info("looking for new and recent messages")
     for flags, delim, name in result:
-      logger.debug('Processing folder %s (flags=%s)', name, flags)
+      logger.debug('checking folder %s (flags=%s)', name, flags)
       if r"\Noselect" in flags:
         logger.debug("'%s' is unselectable - skipping", name)
         continue
@@ -83,10 +90,53 @@ class ImapClient(imap4.IMAP4Client):
         logger.info("'%s' appears special - skipping", name)
         continue
 
-      yield self.examine(name
+      all_folders.append(name)
+      if name.lower()=='inbox':
+        _ = yield self._doRecent([name])
+        continue
+      if delim in name:
+        todo_second.append(name)
+      else:
+        todo_first.append(name)
+
+    _ = yield self._doRecent(todo_first)
+    _ = yield self._doRecent(todo_second)
+
+    logger.info("processing all messages")
+    # Then finally every message in every folder.
+    for name in all_folders:
+      _ = yield self.examine(name
                  ).addCallback(self._examineFolder, name
                  ).addErrback(self._cantExamineFolder, name)
     logger.info('imap processing finished.')
+
+  @defer.inlineCallbacks
+  def _doRecent(self, folder_names):
+    with_recent = []
+    with_unseen = []
+    for name in folder_names:
+      info = yield self.select(name)
+      logger.debug("info for %r is %r", name, info)
+      nitems = yield self.search(imap4.Query(recent=True))
+      if nitems:
+        item = (is_special, len(nitems)), name, nitems
+        with_recent.append(item)
+
+      nitems = yield self.search(imap4.Query(unseen=True))
+      if nitems:
+        item = len(nitems), name, nitems
+        with_unseen.append(item)
+    # Now do all recent first, then unseen next
+    nper = 500
+    for process_list in (with_recent, with_unseen):
+      for _, name, items in sorted(process_list):
+        while items:
+          this_items = items[:500]
+          items = items[500:]
+          _ = yield self.select(name)
+          batch = imap4.MessageSet(this_items[0], this_items[-1])
+          results = yield self.fetchAll(batch, True)
+          _ = yield self._processFolderBatch(results, name)
 
   @defer.inlineCallbacks
   def _examineFolder(self, result, folder_path):
