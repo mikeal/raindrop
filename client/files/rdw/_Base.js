@@ -14,6 +14,16 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
     this.i18n = dojo.i18n.getLocalization("rdw", "i18n");
   },
 
+  getFragmentId: function(/*Event*/evt) {
+    //summary: pulls off the fragment ID of a link on the target element,
+    //if there is one.
+    var frag = evt.target.href;
+    if (frag) {
+      frag = frag.split("#")[1];
+    }
+    return frag;
+  },
+
   createdForTopic: function(/*String*/topic, /*Object*/topicData) {
     //summary: a widget can call this in postCreate if it created itself
     //as a result of a topic publish by another widget. This function will

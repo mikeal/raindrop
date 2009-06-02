@@ -105,11 +105,17 @@ dojo._listener.getDispatcher = function(){
       var link = dojo.create("link", {
         type: "text/css",
         rel: "stylesheet",
+        "data-rdstylename": modulePath,
         href: url
       });
       dojo.doc.getElementsByTagName("head")[0].appendChild(link);
     },
-  
+
+    removeStyle: function(/*String*/modulePath) {
+      //summary: removes the link tag that was associated with the modulePath.
+      dojo.query('[data-rdstylename="' + modulePath + '"]').orphan();
+    },
+
     onExtPublish: function() {
       //summary: handles rd.pub calls to extensions for the first time.
       //This function will unregister itself after loading the extension
@@ -175,7 +181,7 @@ dojo._listener.getDispatcher = function(){
     },
 
     //Types of extension wrapping. Similar to aspected oriented advice.
-    _extTypes: ["before", "after", "around", "replace"],
+    _extTypes: ["before", "after", "around", "replace", "add", "addToPrototype"],
 
     applyExtension: function(/*String|Object*/moduleName, /*Object*/extension) {
       //summary: modifies the module object by attaching an extension to it.
@@ -190,7 +196,7 @@ dojo._listener.getDispatcher = function(){
       //call the appropriate function to handle them.
       for (var i = 0, type; type = this._extTypes[i]; i++) {
         if(extension[type]) {
-          this._extApplyType(moduleName, module, extension[type], type, this["_ext_" + type]);
+          this._extApplyType(moduleName, module, extension[type], type);
         }
       }
     },
@@ -198,10 +204,9 @@ dojo._listener.getDispatcher = function(){
     _extApplyType: function(/*String*/moduleName,
                             /*Object*/module,
                             /*Object*/typeExtensions,
-                            /*String*/type,
-                            /*Function*/typeFunc) {
+                            /*String*/type) {
       //summary: loops through the typeExtensions, calling
-      //typeFunc to apply the type of extension.
+      //the right type of function to apply the type of extension.
       var proto = module.prototype;
       var empty = {};
       for (var prop in typeExtensions) {
@@ -209,18 +214,23 @@ dojo._listener.getDispatcher = function(){
           //Figure out if the extension applies to a module method
           //or a method on the module's prototype.
           var targetObj = module;
-          if(prop in proto) {
+          if (type == "addToPrototype") {
+            type = "add";
             targetObj = proto;
+          } else {
+            if (prop in proto) {
+              targetObj = proto;
+            }
           }
 
           //Inform developer if there is no match for the extension.
-          if (type != "replace" && !(prop in targetObj) || !dojo.isFunction(targetObj[prop])) {
+          if (type != "add" && (!(prop in targetObj) || !dojo.isFunction(targetObj[prop]))) {
             console.error("Trying to register a '" + type + "' extension on object "
                           + moduleName
                           + "for non-existent function property: " 
                           + prop);
           } else {
-            typeFunc(prop, targetObj, targetObj[prop], typeExtensions[prop]);
+            this["_ext_" + type](prop, targetObj, targetObj[prop], typeExtensions[prop]);
           }
         }
       }
@@ -263,6 +273,56 @@ dojo._listener.getDispatcher = function(){
     _ext_replace: function(propName, obj, oldValue, newValue) {
       //summary: Replaces the named property with the new value.
       obj[propName] = newValue;
+    },
+    
+    //Add does the same as replace but sounds better when you are
+    //really adding something new, and not replacing.
+    _ext_add: function(propName, obj, oldValue, newValue) {
+      //summary: Adds the named property with the new value.
+      if (propName in obj) {
+        console.warn("Warning: adding a method named " + propName + " to an object that already has that property");
+      }
+      obj[propName] = newValue;
+    },
+
+    _extender: null,
+    _isExtenderVisible: false,
+
+    showExtender: function() {
+      //summary: launches the extension tool.
+      if (!this._extender) {
+        //Using funky require call syntax to avoid
+        //detection by build tools/loader so it is not
+        //loaded when the page loads but waits until the
+        //extender is shown.
+        dojo["require"]("rdw.Extender");
+        dojo.addOnLoad(dojo.hitch(this, function(){
+          var div = dojo.create("div", {
+            "class": "extender"
+          }, dojo.body());
+
+          this._extender = new rdw.Extender({}, div);
+        }));
+      }
+
+      if (!this._isExtenderVisible) {
+        rd.addStyle("rd.css.extender");
+        if (this._extender) {
+          this._extender.domNode.style.display = "block";
+        }
+        this._isExtenderVisible = true;
+      }
+    },
+
+    hideExtender: function() {
+      //summary: hides the extension tool.
+      if (this._isExtenderVisible) {
+        rd.removeStyle("rd.css.extender");
+        if (this._extender) {
+          this._extender.domNode.style.display = "none";
+        }
+        this._isExtenderVisible = false;
+      }
     }
   });
 
@@ -297,7 +357,6 @@ dojo._listener.getDispatcher = function(){
       for (var i = 0, ext; ext = exts[i]; i++) {
         dojo["require"](ext);
       }
-      delete reqExts[resourceName];
     }
 
     //Do the normal dojo.require work.
@@ -305,6 +364,9 @@ dojo._listener.getDispatcher = function(){
     return ret;
   }
 })();
+
+//Subscribe to extend topic notification.
+rd.subscribe("rd-protocol-extend", rd, "showExtender");
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.

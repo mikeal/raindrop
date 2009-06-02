@@ -58,7 +58,7 @@ class Config(object):
         acct = self.accounts[account_name] = \
                     self.dictifySection(section_name, None, account_name)
         if 'id' not in acct:
-          acct['id'] = acct['username']
+          acct['id'] = account_name
 
     self.local_couch = self.couches['local']
     self.remote_couch = self.couches.get('remote') # may be None
