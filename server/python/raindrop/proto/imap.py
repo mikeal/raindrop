@@ -1,6 +1,8 @@
 from twisted.internet import protocol, ssl, defer, error
 from twisted.mail import imap4
 import logging
+from email.utils import mktime_tz, parsedate_tz
+import time
 
 from ..proc import base
 
@@ -21,6 +23,21 @@ class ImapClient(imap4.IMAP4Client):
   # XXX - should be managed by our caller once these 'protocols' become
   # regular extensions.
   rd_extension_id = 'proto.imap'
+
+  def _defaultHandler(self, tag, rest):
+    # XXX - worm around a bug related to MismatchedQuoting exceptions.
+    # Probably: http://twistedmatrix.com/trac/ticket/1443
+    # "[imap4] mismatched quoting spuriously raised" - raised early 2006 :(
+    try:
+      imap4.IMAP4Client._defaultHandler(self, tag, rest)
+    except imap4.MismatchedQuoting, exc:
+      # The rest seems necessary to 'gracefully' ignore the error.
+      cmd = self.tags[tag]
+      cmd.defer.errback(exc)
+      del self.tags[tag]
+      self.waiting = None
+      self._flushQueue()
+
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
     return self._doAuthenticate(
@@ -69,7 +86,7 @@ class ImapClient(imap4.IMAP4Client):
       yield self.examine(name
                  ).addCallback(self._examineFolder, name
                  ).addErrback(self._cantExamineFolder, name)
-    logger.debug('imap processing finished.')
+    logger.info('imap processing finished.')
 
   @defer.inlineCallbacks
   def _examineFolder(self, result, folder_path):
@@ -90,6 +107,16 @@ class ImapClient(imap4.IMAP4Client):
     msg_infos = {}
     # 'invert' the map so we have one keyed by UID
     for seq, msg_info in results.iteritems():
+      if self.conductor.options.max_age:
+        date_str = msg_info['ENVELOPE'][0]
+        try:
+          date = mktime_tz(parsedate_tz(date_str))
+        except (ValueError, TypeError):
+          continue # invalid date - skip it.
+        if date < time.time() - self.conductor.options.max_age:
+          logger.debug('skipping message - too old')
+          continue
+
       msg_id = msg_info['ENVELOPE'][-1]
       if msg_id in msg_infos:
         # This isn't a very useful check - we are only looking in a single
