@@ -3,6 +3,7 @@
 Fetch skype contacts and chats.
 '''
 import os
+import time
 import logging
 import tempfile
 from urllib import quote
@@ -81,6 +82,9 @@ class TwistySkype(object):
     def get_rdkey_for_chat(self, chat):
         return ('skype-chat', chat.Name.encode('utf8')) # hrmph!
 
+    def get_rdkey_for_chat_name(self, chat_name): # sob
+        return ('skype-chat', chat_name.encode('utf8')) # hrmph!
+
     def get_rdkey_for_msg(self, msg):
         return ('skype-msg',
                 "%s-%d" % (self.account.details['username'], msg._Id))
@@ -114,6 +118,7 @@ class TwistySkype(object):
                     ).addCallback(self._cb_got_seen_chats, chats
                     )
 
+    @defer.inlineCallbacks
     def _cb_got_seen_chats(self, result, chats):
         seen_chats = set([r['value']['rd_key'][1] for r in result['rows']])
         nnew = len(chats)-len(seen_chats)
@@ -121,18 +126,34 @@ class TwistySkype(object):
         # fetch all the messages (future optimization; all we need are the
         # IDs, but we suffer from creating an instance wrapper for each item.
         # Sadly the skype lib doesn't offer a clean way of doing this.)
-        def gen_chats(chats):
-            for chat in chats:
-                yield threads.deferToThread(chat._GetMessages
-                        ).addCallback(self._cb_got_messages, chat, seen_chats
-                        )
-            logger.info("skype has finished processing all chats")
+        for chat in chats:
+            # get the chat properties.
+            # make a 'deferred list' to fetch each property one at a time.
+            ds = [threads.deferToThread(chat._Property, p)
+                  for p, _ in CHAT_PROPS]
+            results = yield defer.DeferredList(ds)
+            logger.debug("got chat %r properties: %s", chat.Name, results)
+            props = {}
+            for (name, typ), (ok, val) in zip(CHAT_PROPS, results):
+                if ok:
+                    props['skype_'+name.lower()] = simple_convert(val, typ)
+            max_age = self.conductor.options.max_age
+            if max_age and props['skype_activity_timestamp'] < time.time() - max_age:
+                logger.debug("chat is too old - ignoring")
+                continue
 
-        return self.conductor.coop.coiterate(gen_chats(chats))
+            # 'Name' is a special case that doesn't come via a prop.  We use
+            # 'chatname' as that is the equiv attr on the messages themselves.
+            props['skype_chatname'] = chat.Name
 
-    def _cb_got_messages(self, messages, chat, seen_chats):
+            _ = yield threads.deferToThread(chat._GetMessages
+                    ).addCallback(self._cb_got_messages, props, seen_chats
+                    )
+        logger.info("skype has finished processing all chats")
+
+    def _cb_got_messages(self, messages, chat_props, seen_chats):
         logger.debug("chat '%s' has %d message(s) total; looking for new ones",
-                     chat.Name, len(messages))
+                     chat_props['skype_chatname'], len(messages))
 
         # Finally got all the messages for this chat.  Execute a view to
         # determine which we have seen (note that we obviously could just
@@ -142,12 +163,12 @@ class TwistySkype(object):
                  [self.get_rdkey_for_msg(m), 'rd.msg.skypemsg.raw']]
                  for m in messages]
         return self.doc_model.open_view(keys=keys, reduce=False
-                    ).addCallback(self._cb_got_seen, chat, messages, seen_chats,
+                    ).addCallback(self._cb_got_seen, chat_props, messages, seen_chats,
                     )
 
-    def _cb_got_seen(self, result, chat, messages, seen_chats):
+    def _cb_got_seen(self, result, chat_props, messages, seen_chats):
         msgs_by_id = dict((self.get_rdkey_for_msg(m)[1], m) for m in messages)
-        chatname = chat.Name
+        chatname = chat_props['skype_chatname']
         need_chat = chatname not in seen_chats
 
         seen_msgs = set([r['value']['rd_key'][1] for r in result['rows']])
@@ -163,19 +184,19 @@ class TwistySkype(object):
         logger.debug("we've already seen %d items from this chat",
                      len(seen_msgs))
         return self.conductor.coop.coiterate(
-                    self.gen_items(chat, remaining, msgs_by_id, need_chat))
+                    self.gen_items(chat_props, remaining, msgs_by_id, need_chat))
 
-    def gen_items(self, chat, todo, msgs_by_id, need_chat):
+    def gen_items(self, chat_props, todo, msgs_by_id, need_chat):
         tow = [] # documents to write.
         if need_chat:
             # we haven't seen the chat itself - do that.
-            logger.debug("Creating new skype chat %r", chat.Name)
-            # make a 'deferred list' to fetch each property one at a time.
-            ds = [threads.deferToThread(chat._Property, p)
-                  for p, _ in CHAT_PROPS]
-            yield defer.DeferredList(ds
-                        ).addCallback(self._cb_got_chat_props, chat, tow)
-            
+            logger.debug("Creating new skype chat %(skype_chatname)r", chat_props)
+            rdkey = self.get_rdkey_for_chat_name(chat_props['skype_chatname'])
+            tow.append({'rd_key' : rdkey,
+                        'ext_id': self.rd_extension_id,
+                        'schema_id': 'rd.msg.skypechat.raw',
+                        'items': chat_props})
+
         for msgid in todo:
             msg = msgs_by_id[msgid]
             # A new msg in this chat.
@@ -183,28 +204,12 @@ class TwistySkype(object):
             # make a 'deferred list' to fetch each property one at a time.
             ds = [threads.deferToThread(msg._Property, p) for p, _ in MSG_PROPS]
             yield defer.DeferredList(ds
-                        ).addCallback(self._cb_got_msg_props, chat, msg, tow)
+                        ).addCallback(self._cb_got_msg_props, chat_props, msg, tow)
 
         if tow:
             yield self.doc_model.create_schema_items(tow)
 
-        logger.debug("finished processing chat %r", chat.Name)
-
-    def _cb_got_chat_props(self, results, chat, pending):
-        logger.debug("got chat %r properties: %s", chat.Name, results)
-        doc ={}
-        for (name, typ), (ok, val) in zip(CHAT_PROPS, results):
-            if ok:
-                doc['skype_'+name.lower()] = simple_convert(val, typ)
-
-        # 'Name' is a special case that doesn't come via a prop.  We use
-        # 'chatname' as that is the equiv attr on the messages themselves.
-        doc['skype_chatname'] = chat.Name
-        rdkey = self.get_rdkey_for_chat(chat)
-        pending.append({'rd_key' : rdkey,
-                        'ext_id': self.rd_extension_id,
-                        'schema_id': 'rd.msg.skypechat.raw',
-                        'items': doc})
+        logger.debug("finished processing chat %(skype_chatname)r", chat_props)
 
     def _cb_got_msg_props(self, results, chat, msg, pending):
         logger.debug("got message properties for %s", msg._Id)
@@ -217,7 +222,7 @@ class TwistySkype(object):
         # needing to reopen the chat for each message in that chat...
         # XXX - this may bite us later - what happens when the chat subject
         # changes? :(  For now it offers serious speedups, so it goes in.
-        doc['skype_chat_friendlyname'] = chat.FriendlyName
+        doc['skype_chat_friendlyname'] = ['skype_friendlyname']
         # we include the skype username with the ID as they are unique per user.
         rdkey = self.get_rdkey_for_msg(msg)
         pending.append({'rd_key' : rdkey,
