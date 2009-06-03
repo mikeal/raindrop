@@ -122,7 +122,7 @@ class ImapClient(imap4.IMAP4Client):
         item = (is_special, len(nitems)), name, nitems
         with_recent.append(item)
 
-      nitems = yield self.search(imap4.Query(unseen=True))
+      nitems = yield self.search(imap4.Query(unseen=True),uid=True)
       if nitems:
         item = len(nitems), name, nitems
         with_unseen.append(item)
