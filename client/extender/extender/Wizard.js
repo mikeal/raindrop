@@ -12,6 +12,9 @@ dojo.declare("extender.Wizard", [rdw._Base], {
 
   //Holds index into the history for extener panels.
   historyIndex: 0,
+  
+  //Holds width of each panel, updated on window resizes.
+  panelWidth: 0,
 
   templatePath: dojo.moduleUrl("extender.templates", "Wizard.html"),
 
@@ -24,6 +27,11 @@ dojo.declare("extender.Wizard", [rdw._Base], {
 
     //Make sure we are scrolled to the right position.
     this.panelContainerNode.scrollLeft = 0;
+
+    //Listen for resizes to resize panels, and also
+    //do initial calculation.
+    this.connect(window, "onresize", "onResize");
+    this.onResize();
   },
 
   destroy: function() {
@@ -39,7 +47,18 @@ dojo.declare("extender.Wizard", [rdw._Base], {
 
   add: function(/*Object*/widget) {
     //summary: adds a widget to the history and trims any forward history.
-    
+
+    //Trim forward history.
+    if (this.history[this.historyIndex + 1]) {
+      var removed = this.history.splice(this.historyIndex + 1, (this.history.length - this.historyIndex + 2));
+      dojo.forEach(removed, function(widget) {
+        var panelNode = widget.domNode.parentNode;
+        widget.destroy();
+        //Get rid of panel container made by Wizard.
+        dojo.destroy(panelNode);
+      });
+    }
+
     //Store the extender on the widget, so widget can send commands to it.
     widget.extender = this;
 
@@ -48,17 +67,12 @@ dojo.declare("extender.Wizard", [rdw._Base], {
       "class": "panel"
     }, this.panelsNode);
 
-    panel.appendChild(widget.domNode);
+    //Width is dynamically set based on window resizes.
+    dojo.style(panel, "width", this.panelWidth);
 
+    panel.appendChild(widget.domNode);
     this.history[this.historyIndex + 1] = widget;
 
-    //Trim forward history.
-    if (this.history.length > this.historyIndex + 2) {
-      var removed = this.history.splice(this.historyIndex + 2, (this.history.length - this.historyIndex + 2));
-      dojo.forEach(removed, function(widget) {
-        widget.destroy();
-      });
-    }
     this.forward();
   },
 
@@ -66,6 +80,10 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     //summary: goes forward one step in the history.
     this.historyIndex += 1;
     var scrollAmount = dojo.marginBox(this.panelNode).w;
+
+    //Make sure both panels are visible.
+    dojo.style(this.history[this.historyIndex].domNode, "visibility", "visible");
+    dojo.style(this.history[this.historyIndex - 1].domNode, "visibility", "visible");
 
     dojox.fx.smoothScroll({
       win: this.panelContainerNode,
@@ -77,6 +95,9 @@ dojo.declare("extender.Wizard", [rdw._Base], {
           this.forwardNode.style.visibility = "hidden";
         }
         this.backNode.style.visibility = "visible";
+        
+        //Hide the other panels so they are not visible during a resize
+        this.updatePanelVisibility();
       })
     }).play();
   },
@@ -85,6 +106,10 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     //summary: goes back one step in the history.
     this.historyIndex -= 1;
     var scrollAmount = dojo.marginBox(this.panelNode).w;
+
+    //Make sure both panels are visible.
+    dojo.style(this.history[this.historyIndex].domNode, "visibility", "visible");
+    dojo.style(this.history[this.historyIndex + 1].domNode, "visibility", "visible");
 
     dojox.fx.smoothScroll({
       win: this.panelContainerNode,
@@ -96,6 +121,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
           this.backNode.style.visibility = "hidden";
         }
         this.forwardNode.style.visibility = "visible";
+        this.updatePanelVisibility();
       })
     }).play();
   },
@@ -117,6 +143,26 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         }));
       }
       dojo.stopEvent(evt);
+    }
+  },
+  
+  onResize: function() {
+    //summary: updates how wide each panel should be based
+    //on the panel container's viewable area. Need this for
+    //the scrolling animation to work nicely.
+    var width = dojo.marginBox(this.panelContainerNode).w;
+    this.panelWidth =  width + "px";
+    dojo.query(".panel", this.panelContainerNode).style("width", this.panelWidth);
+
+    //Make sure to update scrollLeft location of master container, since
+    //the size of the panels changed.
+    this.panelContainerNode.scrollLeft = width * this.historyIndex;
+  },
+
+  updatePanelVisibility: function() {
+    //summary: hide scrolled-off forward panels so they are not visible during a resize
+    for (var i = this.historyIndex + 1; i < this.history.length; i++) {
+      dojo.style(this.history[i].domNode, "visibility", "hidden");
     }
   }
 });

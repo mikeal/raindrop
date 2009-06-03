@@ -1,5 +1,4 @@
 .extenderWizard {
-  width: 370px;
   padding: 10px;
   background-color: #AFAFAF;
   -moz-border-radius: 10px;
@@ -32,12 +31,12 @@
 }
 
 .extenderWizard .panels {
-  width: 4000px;
+  width: 8000px;
   overflow: auto;
 }
 
 .extenderWizard .panel {
   display: block;
   float: left;
-  width: 370px;
+  overflow: hidden;
 }

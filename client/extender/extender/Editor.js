@@ -27,6 +27,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
     var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
 
     this.textArea.attr("value", text);
+  
+    this.connect(window, "onresize", "onResize");
+    this.onResize();
   },
 
   onSave: function(evt) {
@@ -84,5 +87,11 @@ dojo.declare("extender.Editor", [rdw._Base], {
         }), 5000);
       })
     );
+  },
+
+  onResize: function() {
+    //summary: handles window resize actions and tells
+    //the textarea to update its dimensions.
+    this.textArea.resize();
   }
 });
