@@ -1,0 +1,12 @@
+{
+  "schemas" : {
+    "rd.ext.ui" : {
+      "name" : "raindrop extender",
+      "modulePaths": {
+        "extender": "/raindrop/extender/extender"
+      },
+      "info" : "Tool that helps you extend raindrop",
+      "location" : "/raindrop/extender/index.html"
+    }
+  }
+}

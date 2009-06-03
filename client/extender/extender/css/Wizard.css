@@ -1,4 +1,4 @@
-.Extender {
+.extenderWizard {
   width: 370px;
   padding: 10px;
   background-color: #AFAFAF;
@@ -7,36 +7,36 @@
   font-size: small;
 }
 
-.Extender h1,
-.Extender h2,
-.Extender h3 {
+.extenderWizard h1,
+.extenderWizard h2,
+.extenderWizard h3 {
   font-weight: bold;
   font-size: 100%;
 }
 
-.Extender .disabled {
+.extenderWizard .disabled {
   color: gray;
 }
 
-.Extender .actions {
+.extenderWizard .actions {
   position: relative;
 }
 
-.Extender .actions .close {
+.extenderWizard .actions .close {
   position: absolute;
   right: 0;
 }
 
-.Extender .panelContainer {
+.extenderWizard .panelContainer {
   overflow: hidden;
 }
 
-.Extender .panels {
+.extenderWizard .panels {
   width: 4000px;
   overflow: auto;
 }
 
-.Extender .panel {
+.extenderWizard .panel {
   display: block;
   float: left;
   width: 370px;

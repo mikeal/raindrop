@@ -1,12 +1,14 @@
-dojo.provide("rdw.extender.UiManager");
+dojo.provide("extender.UiManager");
 
 dojo.require("rdw._Base");
-dojo.require("rdw.extender.Editor");
+dojo.require("extender.Editor");
 
-rd.addStyle("rdw.extender.css.UiManager");
+//Uses script-added styles to allow loading on demand at the cost of a
+//custom build that would load all styles at the beginning.
+rd.addStyle("extender.css.UiManager");
 
-dojo.declare("rdw.extender.UiManager", [rdw._Base], {
-  templatePath: dojo.moduleUrl("rdw.extender.templates", "UiManager.html"),
+dojo.declare("extender.UiManager", [rdw._Base], {
+  templatePath: dojo.moduleUrl("extender.templates", "UiManager.html"),
 
   extTemplate: '<li><a href="#uimanager-ext-${source}">${source}</a> extends: ${targets}</li>',
 
@@ -59,7 +61,7 @@ dojo.declare("rdw.extender.UiManager", [rdw._Base], {
         //Get the module name and get the text for the module.
         var moduleName = linkId.split("-")[2];
         
-        this.extender.add(new rdw.extender.Editor({
+        this.extender.add(new extender.Editor({
           moduleName: moduleName
         }));
       }

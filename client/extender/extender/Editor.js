@@ -1,18 +1,20 @@
-dojo.provide("rdw.extender.Editor");
+dojo.provide("extender.Editor");
 
 dojo.require("dijit.form.Textarea");
 dojo.require("dojox.io.xhrMultiPart");
 dojo.require("rdw._Base");
 dojo.require("couch");
 
-rd.addStyle("rdw.extender.css.Editor");
+//Uses script-added styles to allow loading on demand at the cost of a
+//custom build that would load all styles at the beginning.
+rd.addStyle("extender.css.Editor");
 
-dojo.declare("rdw.extender.Editor", [rdw._Base], {
+dojo.declare("extender.Editor", [rdw._Base], {
 
   //Holds the module name that is being edited.
   moduleName: "",
 
-  templatePath: dojo.moduleUrl("rdw.extender.templates", "Editor.html"),
+  templatePath: dojo.moduleUrl("extender.templates", "Editor.html"),
   widgetsInTemplate: true,
 
   postCreate: function() {

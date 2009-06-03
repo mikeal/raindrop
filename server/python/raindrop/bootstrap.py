@@ -348,8 +348,18 @@ def update_apps(whateva):
     dm = get_doc_model()
     replacements = {}
 
+    keys = [
+        ["rd.core.content", "schema_id", "rd.ext.ui"],
+        ["rd.core.content", "schema_id", "rd.ext.uiext"],
+    ]
+    results = yield dm.open_view(keys=keys, include_docs=True, reduce=False)
+    all_rows = results['rows']
+
     # Convert couch config value for module paths
     # to a JS string to be used in config.js
+    subs = "subs: ["
+    exts = "exts: ["
+    paths = []
     module_paths = ""
 
     # TODO: this needs more work/reformatting
@@ -361,30 +371,27 @@ def update_apps(whateva):
     #    ) for item in view_results["rows"]]
     # )
 
-    replacements["module_paths"] = module_paths
-
-    keys = [
-        ["rd.core.content", "schema_id", "rd.ext.ui"],
-        ["rd.core.content", "schema_id", "rd.ext.uiext"],
-    ]
-    results = yield dm.open_view(keys=keys, include_docs=True, reduce=False)
-    all_rows = results['rows']
-
-    # Convert couch config value for module paths
-    # to a JS string to be used in config.js
-    sub_docs = []
-    path_docs = []
-    exts = "exts: ["
-
     # Build up a complete list of required resources.
     for row in all_rows:
         if 'error' in row or 'deleted' in row['value']:
             continue
         doc = row["doc"]
         if 'subscriptions' in doc:
-            sub_docs.append(doc)
+            # each row has a key that in an array of objects.
+            for sub in doc['subscriptions']:
+                # sub is an object. Get the keys and
+                # add it to the text output.
+                for key in sub.keys():
+                  subs += "{'%s': '%s'}," % (
+                      key.replace("'", "\\'"),
+                      sub[key].replace("'", "\\'")
+                  )
         if 'modulePaths' in doc:
-            path_docs.append(doc)
+            for key in doc["modulePaths"].keys():
+                paths.append({
+                    "key": key,
+                    "value": doc["modulePaths"][key]
+                })
         try:
             extender = doc["exts"]
         except KeyError:
@@ -395,33 +402,21 @@ def update_apps(whateva):
                   extender[key].replace("'", "\\'")
               )
 
+    # join the paths together
+    if len(paths) > 0:
+        module_paths += ",".join(
+           ["'%s': '%s'" % (
+              item["key"].replace("'", "\\'"), 
+              item["value"].replace("'", "\\'")
+           ) for item in paths]
+        ) + ","
+
     # TODO: if my python fu was greater, probably could do this with some
     # fancy list joins, but falling back to removing trailing comma here.
     exts = re.sub(",$", "", exts)
     exts += "]"
-
-    # Add the string of the required resources to
-    # the replacement structure.
-    replacements["exts"] = exts
-
-    # Pull out all the subscriptions
-    subs = "subs: ["
-    for doc in sub_docs:
-        # each row has a key that in an array of objects.
-        for sub in doc['subscriptions']:
-            # sub is an object. Get the keys and
-            # add it to the text output.
-            for key in sub.keys():
-              subs += "{'%s': '%s'}," % (
-                  key.replace("'", "\\'"),
-                  sub[key].replace("'", "\\'")
-              )
-
-    # TODO: if my python fu was greater, probably could do this with some
-    # fancy list joins, but falling back to removing trailing comma here.
     subs = re.sub(",$", "", subs)
     subs += "],"
-    replacements["subs"] = subs
 
     doc = yield db.openDoc(FILES_DOC, attachments=True)
 
@@ -436,9 +431,9 @@ def update_apps(whateva):
     f.close()
 
     # update config.js contents with couch data
-    data = data.replace("/*INSERT PATHS HERE*/", replacements["module_paths"])
-    data = data.replace("/*INSERT SUBS HERE*/", replacements["subs"])
-    data = data.replace("/*INSERT EXTS HERE*/", replacements["exts"])
+    data = data.replace("/*INSERT PATHS HERE*/", module_paths)
+    data = data.replace("/*INSERT SUBS HERE*/", subs)
+    data = data.replace("/*INSERT EXTS HERE*/", exts)
 
     new = {
         'content_type': "application/x-javascript; charset=UTF-8",

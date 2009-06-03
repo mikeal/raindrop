@@ -1,17 +1,19 @@
-dojo.provide("rdw.Extender");
+dojo.provide("extender.Wizard");
 
 dojo.require("dojox.fx.scroll");
 
 dojo.require("rdw._Base");
 
-rd.addStyle("rdw.css.Extender");
+//Uses script-added styles to allow loading on demand at the cost of a
+//custom build that would load all styles at the beginning.
+rd.addStyle("extender.css.Wizard");
 
-dojo.declare("rdw.Extender", [rdw._Base], {
+dojo.declare("extender.Wizard", [rdw._Base], {
 
   //Holds index into the history for extener panels.
   historyIndex: 0,
 
-  templatePath: dojo.moduleUrl("rdw.templates", "Extender.html"),
+  templatePath: dojo.moduleUrl("extender.templates", "Wizard.html"),
 
   postCreate: function() {
     //summary: dijit lifecycle method.
@@ -109,9 +111,9 @@ dojo.declare("rdw.Extender", [rdw._Base], {
         rd.hideExtender();
       } else if (linkId == "extender-ui-viewAll") {
         //Show all UI extensions
-        dojo["require"]("rdw.extender.UiManager");
+        dojo["require"]("extender.UiManager");
         dojo.addOnLoad(dojo.hitch(this, function(){
-          this.add(new rdw.extender.UiManager({}));
+          this.add(new extender.UiManager({}));
         }));
       }
       dojo.stopEvent(evt);

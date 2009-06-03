@@ -283,46 +283,6 @@ dojo._listener.getDispatcher = function(){
         console.warn("Warning: adding a method named " + propName + " to an object that already has that property");
       }
       obj[propName] = newValue;
-    },
-
-    _extender: null,
-    _isExtenderVisible: false,
-
-    showExtender: function() {
-      //summary: launches the extension tool.
-      if (!this._extender) {
-        //Using funky require call syntax to avoid
-        //detection by build tools/loader so it is not
-        //loaded when the page loads but waits until the
-        //extender is shown.
-        dojo["require"]("rdw.Extender");
-        dojo.addOnLoad(dojo.hitch(this, function(){
-          var div = dojo.create("div", {
-            "class": "extender"
-          }, dojo.body());
-
-          this._extender = new rdw.Extender({}, div);
-        }));
-      }
-
-      if (!this._isExtenderVisible) {
-        rd.addStyle("rd.css.extender");
-        if (this._extender) {
-          this._extender.domNode.style.display = "block";
-        }
-        this._isExtenderVisible = true;
-      }
-    },
-
-    hideExtender: function() {
-      //summary: hides the extension tool.
-      if (this._isExtenderVisible) {
-        rd.removeStyle("rd.css.extender");
-        if (this._extender) {
-          this._extender.domNode.style.display = "none";
-        }
-        this._isExtenderVisible = false;
-      }
     }
   });
 
@@ -364,9 +324,6 @@ dojo._listener.getDispatcher = function(){
     return ret;
   }
 })();
-
-//Subscribe to extend topic notification.
-rd.subscribe("rd-protocol-extend", rd, "showExtender");
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.
