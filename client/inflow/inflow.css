@@ -1,9 +1,9 @@
-@import url("../rdw/css/QuickCompose.css");
-@import url("../rdw/css/Search.css");
-@import url("../rdw/css/Stories.css");
-@import url("../rdw/css/ContactList.css");
-@import url("../rdw/css/Organizer.css");
-@import url("../rdw/css/FaceWall.css");
+@import url("/raindrop/lib/rdw/css/QuickCompose.css");
+@import url("/raindrop/lib/rdw/css/Search.css");
+@import url("/raindrop/lib/rdw/css/Stories.css");
+@import url("/raindrop/lib/rdw/css/ContactList.css");
+@import url("/raindrop/lib/rdw/css/Organizer.css");
+@import url("/raindrop/lib/rdw/css/FaceWall.css");
 
 * {
   font:100%/normal verdana,geneva,sans-serif;

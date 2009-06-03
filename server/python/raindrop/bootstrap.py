@@ -28,7 +28,7 @@ def path_part_nuke(path, count):
     return path
     
 
-FILES_DOC = 'files' #'_design/files'
+LIB_DOC = 'lib' #'_design/files'
 
 # Updating design documents when not necessary can be expensive as all views
 # in that doc are reset. So we've created a helper - a simple 'fingerprinter'
@@ -418,12 +418,12 @@ def update_apps(whateva):
     subs = re.sub(",$", "", subs)
     subs += "],"
 
-    doc = yield db.openDoc(FILES_DOC, attachments=True)
+    doc = yield db.openDoc(LIB_DOC, attachments=True)
 
     # Find config.js skeleton on disk   
     # we cannot go in a zipped egg...
     root_dir = path_part_nuke(model.__file__, 4)
-    config_path = os.path.join(root_dir, "client/files/config.js")
+    config_path = os.path.join(root_dir, "client/lib/config.js")
 
     # load config.js skeleton
     f = open(config_path, 'rb')
@@ -443,7 +443,7 @@ def update_apps(whateva):
     if doc["_attachments"]["config.js"] != new:
         logger.info("config.js in %r has changed; updating", doc['_id'])
         doc["_attachments"]["config.js"] = new
-        _ = yield db.saveDoc(doc, FILES_DOC)
+        _ = yield db.saveDoc(doc, LIB_DOC)
 
 
 @defer.inlineCallbacks

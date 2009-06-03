@@ -5,13 +5,13 @@
   var prefix = "";
   while(i > -1){
     var src = scripts[i].src;
-    if(src && src.indexOf("/raindrop/files/config") != -1){
-      prefix = src.split("/").slice(0, 3).join("/") + "/raindrop/files";
+    if(src && src.indexOf("/raindrop/lib/config") != -1){
+      prefix = src.split("/").slice(0, 3).join("/") + "/raindrop/lib";
     }
     i--;
   }
 
-  var dojoPrefix = prefix.replace(/\/files$/, "/dojo");
+  var dojoPrefix = prefix.replace(/\/lib$/, "/dojo");
 
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.

@@ -108,7 +108,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
       if (this[action]) {
         this[action]();
       } else if (linkId == "extender-close") {
-        rd.hideExtender();
+        rd.pub("rd-protocol-extenderClose");
       } else if (linkId == "extender-ui-viewAll") {
         //Show all UI extensions
         dojo["require"]("extender.UiManager");

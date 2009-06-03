@@ -3,7 +3,7 @@
     "rd.ext.ui" : {
       "name" : "Inflow",
       "info" : "The inflow thingy",
-      "location" : "/raindrop/files/inflow/index.html"
+      "location" : "/raindrop/inflow/index.html"
     }
   }
 }

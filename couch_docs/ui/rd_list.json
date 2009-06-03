@@ -3,7 +3,7 @@
     "rd.ext.ui" : {
       "name" : "App Listing",
       "info" : "Lists all of the applications",
-      "location" : "/raindrop/files/rd_list/index.html"
+      "location" : "/raindrop/rd_list/index.html"
     }
   }
 }
