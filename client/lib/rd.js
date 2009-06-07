@@ -183,106 +183,157 @@ dojo._listener.getDispatcher = function(){
     //Types of extension wrapping. Similar to aspected oriented advice.
     _extTypes: ["before", "after", "around", "replace", "add", "addToPrototype"],
 
-    applyExtension: function(/*String|Object*/moduleName, /*Object*/extension) {
+    _extDisabled: {},
+    _exts: {},
+
+    extensionEnabled: function(/*String*/extName, /*String*/moduleName,/*Boolean?*/enabled) {
+      //summary: marks an extension as enabled or disabled. If no value is
+      //passed in, then reads the enabled state.
+      var key = extName + ":" + moduleName;
+      if (typeof enabled != "undefined") {
+	return rd._extDisabled[key] = !enabled;
+      } else {
+	return !rd._extDisabled[key];
+      }
+    },
+
+    applyExtension: function(/*String*/extName, /*String*/moduleName, /*Object*/extension) {
       //summary: modifies the module object by attaching an extension to it.
       //ASSUMES the module has already been loaded. Each extension should
       //dojo.require the module it will be extending.
-      var module = moduleName;
-      if(typeof moduleName == "string") {
-        module = dojo.getObject(moduleName);
-      }
-  
-      //For each type of extension wrapping,
-      //call the appropriate function to handle them.
-      for (var i = 0, type; type = this._extTypes[i]; i++) {
-        if(extension[type]) {
-          this._extApplyType(moduleName, module, extension[type], type);
-        }
-      }
-    },
-
-    _extApplyType: function(/*String*/moduleName,
-                            /*Object*/module,
-                            /*Object*/typeExtensions,
-                            /*String*/type) {
-      //summary: loops through the typeExtensions, calling
-      //the right type of function to apply the type of extension.
-      var proto = module.prototype;
+      var module = dojo.getObject(moduleName);
+      var extKey = extName + ":" + moduleName;
+      var existing = rd._exts[extKey] || {};
+      rd._exts[extKey] = extension;
       var empty = {};
-      for (var prop in typeExtensions) {
-        if(!(prop in empty)) {
-          //Figure out if the extension applies to a module method
-          //or a method on the module's prototype.
-          var targetObj = module;
-          if (type == "addToPrototype") {
-            type = "add";
-            targetObj = proto;
-          } else {
-            if (prop in proto) {
-              targetObj = proto;
-            }
-          }
+      var proto = module.prototype;
 
-          //Inform developer if there is no match for the extension.
-          if (type != "add" && (!(prop in targetObj) || !dojo.isFunction(targetObj[prop]))) {
-            console.error("Trying to register a '" + type + "' extension on object "
-                          + moduleName
-                          + "for non-existent function property: " 
-                          + prop);
-          } else {
-            this["_ext_" + type](prop, targetObj, targetObj[prop], typeExtensions[prop]);
-          }
-        }
+      //Cycle through allowed extension types
+      for (var i = 0, type; type = this._extTypes[i]; i++) {
+	if (extension[type]) {
+	  //For each method for the given extension type, add the extension
+	  //function but only if it is not on the existing extension. Filter
+	  //out bad code that adds thing to Object.prototype via the empty tests.
+	  for (var prop in extension[type]) {
+	    if (!(prop in empty) && (!existing[type] || !(prop in existing[type]))) {
+	      //Figure out if the extension applies to a module method
+	      //or a method on the module's prototype.
+	      var targetObj = module;
+	      var extType = type;
+	      if (type == "addToPrototype") {
+		extType = "add";
+		targetObj = proto;
+	      } else {
+		if (prop in proto) {
+		  targetObj = proto;
+		}
+	      }
+
+	      //Inform developer if there is no match for the extension.
+	      if (extType != "add" && (!(prop in targetObj) || !dojo.isFunction(targetObj[prop]))) {
+		console.error("Trying to register a '" + type + "' extension on object "
+			      + moduleName
+			      + "for non-existent function property: " 
+			      + prop);
+	      } else {
+		this["_ext_" + extType](extKey, type, targetObj, prop, targetObj[prop]);
+	      }
+	    }
+	  }
+	}
       }
     },
 
-    _ext_before: function(propName, obj, oldValue, newValue) {
+    _ext_before: function(extKey, type, obj, prop, oldValue) {
       //summary: applies the extension on the named function before the
       //real function on the object. If the before function returns any
       //value, it will be treated as an array of arguments to pass to
       //the original function.
-      obj[propName] = function(){
-        var args = (newValue.apply(this, arguments) || arguments);
+      obj[prop] = function() {
+        var args = arguments;
+	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
+	extFunc = extFunc && extFunc[prop];
+	if (extFunc && !rd._extDisabled[extKey]) {
+	  args = extFunc.apply(this, arguments);
+	  if (typeof args == undefined) {
+	    args = arguments;
+	  }
+	}
         return oldValue.apply(this, args);
-      }
+      }      
     },
 
-    _ext_after: function(propName, obj, oldValue, newValue) {
+    _ext_after: function(extKey, type, obj, prop, oldValue) {
       //summary: applies the extension on the named function after the
       //real function on the object. Passes the return value of the original
       //function as "targetReturn" property on the extension function.
-      //Extension function can access it via arguments.callee.targetReturn
-      obj[propName] = function(){
+      //Extension function can access it via arguments.callee.targetReturn.
+      //If the targetReturn is needed, it should be grabbed as the first operation
+      //of the extension function, in case a nested/cyclical call to the same
+      //function happens after it starts to operate
+      //(in which case the .target property could change)
+      obj[prop] = function() {
         var ret = oldValue.apply(this, arguments);
-        newValue.targetReturn = ret;
-        return newValue.apply(this, arguments);
+
+	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
+	extFunc = extFunc && extFunc[prop];
+	if (extFunc && !rd._extDisabled[extKey]) {
+	  extFunc.targetReturn = ret;
+	  ret = extFunc.apply(this, arguments);
+	  delete extFunc.targetReturn;
+	}
+        return ret;	
       }
     },
 
-    _ext_around: function(propName, obj, oldValue, newValue) {
+    _ext_around: function(extKey, type, obj, prop, oldValue) {
       //summary: applies the extension on the named function around the
-      //real function. Attaches the original function as arguments.callee.proceed.
+      //real function. Attaches the original function as arguments.callee.target.
       //The around function has the option to change the arguments passed
-      //to arguments.callee.proceed and also to modify the return value. Extension
-      //needs to call arguments.callee.proceed.apply(this, arguments) to trigger
-      //original function.
-      newValue.target = obj[propName];
-      obj[propName] = newValue;    
+      //to arguments.callee.target and also to modify the return value. Extension
+      //needs to call arguments.callee.target.apply(this, arguments) to trigger
+      //original function. If the target function is needed, it should be grabbed
+      //as the first operation of the extension function, in case a
+      //nested/cyclical call to the same function happens after it starts to operate
+      //(in which case the .target property could change)
+      obj[prop] = function() {
+	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
+	extFunc = extFunc && extFunc[prop];
+	if (extFunc && !rd._extDisabled[extKey]) {
+	  extFunc.target = oldValue;
+	  var ret = extFunc.apply(this, args);
+	  delete extFunc.target;
+	  return ret;
+	} else {
+	  return oldValue.apply(this, arguments);
+	}
+      }
     },
 
-    _ext_replace: function(propName, obj, oldValue, newValue) {
+    _ext_replace: function(extKey, type, obj, prop, oldValue) {
       //summary: Replaces the named property with the new value.
-      obj[propName] = newValue;
-    },
-    
-    //Add does the same as replace but sounds better when you are
-    //really adding something new, and not replacing.
-    _ext_add: function(propName, obj, oldValue, newValue) {
-      //summary: Adds the named property with the new value.
-      if (propName in obj) {
-        console.warn("Warning: adding a method named " + propName + " to an object that already has that property");
+      obj[prop] = function() {
+	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
+	extFunc = extFunc && extFunc[prop];
+	if (extFunc && !rd._extDisabled[extKey]) {
+	  return extFunc.apply(this, args);
+	} else {
+	  return oldValue.apply(this, arguments);
+	}
       }
-      obj[propName] = newValue;
+    },
+
+    _ext_add: function(extKey, type, obj, prop, oldValue) {
+      //summary: Adds the named property with the new value.
+      obj[prop] = function() {
+	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
+	extFunc = extFunc && extFunc[prop];
+	if (extFunc && !rd._extDisabled[extKey]) {
+	  return extFunc.apply(this, args);
+	} else {
+	  throw new Error("Invalid 'add' extension point call for property: " + prop);
+	}
+      }
     }
   });
 

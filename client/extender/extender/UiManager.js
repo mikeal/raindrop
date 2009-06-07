@@ -10,7 +10,7 @@ rd.addStyle("extender.css.UiManager");
 dojo.declare("extender.UiManager", [rdw._Base], {
   templatePath: dojo.moduleUrl("extender.templates", "UiManager.html"),
 
-  extTemplate: '<li><a href="#uimanager-ext-${source}">${source}</a> extends: ${targets}</li>',
+  extTemplate: '<li><a href="#uimanager-ext-${source}:${targets}">${source}</a> extends: ${targets}</li>',
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
@@ -59,10 +59,14 @@ dojo.declare("extender.UiManager", [rdw._Base], {
     if (linkId && linkId.indexOf("uimanager-") == 0) {
       if (linkId.indexOf("uimanager-ext-") == 0) {
         //Get the module name and get the text for the module.
-        var moduleName = linkId.split("-")[2];
-        
+        var parts = linkId.split("-")[2];
+        var parts = parts.split(":");
+        var moduleName = parts[0];
+        var targetNames = parts[1].split(",");
+
         this.extender.add(new extender.Editor({
-          moduleName: moduleName
+          moduleName: moduleName,
+          targetNames: targetNames
         }));
       }
       dojo.stopEvent(evt);

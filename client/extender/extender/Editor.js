@@ -14,6 +14,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //Holds the module name that is being edited.
   moduleName: "",
 
+  //The modules targeted by this extension.
+  targetNames: [],
+
   templatePath: dojo.moduleUrl("extender.templates", "Editor.html"),
   widgetsInTemplate: true,
 
@@ -26,8 +29,15 @@ dojo.declare("extender.Editor", [rdw._Base], {
     this.path = dojo.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
     var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
 
+    //Set the text for the editor.
     this.textArea.attr("value", text);
-  
+
+    //Set the enabled state
+    //Only check for the first target. Only allowing a global
+    //disable for all moduleName+targetName combinations.
+    this.enabledNode.checked = opener.rd.extensionEnabled(this.moduleName, this.targetNames[0]);
+
+    //Bind to resize and make sure size is initially correct.
     this.connect(window, "onresize", "onResize");
     this.onResize();
   },
@@ -68,6 +78,14 @@ dojo.declare("extender.Editor", [rdw._Base], {
         }
       })
     })
+  },
+
+  onEnableClick: function(/*Event*/evt) {
+    //summary: handles clicks to enable/disable an extension.
+    var enabled = this.enabledNode.checked;
+    for(var i = 0, target; target = this.targetNames[i]; i++) {
+      opener.rd.extensionEnabled(this.moduleName, target, enabled);
+    }
   },
 
   updateStatus: function(message) {

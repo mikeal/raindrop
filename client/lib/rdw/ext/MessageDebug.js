@@ -2,7 +2,7 @@ dojo.provide("rdw.ext.MessageDebug");
 
 dojo.require("rdw.Message");
 
-rd.applyExtension("rdw.Message", {
+rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
   after: {
     postCreate: function() {
       //summary: adds debug links to show documents associated with message
@@ -22,7 +22,7 @@ rd.applyExtension("rdw.Message", {
           target: "_blank",
           title: sch.rd_ext_id,
           href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
-          innerHTML: sch_id.replace(/rd\.msg\./,''),
+          innerHTML: sch_id.replace(/rd\.msg\./,'')
         }, debugNode);
       }
 

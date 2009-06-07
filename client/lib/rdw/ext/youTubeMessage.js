@@ -11,7 +11,7 @@ Allows showing youtube videos inline with
 a message.
 */
 
-rd.applyExtension("rdw.Message", {
+rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
   after: {
     postCreate: function() {
       //summary: if messageBag has youtube data, add a
