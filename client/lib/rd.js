@@ -212,6 +212,22 @@ dojo._listener.getDispatcher = function(){
     _extSubs: {},
     _extSubArgs: {},
 
+    _updateExtModule: function(/*String*/extName, /*Array*/targets) {
+      //summary: updates an extension module code to the latest code.
+      //Also refreshes target instances if they are being used in the page.
+      
+      
+    },
+
+    //properties to skip when trying to dynamically recreate an instance
+    //(used by _updateInstances
+    _skipInstanceProperties: {
+      id: 1,
+      _connects: 1,
+      _subscribes: 1,
+      nodeType: 1 //to avoid DOM nodes
+    },
+
     _updateInstances: function(/*String*/moduleName) {
       //summary: if the the module is something that can be instantiated
       //and is being shown in the page, update those instances to the new code.
@@ -220,8 +236,8 @@ dojo._listener.getDispatcher = function(){
 	  && (instances = dijit.registry.byClass(moduleName))
 	  && instances.length) {
 	var module = dojo.getObject(moduleName);
-	var empty = {};
-	
+	var empty = {}, widget = dijit._Widget.prototype;
+
 	//Build a list of default properties.
 	var defaultProps = {};
 	for (var prop in module.prototype) {
@@ -237,7 +253,8 @@ dojo._listener.getDispatcher = function(){
 	  for (var prop in instance) {
 	    if (!(prop in empty)
 		&& (!(prop in defaultProps) || defaultProps[prop] != instance[prop])) {
-	      if (prop != "id") {
+	      //Do not pick up id values or dom nodes, or default widget properties.
+	      if (!(prop in widget) && !(prop in rd._skipInstanceProperties)) {
 		initProps[prop] = instance[prop];
 	      }
 	    }
