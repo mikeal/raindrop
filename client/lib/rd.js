@@ -212,6 +212,46 @@ dojo._listener.getDispatcher = function(){
     _extSubs: {},
     _extSubArgs: {},
 
+    _updateInstances: function(/*String*/moduleName) {
+      //summary: if the the module is something that can be instantiated
+      //and is being shown in the page, update those instances to the new code.
+      var instances;
+      if (dijit && dijit.registry
+	  && (instances = dijit.registry.byClass(moduleName))
+	  && instances.length) {
+	var module = dojo.getObject(moduleName);
+	var empty = {};
+	
+	//Build a list of default properties.
+	var defaultProps = {};
+	for (var prop in module.prototype) {
+	  if (!(prop in empty)) {
+	    defaultProps[prop] = module.prototype[prop];
+	  }
+	}
+
+	instances.forEach(function(instance) {
+	  //Build up a list of instance properties. It is an instance property
+	  //if it differs from the defaultProps
+	  var initProps = {};
+	  for (var prop in instance) {
+	    if (!(prop in empty)
+		&& (!(prop in defaultProps) || defaultProps[prop] != instance[prop])) {
+	      if (prop != "id") {
+		initProps[prop] = instance[prop];
+	      }
+	    }
+	  }
+
+	  //Now create a new version of the instance and replace the old one.
+	  var refreshed = new module(initProps);
+	  var parentNode = instance.domNode.parentNode;
+	  parentNode.replaceChild(refreshed.domNode, instance.domNode);
+	  instance.destroy();
+	});
+      }
+    },
+
     extensionEnabled: function(/*String*/extName, /*String*/moduleName,/*Boolean?*/enabled) {
       //summary: marks an extension as enabled or disabled. If no value is
       //passed in, then reads the enabled state.
@@ -225,7 +265,13 @@ dojo._listener.getDispatcher = function(){
 	    rd.unsub(rd._extSubs[key]);
 	  }
 	}
-	return rd._extDisabled[key] = !enabled;
+
+	var ret = rd._extDisabled[key] = !enabled;
+
+	//Update instances of the module.
+	rd._updateInstances(moduleName);
+
+	return ret;
       } else {
 	return !rd._extDisabled[key];
       }
