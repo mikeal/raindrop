@@ -60,8 +60,10 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
       });
   };
 
-  rd.sub("rdw.Message-reply", dojo.partial(makeWidget, "reply", "rdw.Message-reply"));
-  rd.sub("rdw.Message-forward", dojo.partial(makeWidget, "forward", "rdw.Message-reply"));
+  //Subscribe and indicate this is an extension by passing in the extension's
+  //module name as the first argument.
+  rd.sub("rdw.ReplyForward", "rdw.Message-reply", dojo.partial(makeWidget, "reply", "rdw.Message-reply"));
+  rd.sub("rdw.ReplyForward", "rdw.Message-forward", dojo.partial(makeWidget, "forward", "rdw.Message-reply"));
 
   rd.addStyle("rdw.css.ReplyForward");
 })();

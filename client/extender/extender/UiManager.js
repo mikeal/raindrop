@@ -37,7 +37,30 @@ dojo.declare("extender.UiManager", [rdw._Base], {
       }
     }
 
-    //Dump the object extension names.
+    //Get subscription extensions
+    var subKeys = [];
+    var subNames = {};
+    for (var i = 0, sub; sub = subs[i]; i++) {
+      for (prop in sub) {
+        if (!(prop in empty)) {
+          sourceList = subNames[sub[prop]];
+          if(!sourceList) {
+            sourceList = subNames[sub[prop]] = [];
+            subKeys.push(sub[prop]);
+          }
+          sourceList.push(prop);
+        }
+      }
+    }
+
+    //Show the object and subscription extensions in the DOM.
+    this.insertExtensionHtml(keys, extNames, this.extNode);
+    this.insertExtensionHtml(subKeys, subNames, this.subNode);
+  },
+
+  insertExtensionHtml: function (/*Array*/keys, /*Object*/extNames, /*DOMNode*/parentNode) {
+    //summary: generates the HTML markup that shows each extension and inserts
+    //it into the widget.
     if (keys.length) {
       keys.sort();
       var html = "";
@@ -49,17 +72,18 @@ dojo.declare("extender.UiManager", [rdw._Base], {
           targets: targets.join(",")
         })
       }
-      dojo.place(html, this.extNode);
+      dojo.place(html, parentNode);
     }
   },
 
   onExtClick: function(evt) {
     //summary: Captures extension clicks to load them for viewing.
     var linkId = this.getFragmentId(evt);
+    var extPrefix = "uimanager-ext-";
     if (linkId && linkId.indexOf("uimanager-") == 0) {
-      if (linkId.indexOf("uimanager-ext-") == 0) {
+      if (linkId.indexOf(extPrefix) == 0) {
         //Get the module name and get the text for the module.
-        var parts = linkId.split("-")[2];
+        var parts = linkId.substring(extPrefix.length, linkId.length);
         var parts = parts.split(":");
         var moduleName = parts[0];
         var targetNames = parts[1].split(",");

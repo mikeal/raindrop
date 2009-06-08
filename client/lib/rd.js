@@ -82,20 +82,44 @@ dojo._listener.getDispatcher = function(){
   
     //Shortcut methods for dojo.publish and subscribe. rd.pub more aesthetically pleasing
     //than dojo.publish because it does not force the parameters to be in an array,
-    //but rather as variable number of arguments to rd.pub.
+    //but rather as variable number of arguments to rd.pub. Also, rd.sub allows for passing
+    //in a extension module name, to allow us to disable the subscription extension on demand.
     //Base on plugd versions of the code: http://code.google.com/p/plugd/source/browse/trunk/base.js
-    sub: dojo.subscribe,
+    sub: function(/*String?*/moduleName, /*String?*/topic) {
+      //summary: allows for extension modules names to be passed to allow dynamic
+      //disable of an extension.
+      if (typeof topic == "string") {
+	//Extension case.
+	var extKey = moduleName + ":" + topic;
+	//Convert arguments to an array and strip off the first arg,
+	//which is the extension module name.
+	var ary = dojo._toArray(arguments);
+	ary.shift();
+
+	//Store the handle of the subscription to allow disabling.
+	//Also store subscription args to allow dynamic subscription
+	//if the extension is enabled on the fly.
+	var handle = dojo.subscribe.apply(dojo, ary);
+	rd._extSubs[extKey] = handle;
+	ary.unshift(moduleName);
+	rd._extSubArgs[extKey] = ary;
+	return handle;
+      } else {
+	//Normal subscribe.
+	return dojo.subscribe.apply(dojo, arguments);
+      }
+    },
     unsub: dojo.unsubscribe,
     pub: function(){
       var a = dojo._toArray(arguments);
       return dojo.publish(a.shift(), a);
     },
-    
+
     convertLines: function(text) {
       //Converts line returns to BR tags
       return text && text.replace(/\n/g, "<br>");  
     },
-  
+
     addStyle: function(/*String*/modulePath) {
       //summary: loads a CSS file based on a modulePath. This allows for reskinning
       //by overriding the modulePath via djConfig.modulePaths/dojo.registerModulePath()
@@ -185,12 +209,22 @@ dojo._listener.getDispatcher = function(){
 
     _extDisabled: {},
     _exts: {},
+    _extSubs: {},
+    _extSubArgs: {},
 
     extensionEnabled: function(/*String*/extName, /*String*/moduleName,/*Boolean?*/enabled) {
       //summary: marks an extension as enabled or disabled. If no value is
       //passed in, then reads the enabled state.
       var key = extName + ":" + moduleName;
       if (typeof enabled != "undefined") {
+	//If a subscription enable/disable as appropriate.
+	if (rd._extSubArgs[key]) {
+	  if (enabled) {
+	    rd.sub.apply(rd, rd._extSubArgs[key]);
+	  } else {
+	    rd.unsub(rd._extSubs[key]);
+	  }
+	}
 	return rd._extDisabled[key] = !enabled;
       } else {
 	return !rd._extDisabled[key];

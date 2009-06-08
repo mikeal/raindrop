@@ -1,7 +1,6 @@
 dojo.provide("extender.Editor");
 
 dojo.require("dijit.form.Textarea");
-dojo.require("dojox.io.xhrMultiPart");
 dojo.require("rdw._Base");
 dojo.require("couch");
 
