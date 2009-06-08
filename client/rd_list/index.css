@@ -1,0 +1,31 @@
+* {
+  font:100%/normal verdana,geneva,sans-serif;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+}
+
+h1#topheader {
+  margin: 0px;
+  padding: 0.5ex;
+  font-size: large;
+  border-bottom: 1px solid #547491;
+  background-color: #bfdbf5;
+}
+
+h1#topheader > a {
+  font-size: large;
+  letter-spacing: 0.3ex;
+  color: #466078;
+  text-decoration: none;
+}
+
+h1#topheader > strong {
+  padding-left: 0.25em;
+}
+
+h1#topheader > strong:before {
+  content: "\00BB  ";
+}
