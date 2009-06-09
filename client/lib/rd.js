@@ -215,8 +215,38 @@ dojo._listener.getDispatcher = function(){
     _updateExtModule: function(/*String*/extName, /*Array*/targets) {
       //summary: updates an extension module code to the latest code.
       //Also refreshes target instances if they are being used in the page.
+
+      //targets could be an array from another window. In that case, the targets
+      //are serialized to json to avoid cross window array goofiness.
+      if (typeof targets == "string") {
+	targets = dojo.fromJson(targets);
+      }
+
+      //If a subscription extension, unsub since reloading the extension
+      //will cause a resubscribe.
+      for (var i = 0, target; target = targets[i]; i++) {
+	var key = extName + ":" + target;
+	if (rd._extSubArgs[key]) {
+	    rd.unsub(rd._extSubs[key]);
+	}
+      }
+
+      //Force the module reload by tweaking dojo loader interals.
+      delete dojo._hasResource[extName];
+      delete dojo._loadedModules[extName];
+
+      var url = dojo._getModuleSymbols(extName).join("/") + '.js';
+      url = ((url.charAt(0) == '/' || url.match(/^\w+:/)) ? "" : dojo.baseUrl) + url;
+      delete dojo._loadedUrls[url];
       
-      
+      dojo["require"](extName);
+
+      dojo.addOnLoad(function() {
+	//Update instances of targets as appropriate.
+	for (var i = 0, target; target = targets[i]; i++) {
+	  rd._updateInstances(target);
+	}
+      });
     },
 
     //properties to skip when trying to dynamically recreate an instance

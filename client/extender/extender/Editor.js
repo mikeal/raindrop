@@ -96,6 +96,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
               } else {
                 this.updateStatus("File Saved");
               }
+
+              //Trigger update in opener.
+              opener.rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
             })            
           });
         }
