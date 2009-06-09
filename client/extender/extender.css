@@ -1,3 +1,9 @@
 * {
   font:100%/normal verdana,geneva,sans-serif;
 }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}

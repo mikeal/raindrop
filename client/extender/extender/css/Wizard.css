@@ -1,9 +1,8 @@
 .extenderWizard {
   padding: 10px;
   background-color: #AFAFAF;
-  -moz-border-radius: 10px;
-  border-radius: 10px;
   font-size: small;
+  height: 100%;
 }
 
 .extenderWizard h1,
@@ -38,5 +37,6 @@
 .extenderWizard .panel {
   display: block;
   float: left;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }

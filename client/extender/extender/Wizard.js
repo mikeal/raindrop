@@ -13,8 +13,9 @@ dojo.declare("extender.Wizard", [rdw._Base], {
   //Holds index into the history for extener panels.
   historyIndex: 0,
   
-  //Holds width of each panel, updated on window resizes.
+  //Holds width/height of each panel, updated on window resizes.
   panelWidth: 0,
+  panelHeight: 0,
 
   templatePath: dojo.moduleUrl("extender.templates", "Wizard.html"),
 
@@ -145,14 +146,22 @@ dojo.declare("extender.Wizard", [rdw._Base], {
       dojo.stopEvent(evt);
     }
   },
-  
+
   onResize: function() {
     //summary: updates how wide each panel should be based
     //on the panel container's viewable area. Need this for
     //the scrolling animation to work nicely.
+    
+    this.domNode.style.height = dijit.getViewport().h + "px";
+
+    this.panelHeight = (dojo.marginBox(this.domNode).h - dojo.coords(this.panelsNode).y) + "px";
+    
     var width = dojo.marginBox(this.panelContainerNode).w;
     this.panelWidth =  width + "px";
-    dojo.query(".panel", this.panelContainerNode).style("width", this.panelWidth);
+    dojo.query(".panel", this.panelContainerNode).style({
+      width: this.panelWidth,
+      height: this.panelHeight
+    });
 
     //Make sure to update scrollLeft location of master container, since
     //the size of the panels changed.

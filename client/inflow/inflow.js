@@ -64,7 +64,7 @@ rd.require("rd.conversation");
       //But I am not sure document.write loading is the most robust, in particular
       //across browsers. Use a timeout to deal with occasional issue with
       //DOM not being ready right away.
-      var win = extender = window.open(evt.target.href, "extender", "width=430,height=700,scrollbars=yes,resizable=yes,status=yes,toolbar=yes,location=yes");
+      var win = extender = window.open(evt.target.href, "extender", "width=830,height=700,scrollbars=yes,resizable=yes,status=yes,toolbar=yes,location=yes");
     }
 
     extender.focus();

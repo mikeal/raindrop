@@ -16,7 +16,11 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //The modules targeted by this extension.
   targetNames: [],
 
+  //Bespin url for the iframe.
+  iframeUrl: dojo.moduleUrl("extender", "../bespin.html"),
+
   templatePath: dojo.moduleUrl("extender.templates", "Editor.html"),
+
   widgetsInTemplate: true,
 
   postCreate: function() {
@@ -29,7 +33,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
     var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
 
     //Set the text for the editor.
-    this.textArea.attr("value", text);
+    this.editorContent(text);
 
     //Set the enabled state
     //Only check for the first target. Only allowing a global
@@ -38,7 +42,27 @@ dojo.declare("extender.Editor", [rdw._Base], {
 
     //Bind to resize and make sure size is initially correct.
     this.connect(window, "onresize", "onResize");
-    this.onResize();
+    setTimeout(dojo.hitch(this, "onResize"), 100);
+  },
+
+  editorContent: function(/*String?*/text) {
+    //summary: gets/sets the editor content in bespin.
+    if (arguments.length) {
+      this.editorText = text;
+      if (this._iframeLoaded) {
+        this.iframeNode.contentWindow._editorComponent.setContent(text);
+      }
+      return this.editorText;
+    } else {
+      return this.iframeNode.contentWindow._editorComponent.getContent();
+    }
+  },
+
+  onIframeLoad: function() {
+    //summary: once bespin loads, set the content.
+    this._iframeLoaded = true;
+    this.editorContent(this.editorText);
+    setTimeout(dojo.hitch(this, "onResize"), 1000);
   },
 
   onSave: function(evt) {
@@ -65,7 +89,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
             headers: {
               "Content-Type": "application/javascript"
             },
-            putData: this.textArea.attr("value"),
+            putData: this.iframeNode.contentWindow._editorComponent.getContent(),
             handle: dojo.hitch(this, function(response, ioArgs) {
               if (response instanceof Error) {
                 this.updateStatus("Error: " + response);
@@ -107,8 +131,8 @@ dojo.declare("extender.Editor", [rdw._Base], {
   },
 
   onResize: function() {
-    //summary: handles window resize actions and tells
-    //the textarea to update its dimensions.
-    this.textArea.resize();
+    //summary: handles window resize actions to best show the editable content.
+    var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
+    this.iframeNode.style.height = editorHeight;
   }
 });
