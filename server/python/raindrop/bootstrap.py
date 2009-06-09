@@ -155,9 +155,9 @@ def install_client_files(whateva, options):
         _check_dir(client_dir, "", attachments, fp, False)
 
         new_prints = fp.get_prints()
-        if options.force or design_doc.get('fingerprints') != new_prints:
+        if options.force or design_doc.get('rd_fingerprints') != new_prints:
             logger.info("client files in %r are different - updating doc", doc_name)
-            design_doc['fingerprints'] = new_prints
+            design_doc['rd_fingerprints'] = new_prints
             return d.saveDoc(design_doc, doc_name)
         logger.debug("client files are identical - not updating doc")
         return None
@@ -195,7 +195,7 @@ def install_client_files(whateva, options):
                 finger.update(chunk)
 
         new_prints = fp.get_prints()
-        if options.force or design_doc.get('fingerprints') != new_prints:
+        if options.force or design_doc.get('rd_fingerprints') != new_prints:
             logger.info("updating dojo...")
             dojo_dir = os.path.join(client_dir, "dojo")
 
@@ -210,7 +210,7 @@ def install_client_files(whateva, options):
             shutil.rmtree(dojo_dir)
 
             # save couch doc
-            design_doc['fingerprints'] = new_prints
+            design_doc['rd_fingerprints'] = new_prints
             return d.saveDoc(design_doc, "dojo")
         else:
             return None
@@ -278,7 +278,7 @@ def insert_default_docs(whateva, options):
 
         # hack our fingerprinter in...
         for sch_item in ret:
-            sch_item['items']['fingerprints'] = fingerprinter.get_prints()
+            sch_item['items']['rd_fingerprints'] = fingerprinter.get_prints()
 
         return ret
 
@@ -325,10 +325,10 @@ def insert_default_docs(whateva, options):
                         did)
             updates.append(item)
         else:
-            fp = item['items']['fingerprints']
+            fp = item['items']['rd_fingerprints']
             existing = r['doc']
             assert existing['_id']==did
-            if not options.force and fp == existing.get('fingerprints'):
+            if not options.force and fp == existing.get('rd_fingerprints'):
                 logger.debug("couch doc %r hasn't changed - skipping", did)
             else:
                 logger.info("couch doc %r has changed - updating", did)
@@ -489,7 +489,7 @@ def install_views(whateva, options):
                 assert existing['_id']==doc['_id']
                 assert '_rev' not in doc
                 if not options.force and \
-                   doc['fingerprints'] == existing.get('fingerprints'):
+                   doc['rd_fingerprints'] == existing.get('rd_fingerprints'):
                     logger.debug("design doc %r hasn't changed - skipping",
                                  doc['_id'])
                     continue
@@ -551,7 +551,7 @@ def _build_views_doc_from_directory(ddir):
             if not f.endswith(rtail) and not f.startswith("."):
                 logger.info("skipping non-map/reduce file %r", fqf)
 
-    ret['fingerprints'] = fprinter.get_prints()
+    ret['rd_fingerprints'] = fprinter.get_prints()
     logger.debug("Document in directory %r has views %s", ddir, ret_views.keys())
     if not ret_views:
         logger.warning("Document in directory %r appears to have no views", ddir)
