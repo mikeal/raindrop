@@ -48,6 +48,8 @@ def handler(src):
 
     # emit a 'flags' schema too just for fun
     emit_schema('rd.msg.flags', {'seen': False})
+    # emit a 'tags' schema too just for fun
+    emit_schema('rd.tags', {'tags': ['test1', 'test2']})
 
     if test_emit_identities:
         # and assertions about the existance of a couple of identities...
