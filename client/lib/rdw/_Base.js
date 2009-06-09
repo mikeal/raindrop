@@ -1,4 +1,6 @@
 dojo.provide("rdw._Base");
+
+dojo.require("dojo.cache");
 dojo.require("dijit.dijit");
 dojo.require("rd");
 

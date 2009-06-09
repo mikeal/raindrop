@@ -130,18 +130,23 @@ dojo.declare("extender.Wizard", [rdw._Base], {
   onClick: function(evt) {
     //summary: handles clicks that might route to an extender action.
     var linkId = this.getFragmentId(evt);
+    var extenderUiPrefix = "extender-ui-";
     if (linkId && linkId.indexOf("extender-") == 0) {
       var action = linkId.split("-")[1];
       if (this[action]) {
         this[action]();
       } else if (linkId == "extender-close") {
         rd.pub("rd-protocol-extenderClose");
-      } else if (linkId == "extender-ui-viewAll") {
+      } else if (linkId.indexOf(extenderUiPrefix) == 0) {
         //Show all UI extensions
-        dojo["require"]("extender.UiManager");
-        dojo.addOnLoad(dojo.hitch(this, function(){
-          this.add(new extender.UiManager({}));
-        }));
+        var moduleName = linkId.substring(extenderUiPrefix.length, linkId.length);
+        if (moduleName) {
+          dojo["require"](moduleName);
+          dojo.addOnLoad(dojo.hitch(this, function(){
+            var module = dojo.getObject(moduleName);
+            this.add(new module({}));
+          }));
+        }
       }
       dojo.stopEvent(evt);
     }

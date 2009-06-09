@@ -1,0 +1,10 @@
+.widgetSelectorHelperSelected {
+  border: 2px solid blue !important;
+}
+
+.widgetSelectorHelperLabel {
+  color: white;
+  background-color: blue;
+  position: absolute;
+  z-index: 999999;
+}
