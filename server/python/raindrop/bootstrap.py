@@ -104,7 +104,7 @@ def install_client_files(whateva, options):
             failure.raiseException()
         return {} # return an empty doc.
 
-    def _insert_file(path, couch_path, attachments, fp, ignore_unknowns):
+    def _insert_file(path, couch_path, attachments, fp):
         f = open(path, 'rb')
         ct = mimetypes.guess_type(path)[0]
         if ct is None and sys.platform=="win32":
@@ -116,8 +116,10 @@ def install_client_files(whateva, options):
                 ct = _winreg.QueryValueEx(k, "Content Type")[0]
             except EnvironmentError:
                 pass
-        if not ct and not ignore_unknowns:
-            assert ct, "can't guess the content type for '%s'" % path
+        if not ct:
+            ct = "application/octet-stream"
+            logger.warn("can't guess the content type for '%s' - using %r",
+                        path, ct)
         data = f.read()
         fp.get_finger(couch_path).update(data)
         attachments[couch_path] = {
@@ -126,7 +128,7 @@ def install_client_files(whateva, options):
         }
         f.close()
 
-    def _check_dir(client_dir, couch_path, attachments, fp, ignore_unknowns):
+    def _check_dir(client_dir, couch_path, attachments, fp):
         for filename in os.listdir(client_dir):
             path = os.path.join(client_dir, filename)
             # Insert files if they do not start with a dot or
@@ -135,12 +137,12 @@ def install_client_files(whateva, options):
                not filename.startswith(".") and \
                not filename.endswith("~") and \
                not filename.endswith(".zip"):
-                _insert_file(path, couch_path + filename, attachments, fp, ignore_unknowns)
+                _insert_file(path, couch_path + filename, attachments, fp)
             elif os.path.isdir(path):
                 new_couch_path = filename + "/"
                 if couch_path:
                     new_couch_path = couch_path + new_couch_path
-                _check_dir(path, new_couch_path, attachments, fp, ignore_unknowns)
+                _check_dir(path, new_couch_path, attachments, fp)
             logger.debug("filename '%s'", filename)
 
     def _maybe_update_doc(design_doc, doc_name):
@@ -152,7 +154,7 @@ def install_client_files(whateva, options):
         logger.debug("listing contents of '%s' to look for client files", client_dir)
 
         # recursively go through directories, adding files.
-        _check_dir(client_dir, "", attachments, fp, False)
+        _check_dir(client_dir, "", attachments, fp)
 
         new_prints = fp.get_prints()
         if options.force or design_doc.get('rd_fingerprints') != new_prints:
@@ -204,7 +206,7 @@ def install_client_files(whateva, options):
 
             # insert attachments into couch doc
             attachments = design_doc['_attachments'] = {}
-            _check_dir(dojo_dir, "", attachments, Fingerprinter(), True)
+            _check_dir(dojo_dir, "", attachments, Fingerprinter())
 
             # remove the unzipped dojo directory.
             shutil.rmtree(dojo_dir)
