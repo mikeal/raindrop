@@ -47,12 +47,12 @@ def show_info(result, parser, options):
     fmt = "  %(doc_count)d docs total, %(doc_del_count)d deleted, " \
           "update seq at %(update_seq)d, %(disk_size)d bytes."
     print fmt % info
+    # ouch - this seems a painful way of fetching total unique keys?
     results = yield dm.open_view(
                 startkey=["rd.core.content", "key"],
                 endkey=["rd.core.content", "key", {}],
-                group_level=2)
-    print "  %d unique raindrop keys" % results['rows'][0]['value']
-    print "  (the above seems wrong - what am I doing wrong??)"
+                group_level=3)
+    print "  %d unique raindrop keys" % len(results['rows'])
 
     print "Document counts by schema:"
     results = yield dm.open_view(
