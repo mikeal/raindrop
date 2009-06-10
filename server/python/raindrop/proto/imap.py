@@ -99,8 +99,11 @@ class ImapClient(imap4.IMAP4Client):
       else:
         todo_first.append(name)
 
-    _ = yield self._doRecent(todo_first)
-    _ = yield self._doRecent(todo_second)
+    for todo in todo_first, todo_second:
+      try:
+        _ = yield self._doRecent(todo)
+      except:
+        logger.exception("Failed to quick-examine folder")
 
     logger.info("processing all messages")
     # Then finally every message in every folder.
