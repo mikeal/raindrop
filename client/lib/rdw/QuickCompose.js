@@ -33,7 +33,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
               this.picture.src = user.image;
             }
             if (user.name) {
-              rd.escapeHtml(user.name, this.name);
+              rd.escapeHtml(user.name, this.name, "only");
             }
             //Don't worry about errors, just will not show pic.
         }));

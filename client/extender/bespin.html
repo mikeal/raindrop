@@ -39,8 +39,8 @@
 		var djConfig = { parseOnLoad: false, isDebug: false, debugAtAllCosts: false };
 	</script>   
 
-    <script src="/raindrop/bespin/js/dojo/dojo.js"></script>
-    <script src="/raindrop/bespin/js/bespin/editor/embed.js"></script>
+    <script src="/raindrop/bespin/dojo/dojo.js"></script>
+    <script src="/raindrop/bespin/bespin/editor/embed.js"></script>
 	
 	<script>
         var _editorComponent;
@@ -48,7 +48,7 @@
         // Loads and configures the objects that the editor needs
         dojo.addOnLoad(function() {
             _editorComponent = new bespin.editor.Component('editor', {
-                syntax: "js",
+                language: "js",
                 loadfromdiv: true
             });
 	    

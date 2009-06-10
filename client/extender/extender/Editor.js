@@ -16,6 +16,11 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //The modules targeted by this extension.
   targetNames: [],
 
+  //The initial content to use for the editor
+  //If none is provided, the module will be fetched
+  //from its moduleName.
+  content: "",
+
   //Bespin url for the iframe.
   iframeUrl: dojo.moduleUrl("extender", "../bespin.html"),
 
@@ -27,10 +32,14 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //summary: dijit lifecycle method, after template is in the DOM.
 
     //Some hackery to get .js path from Dojo code.
-    //TODO: does not work with xdomain loaded modules.
     var parts = this.moduleName.split(".");
     this.path = dojo.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
-    var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
+
+    var text = this.content;
+    if(!text && text != "") {
+      //TODO: does not work with xdomain loaded modules.
+      var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
+    }
 
     //Set the text for the editor.
     this.editorContent(text);
@@ -63,11 +72,19 @@ dojo.declare("extender.Editor", [rdw._Base], {
     this._iframeLoaded = true;
     this.editorContent(this.editorText);
     setTimeout(dojo.hitch(this, "onResize"), 1000);
+    if (this._saveOnLoad) {
+      this.onSave();
+    }
   },
 
   onSave: function(evt) {
     //summary: handles click events to save button.
-    
+
+    if (!this._iframeLoaded) {
+      this._saveOnLoad = true;
+      return;
+    }
+
     //Find out what couch doc to modify by taking out the
     //module name from the path.
     var modulePath = this.moduleName.replace(/\./g, "/");
@@ -96,6 +113,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
               } else {
                 this.updateStatus("File Saved");
               }
+
+              //Trigger update in opener.
+              opener.rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
             })            
           });
         }
