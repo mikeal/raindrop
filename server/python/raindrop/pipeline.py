@@ -645,9 +645,9 @@ class MessageTransformerWQ(object):
         logger.debug("finished processing %r to %r - %d processed",
                      self.get_queue_name(), state_doc['seq'], num_processed)
 
-        # We can chew 5000 'nothing to do' docs quickly next time...
+        # We can chew 1000 'nothing to do' docs quickly next time...
         last_saved = state_info['last_saved_seq']
-        if num_processed or (state_doc['seq']-last_saved) > 5000:
+        if num_processed or (state_doc['seq']-last_saved) > 1000:
             logger.debug("flushing state doc at end of run...")
             try:
                 del state_info['last_saved_seq']
@@ -796,6 +796,3 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
                    'ext_id' : ext_id,
                    'items' : new_rel_fields,
             }
-
-
-
