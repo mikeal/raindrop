@@ -29,9 +29,10 @@
 
       "rd": prefix + "/rd",
       "couch": prefix + "/couch",
-      "rdw": prefix  + "/rdw"
+      "rdw": prefix  + "/rdw",
+      "ext": prefix + "/ext"
     },
-    
+
     rd: {
       /*INSERT SUBS HERE*/
       /*INSERT EXTS HERE*/
@@ -101,5 +102,6 @@
     djConfig.modulePaths[param] = value;
   }
   
-  document.write('<script src="' + dojoPrefix + '/dojo/dojo.xd.js.uncompressed.js"></script>');
+  document.write('<script src="' + dojoPrefix + '/dojo/dojo.xd.js.uncompressed.js"></script>'
+               + '<script src="' + prefix + '/jquery-1.3.2.js"></script>');
 })();

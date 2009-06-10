@@ -1,7 +1,17 @@
 <div class="extenderWidgetSelector">
-  <h1>Select Widget</h1>
+  <h1>Extend a Widget</h1>
   
-  <p>Use your mouse and select a widget in the other window by clicking on it.</p>
-  
-  <b>Selected Widget: </b><span dojoAttachPoint="widgetNameNode"></span>
+  <form onsubmit="return false">
+    <label>What name do you want for your extension? (alphanumerics and underscores only, please)<br>
+      <input type="text" dojoAttachPoint="nameNode">
+    </label>
+
+    <p>To go to the next step, in the other window, use your mouse and select a widget.</p>
+
+    <p><b>Selected Widget: </b><span dojoAttachPoint="widgetNameNode"></span></p>
+
+    <button dojoAttachEvent="onclick: onCreateClick">Create Extension</button>
+    
+    <p class="feedback" dojoAttachPoint="feedbackNode"></p>
+ </form>
 </div>
