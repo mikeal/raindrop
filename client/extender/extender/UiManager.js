@@ -1,5 +1,6 @@
 dojo.provide("extender.UiManager");
 
+dojo.require("couch");
 dojo.require("rdw._Base");
 dojo.require("extender.Editor");
 
@@ -10,55 +11,67 @@ rd.addStyle("extender.css.UiManager");
 dojo.declare("extender.UiManager", [rdw._Base], {
   templatePath: dojo.moduleUrl("extender.templates", "UiManager.html"),
 
-  extTemplate: '<li><a href="#uimanager-ext-${source}:${targets}">${source}</a> extends: ${targets}</li>',
+  extTemplate: '<li><a href="#uimanager-ext-${extType}-${source}:${targets}">${source}</a> extends: ${targets}</li>',
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
-
-    //List all the known extensions.
-    var exts = dojo.config.rd.exts;
-    var subs = dojo.config.rd.subs;
-
-    //Get the object extensions
-    var keys = []; //The unique ext names, used for sorting.
-    var extNames = {}; //The map of ext module name to target modules.
-    var empty = {}; //Used to weed out people messing with Object.prototype.
-    for (var prop in exts) {
-      if (!(prop in empty)) {
-        var target = prop;
-        dojo.forEach(exts[prop], function(source) {
-          var sourceList = extNames[source];
-          if(!sourceList) {
-            sourceList = extNames[source] = [];
-            keys.push(source);
-          }
-          sourceList.push(target);
-        })
-      }
-    }
-
-    //Get subscription extensions
-    var subKeys = [];
-    var subNames = {};
-    for (var i = 0, sub; sub = subs[i]; i++) {
-      for (prop in sub) {
-        if (!(prop in empty)) {
-          sourceList = subNames[sub[prop]];
-          if(!sourceList) {
-            sourceList = subNames[sub[prop]] = [];
-            subKeys.push(sub[prop]);
-          }
-          sourceList.push(prop);
-        }
-      }
-    }
-
-    //Show the object and subscription extensions in the DOM.
-    this.insertExtensionHtml(keys, extNames, this.extNode);
-    this.insertExtensionHtml(subKeys, subNames, this.subNode);
   },
 
-  insertExtensionHtml: function (/*Array*/keys, /*Object*/extNames, /*DOMNode*/parentNode) {
+  activate: function() {
+    //summary: called by extender.Wizard when this instance is the current
+    //panel activated in the display.
+
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      keys: [
+        ["rd.core.content", "schema_id", "rd.ext.ui"],
+        ["rd.core.content", "schema_id", "rd.ext.uiext"]
+      ],
+      include_docs: true,
+      reduce: false,
+      success: dojo.hitch(this, function(json) {
+        var extKeys = [], extNames = {};
+        var subKeys = [], subNames = {};
+        var empty = {};
+        for (var i= 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+          //Check for object extensions
+          if (!doc.disabled && doc.exts) {
+            for (var prop in doc.exts) {
+              if (!(prop in empty)) {
+                var key = doc.exts[prop];
+                var targets = extNames[key];
+                if (!targets) {
+                  targets = extNames[key] = [];
+                  extKeys.push(key);
+                }
+                targets.push(prop);
+              }
+            }
+          }
+
+          //Check for topic extensions
+          if (!doc.disabled && doc.subscriptions) {
+            for (var prop in doc.subscriptions) {
+              if (!(prop in empty)) {
+                var key = doc.subscriptions[prop];
+                var targets = subNames[key];
+                if (!targets) {
+                  targets = subNames[key] = [];
+                  subKeys.push(key);
+                }
+                targets.push(prop);
+              }
+            }          
+          }
+        }
+
+        //Show the object and subscription extensions in the DOM.
+        this.insertExtensionHtml("ext", extKeys, extNames, this.extNode);
+        this.insertExtensionHtml("sub", subKeys, subNames, this.subNode);
+      })
+    })
+  },
+
+  insertExtensionHtml: function (/*String*/extType, /*Array*/keys, /*Object*/extNames, /*DOMNode*/parentNode) {
     //summary: generates the HTML markup that shows each extension and inserts
     //it into the widget.
     if (keys.length) {
@@ -68,11 +81,12 @@ dojo.declare("extender.UiManager", [rdw._Base], {
         var targets = extNames[key];
         targets.sort();
         html += dojo.string.substitute(this.extTemplate, {
+          extType: extType,
           source: key,
           targets: targets.join(",")
         })
       }
-      dojo.place(html, parentNode);
+      dojo.place(html, parentNode, "only");
     }
   },
 
@@ -84,13 +98,20 @@ dojo.declare("extender.UiManager", [rdw._Base], {
       if (linkId.indexOf(extPrefix) == 0) {
         //Get the module name and get the text for the module.
         var parts = linkId.substring(extPrefix.length, linkId.length);
+        
+        //Pull off extension type.
+        var dashIndex = parts.indexOf("-");
+        var extType = parts.substring(0, dashIndex);
+        parts = parts.substring(dashIndex + 1, parts.length);
+
         var parts = parts.split(":");
         var moduleName = parts[0];
         var targetNames = parts[1].split(",");
 
         this.extender.add(new extender.Editor({
           moduleName: moduleName,
-          targetNames: targetNames
+          targetNames: targetNames,
+          extType: extType
         }));
       }
       dojo.stopEvent(evt);

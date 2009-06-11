@@ -1,5 +1,6 @@
 dojo.provide("extender.Editor");
 
+dojo.require("dojox.encoding.base64");
 dojo.require("dijit.form.Textarea");
 dojo.require("rdw._Base");
 dojo.require("couch");
@@ -9,12 +10,17 @@ dojo.require("couch");
 rd.addStyle("extender.css.Editor");
 
 dojo.declare("extender.Editor", [rdw._Base], {
+  //The type of extension: possible values are "ext" or "sub"
+  extType: "ext",
 
   //Holds the module name that is being edited.
   moduleName: "",
 
   //The modules targeted by this extension.
   targetNames: [],
+
+  //The couchdb document for the extension's json manifest.
+  moduleManifest: null,
 
   //The initial content to use for the editor
   //If none is provided, the module will be fetched
@@ -36,10 +42,13 @@ dojo.declare("extender.Editor", [rdw._Base], {
     this.path = dojo.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
 
     var text = this.content;
-    if(!text && text != "") {
+    if(!text) {
       //TODO: does not work with xdomain loaded modules.
       var text = dojo._getText(this.path + "?nocache=" + ((new Date()).getTime()));
     }
+
+    //Fetch the manifest file for this document.
+    this.fetchManifest();
 
     //Set the text for the editor.
     this.editorContent(text);
@@ -77,6 +86,21 @@ dojo.declare("extender.Editor", [rdw._Base], {
     }
   },
 
+  couchDocPath: function() {
+    //summary: the path to the couchdb document that has this extension as
+    //an attachment.
+    var modulePath = this.moduleName.replace(/\./g, "/");
+    var index = this.path.indexOf(modulePath);
+    return this.path.substring(0, index - 1);
+  },
+
+  moduleDocPath: function() {
+    //summary: gets the module's couchdb path from its module name.
+    //It is really an attachment on a couchdb document.
+    var modulePath = this.moduleName.replace(/\./g, "/");
+    return this.couchDocPath() + "/" + modulePath + ".js";
+  },
+
   onSave: function(evt) {
     //summary: handles click events to save button.
 
@@ -85,50 +109,109 @@ dojo.declare("extender.Editor", [rdw._Base], {
       return;
     }
 
-    //Find out what couch doc to modify by taking out the
-    //module name from the path.
-    var modulePath = this.moduleName.replace(/\./g, "/");
-    var index = this.path.indexOf(modulePath);
-    var couchDocPath = this.path.substring(0, index - 1);
-
     //Load the couch doc so we can get the _rev field.
     dojo.xhrGet({
-      url: couchDocPath,
+      url: this.couchDocPath(),
       handleAs: "json",
       handle: dojo.hitch(this, function(response, ioArgs) {
         if (response instanceof Error) {
           this.updateStatus("Error: " + response);
-        } else {
-          var _rev = response._rev;
-
-          dojo.xhrPut({
-            url: couchDocPath + "/" + modulePath + ".js?rev=" + _rev,
-            headers: {
-              "Content-Type": "application/javascript"
-            },
-            putData: this.iframeNode.contentWindow._editorComponent.getContent(),
-            handle: dojo.hitch(this, function(response, ioArgs) {
-              if (response instanceof Error) {
-                this.updateStatus("Error: " + response);
-              } else {
-                this.updateStatus("File Saved");
-              }
-
-              //Trigger update in opener.
-              opener.rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
-            })            
-          });
+          return;
         }
+
+        var _rev = response._rev;
+        dojo.xhrPut({
+          url: this.moduleDocPath() + "?rev=" + _rev,
+          headers: {
+            "Content-Type": "application/javascript"
+          },
+          putData: this.iframeNode.contentWindow._editorComponent.getContent(),
+          handle: dojo.hitch(this, function(response, ioArgs) {
+            if (response instanceof Error) {
+              this.updateStatus("Error: " + response);
+              return;
+            }
+
+            //Extension file updated, now update the manifest
+            var manifestUrl = "/raindrop/" + this.moduleManifest._id;
+            if (this.moduleManifest._rev) {
+              manifestUrl += "?rev=" + this.moduleManifest._rev;
+            }
+
+            dojo.xhrPut({
+              url: manifestUrl,
+              putData: dojo.toJson(this.moduleManifest),
+              handle: dojo.hitch(this, function(response, ioArgs) {
+                if (response instanceof Error) {
+                  this.updateStatus("Error: " + response);
+                } else {
+                  //Trigger update in opener.
+                  opener.rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
+
+                  //Make sure to get latest manifest, since _rev can change.
+                  this.fetchManifest();
+
+                  //Update config.js.
+                  //TODO
+
+                  this.updateStatus("File Saved");
+                }
+              })
+            });
+          })            
+        });
       })
     })
   },
 
+  onDelete: function(/*Event*/evt) {
+    //summary: handles action to delete an extension.
+    if (confirm("Delete this extension: " + this.moduleName + "?")) {
+      //Disable the extension in the live page.
+      this.enableExtension(false);
+
+      //Delete the manifest document.
+      var manifestUrl = "/raindrop/" + this.moduleManifest._id;
+      dojo.xhrGet({
+        url: manifestUrl,
+        handleAs: "json",
+        load: dojo.hitch(this, function(doc, ioArgs) {
+          dojo.xhrDelete({
+            url: manifestUrl + "?rev=" + doc._rev,
+            load: dojo.hitch(this, function() {
+              //TODO: regenerate the config.js
+
+              //Now get rid of the extension JS.
+              //TODO: delete any CSS/HTML associated with the deleted files?
+              dojo.xhrGet({
+                url: this.couchDocPath(),
+                handleAs: "json",
+                load: dojo.hitch(this, function(response, ioArgs) {
+                  var _rev = response._rev;
+                  dojo.xhrDelete({
+                    url: this.moduleDocPath() + "?rev=" + _rev
+                  });
+                })
+              });
+            })
+          });
+        })
+      });
+
+      //Destroy this panel.
+      this.extender.back(true);
+    }
+  },
+
   onEnableClick: function(/*Event*/evt) {
     //summary: handles clicks to enable/disable an extension.
-    var enabled = this.enabledNode.checked;
+    this.enableExtension(this.enabledNode.checked);
+  },
+
+  enableExtension: function(/*Boolean*/enabled) {
     for(var i = 0, target; target = this.targetNames[i]; i++) {
       opener.rd.extensionEnabled(this.moduleName, target, enabled);
-    }
+    }  
   },
 
   updateStatus: function(message) {
@@ -154,5 +237,57 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //summary: handles window resize actions to best show the editable content.
     var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
     this.iframeNode.style.height = editorHeight;
+  },
+
+  fetchManifest: function() {
+    //summary: fetches the manifest for this extension. If no manifest exists,
+    //create one for it.
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      key: ["rd.core.content", "key", ["ext", this.moduleName]],
+      include_docs: true,
+      reduce: false,
+      success: dojo.hitch(this, function(json) {
+        var rows = json.rows;
+        if (rows.length) {
+          this.moduleManifest = rows[0].doc;
+        } else {
+          this.generateManifest();
+        }
+      }),
+      error: dojo.hitch(this, function(json) {
+        this.generateManifest();
+      })
+    });
+  },
+
+
+  stringToBytes: function(/*String*/s) {
+    var b = [];
+    for(var i = 0; i < s.length; ++i){
+      b.push(s.charCodeAt(i));
+    }
+    return b;
+  },
+
+  generateManifest: function() {
+    //summary: makes up a manifest json for this extension.
+    var rdKey = ["ext", this.moduleName];
+    var byteKey = this.stringToBytes(dojo.toJson(rdKey).replace(/\n/g, ""));
+    var base64Key = dojox.encoding.base64.encode(byteKey);
+
+    this.moduleManifest = {
+      "_id": "rc!ext." + base64Key + "!rd.core!rd.ext.uiext",
+      "rd_key": ["ext", this.moduleName],
+      "rd_source": null,
+      "rd_schema_id": "rd.ext.uiext",
+      "rd_ext_id": "rd.core"
+    };
+
+    //Set the module mapping.
+    var mapping = {};
+    for (var i = 0, targetName; targetName = this.targetNames[i]; i++) {
+      mapping[targetName] = this.moduleName;
+    }
+    this.moduleManifest[(this.extType == "ext" ? "exts" : "subscriptions")] = mapping;
   }
 });

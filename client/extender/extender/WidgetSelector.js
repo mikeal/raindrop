@@ -68,7 +68,8 @@ dojo.declare("extender.WidgetSelector", [rdw._Base], {
     var editor = new extender.Editor({
       moduleName: "ext." + extName,
       targetNames: [this.targetName],
-      content: text
+      content: text,
+      extType: "ext"
     });
 
     this.extender.add(editor);

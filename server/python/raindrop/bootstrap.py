@@ -379,15 +379,13 @@ def update_apps(whateva):
             continue
         doc = row["doc"]
         if 'subscriptions' in doc:
-            # each row has a key that in an array of objects.
-            for sub in doc['subscriptions']:
-                # sub is an object. Get the keys and
-                # add it to the text output.
-                for key in sub.keys():
-                  subs += "{'%s': '%s'}," % (
-                      key.replace("'", "\\'"),
-                      sub[key].replace("'", "\\'")
-                  )
+            # sub is an object. Get the keys and
+            # add it to the text output.
+            for key in doc['subscriptions'].keys():
+              subs += "{'%s': '%s'}," % (
+                  key.replace("'", "\\'"),
+                  doc['subscriptions'][key].replace("'", "\\'")
+              )
         if 'modulePaths' in doc:
             for key in doc["modulePaths"].keys():
                 paths.append({

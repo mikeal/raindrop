@@ -46,10 +46,9 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     this.inherited("destroy", arguments);
   },
 
-  add: function(/*Object*/widget) {
-    //summary: adds a widget to the history and trims any forward history.
-
-    //Trim forward history.
+  trimForward: function() {
+    //summary: destroys the panels/widgets that more forward in the history
+    //than the current position.
     if (this.history[this.historyIndex + 1]) {
       var removed = this.history.splice(this.historyIndex + 1, (this.history.length - this.historyIndex + 2));
       dojo.forEach(removed, function(widget) {
@@ -58,7 +57,14 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         //Get rid of panel container made by Wizard.
         dojo.destroy(panelNode);
       });
-    }
+    }    
+  },
+
+  add: function(/*Object*/widget) {
+    //summary: adds a widget to the history and trims any forward history.
+
+    //Trim forward history.
+    this.trimForward();
 
     //Store the extender on the widget, so widget can send commands to it.
     widget.extender = this;
@@ -99,11 +105,17 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         
         //Hide the other panels so they are not visible during a resize
         this.updatePanelVisibility();
+
+        //Allow widget to update itself.
+        var widget = this.history[this.historyIndex];
+        if (widget.activate) {
+          widget.activate();
+        }
       })
     }).play();
   },
 
-  back: function() {
+  back: function(/*Boolean*/doTrimForward) {
     //summary: goes back one step in the history.
     this.historyIndex -= 1;
     var scrollAmount = dojo.marginBox(this.panelNode).w;
@@ -123,6 +135,16 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         }
         this.forwardNode.style.visibility = "visible";
         this.updatePanelVisibility();
+
+        //Allow widget to update itself.
+        var widget = this.history[this.historyIndex];
+        if (widget.activate) {
+          widget.activate();
+        }
+
+        if (doTrimForward) {
+          this.trimForward();
+        }
       })
     }).play();
   },
