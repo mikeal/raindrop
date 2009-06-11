@@ -255,6 +255,7 @@ dojo._listener.getDispatcher = function(){
       id: 1,
       _connects: 1,
       _subscribes: 1,
+      _supportingWidgets: 1,
       nodeType: 1 //to avoid DOM nodes
     },
 

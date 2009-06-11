@@ -23,9 +23,14 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //and load up each story widget in there.
     var frag = dojo.doc.createDocumentFragment();
     dojo.forEach(this._mailingLists, function(doc) {
-      new rdw.MailingList({
+      //Store widgets in this._supportingWidgets so they get destroyed properly
+      //by dijit infrastructure.
+      if (!this._supportingWidgets) {
+        this._supportingWidgets = [];
+      }
+      this._supportingWidgets.push(new rdw.MailingList({
         doc: doc
-      }, dojo.create("div", null, frag));
+      }, dojo.create("div", null, frag)));
     });
 
     //Inject nodes all at once for best performance.

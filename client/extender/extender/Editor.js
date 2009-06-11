@@ -151,8 +151,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
                   //Make sure to get latest manifest, since _rev can change.
                   this.fetchManifest();
 
-                  //Update config.js.
-                  //TODO
+                  this.updateConfigJs("save");
 
                   this.updateStatus("File Saved");
                 }
@@ -167,9 +166,6 @@ dojo.declare("extender.Editor", [rdw._Base], {
   onDelete: function(/*Event*/evt) {
     //summary: handles action to delete an extension.
     if (confirm("Delete this extension: " + this.moduleName + "?")) {
-      //Disable the extension in the live page.
-      this.enableExtension(false);
-
       //Delete the manifest document.
       var manifestUrl = "/raindrop/" + this.moduleManifest._id;
       dojo.xhrGet({
@@ -179,8 +175,6 @@ dojo.declare("extender.Editor", [rdw._Base], {
           dojo.xhrDelete({
             url: manifestUrl + "?rev=" + doc._rev,
             load: dojo.hitch(this, function() {
-              //TODO: regenerate the config.js
-
               //Now get rid of the extension JS.
               //TODO: delete any CSS/HTML associated with the deleted files?
               dojo.xhrGet({
@@ -189,7 +183,16 @@ dojo.declare("extender.Editor", [rdw._Base], {
                 load: dojo.hitch(this, function(response, ioArgs) {
                   var _rev = response._rev;
                   dojo.xhrDelete({
-                    url: this.moduleDocPath() + "?rev=" + _rev
+                    url: this.moduleDocPath() + "?rev=" + _rev,
+                    load: dojo.hitch(this, function() {
+                      this.updateConfigJs("delete");
+
+                      //Disable the extension in the live page.
+                      this.enableExtension(false);
+
+                      //Destroy this panel.
+                      this.extender.back(true);
+                    })
                   });
                 })
               });
@@ -197,9 +200,6 @@ dojo.declare("extender.Editor", [rdw._Base], {
           });
         })
       });
-
-      //Destroy this panel.
-      this.extender.back(true);
     }
   },
 
@@ -289,5 +289,56 @@ dojo.declare("extender.Editor", [rdw._Base], {
       mapping[targetName] = this.moduleName;
     }
     this.moduleManifest[(this.extType == "ext" ? "exts" : "subscriptions")] = mapping;
+  },
+  
+  updateConfigJs: function(/*String*/command) {
+    //summary: updates the config.js file with a change to the extension data.
+    //command can be "delete" or "save".
+
+    //Get the config.js text.
+    dojo.xhrGet({
+      url: "/raindrop/lib/config.js",
+      load: dojo.hitch(this, function(configText, ioArgs) {
+        //Do the config.js mangling.
+        var empty = {};
+        for (var i = 0, targetName; targetName = this.targetNames[i]; i++) {
+          var regExp = new RegExp('(,)?\\s*{\\s*["\']' + targetName + '["\']\\s*:\\s*["\']' + this.moduleName + '["\']\\s*}');
+          if (command == "delete") {
+            configText = configText.replace(regExp, "");
+          } else if (command == "save" && !regExp.test(configText)) {
+            //Save a new entry, it is not an existing entry.
+            var propName = (this.extType == "ext" ? "exts" : "subs");
+            var hasObject = (new RegExp(propName + '\\s*:\\s*\\[\\s*{')).test(configText);
+            var insertRegExp = new RegExp(propName + '\\s*:\\s*\\[\\s*');
+            var text = propName + ": [{'" + targetName + "': '" + this.moduleName + "'}";
+            if (hasObject) {
+              text += ",";
+            }
+            configText = configText.replace(insertRegExp, text);
+          }
+
+          //Make sure to clean up any starting commas.
+          configText = configText
+                        .replace(/subs\s*:\s*\[\s*,/, "subs: [")
+                        .replace(/exts\s*:\s*\[\s*,/, "exts: [");
+        }
+
+        //Get the couch doc holding the config.js attachment, to get its version number.
+        dojo.xhrGet({
+          url: "/raindrop/lib",
+          handleAs: "json",
+          load: dojo.hitch(this, function(response, ioArgs) {
+            var _rev = response._rev;
+            dojo.xhrPut({
+              url: "/raindrop/lib/config.js?rev=" + _rev,
+              headers: {
+                "Content-Type": "application/javascript"
+              },
+              putData: configText
+            });
+          })
+        });
+      })
+    });
   }
 });
