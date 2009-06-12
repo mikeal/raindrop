@@ -1,28 +1,31 @@
-.extenderWizard {
-  padding: 10px;
-  background-color: #AFAFAF;
-  font-size: small;
-  height: 100%;
-}
+@import url("/raindrop/rd_list/index.css");
+@import url("/raindrop/lib/rdw/css/Message.css");
 
-.extenderWizard h1,
-.extenderWizard h2,
-.extenderWizard h3 {
-  font-weight: bold;
-  font-size: 100%;
-}
-
-.extenderWizard .disabled {
-  color: gray;
-}
-
-.extenderWizard .actions {
-  position: relative;
-}
-
-.extenderWizard .actions .close {
+.extenderWizard .nav {
   position: absolute;
-  right: 0;
+  right: 10px;
+}
+
+.extenderWizard .wrap { display: table; }
+.extenderWizard .row { display: table-row; }
+.extenderWizard .column { display: table-cell; max-width: 30em; padding: 1em; }
+.extenderWizard .column:first-child { border-right: 1px solid #afafaf; }
+
+.extenderWizard .miners { text-align: center; min-height: 20em; }
+.extenderWizard .miners > ul { text-align: left; list-style: none; }
+.extenderWizard .miners > ul > li { padding: 0.5em; display: none; }
+.extenderWizard .date-processing { text-transform: capitalize; border-bottom: 0px dotted #0066dd; cursor: pointer; }
+.extenderWizard .date-processed { background-color: #efefef; }
+.extenderWizard .date-processed:hover { color: #fff; background-color: #0066dd; border-bottom-style: solid; }
+
+.extenderWizard .Message { cursor: pointer; }
+.extenderWizard .widget-extension {
+  display: none;
+  padding: 0.5em;
+  margin: 0.5em;
+  border: 1px solid #ffee20;
+  background-color: #ffffe0;
+  text-decoration: none;
 }
 
 .extenderWizard .panelContainer {

@@ -19,6 +19,10 @@ dojo.declare("extender.Wizard", [rdw._Base], {
 
   templatePath: dojo.moduleUrl("extender.templates", "Wizard.html"),
 
+  //Image used in template. Specified here so the path is not
+  //hard-coded to a specific path.
+  nobodyImgUrl: dojo.moduleUrl("extender.css", "nobody.png"),
+
   postCreate: function() {
     //summary: dijit lifecycle method.
     this.history = [this];
@@ -33,6 +37,36 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     //do initial calculation.
     this.connect(window, "onresize", "onResize");
     this.onResize();
+    
+    //Other UI setup, start animations.
+    $(".miners > ul > li", this.domNode).each(function() {
+      var d = new Date();
+      if ( $(this).find("span.date").attr('id') == "tomorrow") {
+        d.setDate(d.getDate() + 1);
+      }
+      if ( $(this).find("span.date").attr('id') == "tuesday") {
+        d.setDate( d.getDate() + (2 - d.getDay() + 7) % 7 );
+      }
+      $(this).find("span.date").attr('title', d.toLocaleString());
+  
+    });
+  
+    window.setTimeout(function() {
+      $(".w", this.domNode).slideDown("slow")
+              .find("span.date")
+              .addClass("date-processing")
+              .animate({borderBottomWidth:"1px", backgroundColor: "#dfdfdf"},"slow", "",
+                function() { 
+                    $(this).addClass("date-processed");
+                    $(".y", this.domNode).slideDown("slow")
+                            .find("span.date")
+                            .addClass("date-processing")
+                            .animate({borderBottomWidth:"1px"}, "slow", "",
+                              function() { $(this).addClass("date-processed") });
+                }
+      );
+    }, 1000 * 1);
+    window.setTimeout(function() { $(".Message > .message > .content > .widget-extension").slideDown("slow"); }, 1000 * 2);
   },
 
   destroy: function() {

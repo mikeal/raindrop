@@ -7,7 +7,7 @@ body {
   padding: 0px;
 }
 
-h1#topheader {
+h1.topheader {
   margin: 0px;
   padding: 0.5ex;
   font-size: large;
@@ -15,17 +15,17 @@ h1#topheader {
   background-color: #bfdbf5;
 }
 
-h1#topheader > a {
+h1.topheader a {
   font-size: large;
   letter-spacing: 0.3ex;
   color: #466078;
   text-decoration: none;
 }
 
-h1#topheader > strong {
+h1.topheader > strong {
   padding-left: 0.25em;
 }
 
-h1#topheader > strong:before {
+h1.topheader > strong:before {
   content: "\00BB  ";
 }

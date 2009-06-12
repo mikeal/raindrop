@@ -1,38 +1,59 @@
 <div class="extenderWizard" dojoAttachEvent="onclick: onClick">
-  <div class="actions">
-    <a dojoAttachPoint="backNode" href="#extender-back">&lt; Back</a>
-    <a dojoAttachPoint="forwardNode" href="#extender-forward">Forward &gt;</a>
-    <a class="close" href="#extender-close">Close</a>
-  </div>
+  <h1 class="topheader">
+    <a href="/raindrop/rd_list/index.html">raindrop</a><strong>extensions</strong>
+    <span class="nav">
+      <a dojoAttachPoint="backNode" href="#extender-back">&lt;Back</a>
+      <a dojoAttachPoint="forwardNode" href="#extender-forward">Forward&gt;</a>
+    </span>
+  </h1>
   <div class="panelContainer" dojoAttachPoint="panelContainerNode">
     <div class="panels" dojoAttachPoint="panelsNode">
       <div class="panel" dojoAttachPoint="panelNode">
-        <h1>How do you want to extend raindrop?</h1>
-  
-        <h2>Change the UI</h2>
-          <h3><a class="disabled" href="#extender-ui-">Extend the CSS</a></h3>
-          <p>Use a tool like firebug to inspect the page then add your
-          style overrides in a custom style sheet.</p>
-    
-          <h3><a href="#extender-ui-extender.WidgetSelector">Extend a Widget</a></h3>
-          <p>Inspect widgets on the page, select one and extend it. If you Extend the Widget Data, then you can extend a widget to display the new data.</p>
-    
-          <h3><a class="disabled" href="#extender-ui-">Extend the Widget Data</a></h3>
-          <p>Add or modify the data objects used by widgets. You can add new data properties, then Extend a Widget to display the new data.</p>
-    
-          <h3><a class="disabled" href="#extender-ui-">Create A Widget</a></h3>
-          <p>Create a widget and specify where it should show up on the page.</p>
-    
-          <h3><a href="#extender-ui-extender.UiManager">View all extensions</a></h3>
-          <p>Show all the extensions used by the UI. Modify, remove or copy extensions here.</p>
-        </ul>
 
-        <h2>Change how data is stored</h2>
-          <h3><a class="disabled" href="#extender-be-create">Create extension</a></h3>
-          <p>Create a new extension that runs in the background as new data is stored in raindrop</p>
-    
-          <h3><a class="disabled" href="#extender-be-viewAll">View all extensions</a></h3>
-          <p>Show all data storage extensions. Modify, remove or copy extensions here.</p>
+        <h2 style="text-align:center; letter-spacing: 3px;padding:0.5em;font-size:small;font-weight:bold;"><a href="#">Tutorial</a> | <a href="#extender-ui-extender.UiManager">Your Extensions</a> | <a href="#">Reference</a></h2>
+        <div class="wrap">
+        <div class="row">
+          <div class="column">
+            <h3>Miners</h3>
+            <div class="miners">
+              <img src="${nobodyImgUrl}"/>
+              <p>Miners help you find hidden data in your messages so it can be searched or displayed in the inflow</p>
+              <ul>
+                <li class="w">Lets get lunch <span class="date tomorrow">tomorrow</span></li>
+                <li class="y">Are you free on <span class="date tuesday">tuesday</span> for dinner?</li>
+              </ul>
+            </div>
+          </div>
+          <div class="column">
+            <h3>Extensions</h3>
+            <div class="extenders">
+            <div class="Message ">
+              <div class="photo"><img src="http://www.gravatar.com/avatar/8ea890a677d6a223c591a1beea6ea9d2.jpg?d=wavatar&amp;s=48" dojoattachpoint="userPicNode" class="photo"/></div>
+              <div class="message">
+                <div class="header">
+                  <span class="from">
+                    <a class="from" href="#extender-ui-extender.WidgetSelector">Widget Extender</a>
+                    </span>
+                  <span class="medium">widgets@raindrop</span>
+                </div>
+                <div class="content">
+                  <span class="subject">Extend the display of widgets!</span> The display of messages can be extended to include any number of different widget types.
+                <a href="#extender-ui-extender.WidgetSelector" class="widget-extension">Add Calendar Events, Link Detection, Attachment Previews</a>
+                </div>
+                <div class="tools">
+                </div>
+                <div title="Fri, 08 May 2009 20:51:10 GMT" class="timestamp">
+                  <span class="friendly">5 weeks ago</span>
+                  <span class="additional">Friday May  8</span>
+                </div>
+                <div class="toolAction">
+                </div>
+            </div>
+            </div>
+          </div>
+
+        </div>
+        </div>
       </div>
     </div>
   </div>
