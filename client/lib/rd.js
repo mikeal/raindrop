@@ -291,11 +291,19 @@ dojo._listener.getDispatcher = function(){
 	    }
 	  }
 
-	  //Now create a new version of the instance and replace the old one.
-	  var refreshed = new module(initProps);
 	  var parentNode = instance.domNode.parentNode;
-	  parentNode.replaceChild(refreshed.domNode, instance.domNode);
+	  var nextSibling = instance.domNode.nextSibling;
+	  //Destroy the old one first in case it is holding on to widgets
+	  //that will be recreated when new instance is created.
 	  instance.destroy();
+
+	  //Make the new instance and place it accordingly.
+	  var refreshed = new module(initProps);
+	  if (nextSibling) {
+	    parentNode.insertBefore(refreshed.domNode, nextSibling);
+	  } else {
+	    parentNode.appendChild(refreshed.domNode);
+	  }
 	});
       }
     },

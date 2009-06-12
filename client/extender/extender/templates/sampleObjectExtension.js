@@ -19,7 +19,7 @@ rd.applyExtension("ext.${extName}", "${targetModule}", {
 
       //this.domNode is the root DOM node for the widget's instance.
       $(this.domNode)
-        .append('<div class=ext${extName}>Hello World</div>')
+        .append('<div class="ext${extName}">Hello World</div>')
         .children(".ext${extName}")
         .css("backgroundColor", "red");
     }
