@@ -51,7 +51,9 @@
 
   <script type="text/javascript" charset="utf-8">
     rd.require("dijit.form.Textarea");
-  
+    rd.require("dojo.NodeList-manipulate");
+    rd.require("dojo.NodeList-traverse");
+
     rd.addOnLoad(function(){
 
       //Get the list of views available for querying.
@@ -119,11 +121,15 @@
           }
           rd.place(nodes, "masterForm");
 
-          //Bind to onsubmit for the form.
-          rd.connect(dojo.byId("masterForm"), "onsubmit", function(evt){
-            dojo.stopEvent(evt);
+          function fetch(/*Object*/args) {
+            //summary: normalizes arguments and then fetches the results from server.
 
-            var args = rd.formToObject("masterForm");
+            //Create a copy so we can modify the args below without affecting
+            //form history.
+            var oldArgs = args;
+            args = {};
+            dojo.mixin(args, oldArgs);
+
             var url = "/raindrop/" + args.url;
             delete args.url;
 
@@ -173,6 +179,64 @@
             }
 
             rd["xhr" + (keys ? "Post" : "Get")](xhrArgs);
+          }
+
+          //Hold history of commands.
+          historyCache = [];
+          historyIndex = 0;
+
+          function showHistory() {
+            //summary: shows the current history index's form info
+            //and updates the output to that query.
+            var args = historyCache[historyIndex].args;
+
+            //Update form.
+            var form = dojo.byId("masterForm");
+            for (var prop in args) {
+              if (prop == "url") {
+                dojo.query(form[prop]).val(args[prop]);
+              } else {
+                form[prop].value = args[prop];
+              }
+            }
+
+            fetch(args);
+          }
+          //Bind to onsubmit for the form.
+          rd.connect(dojo.byId("masterForm"), "onsubmit", function(evt){
+            dojo.stopEvent(evt);
+
+            var args = rd.formToObject("masterForm");
+            historyIndex = historyCache.push({ args: args }) - 1;
+
+            fetch(args);
+          });
+
+          //Bind to key events to allow going back/forward in history.
+          var ignoreNames = {
+            "input": 1,
+            "textarea": 1,
+            "select": 1,
+            "button": 1
+          };
+          rd.connect(document.documentElement, "onkeypress", function(evt) {
+            var name = evt.target.nodeName.toLowerCase();            
+            if (ignoreNames[name]) {
+              return;
+            }
+            //console.log(evt, evt.target, evt.currentTarget);
+
+            if (evt.keyCode == dojo.keys.UP_ARROW) {
+               if (historyIndex > 0) {
+                historyIndex -= 1;
+                showHistory();
+              }
+           } else if (evt.keyCode == dojo.keys.DOWN_ARROW) {
+              if (historyIndex < historyCache.length - 1) {
+                historyIndex += 1;
+                showHistory();
+              }
+            }
           });
         }
       });
@@ -180,6 +244,8 @@
   </script>
 </head>
 <body>
+  Use <b>up arrow</b> to go back in query history, use <b>down arrow</b> to go forward in query history.
+  <hr>
   <table>
     <tbody>
     <tr>
