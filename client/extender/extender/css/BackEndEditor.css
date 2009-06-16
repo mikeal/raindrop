@@ -1,0 +1,13 @@
+.extenderBackEndEditor .header {
+  padding: 10px;
+}
+
+.extenderBackEndEditor iframe {
+  width: 100%;
+  height: 100%;
+}
+
+.extenderBackEndEditor .delete {
+  position: absolute;
+  right: 1em;
+}

@@ -1,0 +1,15 @@
+<div class="extenderBackEndEditor">
+  <div class="header">
+    <h1>Editor</h1>
+    <form onsubmit="return false;">
+      <div class="actions">
+        <button dojoAttachEvent="onclick: onSave">Save</button>
+        <input type="checkbox" dojoAttachPoint="enabledNode" dojoAttachEvent="onclick: onEnableClick"> Enabled
+        <button class="delete" dojoAttachEvent="onclick: onDelete">Delete</button>
+      </div>
+      <div dojoAttachPoint="statusNode" class="status">
+      </div>
+    </form>
+  </div>
+  <iframe src="${iframeUrl}" dojoAttachPoint="iframeNode" dojoAttachEvent="onload: onIframeLoad"></iframe>
+</div>

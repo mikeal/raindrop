@@ -48,7 +48,7 @@
         // Loads and configures the objects that the editor needs
         dojo.addOnLoad(function() {
             _editorComponent = new bespin.editor.Component('editor', {
-                language: "js",
+                language: location.href.split("#")[1] || "js",
                 loadfromdiv: true
             });
 	    

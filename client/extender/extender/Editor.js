@@ -1,7 +1,6 @@
 dojo.provide("extender.Editor");
 
 dojo.require("dojox.encoding.base64");
-dojo.require("dijit.form.Textarea");
 dojo.require("rdw._Base");
 dojo.require("couch");
 
