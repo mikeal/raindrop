@@ -45,6 +45,15 @@
     textarea {
       width: 100%;
     }
+    
+    .controls {
+      font-size: smaller;
+      font-weight: normal;
+    }
+    
+    #output {
+      font-size: smaller;
+    }
   </style>
 
   <script src="/raindrop/lib/config.js" charset="utf-8"></script>
@@ -53,6 +62,7 @@
     rd.require("dijit.form.Textarea");
     rd.require("dojo.NodeList-manipulate");
     rd.require("dojo.NodeList-traverse");
+    rd.require("dojo.cookie");
 
     rd.addOnLoad(function(){
 
@@ -76,7 +86,7 @@
           var html = '<select id="url" name="url">';
 
           //Add in all_docs option
-          urls.unshift("_all_docs");
+          urls.push("_all_docs");
 
           //Now all the views.
           for (var i = 0, url; url = urls[i]; i++) {
@@ -104,7 +114,8 @@
           ];
 
           var inputValues = {
-            limit: 10
+            limit: 10,
+            reduce: "false"
           }
 
           //Convert form controls into HTML.
@@ -121,6 +132,7 @@
           }
           rd.place(nodes, "masterForm");
 
+          //********************************************
           function fetch(/*Object*/args) {
             //summary: normalizes arguments and then fetches the results from server.
 
@@ -162,7 +174,7 @@
                 //var text = rd.toJson(response, true);
                 //var text = response.replace(/\},/g, "},\n");
                 var text = response;
-                rdw.byId("output").attr("value", text);
+                output(text);
               }
             };
 
@@ -181,36 +193,70 @@
             rd["xhr" + (keys ? "Post" : "Get")](xhrArgs);
           }
 
+          var rawOutputText;
+
+          //********************************************
+          function output(/*String*/ text) {
+            rawOutputText = text;
+            //summary: output the text, depending on formatting options.
+            var useHyperlink = dojo.byId("hyperLinkIds").checked;
+            if (arguments.length) {
+              //Setter case
+              if (useHyperlink) {
+                //Hyperlink the IDs.
+                text = rd.escapeHtml(text).replace(/("id":"([^"]+)")/g, function (txt, match, sub1) {
+                  return '"id":"<a href="/_utils/document.html?raindrop/' + sub1 + '" target="_blank">' + sub1 + '</a>"';
+                });
+                rdw.byId("outputText").domNode.style.display = "none";
+                dojo.byId("outputSpan").style.display = "block";
+
+                dojo.byId("outputSpan").innerHTML = text;
+              } else {
+                rdw.byId("outputText").domNode.style.display = "block";
+                dojo.byId("outputSpan").style.display = "none";
+
+                rdw.byId("outputText").attr("value", text);
+              }
+            } else {
+              //Getter case.
+              return useHyperlink ? dojo.byId("outputSpan").innerHTML : dw.byId("outputText").attr("value");
+            }
+          }
+
+          dojo.query("#hyperLinkIds").onclick(function(evt) {
+            output(rawOutputText);
+          });
+
           //Hold history of commands.
           historyCache = [];
           historyIndex = 0;
 
+          //********************************************
           function showHistory() {
             //summary: shows the current history index's form info
             //and updates the output to that query.
             var args = historyCache[historyIndex].args;
-
-            //Update form.
-            var form = dojo.byId("masterForm");
-            for (var prop in args) {
-              if (prop == "url") {
-                dojo.query(form[prop]).val(args[prop]);
-              } else {
-                form[prop].value = args[prop];
-              }
-            }
-
+            setForm(args);
             fetch(args);
           }
-          //Bind to onsubmit for the form.
-          rd.connect(dojo.byId("masterForm"), "onsubmit", function(evt){
-            dojo.stopEvent(evt);
+
+          //********************************************
+          function submitQuery(evt) {
+            //summary: grabs the forms fields, adds to history and submits query.
+            if (evt) {
+              dojo.stopEvent(evt);
+            }
 
             var args = rd.formToObject("masterForm");
             historyIndex = historyCache.push({ args: args }) - 1;
 
             fetch(args);
-          });
+          }
+
+          //Bind to onsubmit for the form.
+          rd.connect(dojo.byId("masterForm"), "onsubmit", submitQuery);
+
+
 
           //Bind to key events to allow going back/forward in history.
           var ignoreNames = {
@@ -219,6 +265,20 @@
             "select": 1,
             "button": 1
           };
+
+          //********************************************
+          function setForm(args) {
+            //summary: sets the form fields based on the args.
+            var form = dojo.byId("masterForm");
+            for (var prop in args) {
+              if (prop == "url") {
+                dojo.query(form[prop]).val(args[prop]);
+              } else {
+                form[prop].value = args[prop];
+              }
+            }
+          }
+
           rd.connect(document.documentElement, "onkeypress", function(evt) {
             var name = evt.target.nodeName.toLowerCase();            
             if (ignoreNames[name]) {
@@ -238,6 +298,19 @@
               }
             }
           });
+          
+          //Save last query in a cookie for now. Also rehydrate last query from cookie if available.
+          var oldArgs = dojo.cookie("lastQuery");
+          if (oldArgs) {
+            setForm(dojo.fromJson(oldArgs));
+            submitQuery();
+          }
+
+          //When page is being unloaded save query to a cookie.
+          dojo.connect(window, "onbeforeunload", function(evt) {
+            var args = rd.formToObject("masterForm");
+            dojo.cookie("lastQuery", dojo.toJson(args), { expires: 25 });
+          });
         }
       });
     });
@@ -255,8 +328,9 @@
         </form>      
       </td>
       <td id="outake">      
-        <h3>Output</h3>
-        <textarea id="output" rdType="dijit.form.Textarea"></textarea>
+        <h3>Output <span class="controls"> <input id="hyperLinkIds" value="useHyperlink" type="checkbox">Hyperlink IDs</span></h3>
+        <textarea id="outputText" rdType="dijit.form.Textarea"></textarea>
+        <span id="outputSpan"></span>
       </td>
     </tr>
     </tbody>
