@@ -36,8 +36,11 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
     }
   },
 
-  show: function(id) {
+  show: function(/*String*/id, /*Boolean*/isRefresh) {
     // Get the rd_key for all items in the mailing-list.
+
+    this.id = id;
+
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       key: ["rd.msg.email.mailing-list", "id", id],
       reduce: false,
@@ -67,11 +70,17 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
             }
             //Load up conversations and ask for them to be displayed.
             rd.conversation(convIds, function(conversations) {
-              rd.pub("rd-display-conversations", conversations);
+              rd.pub("rd-display-conversations", conversations, this, isRefresh);
             });
           }
         });
       }
     });
+  },
+
+  refreshConversations: function() {
+    //summary: part of the contract when publishing "rd-display-conversations",
+    //called if new messages may be on the server.
+    this.show(this.id, true);
   }
 });

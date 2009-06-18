@@ -52,8 +52,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
-    rd.pub("rd-protocol-home");
-
     // Populate the widget with a list of mailing lists to which any messages
     // in the datastore belong.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
