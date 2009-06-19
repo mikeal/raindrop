@@ -120,7 +120,22 @@ rd.require("rd.conversation");
     //Trigger the "home" action.
     rd.pub("rd-protocol-home");
 
-    //Start up the autosyncing every 15 minutes.
-    rd.engine.autoSync(900);
+    //Start up the autosyncing if desired, time is in seconds.
+    var autoSync = 0;
+    var args = location.href.split("#")[0].split("?")[1];
+    if (args) {
+      args = dojo.queryToObject(args);
+      if (args.autosync) {
+        if (args.autosync == "off") {
+          autoSync = 0;
+        } else {
+          autoSync = parseInt(args.autosync, 10);
+        }
+      }
+    }
+
+    if (autoSync) {
+      rd.engine.autoSync(autoSync);
+    }
   });
 })();
