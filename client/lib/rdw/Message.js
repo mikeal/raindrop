@@ -15,14 +15,15 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //set it per instance.
   messageBag: {},
 
-  templatePath: dojo.moduleUrl("rdw.templates", "Message.html"),
+  normalTemplate: dojo.cache("rdw.templates", "Message.html"),
+  unknownUserTemplate: dojo.cache("rdw.templates", "MessageUnknown.html"),
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
-    
+
     //Set the properties for this widget based on messageBag
     //properties.
     //TODO: some of these need more info from backend.    
@@ -71,6 +72,14 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (this.fromId && this.fromId.indexOf("@") != -1) {
       this.userPicUrl = rdw.gravatar.get(this.fromId);
     }
+
+    //Determine if the sender is known and switch templates if necessary.
+    var known = msgBag["rd.msg.ui"].known;
+    if (!known) {
+      this.templateString = this.unknownUserTemplate;
+    } else {
+      this.templateString = this.normalTemplate;
+    }
   },
 
   postCreate: function() {
@@ -82,7 +91,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var msgDoc = msgBag['rd.msg.body'];
     var from = msgDoc.from;
     rd.identity.get(from, dojo.hitch(this, function(user) {
-      if (user.image) {
+      if (this.userPicNode && user.image) {
         if (user.image[0]=="/")
           // It is a URL into our couch.
           this.userPicNode.src = "/raindrop" + user.image;

@@ -1,0 +1,24 @@
+<div class="Message MessageUnknown ${type}">
+  <a href="#" class="close">${i18n.closeIcon}</a>
+  <div class="photo">??</div>
+  <div class="message">
+    <div class="header">
+      <span class="from">
+        <a target="_blank" class="from" dojoAttachPoint="fromNameNode">${fromName}</a>
+        </span>
+      <span class="medium">${fromId}</span>
+    </div>
+    <div class="content">
+      <span class="subject">${subject}</span> ${message}
+    </div>
+    <div class="tools" dojoAttachPoint="tools" dojoAttachEvent="onclick: onToolClick">
+      <a href="#spam">${i18n.spam}</a> <a href="#block">${i18n.block}</a> <a href="#know">${i18n.who}</a>
+    </div>
+    <div class="timestamp" title="${utcTime}">
+      <span class="friendly">${friendlyTime}</span>
+      <span class="additional">${additionalTime}</span>
+    </div>
+    <div class="toolAction" dojoAttachPoint="toolDisplay">
+    </div>
+  </div>
+</div>

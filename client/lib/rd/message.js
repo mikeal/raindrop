@@ -1,8 +1,10 @@
 dojo.provide("rd.message");
 
 dojo.require("couch");
+dojo.require("rd._api");
+dojo.require("rd.identity");
 
-rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
+rd.message = rd._api._protectFunc(function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
   //summary: gets a message given an ID. Loads multiple couch documents to create
   //a unified message object for the UI. The method accepts either one string message
   //ID or an array of string message IDs. Normally, you will want to call rd.conversation
@@ -55,8 +57,22 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
           //If so, then tell any extensions about new message load.
           var nextDoc = json.rows[i + 1] && json.rows[i + 1].doc;
           if (!nextDoc || rdKey[1] != nextDoc.rd_key[1]) {
-            //Have a final bag. Make sure it is not a ghost
-            if (bag["rd.msg.body"]) {
+            //Have a final bag. Make sure it is not a ghost by checking
+            //for a body. Also synthesize a bag schema for if the person is known.
+            if (bag["rd.msg.body"]) {              
+              //See if this is a known sender by checking existence of an identity
+              //object for the from identity.
+              //Using private implementation knowledge of rd.identity to make
+              //this code easier to follow/faster. This works because rd.message
+              //forces the load of all identities before loading any messages
+              //(via the work it does in _load)
+              var from = bag["rd.msg.body"].from;
+              var known = rd.identity[from[0]] && rd.identity[from[0]][from[1]];
+              bag["rd.msg.ui"] = {
+                rd_schema_id: "rd.msg.ui",
+                known: !!known
+              };
+
               messageResults.push(bag);
               rd.message.onMessageLoaded(bag);
             }
@@ -73,12 +89,26 @@ rd.message = function(/*String|Array*/ids, /*Function*/callback, /*Function*/err
     }),
     error: errback
   });
-}
+}, 2);
+
+dojo._mixin(rd.message, rd._api);
 
 dojo._mixin(rd.message, {
   onMessageLoaded: function(/*Object*/messageBag) {
     //summary: an extension point to allow adding things to the
     //message bag before it is returned to a caller. This is how
     //to add UI data extensions for messages.
+  },
+  
+  _load: function() {
+    //summary: load handler for rd._api mixin. Make sure we
+    //load all identities so we can mark if this message is
+    //from a known person.
+    //TODO: may want to expand this to look for tags?
+    rd.identity.list(dojo.hitch(this, function(){
+      this._onload();
+    }));
   }
 });
+
+rd.identity._protectPublic();

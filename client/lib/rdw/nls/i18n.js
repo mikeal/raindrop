@@ -5,5 +5,8 @@
   home: "Home",
   reply: "reply",
   send: "send",
-  sent: "Sent"
+  sent: "Sent",
+  spam: "Spam",
+  block: "Block",
+  who: "Who is this?"
 })
