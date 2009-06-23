@@ -16,6 +16,55 @@ dojo.mixin(rd.contact, {
   _byIdty: {},
   _idtyMapIds: {},
   _listStatus: "unfetched",
+  _matches: {},
+
+  matches: function(/*String*/name, /*Function*/callback, /*Function?*/errback) {
+    //summary: Returns a list of possible contact matches to the callback.
+
+    //Use cache when possible.
+    if (name in this._matches) {
+      callback(this._matches[name]);
+      return;
+    }
+    
+    this.list(dojo.hitch(this, function(contacts) {
+      var matches = [];
+      
+      //Take off @ domain from an email, then separate names in original
+      //name by whitespace.
+      sourceNames = name.split("@")[0].toLowerCase();
+      var sourceNames = sourceNames.split(/\s+/);
+
+      //Cycle through the names to try and find a match.
+      //TODO: This is a bit expensive. Ideally this could become a back-end extension,
+      //although there are "fresher" results if this is run at display-time.
+      //May not be worth the cost though, back-end extension might be better.
+      for (var k = 0, from; from = sourceNames[k]; k++) {
+        for (var i = 0, contact; contact = contacts[i]; i++) {
+          //See if contact name matches
+          var names = contact.name.split(/\s+/);
+          if (this._hasNameMatch(from, names)) {
+            matches.push(contact);
+            continue;
+          }
+
+          //Check each identity for a match.
+          for (var j, identity; identity = contact.identities[j]; j++) {
+            names = identity.name.split(/\s+/);
+            names.unshift(identity.nickname);
+            if (this._hasNameMatch(from, names)) {
+              matches.push(contact);
+              break;
+            }
+          }
+        }
+      }
+      this._matches[name] = matches;
+      callback(matches);
+    }), errback);
+    
+    return; //For strict JS checking.
+  },
 
   list: function(/*Function*/callback, /*Function?*/errback) {
     //summary: returns a list of all contacts with their identities loaded.
@@ -153,7 +202,7 @@ dojo.mixin(rd.contact, {
     return {
       found: found.length ? found : null,
       missing: missing.length ? missing: null,
-      unknown: unknown.length ? unknown: null,
+      unknown: unknown.length ? unknown: null
     }
   },
 
@@ -362,6 +411,22 @@ dojo.mixin(rd.contact, {
         })
       );
     }
+  },
+
+  _hasNameMatch: function(/*String*/from, /*Array*/names) {
+    //summary: sees if there is a match in names with from, and vice versa. Basically,
+    //if any name matches with part of from or from matches with a part of a name.
+    var ret = false;
+    //Do not bother with short one letter names.
+    if (from.length > 1) {
+      for (var i = 0, name; name = names[i]; i++) {
+        name = name.toLowerCase();
+        if (name.length > 1 && (from.indexOf(name) != -1 || name.indexOf(from) != -1)) {
+          return true;
+        }
+      }
+    }
+    return ret;
   }
 });
 

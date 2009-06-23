@@ -12,7 +12,9 @@
       <span class="subject">${subject}</span> ${message}
     </div>
     <div class="tools" dojoAttachPoint="tools" dojoAttachEvent="onclick: onToolClick">
-      <a href="#spam">${i18n.spam}</a> <a href="#block">${i18n.block}</a> <a href="#know">${i18n.who}</a>
+      <a title="${i18n.spamTitle}" href="#spam">${i18n.spam}</a>
+      <a title="${i18n.annoyingTitle}" href="#block">${i18n.annoying}</a>
+      <a title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode"></a>
     </div>
     <div class="timestamp" title="${utcTime}">
       <span class="friendly">${friendlyTime}</span>

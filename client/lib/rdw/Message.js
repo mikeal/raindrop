@@ -2,6 +2,7 @@ dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
 dojo.require("rd.identity");
+dojo.require("rd.contact");
 dojo.require("rdw.gravatar");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
@@ -74,17 +75,37 @@ dojo.declare("rdw.Message", [rdw._Base], {
     }
 
     //Determine if the sender is known and switch templates if necessary.
-    var known = msgBag["rd.msg.ui"].known;
-    if (!known) {
-      this.templateString = this.unknownUserTemplate;
-    } else {
+    this.known = msgBag["rd.msg.ui"].known;
+    if (this.known) {
       this.templateString = this.normalTemplate;
+    } else {
+      this.templateString = this.unknownUserTemplate;
     }
   },
 
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
+
+    if (!this.known) {
+      //This identity is unknown. Try to make a suggestion for
+      //who it might be.
+      var from = this.messageBag['rd.msg.body'].from[1];
+      rd.contact.matches(from, dojo.hitch(this, function(contacts) {
+        this.matches = contacts;
+
+        //hold on to matches.
+        if (this.matches.length) {
+          //Matches, show first one in the list.
+          rd.escapeHtml(dojo.string.substitute(this.i18n.whoKnown, {
+            name: this.matches[0].name
+          }), this.whoNode);
+        } else {
+          //No matches, just show unknown message.
+          rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
+        }
+      }));
+    }
 
     //If twitter user, get their profile pic.
     var msgBag = this.messageBag;
