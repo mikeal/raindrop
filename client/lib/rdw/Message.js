@@ -2,6 +2,7 @@ dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
 dojo.require("rd.identity");
+dojo.require("rd.contact");
 dojo.require("rdw.gravatar");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
@@ -15,14 +16,15 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //set it per instance.
   messageBag: {},
 
-  templatePath: dojo.moduleUrl("rdw.templates", "Message.html"),
+  normalTemplate: dojo.cache("rdw.templates", "Message.html"),
+  unknownUserTemplate: dojo.cache("rdw.templates", "MessageUnknown.html"),
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
-    
+
     //Set the properties for this widget based on messageBag
     //properties.
     //TODO: some of these need more info from backend.    
@@ -71,18 +73,46 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (this.fromId && this.fromId.indexOf("@") != -1) {
       this.userPicUrl = rdw.gravatar.get(this.fromId);
     }
+
+    //Determine if the sender is known and switch templates if necessary.
+    this.known = msgBag["rd.msg.ui"].known;
+    if (this.known) {
+      this.templateString = this.normalTemplate;
+    } else {
+      this.templateString = this.unknownUserTemplate;
+    }
   },
 
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
+    if (!this.known) {
+      //This identity is unknown. Try to make a suggestion for
+      //who it might be.
+      var from = this.messageBag['rd.msg.body'].from[1];
+      rd.contact.matches(from, dojo.hitch(this, function(contacts) {
+        this.matches = contacts;
+
+        //hold on to matches.
+        if (this.matches.length) {
+          //Matches, show first one in the list.
+          rd.escapeHtml(dojo.string.substitute(this.i18n.whoKnown, {
+            name: this.matches[0].name
+          }), this.whoNode);
+        } else {
+          //No matches, just show unknown message.
+          rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
+        }
+      }));
+    }
+
     //If twitter user, get their profile pic.
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
     var from = msgDoc.from;
     rd.identity.get(from, dojo.hitch(this, function(user) {
-      if (user.image) {
+      if (this.userPicNode && user.image) {
         if (user.image[0]=="/")
           // It is a URL into our couch.
           this.userPicNode.src = "/raindrop" + user.image;

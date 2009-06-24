@@ -13,6 +13,19 @@ dojo.require("rd._api");
 rd.identity = dojo.delegate(rd._api);
 
 dojo.mixin(rd.identity, {
+  list: function(/*Function*/callback, /*Function?*/errback) {
+    //summary: returns a list of all identities to the callback. To get info
+    //on an identity inside the callback(identities) function, use
+    //identities[identityId[0]][identity[1]]
+    if (this._listStatus == "done") {
+      callback(this);
+    } else {
+      this._loaded = false;
+      this._listStatus = "needFetch";
+      this.list.apply(this, arguments);
+    }
+  },
+
   get: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
     //summary: fetches an identity based on an identity ID. It accepts either one
     //identityId or an array of identityIds to fetch.
@@ -65,7 +78,7 @@ dojo.mixin(rd.identity, {
                 this._byImage.push(row.key[2]);
               }
               callback(this._byImage);
-            }),
+            })
           });
         },
         error: errback
@@ -96,6 +109,31 @@ dojo.mixin(rd.identity, {
     //summary: pulls a few identity records from the couch, starting
     //with the requested one, to hopefully limit how many times we hit
     //the couch.
+    
+    //If we need to do get all the identites, do that and call load back
+    //again with the identities.
+    if (this._listStatus == "needFetch") {
+      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+        key: ["rd.core.content", "schema_id", "rd.identity"],
+        reduce: false,
+        success: dojo.hitch(this, function(json) {
+          var identityIds = [];
+          for (var i = 0, row; row = json.rows[i]; i++) {
+            identityIds.push(row.value.rd_key);
+          }
+
+          this._listStatus = "done";
+          this._load(identityIds);
+        }),
+        error: dojo.hitch(this, function(err) {
+          this._error = err;
+          this._onload();
+        })
+      });
+      return;
+    }
+
+    //Have identites to fetch.
     if (typeof identityIds[0] == "string")
       identityIds = [identityIds];
     var keys = [];
@@ -136,7 +174,7 @@ dojo.mixin(rd.identity, {
                 // it't not clear if we should use a 'real' identity ID here?
                 // theoretically all the fields being empty should be enough...
                 rd_key: ['identity', idty],
-                rd_schema: 'rd.identity',
+                rd_schema: 'rd.identity'
               }
             }
           }

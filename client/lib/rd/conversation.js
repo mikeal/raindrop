@@ -46,7 +46,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
         //also has properties for each conversation ID,
         //to allow for easy retrieval.
         var conversations = [];
-        
+
         for (var i = 0, message; message = messages[i]; i++) {
           var convId = message['rd.msg.conversation'].conversation_id;
           var conv = conversations["cId:" + convId];
