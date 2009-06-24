@@ -12,10 +12,7 @@
 }
 
 .Message.MessageUnknown div.photo {
-  width: 2em;
-  height: 2ex;
-  left: 2em;
-  background-color: inherit;
+  background-color: #bbbbbb;
 }
 
 .Message .close {
