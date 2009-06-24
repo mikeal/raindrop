@@ -322,6 +322,25 @@ class DocumentModel(object):
         docs = []
         for si in item_defs:
             doc = {}
+            docs.append(doc)
+            # If the extension needs to update an existing record it must
+            # give _rev.
+            # NOTE: _id doesn't need quoting when used via a PUT...
+            if '_id' in si:
+                id = si['_id']
+                if __debug__ and 'rd_key' in si:
+                    assert id == self.get_doc_id_for_schema_item(si), (id, si)
+            else:
+                id = self.get_doc_id_for_schema_item(si)
+            doc['_id'] = id
+            if '_rev' in si:
+                doc['_rev'] = si['_rev']
+            if 'deleted' in si:
+                assert '_rev' in si, 'must know _rev to delete!!'
+                doc['deleted'] = True
+                # that's all!
+                continue
+
             schema_id = si.get('schema_id')
             assert schema_id  # schema-id not optional.
             items = si['items'] # items not optional - but may be None
@@ -334,20 +353,6 @@ class DocumentModel(object):
                 continue
             else:
                 doc.update(si['items'])
-            docs.append(doc)
-            # If the extension needs to update an existing record it must
-            # give _rev.
-            # NOTE: _id doesn't need quoting when used via a PUT...
-            if '_id' in si:
-                # XXXX - remove this - don't force them to specify the _id!!
-                # there is no way it can ever be different!!
-                id = si['_id']
-                assert id == self.get_doc_id_for_schema_item(si)
-            else:
-                id = self.get_doc_id_for_schema_item(si)
-            if '_rev' in si:
-                doc['_rev'] = si['_rev']
-            doc['_id'] = id
             doc['rd_key'] = si['rd_key']
             # always emit rd_source - an explicit NULL means this is a
             # 'source' doc
