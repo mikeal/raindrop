@@ -2,9 +2,31 @@
 # own!!
 import sys
 import os
+import re
 import tempfile
 import logging
 from optparse import Option
+
+max_age_mults = {
+    'minute': 60*60,
+    'day': 60*60*24,
+    'week': 60*60*24*7,
+    'year': 60*60*24*365,
+}
+class MaxAgeOption(Option):
+    def check_value(self, opt, value):
+        max_age_strings = '|'.join(max_age_mults.keys())
+        max_age_re = re.compile("(\d)*\W*(" + max_age_strings + ")s?")
+        match = max_age_re.match(value)
+        if match is None:
+            raise ValueError("Invalid syntax for --max-age - try, eg, '4days'")
+        val, name = match.groups()
+        mult = max_age_mults[name.lower()]
+        try:
+            val = float(val)
+        except ValueError:
+            raise ValueError("%r is an invalid number" % val)
+        return val * mult
 
 
 def get_program_options():
@@ -51,8 +73,9 @@ def get_request_options():
     yield Option("", "--no-process", action="store_true",
                 help="Don't process the work-queue.")
 
-    yield Option("", "--max-age", type="int",
-                help="Maximum age of an item to fetch, in seconds.")
+    yield MaxAgeOption("", "--max-age", type="int",
+                help="Maximum age of an item to fetch.  eg, '30 seconds', "
+                     "'2weeks'.")
 
 # possibly misplaced....
 def setup_logging(options):
@@ -84,4 +107,3 @@ def setup_logging(options):
     # write the errors after the logging is completely setup.
     for e in init_errors:
         logging.getLogger().error(e)
-
