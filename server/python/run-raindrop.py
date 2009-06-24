@@ -312,8 +312,9 @@ def main():
 
     # and some final deferreds to control the process itself.
     def done(whateva):
-        print "Apparently everything is finished - terminating."
-        reactor.stop()
+        if reactor.running:
+            print "Apparently everything is finished - terminating."
+            reactor.stop()
 
     def error(*args, **kw):
         from twisted.python import log
