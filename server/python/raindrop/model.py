@@ -28,7 +28,9 @@ logger = logging.getLogger('model')
 DBs = {}
 
 class DocumentSaveError(Exception):
-    pass
+    def __init__(self, infos):
+        self.infos = infos
+        Exception.__init__(self, infos)
 
 class DocumentOpenError(Exception):
     pass
@@ -436,6 +438,7 @@ class DocumentModel(object):
         ds = []
         assert len(result)==len(attachments) and len(result)==len(item_defs)
         new_items = []
+        errors = []
         for dinfo, dattach, item_def in zip(result, attachments, item_defs):
             if 'error' in dinfo:
                 # If no 'schema_id' was specified then this is OK - the
@@ -445,7 +448,7 @@ class DocumentModel(object):
                                  dinfo['id'])
                 else:
                     # presumably an unexpected error :(
-                    raise DocumentSaveError(dinfo)
+                    errors.append(dinfo)
             else:
                 # Give the ID and revision info back incase they need to
                 # know...
@@ -456,6 +459,8 @@ class DocumentModel(object):
 
             if dattach:
                 ds.append(self._cb_save_attachments(dinfo, dattach))
+        if errors:
+            raise DocumentSaveError(errors)
 
         # If anyone is listening for new items, call them now.
         for listener in self._new_item_listeners:
