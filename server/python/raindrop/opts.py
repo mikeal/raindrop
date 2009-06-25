@@ -57,6 +57,10 @@ def get_request_options():
                 help="Specifies the schema ids to use for some "
                      "operations.")
 
+    yield Option("", "--folder", action="append", dest='folders',
+                help="Specifies the names of folders to use for some "
+                     "operations.")
+
     yield Option("", "--key", action="append", dest='keys',
                 help="Specifies the 'raindrop key' to use for some "
                      "operations.")
