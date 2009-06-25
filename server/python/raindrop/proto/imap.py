@@ -10,6 +10,10 @@ brat = base.Rat
 
 logger = logging.getLogger(__name__)
 
+# Set this to see IMAP lines printed to the console.
+# NOTE: lines printed may include your password!
+TRACE_IMAP = False
+
 def get_rdkey_for_email(msg_id):
   return ("email", msg_id)
 
@@ -56,6 +60,47 @@ class ImapClient(imap4.IMAP4Client):
   def accountStatus(self, result, *args):
     return self.account.reportStatus(*args)
 
+  def xlist(self, reference, wildcard):
+    # like 'list', but does XLIST.  Caller is expected to have checked the
+    # server offers this capability.
+    cmd = 'XLIST'
+    args = '"%s" "%s"' % (reference, wildcard.encode('imap4-utf-7'))
+    resp = ('XLIST',)
+    # Have I mentioned I hate the twisted IMAP client yet today?
+    # Tell the Command class about the new XLIST command...
+    cmd = imap4.Command(cmd, args, wantResponse=resp)
+    cmd._1_RESPONSES = cmd._1_RESPONSES  + ('XLIST',)
+    d = self.sendCommand(cmd)
+    d.addCallback(self.__cbXList, 'XLIST')
+    return d
+
+  # *sob* - duplicate the callback due to twisted using private '__'
+  # attributes...
+  def __cbXList(self, (lines, last), command):
+    results = []
+    for L in lines:
+        parts = imap4.parseNestedParens(L)
+        if len(parts) != 4:
+            raise imap4.IllegalServerResponse, L
+        if parts[0] == command:
+            parts[1] = tuple(parts[1])
+            results.append(tuple(parts[1:]))
+    return results
+
+  if TRACE_IMAP:
+    def sendLine(self, line):
+      print 'C:', repr(line)
+      return imap4.IMAP4Client.sendLine(self, line)
+  
+    def lineReceived(self, line):
+      if len(line) > 50:
+        lrepr = repr(line[:50]) + (' <+ %d more bytes>' % len(line[50:]))
+      else:
+        lrepr = repr(line)
+      print 'S:', lrepr
+      return imap4.IMAP4Client.lineReceived(self, line)
+
+
 class ImapProvider(object):
   # The 'id' of this extension
   # XXX - should be managed by our caller once these 'protocols' become
@@ -73,39 +118,70 @@ class ImapProvider(object):
   @defer.inlineCallbacks
   def _reqList(self, conn, *args, **kwargs):
     self.account.reportStatus(brat.EVERYTHING, brat.GOOD)
-    result = yield conn.list('', '*')
+    caps = yield conn.getCapabilities()
+    if 'XLIST' in caps:
+      result = yield conn.xlist('', '*')
+    else:
+      logger.warning("This IMAP server doesn't support XLIST, so performance may suffer")
+      result = yield conn.list('', '*')
     # quickly scan through the folders list building the ones we will
     # process and the order.
     logger.info("examining folders")
-    done_recent = {}
-    # First zoom over the list looking for top-level folders.
-    todo_first = []
-    todo_second = []
-    all_folders = []
+    folders_use = []
+    # First pass - filter folders we don't care about.
     for flags, delim, name in result:
-      logger.debug('checking folder %s (flags=%s)', name, flags)
-      if r"\Noselect" in flags:
-        logger.debug("'%s' is unselectable - skipping", name)
-        continue
+      ok = True
+      for flag in (r'\Noselect', r'\AllMail', r'\Trash', r'\Spam'):
+        if flag in flags:
+          logger.debug("'%s' has flag %r - skipping", name, flag)
+          ok = False
+          break
+      if ok and self.options.folders and \
+         name.lower() not in [o.lower() for o in self.options.folders]:
+        logger.debug('skipping folder %r - not in specified folder list', name)
+        ok = False
+      if ok:
+        folders_use.append((flags, delim, name ))
 
-      # XXX - sob - markh sees:
-      # 'Folder [Gmail]/All Mail has 38163 messages, 36391 of which we haven'
-      # although we obviously have seen them already in the other folders.
-      # XXX - but should not be necessary now we are using message-id?
-      if name and name.startswith('['):
-        logger.info("'%s' appears special - skipping", name)
-        continue
+    # Second pass - prioritize the folders into the order we want to
+    # process them - 'special' ones first in a special order, then remaining
+    # top-level folders the order they appear, then sub-folders in the order
+    # they appear...
+    special_flags = [r'\Inbox', r'\Sent', r'\Drafts'] # indexes into special
+    special = [None] * len(special_flags) # None means 'not found'
+    todo_top = []
+    todo_sub = []
 
-      all_folders.append(name)
-      if delim in name:
-        todo_second.append(name)
-      elif name.lower()=='inbox':
-        todo_first.insert(0, name)
-      else:
-        todo_first.append(name)
+    if 'XLIST' in caps:
+      for flags, delim, name in folders_use:
+        special_index = None
+        for flag in flags:
+          try:
+            ndx = special_flags.index(flag)
+          except ValueError:
+            pass
+          else:
+            special[ndx] = name
+            break
+        else:
+          # for loop wasn't broken - no special tags...
+          if delim in name:
+            todo_sub.append(name)
+          else:
+            todo_top.append(name)
+    else:
+      # older mapi server - just try and find the inbox.
+      for flags, delim, name in folders_use:
+        if delim in name:
+          todo_sub.append(name)
+        elif name.lower()=='inbox':
+          todo_top.insert(0, name)
+        else:
+          todo_top.append(name)
 
+    todo = [n for n in special if n is not None] + todo_top + todo_sub
     try:
-      _ = yield self._updateFolders(conn, todo_first + todo_second)
+      _ = yield self._updateFolders(conn, todo)
     except:
       logger.exception("Failed to update folder")
     logger.info('imap queue generation finished - waiting for queues to finish')
@@ -483,26 +559,6 @@ class ImapClientFactory(protocol.ClientFactory):
       reactor.connectTCP(details['host'], details['port'], self)
     return self.deferred
 
-  def clientConnectionLost(self, connector, reason):
-    # the flaw in this is that we start from scratch every time; which is why
-    #  most of the logic in the client class should really be pulled out into
-    #  the account logic, probably.  this class itself may have issues too...
-    # XXX - also note that a simple exception in other callbacks can trigger
-    # this - meaning we retry just to hit the same exception.
-    # XXX - and - everything we do to close the connection seems to complain :(
-    logger.info('imap connection was closed: %s', reason)
-    return
-
-    # XXXX - not reached!!
-    if reason.check(error.ConnectionDone):
-        # only an error if premature
-        if not self.deferred.called:
-            self.deferred.errback(reason)
-    else:
-        #self.deferred.errback(reason)
-        logger.debug('lost connection to server, going to reconnect in a bit')
-        self.conductor.reactor.callLater(2, self.connect)
-
   def clientConnectionFailed(self, connector, reason):
     self.account.reportStatus(brat.SERVER, brat.BAD, brat.UNREACHABLE,
                               brat.TEMPORARY)
@@ -523,16 +579,17 @@ class IMAPAccount(base.AccountBase):
     @defer.inlineCallbacks
     def start_fetchers(n):
       ds = []
+      conns = []
       for i in range(n):
         factory = ImapClientFactory(self, conductor)
         fetch_connection = yield factory.connect()
+        conns.append(fetch_connection)
         ds.append(prov._consumeFetchRequests(fetch_connection))
       _ = yield defer.DeferredList(ds)
       # fetchers done - post a stop request to the writer...
       prov.write_queue.put(None)
-      # *sob* - doing a 'logout' (a) may take many seconds, and (b) still
-      # reports a 'problem' to connectionLost - so just abandon it :(
-      #_ = yield fetch_connection.logout()
+      for c in conns:
+        _ = yield c.logout()
 
     @defer.inlineCallbacks
     def start_producer():
@@ -547,8 +604,7 @@ class IMAPAccount(base.AccountBase):
       prov.fetch_queue.put(None)
       _ = yield prov._consumeFetchRequests(client)
       logger.debug('producer finished consuming!')
-      # See above - abandon the connection...
-      #_ = yield client.logout()
+      _ = yield client.logout()
 
     @defer.inlineCallbacks
     def start_writer():
