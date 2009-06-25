@@ -44,8 +44,6 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
         continue;
       }
 
-      var contactImageUrl = "";
-
       //Sort the identities.
       idtys.sort(function(a, b) {
         return a.rd_key[1][0] > b.rd_key[1][0] ? 1 : -1;
@@ -54,11 +52,6 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
       //Build HTML for identities.
       var idtyHtml = '<ul class="identities">';
       for (var j = 0, idty; idty = idtys[j]; j++) {
-        //Use first identity with an image as the image for the contact.
-        if (idty.image && !contactImageUrl) {
-          contactImageUrl = idty.image;
-        }
-
         var name = idty.name, service = "", serviceName = "", serviceClass = "hidden";
         
         //For URL identities, the info is very redundant, so
@@ -83,7 +76,7 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
       //Build HTML for all the contacts.
       html += dojo.string.substitute(this.contactTemplate, {
         contactId: contact.rd_key[1],
-        imageUrl: contactImageUrl || this.blankImgUrl,
+        imageUrl: contact.image || this.blankImgUrl,
         name: rd.escapeHtml(contact.name),
         identityHtml: idtyHtml
       });

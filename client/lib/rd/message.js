@@ -68,6 +68,7 @@ rd.message = rd._api._protectFunc(function(/*String|Array*/ids, /*Function*/call
               //(via the work it does in _load)
               var from = bag["rd.msg.body"].from;
               var known = rd.identity[from[0]] && rd.identity[from[0]][from[1]];
+              console.log("##Checking known for " + from + ": " + known);
               bag["rd.msg.ui"] = {
                 rd_schema_id: "rd.msg.ui",
                 known: !!known
@@ -99,13 +100,14 @@ dojo._mixin(rd.message, {
     //message bag before it is returned to a caller. This is how
     //to add UI data extensions for messages.
   },
-  
+
   _load: function() {
     //summary: load handler for rd._api mixin. Make sure we
     //load all identities so we can mark if this message is
     //from a known person.
     //TODO: may want to expand this to look for tags?
     rd.identity.list(dojo.hitch(this, function(){
+      console.log("##identity list done");
       this._onload();
     }));
   }

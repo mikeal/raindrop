@@ -29,7 +29,8 @@ dojo.mixin(rd.contact, {
     
     this.list(dojo.hitch(this, function(contacts) {
       var matches = [];
-      
+      var matchIds = {};
+
       //Take off @ domain from an email, then separate names in original
       //name by whitespace.
       sourceNames = name.split("@")[0].toLowerCase();
@@ -43,8 +44,12 @@ dojo.mixin(rd.contact, {
         for (var i = 0, contact; contact = contacts[i]; i++) {
           //See if contact name matches
           var names = contact.name.split(/\s+/);
+          var contactId = contact.rd_key[1];
           if (this._hasNameMatch(from, names)) {
-            matches.push(contact);
+            if (!matchIds[contactId]) {
+              matches.push(contact);
+              matchIds[contactId] = 1;
+            }
             continue;
           }
 
@@ -53,7 +58,10 @@ dojo.mixin(rd.contact, {
             names = identity.name.split(/\s+/);
             names.unshift(identity.nickname);
             if (this._hasNameMatch(from, names)) {
-              matches.push(contact);
+              if (!matchIds[contactId]) {
+                matches.push(contact);
+                matchIds[contactId] = 1;
+              }
               break;
             }
           }
@@ -366,6 +374,12 @@ dojo.mixin(rd.contact, {
               //Make sure we do not add the same contact more than once.
               if(dojo.indexOf(contact.identities, idty) == -1) {
                 contact.identities.push(idty);
+                
+                //If the contact does not have an image, use one
+                //on the identity if possible. First one with a picture wins.
+                if(idty.image && !contact.image) {
+                  contact.image = idty.image;
+                }
               }
             }
           }

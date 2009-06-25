@@ -4,6 +4,7 @@ dojo.require("rdw._Base");
 dojo.require("rd.identity");
 dojo.require("rd.contact");
 dojo.require("rdw.gravatar");
+dojo.require("rdw.contactDropDown");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
 
@@ -132,12 +133,21 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //delegation to publish the right action.
     var href = evt.target.href;
     if (href && (href = href.split("#")[1])) {
-      rd.pub("rdw.Message-" + href, {
-        widget: this,
-        messageBag: this.messageBag
-      });
+      if (href == "know") {
+        rdw.contactDropDown.open(evt.target, this, this.matches);
+      } else {
+        rd.pub("rdw.Message-" + href, {
+          widget: this,
+          messageBag: this.messageBag
+        });
+      }
       evt.preventDefault();
     }
+  },
+
+  onContactSelected: function(/*String*/contactId) {
+    //summary: handles a contact selection from the rdw.contactDropDown.
+    console.log("Selected contact: " + contactId);
   },
 
   addByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {

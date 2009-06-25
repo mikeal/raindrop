@@ -1,0 +1,35 @@
+.dijitPopup {
+  position: absolute;
+}
+
+.rdwContactSelector {
+  width: 10em;
+  height: 20ex;
+  border: 1px solid gray;
+  padding: 1ex 0.5em;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background-color: white;
+}
+
+.rdwContactSelector ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: smaller;
+}
+
+.rdwContactSelector ul .preferred {
+  background-color: #FFFFCC;
+}
+
+.rdwContactSelector ul img {
+  width: 24px;
+  height: 24px;
+  border: 0;
+}
+
+.rdwContactSelector ul a {
+  text-decoration: none;
+  color: #44617E;
+}
