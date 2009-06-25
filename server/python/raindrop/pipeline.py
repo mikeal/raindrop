@@ -3,7 +3,7 @@ form to their most useful form.
 """
 import uuid
 
-from twisted.internet import defer, threads
+from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 
@@ -313,7 +313,6 @@ class QueueRunner(object):
         assert qs, "nothing to do?"
         self.options = options
         self.state_infos = None # set as we run.
-        self.dc_status = None # a 'delayed call'
         self.status_msg_last = None
 
     def _start_q(self, q, si, def_done):
@@ -345,7 +344,6 @@ class QueueRunner(object):
         if self.status_msg_last != msg:
             logger.info(msg)
             self.status_msg_last = msg
-        self.dc_status = reactor.callLater(10, self._q_status)
 
     def _q_done(self, result, q, state_info, def_done):
         state_doc = state_info['items']
@@ -395,12 +393,13 @@ class QueueRunner(object):
 
         state_infos = self.state_infos = [r[1] for r in result]
 
-        self.dc_status = reactor.callLater(10, self._q_status)
+        lc = task.LoopingCall(self._q_status)
+        lc.start(10)
         def_done = defer.Deferred()
         for q, state_info in zip(self.queues, state_infos):
             self._start_q(q, state_info, def_done)
         _ = yield def_done
-        self.dc_status.cancel()
+        lc.stop()
         # update the views now...
         _ = yield self.doc_model._update_important_views()
 
