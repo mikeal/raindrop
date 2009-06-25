@@ -394,7 +394,7 @@ class QueueRunner(object):
         state_infos = self.state_infos = [r[1] for r in result]
 
         lc = task.LoopingCall(self._q_status)
-        lc.start(10)
+        lc.start(10, False)
         def_done = defer.Deferred()
         for q, state_info in zip(self.queues, state_infos):
             self._start_q(q, state_info, def_done)
