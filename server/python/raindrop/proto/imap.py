@@ -1,10 +1,11 @@
-from twisted.internet import protocol, ssl, defer, error
+from twisted.internet import protocol, ssl, defer, error, task
 from twisted.mail import imap4
 import logging
 from email.utils import mktime_tz, parsedate_tz
 import time
 
 from ..proc import base
+from ..model import DocumentSaveError
 
 brat = base.Rat
 
@@ -522,10 +523,23 @@ class ImapProvider(object):
       logger.debug('writing %d schema items', len(items))
       try:
         _ = yield self.doc_model.create_schema_items(items)
+      except DocumentSaveError, exc:
+        # So - conflicts are a fact of life in this 'queue' model: we check
+        # if a record exists and it doesn't, so we queue the write.  By the
+        # time the write gets processed, it may have been written by a
+        # different exception...
+        nc = 0
+        for info in exc.infos:
+          if info['error']=='conflict':
+            nc += 1
+          else:
+            raise
+        logger.info('ignored %d conflict errors writing this batch', nc)
       except:
+        # premature shutdown...
         if not self.reactor.running:
           break
-        logger.exception('failed to write items')
+        raise
 
 class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
@@ -610,6 +624,14 @@ class IMAPAccount(base.AccountBase):
     def start_writer():
       _ = yield prov._consumeWriteRequests()
 
+    def log_status():
+      nf = sum(len(i) for i in prov.fetch_queue.pending if i is not None)
+      nw = sum(len(i) for i in prov.write_queue.pending if i is not None)
+      if nf or nw:
+        logger.info('fetch queue has %d items, write queue has %d', nf, nw)
+
+    lc = task.LoopingCall(log_status)
+    lc.start(10)
     # fire off the producer and queue consumers.  We have 2 'fetchers', which
     # are io-bound talking to the IMAP server, and a single 'writer', which
     # is responsible for writing couch docs, and as a side-effect, doing the
@@ -619,3 +641,5 @@ class IMAPAccount(base.AccountBase):
     _ = yield defer.DeferredList([start_producer(),
                                   start_fetchers(2),
                                   start_writer()])
+
+    lc.stop()
