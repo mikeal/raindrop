@@ -108,8 +108,8 @@ dojo._mixin(rd.conversation, {
           convSet[row.doc.conversation_id] = row.doc.conversation_id;
         }
         var convIds = [];
-        for each (var cid in convSet) {
-          convIds.push(cid);
+        for (var cid in convSet) {
+          convIds.push(convSet[cid]);
         }
         //Now load conversations based on those IDs.
         this(isOne ? convIds[0] : convIds, callback, errback);
@@ -150,8 +150,8 @@ dojo._mixin(rd.conversation, {
               convSet[row.doc.conversation_id] = row.doc.conversation_id;
             }
             var convIds = [];
-            for each (var cid in convSet) {
-              convIds.push(cid);
+            for (var cid in convSet) {
+              convIds.push(convSet[cid]);
             }
             this(convIds, callback, errback);
           })

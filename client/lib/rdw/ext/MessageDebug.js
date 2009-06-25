@@ -14,13 +14,14 @@ rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
       });
 
       //Loop over the sources and add links for each kind.
-      for each (var sch in this.messageBag) {
-        var sch_id = sch.rd_schema_id; // XXX - include schema in the link?
-        id = sch._id;
+      for(var prop in this.messageBag) {
+        var schema = this.messageBag[prop];
+        var sch_id = schema.rd_schema_id; // XXX - include schema in the link?
+        id = schema._id;
         dojo.create("a", {
           "class": "tag",
           target: "_blank",
-          title: sch.rd_ext_id,
+          title: schema.rd_ext_id,
           href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
           innerHTML: sch_id.replace(/rd\.msg\./,'')
         }, debugNode);
