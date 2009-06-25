@@ -1,0 +1,8 @@
+.extenderSchemaExplorer td {
+  border: 1px solid gray;
+}
+
+.extenderSchemaExplorer th,
+.extenderSchemaExplorer .prop {
+  font-weight: bold;
+}

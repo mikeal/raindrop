@@ -1,7 +1,6 @@
 dojo.provide("extender.WidgetSelector");
 
 dojo.require("rdw._Base");
-dojo.require("dojo.cache");
 dojo.require("dojo.string");
 
 dojo.require("extender.Editor");
