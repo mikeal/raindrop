@@ -1,6 +1,12 @@
+// A doc may have rd_megaview_ignore_doc set - this excludes the doc
+// completely from the megaview.
+// A doc may also have rd_megaview_ignore_values set - this writes the
+// 'rd.core.*' schemas (so the document IDs can still be located) but the
+// values aren't written.
+
 function(doc) {
   if (doc.rd_schema_id
-    && !doc.rd_ignore_megaview // XXX - afaik this is never set by anyone...
+    && !doc.rd_megaview_ignore_doc
     && doc.rd_schema_id.indexOf("ui") != 0) { // ui extensions should be ok here?
     // every row we emit for this doc uses an identical 'value'.
     var row_val = {'_rev': doc._rev,
@@ -29,6 +35,10 @@ function(doc) {
     if (doc.rd_schema_confidence)
       emit(['rd.core.content', 'rd_schema_confidence', doc.rd_schema_confidence],
            row_val);
+
+    // If this schema doesn't want/need values indexed, bail out now.
+    if (doc.rd_megaview_ignore_values)
+      return
 
     for (var prop in doc) {
         //Skip text fields that are big (better served by full

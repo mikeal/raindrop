@@ -54,6 +54,11 @@ megaview_schemas_expandable_values = {
     'rd.tags' : ['tags'],
     'rd.identity.contacts' : ['contacts'],
 }
+# Ditto - info which should come from the schema-defn itself - a list of
+# schemas that don't need values emitted, just the keys etc.
+megaview_schemas_ignore_values = [
+    'rd.imap.mailbox-cache',
+]
 
 def encode_provider_id(proto_id):
     # a 'protocol' gives us a 'blob' used to identify the document; we create
@@ -368,6 +373,8 @@ class DocumentModel(object):
                         megaview_schemas_expandable_values[schema_id]
             except KeyError:
                 pass
+            if schema_id in megaview_schemas_ignore_values:
+                doc['rd_megaview_ignore_values'] = True
 
         attachments = self._prepare_attachments(docs)
         logger.debug('create_schema_items saving %d docs', len(docs))
