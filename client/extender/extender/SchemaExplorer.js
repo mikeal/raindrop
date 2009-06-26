@@ -18,8 +18,16 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
   //The number of sample documents to use.
   limit: 10,
 
+  //Flag on whether to show private fields.
+  showPrivate: false,
+
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
+  },
+
+  activate: function() {
+    //Callback from expander when this widget is being shown.
+    //Also used just to refresh the data displayed.
 
     //Get some sample documents for this schema.
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
@@ -35,6 +43,10 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
           //Save the document, then collect properties that can exist
           //on this type of document. Collect the properties as an array
           //so we can sort and display easier.
+  
+          //Strip off private props if necessary.
+          doc = this.showPrivate ? doc : this._stripPrivate(doc);
+
           this.docs.push(doc);
           var empty = {};
           for (var prop in doc) {
@@ -67,6 +79,25 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
         this.exampleNode.innerHTML = dojo.toJson(this.docs, true);
       })
     });
+  },
+
+  onShowPrivateClick: function(/*Event*/evt) {
+    //summary: handles clicks to checkbox to toggle showing private fields.
+    this.showPrivate = !!this.showPrivateNode.checked;
+    this.activate();
+  },
+ 
+  _stripPrivate: function(/*Object*/doc) {
+    //summary: strips off the private fields from the doc, this includes
+    //couch-private and raindrop-private fields.
+    var newDoc = {};
+    var empty = {};
+    for (var prop in doc) {
+      if (!(prop in empty) && prop.charAt(0) != "_" && prop.indexOf("rd_") != 0) {
+        newDoc[prop] = doc[prop];
+      }
+    }
+    return newDoc;
   }
 });
 

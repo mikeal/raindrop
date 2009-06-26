@@ -1,3 +1,4 @@
+@import url("/raindrop/lib/rdw/css/Loading.css");
 @import url("/raindrop/lib/rdw/css/QuickCompose.css");
 @import url("/raindrop/lib/rdw/css/Search.css");
 @import url("/raindrop/lib/rdw/css/Stories.css");
@@ -7,6 +8,12 @@
 
 * {
   font:100%/normal verdana,geneva,sans-serif;
+}
+
+.rdwLoading {
+  position: absolute;
+  top: 1ex;
+  right: 1em;
 }
 
 #content {

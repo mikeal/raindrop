@@ -1,3 +1,20 @@
+
+.extenderSchemaExplorer {
+  position: relative;
+  padding: 1em;
+}
+
+.extenderSchemaExplorer .privateForm {
+  position: absolute;
+  top: 2ex;
+  right: 1em;
+ }
+
+.extenderSchemaExplorer table,
+.extenderSchemaExplorer pre {
+  font-size: smaller;
+}
+
 .extenderSchemaExplorer td {
   border: 1px solid gray;
 }

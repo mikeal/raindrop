@@ -1,3 +1,5 @@
+@import url("/raindrop/lib/rdw/css/Loading.css");
+
 * {
   font:100%/normal verdana,geneva,sans-serif;
 }
@@ -6,4 +8,10 @@ html, body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+}
+
+.rdwLoading {
+  position: absolute;
+  top: 1ex;
+  right: 1em;
 }

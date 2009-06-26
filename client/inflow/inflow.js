@@ -1,5 +1,6 @@
 dojo.provide("inflow");
 
+rd.require("rdw.Loading");
 rd.require("rdw.QuickCompose");
 rd.require("rdw.Search");
 rd.require("rdw.ContactList");

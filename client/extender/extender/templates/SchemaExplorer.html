@@ -1,6 +1,11 @@
 <div class="extenderSchemaExplorer">
   <h1>${schemaId}</h1>
 
+  <form class="privateForm" onsubmit="return false">
+    <input type="checkbox" dojoAttachPoint="showPrivateNode" dojoAttachEvent="onclick: onShowPrivateClick">
+    Show private properties
+  </form>
+
   <table dojoAttacPoint="tableNode">
     <thead>
       <tr>

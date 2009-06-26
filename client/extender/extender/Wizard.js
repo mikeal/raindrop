@@ -145,6 +145,8 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         if (widget.activate) {
           widget.activate();
         }
+
+        setTimeout(dojo.hitch(this, "onResize"), 100);
       })
     }).play();
   },
@@ -179,6 +181,8 @@ dojo.declare("extender.Wizard", [rdw._Base], {
         if (doTrimForward) {
           this.trimForward();
         }
+        
+        setTimeout(dojo.hitch(this, "onResize"), 100);
       })
     }).play();
   },
