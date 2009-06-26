@@ -155,6 +155,7 @@ class ImapProvider(object):
 
     if 'XLIST' in caps:
       for flags, delim, name in folders_use:
+        folder_info = (delim, name)
         special_index = None
         for flag in flags:
           try:
@@ -162,23 +163,24 @@ class ImapProvider(object):
           except ValueError:
             pass
           else:
-            special[ndx] = name
+            special[ndx] = folder_info
             break
         else:
           # for loop wasn't broken - no special tags...
           if delim in name:
-            todo_sub.append(name)
+            todo_sub.append(folder_info)
           else:
-            todo_top.append(name)
+            todo_top.append(folder_info)
     else:
       # older mapi server - just try and find the inbox.
       for flags, delim, name in folders_use:
+        folder_info = (delim, name)
         if delim in name:
           todo_sub.append(name)
         elif name.lower()=='inbox':
-          todo_top.insert(0, name)
+          todo_top.insert(0, folder_info)
         else:
-          todo_top.append(name)
+          todo_top.append(folder_info)
 
     todo = [n for n in special if n is not None] + todo_top + todo_sub
     try:
@@ -224,14 +226,14 @@ class ImapProvider(object):
 
     # All folders without cache docs get the special 'fetch quick'
     # treatment...
-    for name in all_names:
+    for delim, name in all_names:
       if name not in caches:
         _ = yield conn.select(name)
         _ = yield self._checkQuickRecent(conn, name, 20)
 
     # Now update the cache for all folders...
     sync_by_name = {}
-    for name in all_names:
+    for delim, name in all_names:
       info = yield conn.select(name)
       logger.debug("info for %r is %r", name, info)
 
@@ -253,36 +255,39 @@ class ImapProvider(object):
         sync_items = update_doc['infos']
       else:
         sync_items = cache_doc.get('infos')
-      sync_by_name[name] = sync_items[:]
+      sync_by_name[(delim, name)] = sync_items[:]
     # XXX - todo - should nuke old folders which no longer exist.
 
     # Take a copy of the infos before consuming them priming the queues...
     todo_locations = sync_by_name.copy()
 
-    # now the final step - use the cached info to sync each and every mailbox
+    # now use the cached info to sync the IMAP nessages for each and every
+    # mailbox.
     while sync_by_name:
       # do 'n' in each folder, then n more in each folder, etc.
-      for name in all_names:
+      for info in all_names:
         try:
-          todo = sync_by_name[name]
+          todo = sync_by_name[info]
         except KeyError:
           continue
         else:
+          delim, name = info
           # do later ones first...
           batch = todo[-50:]
           rest = todo[:-50]
           logger.log(1, 'queueing check of %d items in %r', len(batch), name)
           self.fetch_queue.put((name, batch))
           if rest:
-            sync_by_name[name] = rest
+            sync_by_name[info] = rest
           else:
-            del sync_by_name[name]
+            del sync_by_name[info]
 
     # and while the items are being fetched we can update the location info
     # for each folder.
     logger.info('starting message location updates...')
-    for name, items in todo_locations.iteritems():
-      _ = yield self._updateLocations(name, items)
+    for (delim, name), items in todo_locations.iteritems():
+      location = name.split(delim)
+      _ = yield self._updateLocations(location, items)
 
   @defer.inlineCallbacks
   def _syncFolderInfo(self, conn, folder_path, server_info, cache_doc):
@@ -334,61 +339,67 @@ class ImapProvider(object):
 
   @defer.inlineCallbacks
   def _updateLocations(self, folder_path, results):
+    """Writes 'message location' schemas for messages, using the folder name
+       as the default location.
+    """
     logger.debug("checking what we know about items in folder %r", folder_path)
     acct_id = self.account.details.get('id')
-    # Build a map keyed by the UID of the message.
-    by_uid = {}
+    # Build a map keyed by the rd_key of all items we know are currently in
+    # the folder
+    current = set()
     for result in results:
-      by_uid[int(result['UID'])] = result
+      rdkey = get_rdkey_for_email(result['ENVELOPE'][-1])
+      current.add(tuple(rdkey))
 
-    # fetch all things in couch which are currently associated
+    # fetch all things in couch which (a) are currently tagged with this
+    # location and (b) was tagged by this mapi account.
     startloc = ['imap', [acct_id, folder_path]]
     endloc = ['imap', [acct_id, folder_path, {}]]
-    startkey = ['rd.msg.location', 'location', startloc]
-    endkey = ['rd.msg.location', 'location', endloc]
-    existing = yield self.doc_model.open_view(startkey=startkey,
-                                              endkey=endkey, reduce=False)
-    seen = set() # if dupes in a folder we only want to write it once.
+    key = ['rd.msg.location', 'location', folder_path]
+    existing = yield self.doc_model.open_view(key=key, reduce=False,
+                                              include_docs=True)
+    couch = {} # key is rdkey, val is _id /_rev incase we need to nuke it.
     for row in existing['rows']:
-      loc = row['key'][2]
-      assert loc[0]=='imap'
-      assert loc[1][0]==acct_id and loc[1][1]==folder_path
-      uid = loc[1][2]
-      info = by_uid.setdefault(uid, {})
-      info['COUCH'] = row
+      doc = row['doc']
+      if doc.get('source') != ['imap', acct_id]:
+        # Something in this location, but it was put there by other than
+        # this IMAP account - ignore it.
+        continue
+      couch[tuple(doc['rd_key'])] = (doc['_id'], doc['_rev'])
 
     # Finally merge the differences between what imap has and couch has
+    scouch = set(couch.keys())
+    to_add = current - scouch
+    to_nuke = scouch - current
     to_up = []
-    for uid, info in by_uid.iteritems():
-      if 'COUCH' in info and 'ENVELOPE' in info:
-        # already exists in both places - cool!
-        rdkey = get_rdkey_for_email(info['ENVELOPE'][-1])
-        seen.add(rdkey)
-      elif 'COUCH' in info:
-        couch_row = info['COUCH']
-        # no longer in that folder...
-        to_up.append({'_id': couch_row['id'],
-                      '_rev': couch_row['value']['_rev'],
-                      'deleted': True,
-                    })
-      else:
-        # Item in the folder but couch doesn't know it is there.
-        # We hack the 'extension_id' in a special way to allow multiple of the
-        # same schema
-        rdkey = get_rdkey_for_email(info['ENVELOPE'][-1])
-        if rdkey in seen:
-          logger.debug("skipping duplicate message in folder")
-          continue
-        seen.add(rdkey)
-        loc = ['imap', [acct_id, folder_path, uid]]
-        to_up.append({'rd_key': rdkey,
-                      'ext_id': "%s~%s~%s" % (self.rd_extension_id, acct_id, folder_path),
-                      'schema_id': 'rd.msg.location',
-                      'items': {'location': loc},
-                    })
+    seen = set()
+    for rdkey in to_nuke:
+      id, rev = couch[rdkey]
+      to_up.append({'_id': id,
+                    '_rev': rev,
+                    'deleted': True,
+                  })
+      seen.add(rdkey)
+    for rdkey in to_add:
+      # Item in the folder but couch doesn't know it is there.
+      if rdkey in seen:
+        logger.debug("skipping duplicate message in folder")
+        continue
+      seen.add(rdkey)
+      # We hack the 'extension_id' in a special way to allow multiple of the
+      # same schema; multiple IMAP accounts, for example, may mean the same
+      # rdkey ends up with multiple of these location records.
+      # XXX - this is a limitation in the doc model we should fix!
+      ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, folder_path)
+      to_up.append({'rd_key': list(rdkey),
+                    'ext_id': ext_id,
+                    'schema_id': 'rd.msg.location',
+                    'items': {'location': folder_path,
+                              'source': ['imap', acct_id]},
+                  })
     if to_up:
-      logger.info("folder %r info needs to update %d location records", folder_path,
-                  len(to_up))
+      logger.info("folder %r info needs to update %d location records",
+                  folder_path, len(to_up))
       _ = yield self.doc_model.create_schema_items(to_up)
 
   def results_by_rdkey(self, infos):
