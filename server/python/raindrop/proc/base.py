@@ -1,6 +1,11 @@
 import logging
+import time
+from twisted.internet import defer
 
-__all__ = ['Rat', 'AccountBase']
+__all__ = ['Rat', 'AccountBase', 'OutgoingAccountBase']
+
+def get_now():
+    return time.time()
 
 logger = logging.getLogger("accounts")
 
@@ -98,3 +103,61 @@ class AccountBase(Rat):
     '''
     '''
     pass
+
+
+# The base class for something which 'sends' an item of content, such as an
+# email or tweet.  All senders share a common base model for performing the
+# 'transaction' with the real outgoing service (eg, the SMTP server) and the
+# couch to take care not to send items multiple time.
+# Overview of the send process:
+# * Front-end writes a simplified 'outgoing' schema.
+# * Extension points run, ending up with a 'raw' outgoing type, eg SMTP.
+# * This class manages the sending of the final 'raw' type, but tracks the
+#   sent state in the original simplified outgoing schema.
+# End result is that as state is maintained directly on the source document,
+# re-running the extensions etc will not re-send the message - only modifying
+# the saved state on the source doc will.
+class ContentSender(Rat):
+  def __init__(self, doc_model, source_doc, out_doc):
+    self.source_doc = source_doc # simplified outgoing schema
+    self.out_doc = out_doc # raw document suitable
+
+class OutgoingAccountBase(AccountBase):
+  rd_outgoing_schemas = None # list of 'raw' schemas we can handle.
+
+  def sync_outgoing(self, src_doc, raw_doc):
+    # A key difference to 'sync' is that our conductor etc determines the
+    # queue of outgoing docs and passes them to us.
+
+    # src_doc - the doc where 'sent' state (and only that) should be written.
+    # raw_doc - the 'transformed' doc with the raw data ready to send.
+
+    # NOTE: These asserts are never executed - they are just 'logical'
+    # assertions :) Feel free to copy them to your handler.
+    # 'drafts' etc should have been intercepted before here...
+    assert src_doc['outgoing_state']['state'] == 'outgoing', src_doc
+    # The 'sent state' must be nothing or a previous error.
+    assert src_doc['sent_state'] is None or \
+           src_doc['sent_state']['state'] in [None, 'error'], src_doc
+    raise NotImplementedError
+
+  @defer.inlineCallbacks
+  def _update_sent_state(self, src_doc, new_state, reason=None, message=None):
+    # update the doc
+    sent_state = src_doc['sent_state']
+    sent_state['state'] = new_state
+    sent_state['timestamp'] = get_now()
+    if reason:
+      sent_state['reason'] = reason
+    elif 'reason' in sent_state:
+      del sent_state['reason']
+    if message:
+      sent_state['message'] = reason
+    elif 'message' in sent_state:
+      del sent_state['message']
+    assert '_id' in src_doc and '_rev' in src_doc, src_doc
+    did = self.doc_model.quote_id(src_doc['_id'])
+    result = yield self.doc_model.db.saveDoc(src_doc, did)
+    # track the _rev for next time...
+    src_doc['_rev'] = result['rev']
+    logger.debug('set sent state to %(sent_state)s at rev %(_rev)s', src_doc)

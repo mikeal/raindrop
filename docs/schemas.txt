@@ -74,6 +74,39 @@ help:
 subscribe:
 unsubscribe:
 
+rd.msg.outgoing.smtp:
+---------------------
+** Fields**
+
+smtp_from: string with smtp 'from' info
+smtp_to: list of strings with smtp 'to' info
+smtp_body: attachment - the binary SMTP body, including all headers etc.
+
+rd.msg.outgoing.simple:
+----------------------
+
+Outgoing state pseudo-schemas:
+------------------------------
+The following pseudo-schemas are used by the 'outgoing' message handling
+to record the sent state of a message.  This state is stored on the
+*source* document (eg, an 'rd.msg.outgoing.simple') rather than on the
+raw outgoing document.
+
+outgoing_state: object (dictionary) with the following fields:
+    state: one of null (meaning 'draft'), 'outgoing' (ie, in the 'outbox'
+               or 'sent' (ie, message fully delivered.)
+    timestamp: when the out_state was set.  IOW, if 'out_state' is
+                   'outgoing', out_timestamp should be when they pressed the
+                   'send' button.
+
+sent_state: object (dictionary) with fields describing the state of delivering
+            the item to the underlying transport (eg, SMTP, imap).  Fields:
+    state: null, 'sending', 'sent', 'error'
+    timestamp: when the send_state was set.
+    reason: the 'reason' for the failure - may only make sense to the protocol
+            itself (eg, may be the SMTP error code and response string)
+    message: an optional message for the failure for human consumption.
+    
 
 IDENTITIES AND CONTACTS:
 ========================
