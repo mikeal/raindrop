@@ -369,6 +369,10 @@ class DocumentModel(object):
             if 'confidence' in si:
                 doc['rd_schema_confidence'] = si['confidence']
             try:
+                doc['_attachments'] = si['attachments']
+            except KeyError:
+                pass
+            try:
                 doc['rd_megaview_expandable'] = \
                         megaview_schemas_expandable_values[schema_id]
             except KeyError:
@@ -430,7 +434,6 @@ class DocumentModel(object):
                     # base64-encode in place...
                     for a in this_attach.values():
                         a['data'] = base64.encodestring(a['data']).replace('\n', '')
-                   
                     all_attachments.append(None)
             except KeyError:
                 # It is important we put 'None' here so the list of
