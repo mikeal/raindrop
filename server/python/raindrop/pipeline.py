@@ -276,7 +276,12 @@ class NewItemProcessor(object):
             src = item['_id'], item['_rev']
             src_schema = item['schema_id']
             todo_by_schema.setdefault(src_schema, []).append(src)
+        num = yield self.process_schema_items(todo_by_schema)
+        logger.debug("processing %d new items created %d documents",
+                     len(items), num)
 
+    @defer.inlineCallbacks
+    def process_schema_items(self, todo_by_schema):
         # Pick all schemas in any order, then ask the extension to process
         # them in a batch, each time
         num = 0
@@ -301,8 +306,7 @@ class NewItemProcessor(object):
                         num += len(new_items)
 
         self.total += num
-        logger.debug("processing %d new items created %d documents",
-                     len(items), num)
+        defer.returnValue(num)
 
 # Runs all of the 'work queues', restarting them as necessary and detecting
 # when all are complete.
@@ -457,7 +461,8 @@ class MessageTransformerWQ(object):
         # (specifically, provide the emit_schema etc globals)
         # NOTE: These are all called in the context of a worker thread and
         # are expected by the caller to block.
-        def emit_schema(schema_id, items, rd_key=None, confidence=None):
+        def emit_schema(schema_id, items, rd_key=None, confidence=None,
+                        attachments=None):
             ni = {'schema_id': schema_id,
                   'items': items,
                   'ext_id' : self.ext.id,
@@ -469,6 +474,8 @@ class MessageTransformerWQ(object):
             if confidence is not None:
                 ni['confidence'] = confidence
             ni['rd_source'] = [src_doc['_id'], src_doc['_rev']]
+            if attachments is not None:
+                ni['attachments'] = attachments
             new_items.append(ni)
             return self.doc_model.get_doc_id_for_schema_item(ni)
 

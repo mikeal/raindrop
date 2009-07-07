@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schema" : "rd.msg.outgoing.simple",
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates outgoing smtp messages ready for delivery"
+    }
+  }
+}

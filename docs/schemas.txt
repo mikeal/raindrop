@@ -85,6 +85,13 @@ smtp_body: attachment - the binary SMTP body, including all headers etc.
 rd.msg.outgoing.simple:
 ----------------------
 
+from: identity ID (eg, ['email', 'email@addy'])
+from_display: the display name for the 'from' address
+cc: optional list of identity IDs
+cc_display: list of display names for the CC identities.  Must be same length
+            as CC
+bcc/bcc_display: as above but for bcc
+
 Outgoing state pseudo-schemas:
 ------------------------------
 The following pseudo-schemas are used by the 'outgoing' message handling
@@ -92,20 +99,22 @@ to record the sent state of a message.  This state is stored on the
 *source* document (eg, an 'rd.msg.outgoing.simple') rather than on the
 raw outgoing document.
 
-outgoing_state: object (dictionary) with the following fields:
-    state: one of null (meaning 'draft'), 'outgoing' (ie, in the 'outbox'
-               or 'sent' (ie, message fully delivered.)
-    timestamp: when the out_state was set.  IOW, if 'out_state' is
+[Note: this originally called for 2 dictionaries/objects 'outgoing_state' and
+'sent_state', with each object having attributes - but this would currently
+make the attributes unavailable to the megaview]
+
+outgoing_state: one of null (meaning 'draft'), 'outgoing' (ie, in the 'outbox'
+                or 'sent' (ie, message fully delivered.)
+outgoing_state_timestamp: when the out_state was set.  IOW, if 'out_state' is
                    'outgoing', out_timestamp should be when they pressed the
                    'send' button.
 
-sent_state: object (dictionary) with fields describing the state of delivering
-            the item to the underlying transport (eg, SMTP, imap).  Fields:
-    state: null, 'sending', 'sent', 'error'
-    timestamp: when the send_state was set.
-    reason: the 'reason' for the failure - may only make sense to the protocol
-            itself (eg, may be the SMTP error code and response string)
-    message: an optional message for the failure for human consumption.
+sent_state: null, 'sending', 'sent', 'error'
+sent_state_timestamp: when the send_state was set.
+sent_state_reason: the 'reason' for the failure - may only make sense to
+                   the protocol itself (eg, may be the SMTP error code and
+                   response string)
+sent_state_message: an optional message for the failure for human consumption.
     
 
 IDENTITIES AND CONTACTS:

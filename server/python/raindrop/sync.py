@@ -74,22 +74,83 @@ class SyncConductor(object):
           self.log.info('Starting sync of %s account: %s',
                         kind, account_details.get('name', '(un-named)'))
           self.active_accounts.append(account)
-          yield account.startSync(self
-                    ).addBoth(self._cb_sync_finished, account)
+          def_done = account.startSync(self)
+          if def_done is not None:
+            yield def_done.addBoth(self._cb_sync_finished, account)
         else:
           self.log.error("Don't know what to do with account kind: %s", kind)
       else:
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
   @defer.inlineCallbacks
-  def sync(self, whateva=None):
-    # get all accounts from the couch.
-    key = ['rd.core.content', 'schema_id', 'rd.account']
-    result = yield self.doc_model.open_view(key=key, reduce=False,
-                                            include_docs=True)
+  def sync_outgoing(self, outgoing_handlers, pipeline):
+    # XXX - we need a registry of 'outgoing source docs'.
+    source_schemas = ['rd.msg.outgoing.simple']
 
-    # we don't use the cooperator here as we want them all to run in parallel.
-    _ = yield defer.DeferredList([d for d in self._genAccountSynchs(result['rows'])])
+    keys = []
+    for ss in source_schemas:
+      keys.append([ss, 'outgoing_state', 'outgoing'])
+
+    result = yield self.doc_model.open_view(keys=keys, reduce=False)
+    for row in result['rows']:
+      logger.info("found outgoing document %(id)r", row)
+      val = row['value']
+      # push it through the pipeline.
+      todo = {val['rd_schema_id']: [(row['id'], val['_rev'])]}
+      _ = yield pipeline.sync_processor.process_schema_items(todo)
+
+      # Now attempt to find the 'outgoing' message.
+      keys = []
+      for ot in outgoing_handlers:
+        keys.append(['rd.core.content', 'key-schema_id', [val['rd_key'], ot]])
+      out_schema = None
+      out_result = yield self.doc_model.open_view(keys=keys, reduce=False)
+      for out_row in out_result['rows']:
+        if 'error' not in row:
+          # hrm - I don't think we want to let multiple accounts handle the
+          # same item without more thought...
+          if out_schema is not None:
+            raise RuntimeError, "Found multiple outgoing schemas!!"
+          out_schema = out_row['value']['rd_schema_id']
+          out_id = out_row['id']
+          break
+      else:
+        raise RuntimeError("the queues failed to create an outgoing schema")
+      logger.info('found outgoing message with schema %s', out_schema)
+      # open the original source doc and the outgoing schema we just found.
+      dids = [row['id'], out_id]
+      src_doc, out_doc = yield self.doc_model.open_documents_by_id(dids)
+      if src_doc['_rev'] != val['_rev']:
+        raise RuntimeError('the document changed since it was processed.')
+      sender = outgoing_handlers[out_schema]
+      _ = yield sender.startSend(self, src_doc, out_doc)
+      print "sync done"
+
+  @defer.inlineCallbacks
+  def sync(self, pipeline):
+    if not self.options.no_process:
+      pipeline.prepare_sync_processor()
+    try:
+      # get all accounts from the couch.
+      key = ['rd.core.content', 'schema_id', 'rd.account']
+      result = yield self.doc_model.open_view(key=key, reduce=False,
+                                              include_docs=True)
+
+      dl = [d for d in self._genAccountSynchs(result['rows'])]
+      out_handlers = {}
+      for aa in self.active_accounts:
+        out_schemas = aa.rd_outgoing_schemas
+        if out_schemas:
+          for sid in out_schemas:
+            out_handlers[sid] = aa
+      if out_handlers:
+        dl.append(self.sync_outgoing(out_handlers, pipeline))
+      # we don't use the cooperator here as we want them all to run in parallel.
+      _ = yield defer.DeferredList(dl)
+    finally:
+      if not self.options.no_process:
+        num = pipeline.finish_sync_processor()
+        logger.info("generated %d documents", num)
 
   def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):

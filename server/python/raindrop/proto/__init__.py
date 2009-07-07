@@ -4,6 +4,7 @@ _protocol_infos = [
     ('imap', 'raindrop.proto.imap', 'IMAPAccount'),
     ('skype', 'raindrop.proto.skype', 'SkypeAccount'),
     ('twitter', 'raindrop.proto.twitter', 'TwitterAccount'),
+    ('smtp', 'raindrop.proto.smtp', 'SMTPAccount'),
 ]
 if __debug__:
     _protocol_infos.append(('test', 'raindrop.proto.test', 'TestAccount'))

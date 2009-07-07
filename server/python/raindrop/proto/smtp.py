@@ -15,7 +15,12 @@ class SMTPPostingClient(smtp.ESMTPClient):
         self.src_doc = src_doc
         self.out_doc = out_doc
         self.data_file = None # setup later.
+        self.seen_from = False
         smtp.ESMTPClient.__init__(self, *args, **kw)
+
+    def connectionLost(self, reason=protocol.connectionDone):
+        smtp.ESMTPClient.connectionLost(self, reason)
+        self.deferred.callback(None)
 
     #def smtpTransferFailed(self, code, resp):
 
@@ -46,8 +51,11 @@ class SMTPPostingClient(smtp.ESMTPClient):
             else:
                 smtp.ESMTPClient.smtpState_from(self, code, resp)
 
-        d = do_couchy()
-        d.addBoth(do_base)
+        if self.seen_from:
+            smtp.ESMTPClient.smtpState_from(self, code, resp)
+        else:
+            d = do_couchy()
+            d.addBoth(do_base)
 
     def smtpState_msgSent(self, code, resp):
         @defer.inlineCallbacks
@@ -60,8 +68,7 @@ class SMTPPostingClient(smtp.ESMTPClient):
                 _ = yield self.acct._update_sent_state(self.src_doc, 'sent')
             else:
                 reason = (code, resp) # is this enough?
-                _ = yield self.acct._update_sent_state(self.src_doc, 'error',
-                                                       reason)
+                _ = yield self.acct._update_sent_state(self.src_doc, 'error', reason)
 
         def do_base(result):
             smtp.ESMTPClient.smtpState_msgSent(self, code, resp)
@@ -69,6 +76,10 @@ class SMTPPostingClient(smtp.ESMTPClient):
         d.addBoth(do_base)
 
     def getMailFrom(self):
+        if self.seen_from:
+            # This appears the official way to finish...
+            return None
+        self.seen_from = True
         return self.out_doc['smtp_from']
 
     def getMailTo(self):
@@ -80,18 +91,19 @@ class SMTPPostingClient(smtp.ESMTPClient):
     def sentMail(self, code, resp, numOk, addresses, log):
         # Woohoo - some response from the server - hopefully a good one.
         logger.debug('sentMail with %d (%s)', code, resp)
-
+ 
 class SMTPClientFactory(protocol.ClientFactory):
     protocol = SMTPPostingClient
-    def __init__(self, account, conductor):
+    def __init__(self, account, conductor, src_doc, out_doc):
         # base-class has no __init__
+        self.src_doc = src_doc
+        self.out_doc = out_doc
         self.account = account
         self.conductor = conductor
 
     def buildProtocol(self, addr):
-        p = self.protocol(secret=None, identity='')
-        p.account = self.account
-        p.doc_model = self.account.doc_model
+        p = self.protocol(self.account, self.src_doc, self.out_doc,
+                          secret=None, identity='')
         p.deferred = self.deferred # ???????????
         return p
 
@@ -105,21 +117,11 @@ class SMTPClientFactory(protocol.ClientFactory):
         return self.deferred
 
 
-class OutgoingSMTPAccount(base.OutgoingAccountBase):
+class SMTPAccount(base.AccountBase):
     rd_outgoing_schemas = ['rd.msg.outgoing.smtp']
-    # XXX - should be managed by our caller once these 'protocols' become
-    # regular extensions.
-    rd_extension_id = 'proto.smtp'
-
     @defer.inlineCallbacks
-    def sync_outgoing(self, src_doc, raw_doc):
-        # 'drafts' etc should have been intercepted before here...
-        assert src_doc['outgoing_state']['state'] == 'outgoing', src_doc
-        # The 'sent state' must be nothing or a previous error.
-        assert src_doc['sent_state'] is None or \
-               src_doc['sent_state']['state'] in [None, 'error'], src_doc
-    
+    def startSend(self, conductor, src_doc, dest_doc):
         # do it...
-        factory = SMTPClientFactory(self, conductor)
+        factory = SMTPClientFactory(self, conductor, src_doc, dest_doc)
         client = yield factory.connect()
         # apparently all done!

@@ -37,11 +37,12 @@ if 'RAINDROP_LOG_LEVELS' in os.environ:
     
 
 class FakeOptions:
-    # XXX - we might need run-raindrop to share its options...
+    # XXX - get options from raindrop.opts...
     stop_on_error = False
     force = False
     protocols = None
     exts = None
+    no_process = False
 
 class TestCase(unittest.TestCase):
     pass

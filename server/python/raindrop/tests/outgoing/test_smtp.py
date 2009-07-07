@@ -1,8 +1,8 @@
 from raindrop.model import get_doc_model
-from raindrop.sync import SyncConductor
+from raindrop.sync import get_conductor
+from raindrop.pipeline import Pipeline
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
-from raindrop.proto.smtp import (
-        SMTPClientFactory, OutgoingSMTPAccount, SMTPPostingClient)
+from raindrop.proto.smtp import SMTPAccount, SMTPPostingClient
 
 from twisted.protocols import basic, loopback
 from twisted.internet import defer
@@ -15,6 +15,9 @@ class LoopbackMixin:
     def loopback(self, server, client):
         return loopback.loopbackTCP(server, client)
 
+SMTP_SERVER_HOST='127.0.0.1'
+SMTP_SERVER_PORT=6578
+
 class FakeSMTPServer(basic.LineReceiver):
     # in a dict so test-cases can override defaults.
     responses = {
@@ -22,6 +25,7 @@ class FakeSMTPServer(basic.LineReceiver):
         "QUIT": "221 see ya around\r\n",
         "MAIL FROM:": "250 ok",
         "RCPT TO:":   "250 ok",
+        "RSET": "250 ok",
     }
 
     def connectionMade(self):
@@ -44,8 +48,6 @@ class FakeSMTPServer(basic.LineReceiver):
         elif line == "DATA":
             self.transport.write("354 go for it\r\n")
             self.receiving_data = True
-        elif line == "RSET":
-            self.transport.loseConnection()
         elif self.receiving_data:
             if line == ".":
                 self.transport.write("250 gotcha\r\n")
@@ -53,6 +55,7 @@ class FakeSMTPServer(basic.LineReceiver):
         else:
             if not handled:
                 raise RuntimeError("test server not expecting %r", line)
+
 
 # Simple test case writes an outgoing smtp schema, and also re-uses that
 # same document for the 'sent' state.  This avoids any 'pipeline' work.
@@ -66,7 +69,8 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         items = {'smtp_from' : 'sender@test.com',
                  'smtp_to': ['recip1@test.com', 'recip2@test2.com'],
                  # The 'state' bit...
-                 'sent_state': {},
+                 'sent_state': None,
+                 'outgoing_state': 'outgoing',
                 }
         result = yield doc_model.create_schema_items([
                     {'rd_key': ['test', 'smtp_test'],
@@ -79,8 +83,10 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         defer.returnValue(src_doc)
 
     def _get_post_client(self, src_doc, raw_doc):
-        acct = OutgoingSMTPAccount(get_doc_model(), {})
-        return SMTPPostingClient(acct, src_doc, raw_doc, 'secret', None, 'foo')
+        acct = SMTPAccount(get_doc_model(), {})
+        c = SMTPPostingClient(acct, src_doc, raw_doc, 'secret', None, 'foo')
+        c.deferred = defer.Deferred()
+        return c
 
     @defer.inlineCallbacks
     def test_simple(self):
@@ -90,7 +96,7 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         _ = yield self.loopback(server, client)
         # now re-open the doc and check the state says 'sent'
         src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
-        self.failUnlessEqual(src_doc['sent_state']['state'], 'sent')
+        self.failUnlessEqual(src_doc['sent_state'], 'sent')
 
     @defer.inlineCallbacks
     def test_simple_rejected(self):
@@ -102,4 +108,80 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         _ = yield self.loopback(server, client)
         # now re-open the doc and check the state says 'error'
         src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
-        self.failUnlessEqual(src_doc['sent_state']['state'], 'error')
+        self.failUnlessEqual(src_doc['sent_state'], 'error')
+
+# creates a real 'outgoing' schema, then uses the conductor to do whatever
+# it does...
+class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
+    @defer.inlineCallbacks
+    def setUp(self):
+        _ = yield TestCaseWithTestDB.setUp(self)
+        self.serverDisconnected = defer.Deferred()
+        self.serverPort = self._listenServer(self.serverDisconnected)
+        #connected = defer.Deferred()
+        #self.clientDisconnected = defer.Deferred()
+        #self.clientConnection = self._connectClient(connected,
+        #                                            self.clientDisconnected)
+        #return connected
+
+    def _listenServer(self, d):
+        from twisted.internet.protocol import Factory
+        from twisted.internet import reactor
+        f = Factory()
+        f.onConnectionLost = d
+        f.protocol = FakeSMTPServer
+        return reactor.listenTCP(SMTP_SERVER_PORT, f)
+
+    def tearDown(self):
+        self.serverPort.stopListening()
+        return ###?????????
+        d = defer.maybeDeferred(self.serverPort.stopListening)
+        return defer.gatherResults([d, self.serverDisconnected])
+
+    @defer.inlineCallbacks
+    def _prepare_test_doc(self):
+        doc_model = get_doc_model()
+        # write a simple outgoing schema
+        items = {'body' : 'hello there',
+                 'from' : ['email', 'test1@test.com'],
+                 'from_display': 'Sender Name',
+                 'to' : [
+                            ['email', 'test2@test.com'],
+                            ['email', 'test3@test.com'],
+                        ],
+                 'to_display': ['recip 1', 'recip 2'],
+                 'cc' : [
+                            ['email', 'test4@test.com'],
+                    
+                        ],
+                 'cc_display' : ['CC recip 1'],
+                 'subject': "the subject",
+                 # The 'state' bit...
+                 'sent_state': None,
+                 'outgoing_state': 'outgoing',
+                }
+        result = yield doc_model.create_schema_items([
+                    {'rd_key': ['test', 'smtp_test'],
+                     'ext_id': 'testsuite',
+                     'schema_id': 'rd.msg.outgoing.simple',
+                     'items': items,
+                    }])
+        src_doc = yield doc_model.db.openDoc(result[0]['id'])
+        defer.returnValue(src_doc)
+
+    def prepare_test_accounts(self, config):
+        acct = config.accounts['test'] = {}
+        acct['kind'] = 'smtp'
+        acct['username'] = 'test'
+        acct['id'] = 'smtp_test'
+        acct['host'] = SMTP_SERVER_HOST
+        acct['port'] = SMTP_SERVER_PORT
+        acct['ssl'] = False
+
+    @defer.inlineCallbacks
+    def test_outgoing(self):
+        doc_model = get_doc_model()
+        src_doc = yield self._prepare_test_doc()
+        opts = FakeOptions()
+        pipeline = Pipeline(doc_model, opts)
+        _ = yield get_conductor(opts).sync(pipeline)

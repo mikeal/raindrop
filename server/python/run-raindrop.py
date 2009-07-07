@@ -84,14 +84,7 @@ def show_info(result, parser, options):
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
-    if not options.no_process:
-        g_pipeline.prepare_sync_processor()
-    try:
-        _ = yield conductor.sync(None)
-    finally:
-        if not options.no_process:
-            num = g_pipeline.finish_sync_processor()
-            logger.info("generated %d documents", num)
+    _ = yield conductor.sync(g_pipeline)
 
 def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
