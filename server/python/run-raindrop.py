@@ -166,6 +166,26 @@ def unprocess(result, parser, options):
         print "unprocess has finished..."
     return g_pipeline.unprocess().addCallback(done)
 
+@allargs_command
+@defer.inlineCallbacks
+def add_schemas(result, parser, options, args):
+    """Add one or more schema documents to the couch"""
+    if not args:
+        parser.error("You must supply filenames containing json for the docs")
+    dm = model.get_doc_model()
+    for arg in args:
+        try:
+            with open(arg) as f:
+                try:
+                    vals = json.load(f)
+                except ValueError, why:
+                    parser.error("file %r has invalid json: %s" % (arg, why))
+        except IOError:
+            parser.error("Failed to open json document %r" % arg)
+
+        got = yield dm.create_schema_items([vals])
+        print "Saved doc id %(id)r at rev %(rev)s" % got[0]
+
 def delete_docs(result, parser, options):
     """Delete all documents of a particular type.  Use with caution or see
        the 'unprocess' command for an alternative.
@@ -309,10 +329,11 @@ def main():
             print "Apparently everything is finished - terminating."
             reactor.stop()
 
-    def error(*args, **kw):
+    def error(result, *args, **kw):
         from twisted.python import log
-        log.err(*args, **kw)
-        print "A command failed - terminating."
+        if not isinstance(result.value, SystemExit):
+            log.err(result, *args, **kw)
+            print "A command failed - terminating."
         reactor.stop()
 
     d.addCallbacks(done, error)
