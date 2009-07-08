@@ -83,6 +83,39 @@ class SyncConductor(object):
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
   @defer.inlineCallbacks
+  def _process_outgoing_row(self, row, outgoing_handlers, pipeline):
+    val = row['value']
+    # push it through the pipeline.
+    todo = {val['rd_schema_id']: [(row['id'], val['_rev'])]}
+    _ = yield pipeline.sync_processor.process_schema_items(todo)
+
+    # Now attempt to find the 'outgoing' message.
+    keys = []
+    for ot in outgoing_handlers:
+      keys.append(['rd.core.content', 'key-schema_id', [val['rd_key'], ot]])
+    out_schema = None
+    out_result = yield self.doc_model.open_view(keys=keys, reduce=False)
+    for out_row in out_result['rows']:
+      if 'error' not in row:
+        # hrm - I don't think we want to let multiple accounts handle the
+        # same item without more thought...
+        if out_schema is not None:
+          raise RuntimeError, "Found multiple outgoing schemas!!"
+        out_schema = out_row['value']['rd_schema_id']
+        out_id = out_row['id']
+        break
+    else:
+      raise RuntimeError("the queues failed to create an outgoing schema")
+    logger.info('found outgoing message with schema %s', out_schema)
+    # open the original source doc and the outgoing schema we just found.
+    dids = [row['id'], out_id]
+    src_doc, out_doc = yield self.doc_model.open_documents_by_id(dids)
+    if src_doc['_rev'] != val['_rev']:
+      raise RuntimeError('the document changed since it was processed.')
+    sender = outgoing_handlers[out_schema]
+    _ = yield sender.startSend(self, src_doc, out_doc)
+
+  @defer.inlineCallbacks
   def sync_outgoing(self, outgoing_handlers, pipeline):
     # XXX - we need a registry of 'outgoing source docs'.
     source_schemas = ['rd.msg.outgoing.simple']
@@ -94,37 +127,11 @@ class SyncConductor(object):
     result = yield self.doc_model.open_view(keys=keys, reduce=False)
     for row in result['rows']:
       logger.info("found outgoing document %(id)r", row)
-      val = row['value']
-      # push it through the pipeline.
-      todo = {val['rd_schema_id']: [(row['id'], val['_rev'])]}
-      _ = yield pipeline.sync_processor.process_schema_items(todo)
-
-      # Now attempt to find the 'outgoing' message.
-      keys = []
-      for ot in outgoing_handlers:
-        keys.append(['rd.core.content', 'key-schema_id', [val['rd_key'], ot]])
-      out_schema = None
-      out_result = yield self.doc_model.open_view(keys=keys, reduce=False)
-      for out_row in out_result['rows']:
-        if 'error' not in row:
-          # hrm - I don't think we want to let multiple accounts handle the
-          # same item without more thought...
-          if out_schema is not None:
-            raise RuntimeError, "Found multiple outgoing schemas!!"
-          out_schema = out_row['value']['rd_schema_id']
-          out_id = out_row['id']
-          break
-      else:
-        raise RuntimeError("the queues failed to create an outgoing schema")
-      logger.info('found outgoing message with schema %s', out_schema)
-      # open the original source doc and the outgoing schema we just found.
-      dids = [row['id'], out_id]
-      src_doc, out_doc = yield self.doc_model.open_documents_by_id(dids)
-      if src_doc['_rev'] != val['_rev']:
-        raise RuntimeError('the document changed since it was processed.')
-      sender = outgoing_handlers[out_schema]
-      _ = yield sender.startSend(self, src_doc, out_doc)
-      print "sync done"
+      try:
+        _ = yield self._process_outgoing_row(row, outgoing_handlers, pipeline)
+      except Exception:
+        logger.exception("Failed to processing doc %(id)r", row)
+    logger.info("outgoing sync done")
 
   @defer.inlineCallbacks
   def sync(self, pipeline):
