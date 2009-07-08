@@ -1,5 +1,4 @@
 from raindrop.model import get_doc_model
-from raindrop.sync import get_conductor
 from raindrop.pipeline import Pipeline
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
 from raindrop.proto.smtp import SMTPAccount, SMTPPostingClient
@@ -27,8 +26,10 @@ class FakeSMTPServer(basic.LineReceiver):
         "RCPT TO:":   "250 ok",
         "RSET": "250 ok",
     }
+    num_connections = 0
 
     def connectionMade(self):
+        self.__class__.num_connections += 1
         self.buffer = []
         self.sendLine('220 hello')
         self.receiving_data = False
@@ -97,6 +98,7 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         # now re-open the doc and check the state says 'sent'
         src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
         self.failUnlessEqual(src_doc['sent_state'], 'sent')
+        self.failUnless(server.buffer) # must have connected to the test server.
 
     @defer.inlineCallbacks
     def test_simple_rejected(self):
@@ -184,4 +186,20 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
         src_doc = yield self._prepare_test_doc()
         opts = FakeOptions()
         pipeline = Pipeline(doc_model, opts)
-        _ = yield get_conductor(opts).sync(pipeline)
+        _ = yield self.get_conductor(opts).sync(pipeline)
+
+    @defer.inlineCallbacks
+    def test_outgoing_twice(self):
+        doc_model = get_doc_model()
+        src_doc = yield self._prepare_test_doc()
+        opts = FakeOptions()
+        pipeline = Pipeline(doc_model, opts)
+        conductor = self.get_conductor(opts)
+        nc = FakeSMTPServer.num_connections
+        _ = yield conductor.sync(pipeline)
+        self.failUnlessEqual(nc+1, FakeSMTPServer.num_connections)
+        nc = FakeSMTPServer.num_connections
+        # sync again - better not make a connection this time!
+        _ = yield conductor.sync(pipeline)
+        self.failUnlessEqual(nc, FakeSMTPServer.num_connections)
+
