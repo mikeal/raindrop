@@ -151,8 +151,13 @@ class TestCaseWithTestDB(TestCaseWithDB):
         test_proto.test_num_test_docs = 0 # incremented later..
         acct['id'] = 'test'
 
+    def get_conductor(self, options=None):
+        if options is None:
+            options = FakeOptions()
+        sync._conductor = None # hack away the singleton...
+        return sync.get_conductor(options)
+        
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol
         test_proto.test_num_test_docs += 1
-        sync._conductor = None # hack away the singleton...        
-        return sync.get_conductor(FakeOptions()).sync()
+        return self.get_conductor().sync()
