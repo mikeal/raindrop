@@ -134,6 +134,9 @@ class AccountBase(Rat):
       src_doc['sent_state_message'] = reason
     elif 'sent_state_message' in src_doc:
       del src_doc['sent_state_message']
+    # Set outgoing state to 'sent' - if sent-state winds up being stuck at
+    # 'sending' then we may recover later
+    src_doc['outgoing_state'] = 'sent'
     assert '_id' in src_doc and '_rev' in src_doc, src_doc
     did = self.doc_model.quote_id(src_doc['_id'])
     result = yield self.doc_model.db.saveDoc(src_doc, did)
