@@ -17,13 +17,15 @@ dojo.declare("extender.SchemaSelector", [rdw._Base], {
     //summary: dijit lifecycle method, after template is in the DOM.
 
     //First, get the list of schemas from a view.
-    couch.db("raindrop").view("raindrop!schema_id!list/_view/all", {
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      startkey: ["rd.core.content", "schema_id"],
+      endkey: ["rd.core.content", "schema_id", {}],
       group: true,
       success: dojo.hitch(this, function(json) {
         var html = "";
         for (var i = 0, row; row = json.rows[i]; i++) {
           html += dojo.string.substitute(this.schemaTemplate, {
-            name: row.key
+            name: row.key[2]
           })
         }
         if (html) {
