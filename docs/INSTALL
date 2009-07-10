@@ -25,6 +25,10 @@ Install twisted.
 Install 'paisley' from launchpad.
   easy_install paisley
 
+Perhaps install 'simplejson' (Myk: paisley requires it, but easy_install
+didn't auto-install it when I installed paisley):
+  easy_install simplejson
+
 Either install raindrop:
   cd raindrop/server/python
   python setup.py develop
