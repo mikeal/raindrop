@@ -29,10 +29,18 @@ class SMTPPostingClient(SMTPPostingClient_Base): #smtp.ESMTPClient):
         self.heloFallback = 1
 
     def connectionLost(self, reason=protocol.connectionDone):
-        SMTPPostingClient_Base.connectionLost(self, reason)
-        # should be impossible to get here without having updated sent state
-        assert self.done_sent_state
+        # If the connection just dropped without an error response, we
+        # will not have called out handlers.
+        @defer.inlineCallbacks
+        def check_state():
+            if not self.done_sent_state:
+                _ = yield self._update_sent_state(-1, "Lost connection to server")
+        def do_base(result):
+            SMTPPostingClient_Base.connectionLost(self, reason)
+
+        d = check_state()
         self.deferred.callback(None)
+        d.addCallback(do_base)
 
     #def smtpTransferFailed(self, code, resp):
 

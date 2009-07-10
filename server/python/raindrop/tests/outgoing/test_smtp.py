@@ -32,10 +32,12 @@ class FakeSMTPServer(basic.LineReceiver):
             "DATA": "354 go for it",
             ".": "250 gotcha",
         }
+        self.connection_made_resp = '220 hello'
+
     def connectionMade(self):
         self.__class__.num_connections += 1
         self.buffer = []
-        self.sendLine('220 hello')
+        self.sendLine(self.connection_made_resp)
         self.receiving_data = False
 
     def lineReceived(self, line):
@@ -125,6 +127,17 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         server = FakeSMTPServer()
         client = self._get_post_client(src_doc, src_doc)
         client.requireAuthentication = True # this causes failure!
+        _ = yield self.loopback(server, client)
+        # now re-open the doc and check the state says 'error'
+        src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
+        self.failUnlessEqual(src_doc['sent_state'], 'error')
+
+    @defer.inlineCallbacks
+    def test_simple_connection_failed(self):
+        src_doc = yield self._prepare_test_doc()
+        server = FakeSMTPServer()
+        server.connection_made_resp = "452 Out of disk space; try later"
+        client = self._get_post_client(src_doc, src_doc)
         _ = yield self.loopback(server, client)
         # now re-open the doc and check the state says 'error'
         src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
