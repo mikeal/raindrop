@@ -287,14 +287,9 @@ def main():
     def mutter(whateva):
         print "Raindrops keep falling on my head..."
     d.addCallback(mutter)
-
-    # Check DB exists and if not, install accounts.
-    def maybe_install_accounts(db_created):
-        if db_created:
-            return bootstrap.install_accounts(None)
-    d.addCallback(model.fab_db
-        ).addCallback(maybe_install_accounts
-        )
+    d.addCallback(model.fab_db)
+    # See if accounts are up-to-date.
+    d.addCallback(bootstrap.check_accounts)
     # Check if the files on the filesystem need updating.
     d.addCallback(bootstrap.install_client_files, options)
     d.addCallback(bootstrap.insert_default_docs, options)

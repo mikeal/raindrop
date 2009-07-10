@@ -89,7 +89,7 @@ class TestCaseWithDB(TestCase):
         return db.deleteDB(dbinfo['name']
                 ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
-                ).addCallback(bootstrap.install_accounts
+                ).addCallback(bootstrap.check_accounts
                 # client files are expensive (particularly dojo) and not
                 # necessary yet...
                 #).addCallback(bootstrap.install_client_files, FakeOptions()

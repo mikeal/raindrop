@@ -447,14 +447,14 @@ def update_apps(whateva):
 
 
 @defer.inlineCallbacks
-def install_accounts(whateva):
+def check_accounts(whateva):
     db = get_db()
     config = get_config()
     dm = get_doc_model()
 
     for acct_name, acct_info in config.accounts.iteritems():
         acct_id = "account!" + acct_info['id']
-        logger.info("Adding account '%s'", acct_id)
+        logger.debug("Checking account '%s'", acct_id)
         rd_key = ['raindrop-account', acct_id]
 
         infos = yield dm.open_schemas(rd_key, 'rd.account')
@@ -470,10 +470,22 @@ def install_accounts(whateva):
                     'ext_id': 'raindrop.core',
                     'items': acct_info}
         if len(infos)==1:
-            new_info['_id'] = infos[0]['_id']
-            new_info['_rev'] = infos[0]['_rev']
+            existing = infos[0]
+            # See if the items are identical, and skip if they are.
+            for name, value in acct_info.iteritems():
+                if existing.get(name)!=value:
+                    break
+            else:
+                # they are identical
+                logger.debug("account '%(_id)s' is up-to-date at revision %(_rev)s",
+                             existing)
+                continue
+            new_info['_id'] = existing['_id']
+            new_info['_rev'] = existing['_rev']
             logger.info("account '%(_id)s' already exists at revision %(_rev)s"
                         " - updating", new_info)
+        else:
+            logger.info("Adding account '%s'", acct_id)
         _ = yield dm.create_schema_items([new_info])
 
 
