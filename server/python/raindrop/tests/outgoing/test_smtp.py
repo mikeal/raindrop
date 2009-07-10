@@ -1,7 +1,8 @@
 from raindrop.model import get_doc_model
 from raindrop.pipeline import Pipeline
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
-from raindrop.proto.smtp import SMTPAccount, SMTPPostingClient
+from raindrop.proto.smtp import SMTPAccount, SMTPPostingClient, \
+                                SMTPClientFactory
 
 from twisted.protocols import basic, loopback
 from twisted.internet import defer
@@ -18,16 +19,19 @@ SMTP_SERVER_HOST='127.0.0.1'
 SMTP_SERVER_PORT=6578
 
 class FakeSMTPServer(basic.LineReceiver):
-    # in a dict so test-cases can override defaults.
-    responses = {
-        "EHLO": "250 nice to meet you",
-        "QUIT": "221 see ya around\r\n",
-        "MAIL FROM:": "250 ok",
-        "RCPT TO:":   "250 ok",
-        "RSET": "250 ok",
-    }
     num_connections = 0
 
+    def __init__(self, *args, **kw):
+        # in a dict so test-cases can override defaults.
+        self.responses = {
+            "EHLO": "250 nice to meet you",
+            "QUIT": "221 see ya around\r\n",
+            "MAIL FROM:": "250 ok",
+            "RCPT TO:":   "250 ok",
+            "RSET": "250 ok",
+            "DATA": "354 go for it",
+            ".": "250 gotcha",
+        }
     def connectionMade(self):
         self.__class__.num_connections += 1
         self.buffer = []
@@ -39,6 +43,8 @@ class FakeSMTPServer(basic.LineReceiver):
         # *sob* - regex foo failed me.
         for k, v in self.responses.iteritems():
             if line.startswith(k):
+                if isinstance(v, Exception):
+                    raise v
                 handled = True
                 self.transport.write(v + "\r\n")
                 break
@@ -47,11 +53,9 @@ class FakeSMTPServer(basic.LineReceiver):
         if line == "QUIT":
             self.transport.loseConnection()
         elif line == "DATA":
-            self.transport.write("354 go for it\r\n")
             self.receiving_data = True
         elif self.receiving_data:
             if line == ".":
-                self.transport.write("250 gotcha\r\n")
                 self.receiving_data = False
         else:
             if not handled:
@@ -85,7 +89,10 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
 
     def _get_post_client(self, src_doc, raw_doc):
         acct = SMTPAccount(get_doc_model(), {})
-        c = SMTPPostingClient(acct, src_doc, raw_doc, 'secret', None, 'foo')
+        # we need a factory for error handling...
+        factory = SMTPClientFactory(None, None, src_doc, raw_doc)
+        c = SMTPPostingClient(acct, src_doc, raw_doc, 'secret', None, None, None)
+        c.factory = factory
         c.deferred = defer.Deferred()
         return c
 
@@ -107,6 +114,17 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
         server.responses["MAIL FROM:"] = "500 sook sook sook"
 
         client = self._get_post_client(src_doc, src_doc)
+        _ = yield self.loopback(server, client)
+        # now re-open the doc and check the state says 'error'
+        src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])
+        self.failUnlessEqual(src_doc['sent_state'], 'error')
+
+    @defer.inlineCallbacks
+    def test_simple_failed(self):
+        src_doc = yield self._prepare_test_doc()
+        server = FakeSMTPServer()
+        client = self._get_post_client(src_doc, src_doc)
+        client.requireAuthentication = True # this causes failure!
         _ = yield self.loopback(server, client)
         # now re-open the doc and check the state says 'error'
         src_doc = yield get_doc_model().db.openDoc(src_doc['_id'])

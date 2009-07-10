@@ -122,7 +122,8 @@ class AccountBase(Rat):
 
   # helper function to manage the 'sent state' for an item.
   @defer.inlineCallbacks
-  def _update_sent_state(self, src_doc, new_state, reason=None, message=None):
+  def _update_sent_state(self, src_doc, new_state, reason=None, message=None,
+                         outgoing_state='sent'):
     # update the doc
     src_doc['sent_state'] = new_state
     src_doc['sent_state_timestamp'] = get_now()
@@ -131,12 +132,13 @@ class AccountBase(Rat):
     elif 'sent_state_reason' in src_doc:
       del src_doc['sent_state_reason']
     if message:
-      src_doc['sent_state_message'] = reason
+      src_doc['sent_state_message'] = message
     elif 'sent_state_message' in src_doc:
       del src_doc['sent_state_message']
-    # Set outgoing state to 'sent' - if sent-state winds up being stuck at
-    # 'sending' then we may recover later
-    src_doc['outgoing_state'] = 'sent'
+    # By default, we set outgoing state to 'sent' - if sent-state winds up being stuck at
+    # 'sending' then we may recover later.  It might get reset to 'outgoing'
+    # of a retry-able error is detected.
+    src_doc['outgoing_state'] = outgoing_state
     assert '_id' in src_doc and '_rev' in src_doc, src_doc
     did = self.doc_model.quote_id(src_doc['_id'])
     result = yield self.doc_model.db.saveDoc(src_doc, did)
