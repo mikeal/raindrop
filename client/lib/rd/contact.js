@@ -105,7 +105,7 @@ dojo.mixin(rd.contact, {
         }, errback);
       }
     } else {
-      errback && errback(new Error("unknown identity: " + contacts.unkown));
+      errback && errback(new Error("unknown identity: " + contacts.unknown));
     }
   },
 
