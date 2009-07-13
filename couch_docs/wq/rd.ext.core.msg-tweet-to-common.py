@@ -7,6 +7,7 @@ def handler(doc):
     # body schema
     body = doc['twitter_text']
     bdoc = {'from': ['twitter', doc['twitter_user']],
+            'from_display': doc['twitter_user_name'],
             'body': body,
             'body_preview': body[:140],
             # we shoved GetCreatedAtInSeconds inside the func tweet_to_raw 

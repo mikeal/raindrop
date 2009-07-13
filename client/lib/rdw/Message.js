@@ -28,27 +28,11 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
     //Set the properties for this widget based on messageBag
     //properties.
-    //TODO: some of these need more info from backend.    
-    // XXX: these are a couple hacks to get the UI looking more like we want
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
 
-    this.fromName = msgDoc.from[1];
-    try {
-      var pieces = msgDoc.from[1].split("<");
-      if(pieces && pieces[0]) {
-        this.fromName = pieces[0];
-      }
-    } catch(ignore) { }
-    
     this.fromId = msgDoc.from[1];
-    try {
-      var matches = msgDoc.from[1].match(/<(.+)>/);
-      if(matches && matches[1]) {
-        this.fromId = matches[1].toLowerCase();
-      }
-    } catch(ignore) { }
-
+    this.fromName = msgDoc.from_display || this.fromId;
     this.subject = null;
     this.subject = rd.escapeHtml(msgDoc.subject ?
                                 msgDoc.subject.replace(/^Re:/,'') : "");

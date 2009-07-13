@@ -1,4 +1,4 @@
-from email.utils import mktime_tz, parsedate_tz
+from email.utils import mktime_tz, parsedate_tz, getaddresses, parseaddr
 from email.message import Message
 
 def decode_body_part(docid, body_bytes, charset=None):
@@ -41,6 +41,11 @@ def extract_preview(body):
     preview_body = '\n'.join(trimmed_preview_lines)
     return preview_body[:140] + (preview_body[140:] and '...') # cute trick
 
+def fill_identity_info(val, identity_list, display_list):
+    for name, addr in getaddresses(val):
+        identity_list.append(['email', addr])
+        display_list.append(name)
+
 def handler(doc):
     # a 'rfc822' stores 'headers' as a dict
     headers = doc['headers']
@@ -48,7 +53,20 @@ def handler(doc):
     callbacks = []
     ret = {}
     if 'from' in headers:
-        ret['from'] = ['email', headers['from']]
+        name, addr = parseaddr(headers['from'])
+        ret['from'] = ['email', addr]
+        ret['from_display'] = name
+
+    if 'to' in headers:
+        id_list = ret['to'] = []
+        disp_list = ret['to_display'] = []
+        fill_identity_info(headers['to'], id_list, disp_list)
+
+    if 'cc' in headers:
+        id_list = ret['cc'] = []
+        disp_list = ret['cc_display'] = []
+        fill_identity_info(headers['cc'], id_list, disp_list)
+
     if 'subject' in headers:
         ret['subject'] = headers['subject']
     if 'date' in headers:

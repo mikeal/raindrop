@@ -4,6 +4,7 @@ def handler(doc):
     subject = doc['skype_chat_friendlyname']
     # Currently 'body' also defines 'envelope' type items
     bdoc = {'from': ['skype', doc['skype_from_handle']],
+            'from_display': doc['skype_from_dispname'],
             'subject': subject,
             'body': doc['skype_body'],
             'body_preview': doc['skype_body'][:140],

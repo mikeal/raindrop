@@ -44,6 +44,7 @@ def tweet_to_raw(tweet):
         val = getattr(tweet, name)
         # simple hacks - users just become the user ID.
         if isinstance(val, twitter.User):
+            ret['twitter_'+name.lower()+'_name'] = val.GetName()
             val = val.screen_name
         ret['twitter_'+name.lower()] = val
     ret['twitter_created_at_in_seconds'] = tweet.GetCreatedAtInSeconds()
