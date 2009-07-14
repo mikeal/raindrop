@@ -41,7 +41,15 @@ dojo.mixin(rd.identity, {
         //is a Fetch method that knows about twitter.
        this["_" + ids.missing[0][0] + "Fetch"](
           ids.missing[0],
-          dojo.hitch(this, function(,
+          dojo.hitch(this, function(){
+            //Retry the get call with the missing data and merge with previously found.
+            this.get(ids.missing, function(found) {
+              if (ids.found) {
+                found = ids.found.concat(found);
+              }
+              callback(isSingle ? found[0] : found);
+            }, errback);
+          }),
           errback
         );
       } else {
@@ -71,16 +79,41 @@ dojo.mixin(rd.identity, {
     }
   },
 
-  _mergeMissing: function(/*Array*/missing, /*Array*/found, /*Function*/callback) {
-    //summary: helper to merge newly found missing identities with
-    //a previously found set.
-    
-  }
   byImage: function(/*Function*/callback, /*Function?*/errback) {
     //summary: Fetches identities that have images associated with them.
     //Only retrieves the identityIds, not a full identity doc. Use get()
     //to get the docs.
-    callback(this._byImage);
+    if (this._byImage) {
+      callback(this._byImage);
+    } else {
+      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+        reduce: false,
+        startkey: ['rd.identity', 'image'],
+        endkey: ['rd.identity', 'image', {}],
+        success: function(json) {
+          // We have all identities with images - now find out which of these
+          // identities have sent a message...
+          var keys = [];
+          for (var i = 0, row; row = json.rows[i]; i++) {
+            var rd_key = row.value.rd_key;
+            // rd_key is ['identity', identity_id]
+            keys.push(["rd.msg.body", "from", rd_key[1]]);
+          }
+          couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+            keys: keys,
+            group: true,
+            success: dojo.hitch(this, function(json) {
+              this._byImage = [];
+              for (var i = 0, row; row = json.rows[i]; i++) {
+                this._byImage.push(row.key[2]);
+              }
+              callback(this._byImage);
+            })
+          });
+        },
+        error: errback
+      });
+    }
   },
 
   createEmail: function(/*Object*/messageBag, /*Function*/callback, /*Function?*/errback) {
@@ -134,79 +167,18 @@ dojo.mixin(rd.identity, {
     }
   },
 
-<<<<<<< local
   _load: function() {
     //summary: pulls in all the identities, since we need them anyway to do
     //things like mark a message a from a known user. This may change if we
     //modify the backend to do more work.
-    console.log("!!rd.identity._load called");
     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
       key: ["rd.core.content", "schema_id", "rd.identity"],
       reduce: false,
-=======
-  _load: function(/*Array*/identityIds, /*Function*/callback, /*Function?*/errback) {
-    //summary: pulls a few identity records from the couch, starting
-    //with the requested one, to hopefully limit how many times we hit
-    //the couch.
-    
-    //If we need to do get all the identites, do that and call load back
-    //again with the identities.
-    if (this._listStatus == "needFetch") {
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-        key: ["rd.core.content", "schema_id", "rd.identity"],
-        reduce: false,
-        success: dojo.hitch(this, function(json) {
-          var identityIds = [];
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            identityIds.push(row.value.rd_key);
-          }
-
-          this._listStatus = "done";
-          this._load(identityIds);
-        }),
-        error: dojo.hitch(this, function(err) {
-          this._error = err;
-          this._onload();
-        })
-      });
-      return;
-    }
-
-    //Have identites to fetch.
-    if (typeof identityIds[0] == "string")
-      identityIds = [identityIds];
-    var keys = [];
-    for (var i = 0, id; id = identityIds[i]; i++) {
-      keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity"]]);
-    }
-    var dbname = "raindrop"; // XXX - the dbname needs to be a global somewhere?
-    couch.db(dbname).view("raindrop!content!all/_view/megaview", {
-      keys: keys,
->>>>>>> other
       include_docs: true,
       success: dojo.hitch(this, function(json) {
         //Save off identity docs in our store for all the identities.
-        console.log("##_loadIdentities for " + identityIds + " has results: " + json.rows.length);
         for (var i = 0, row; row = json.rows[i]; i++) {
-<<<<<<< local
           this._storeIdty(row.doc);
-=======
-          var doc = row.doc;
-          var identity_id = doc.rd_key[1];
-
-          // Fix up the image URL; a leading '/' means it is a URL in our
-          // couch DB.
-          if (doc.image && doc.image[0]=="/") {
-            doc.image = "/" + dbname + doc.image;
-          }
-
-          //Add the document to the store for that service.
-          var svc = dojo.getObject(identity_id[0], true, this);
-          var uId = identity_id[1];
-          if (!svc[uId]) {
-            svc[uId] = doc;
-          }
->>>>>>> other
         }
         this._onload();
       }),
@@ -227,10 +199,9 @@ dojo.mixin(rd.identity, {
     var identity_id = idty.rd_key[1];
   
     //Add the identity to the store for that service.
-    console.log("@@Storing identity: " + idty.rdKey +  " at: " + identity_id[0]);
     var svc = dojo.getObject(identity_id[0], true, this);
     var uId = identity_id[1];
-    if (!svc[uId]) {
+    if (!svc[uId] || svc[uId]._isFake) {
       svc[uId] = idty;
     }
 
@@ -239,7 +210,6 @@ dojo.mixin(rd.identity, {
       this._byImage = [];
     }
     
-    console.log("##Has an image: " + idty.image);
     if (idty.image) {
       this._byImage.push(idty.rd_key);
     }

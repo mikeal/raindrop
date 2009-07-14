@@ -126,8 +126,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
   onContactSelected: function(/*String*/contactId) {
     //summary: handles a contact selection from the rdw.contactDropDown.
-    console.log("Selected contact: " + contactId);
-
     rdw.contactDropDown.close();
 
     //Create the email identity record, then attach it to the contact.
