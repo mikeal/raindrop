@@ -140,7 +140,8 @@ dojo.mixin(rd.identity, {
     for (var i = 0, id; id = identityIds[i]; i++) {
       keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity"]]);
     }
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    var dbname = "raindrop"; // XXX - the dbname needs to be a global somewhere?
+    couch.db(dbname).view("raindrop!content!all/_view/megaview", {
       keys: keys,
       include_docs: true,
       reduce: false,
@@ -149,6 +150,12 @@ dojo.mixin(rd.identity, {
         for (var i = 0, row; row = json.rows[i]; i++) {
           var doc = row.doc;
           var identity_id = doc.rd_key[1];
+
+          // Fix up the image URL; a leading '/' means it is a URL in our
+          // couch DB.
+          if (doc.image && doc.image[0]=="/") {
+            doc.image = "/" + dbname + doc.image;
+          }
 
           //Add the document to the store for that service.
           var svc = dojo.getObject(identity_id[0], true, this);

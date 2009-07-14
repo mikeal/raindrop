@@ -98,12 +98,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var from = msgDoc.from;
     rd.identity.get(from, dojo.hitch(this, function(user) {
       if (this.userPicNode && user.image) {
-        if (user.image[0]=="/")
-          // It is a URL into our couch.
-          this.userPicNode.src = "/raindrop" + user.image;
-        else
-          // it is an absolute URL...
-          this.userPicNode.src = user.image;
+        this.userPicNode.src = user.image;
       }
       if (user.name) {
         this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
