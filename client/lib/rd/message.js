@@ -67,7 +67,9 @@ rd.message = rd._api._protectFunc(function(/*String|Array*/ids, /*Function*/call
               //forces the load of all identities before loading any messages
               //(via the work it does in _load)
               var from = bag["rd.msg.body"].from;
-              var known = rd.identity[from[0]] && rd.identity[from[0]][from[1]];
+              var known = (rd.identity[from[0]]
+                          && rd.identity[from[0]][from[1]]
+                          && !rd.identity[from[0]][from[1]]._isFake);
               console.log("##Checking known for " + from + ": " + known);
               bag["rd.msg.ui"] = {
                 rd_schema_id: "rd.msg.ui",

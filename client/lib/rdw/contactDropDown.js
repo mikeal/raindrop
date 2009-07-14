@@ -35,6 +35,13 @@ rdw.contactDropDown = {
     this._justOpened = true;
   },
 
+  close: function() {
+    //summary: closes teh contact drop down.
+    this._justOpened = false;
+    dijit.popup.close(this.selector);
+    this._closed();
+  },
+
   onDocClick: function(/*Event*/evt) {
     //summary: handles document clicks to see if we should hide the contacts.
     //Check if the click happens inside the ContactSelector.

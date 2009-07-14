@@ -3,6 +3,7 @@ dojo.provide("rd.identity");
 dojo.require("dojo.io.script");
 dojo.require("couch");
 dojo.require("rd._api");
+dojo.require("rd.store");
 
 //TODO: have try/catches on callbacks commented out so errors show up early and
 //have stack traces. However, for release code, want to make sure one callback
@@ -17,13 +18,7 @@ dojo.mixin(rd.identity, {
     //summary: returns a list of all identities to the callback. To get info
     //on an identity inside the callback(identities) function, use
     //identities[identityId[0]][identity[1]]
-    if (this._listStatus == "done") {
-      callback(this);
-    } else {
-      this._loaded = false;
-      this._listStatus = "needFetch";
-      this.list.apply(this, arguments);
-    }
+    callback(this);
   },
 
   get: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
@@ -39,7 +34,34 @@ dojo.mixin(rd.identity, {
     if (!ids.missing) {
       callback(isSingle ? ids.found[0] : ids.found);
     } else {
-      this._loaded = false;
+      //Handle requests for identities that we do not have.
+      if (ids.missing.length == 1 && this["_" + ids.missing[0][0] + "Fetch"]) {
+        //If just one missing and there is a Fetch method on this object
+        //that matches the identity type/provider, try that one. Example,
+        //is a Fetch method that knows about twitter.
+       this["_" + ids.missing[0][0] + "Fetch"](
+          ids.missing[0],
+          dojo.hitch(this, function(,
+          errback
+        );
+      } else {
+        //TODO: may want to rethink this later.
+        //Create a dummy identities. This area normally hit
+        //by the test_identity which seems malformed, but
+        //we might want to account for phantom identities?
+        for (var i = 0, idty; idty = ids.missing[i]; i++) {
+          dojo.getObject(idty[0], true, this)[idty[1]] = {
+            // it't not clear if we should use a 'real' identity ID here?
+            // theoretically all the fields being empty should be enough...
+            rd_key: ['identity', idty],
+            rd_schema: 'rd.identity',
+            //Mark this as a fake record
+            _isFake: true
+          };
+        }
+      }
+        
+      //Retry the get call with the missing data and merge with previously found.
       this.get(ids.missing, function(found) {
         if (ids.found) {
           found = ids.found.concat(found);
@@ -49,41 +71,48 @@ dojo.mixin(rd.identity, {
     }
   },
 
+  _mergeMissing: function(/*Array*/missing, /*Array*/found, /*Function*/callback) {
+    //summary: helper to merge newly found missing identities with
+    //a previously found set.
+    
+  }
   byImage: function(/*Function*/callback, /*Function?*/errback) {
     //summary: Fetches identities that have images associated with them.
     //Only retrieves the identityIds, not a full identity doc. Use get()
     //to get the docs.
-    if (this._byImage) {
-      callback(this._byImage);
-    } else {
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-        reduce: false,
-        startkey: ['rd.identity', 'image'],
-        endkey: ['rd.identity', 'image', {}],
-        success: function(json) {
-          // We have all identities with images - now find out which of these
-          // identities have sent a message...
-          var keys = [];
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            var rd_key = row.value.rd_key;
-            // rd_key is ['identity', identity_id]
-            keys.push(["rd.msg.body", "from", rd_key[1]]);
-          }
-          couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-            keys: keys,
-            group: true,
-            success: dojo.hitch(this, function(json) {
-              this._byImage = [];
-              for (var i = 0, row; row = json.rows[i]; i++) {
-                this._byImage.push(row.key[2]);
-              }
-              callback(this._byImage);
-            })
-          });
-        },
-        error: errback
-      });
-    }
+    callback(this._byImage);
+  },
+
+  createEmail: function(/*Object*/messageBag, /*Function*/callback, /*Function?*/errback) {
+    //summary: creates an identity document for the given a mail message bag.
+    //The callback will receive the identity document as the only argument.
+    var body = messageBag["rd.msg.body"];
+    var from = body.from[1];
+    var extId = rd.uiExtId;
+    var schemaId = "rd.identity";
+
+    //Generate the new document.
+    var idty = {
+      name: body.from_display,
+      nickname: from,
+      rd_ext_id: extId,
+      rd_key: [
+        "identity",
+        ["email", from]
+      ],
+      rd_schema_id: schemaId,
+      rd_source: [messageBag["rd.msg.email"]._id]
+    };
+
+    idty._id = 'rc!identity.' + rd.toBase64(idty.rd_key) + '!' + extId + '!' + schemaId;
+
+    //Insert the document.
+    rd.store.put(idty, dojo.hitch(this, function() {
+      //Update this data store.
+      this._storeIdty(idty);
+
+      callback(idty);
+    }), errback);
   },
 
   _get: function(/*Array*/identityId) {
@@ -105,6 +134,16 @@ dojo.mixin(rd.identity, {
     }
   },
 
+<<<<<<< local
+  _load: function() {
+    //summary: pulls in all the identities, since we need them anyway to do
+    //things like mark a message a from a known user. This may change if we
+    //modify the backend to do more work.
+    console.log("!!rd.identity._load called");
+    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      key: ["rd.core.content", "schema_id", "rd.identity"],
+      reduce: false,
+=======
   _load: function(/*Array*/identityIds, /*Function*/callback, /*Function?*/errback) {
     //summary: pulls a few identity records from the couch, starting
     //with the requested one, to hopefully limit how many times we hit
@@ -143,11 +182,15 @@ dojo.mixin(rd.identity, {
     var dbname = "raindrop"; // XXX - the dbname needs to be a global somewhere?
     couch.db(dbname).view("raindrop!content!all/_view/megaview", {
       keys: keys,
+>>>>>>> other
       include_docs: true,
-      reduce: false,
       success: dojo.hitch(this, function(json) {
         //Save off identity docs in our store for all the identities.
+        console.log("##_loadIdentities for " + identityIds + " has results: " + json.rows.length);
         for (var i = 0, row; row = json.rows[i]; i++) {
+<<<<<<< local
+          this._storeIdty(row.doc);
+=======
           var doc = row.doc;
           var identity_id = doc.rd_key[1];
 
@@ -163,30 +206,8 @@ dojo.mixin(rd.identity, {
           if (!svc[uId]) {
             svc[uId] = doc;
           }
+>>>>>>> other
         }
-
-        //See if we have the requested identities.
-        var idtys = this._get(identityIds);
-        if (idtys.missing) {
-          if (idtys.missing.length == 1 && this["_" + idtys.missing[0][0] + "Fetch"]) {
-            this["_" + idtys.missing[0][0] + "Fetch"](idtys.missing[0], callback, errback);
-            return;
-          } else {
-            //TODO: may want to rethink this later.
-            //Create a dummy identities. This area normally hit
-            //by the test_identity which seems malformed, but
-            //we might want to account for phantom identities?
-            for (var i = 0, idty; idty = idtys.missing[i]; i++) {
-              idtys.missing[i] = dojo.getObject(idty[0], true, this)[idty[1]] = {
-                // it't not clear if we should use a 'real' identity ID here?
-                // theoretically all the fields being empty should be enough...
-                rd_key: ['identity', idty],
-                rd_schema: 'rd.identity'
-              }
-            }
-          }
-        }
-
         this._onload();
       }),
       error: dojo.hitch(this, function(err) {
@@ -199,6 +220,29 @@ dojo.mixin(rd.identity, {
   _idty: function(/*Array*/identityId) {
     //summary: private helper function for getting an identity from a service store.
     return dojo.getObject(identityId[0], true, this)[identityId[1]];    
+  },
+
+  _storeIdty: function(/*Object*/idty) {
+    //summary: stores an idtentiy in the data store.
+    var identity_id = idty.rd_key[1];
+  
+    //Add the identity to the store for that service.
+    console.log("@@Storing identity: " + idty.rdKey +  " at: " + identity_id[0]);
+    var svc = dojo.getObject(identity_id[0], true, this);
+    var uId = identity_id[1];
+    if (!svc[uId]) {
+      svc[uId] = idty;
+    }
+
+    //Add to byImage store
+    if (!this._byImage) {
+      this._byImage = [];
+    }
+    
+    console.log("##Has an image: " + idty.image);
+    if (idty.image) {
+      this._byImage.push(idty.rd_key);
+    }
   },
 
   _twitterFetch: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
@@ -234,7 +278,6 @@ dojo.mixin(rd.identity, {
           //TODO: save this info back to the couch?
           callback([idty]);
         }
-        this._onload();
       })
     });
   }

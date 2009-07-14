@@ -1,6 +1,5 @@
 dojo.provide("extender.Editor");
 
-dojo.require("dojox.encoding.base64");
 dojo.require("rdw._Base");
 dojo.require("couch");
 
@@ -259,24 +258,13 @@ dojo.declare("extender.Editor", [rdw._Base], {
     });
   },
 
-
-  stringToBytes: function(/*String*/s) {
-    var b = [];
-    for(var i = 0; i < s.length; ++i){
-      b.push(s.charCodeAt(i));
-    }
-    return b;
-  },
-
   generateManifest: function() {
     //summary: makes up a manifest json for this extension.
     var rdKey = ["ext", this.moduleName];
-    var byteKey = this.stringToBytes(dojo.toJson(rdKey).replace(/\n/g, ""));
-    var base64Key = dojox.encoding.base64.encode(byteKey);
 
     this.moduleManifest = {
-      "_id": "rc!ext." + base64Key + "!rd.core!rd.ext.uiext",
-      "rd_key": ["ext", this.moduleName],
+      "_id": "rc!ext." + rd.toBase64(rdKey) + "!rd.core!rd.ext.uiext",
+      "rd_key": rdKey,
       "rd_source": null,
       "rd_schema_id": "rd.ext.uiext",
       "rd_ext_id": "rd.core"

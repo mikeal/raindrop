@@ -1,6 +1,7 @@
 //Main module definition
 dojo.provide("rd");
 
+dojo.require("dojox.encoding.base64");
 dojo.require("couch");
 
 /*
@@ -42,6 +43,8 @@ dojo._listener.getDispatcher = function(){
   dojo.mixin(rd, {
     ready: dojo.addOnLoad,
   
+    uiExtId: "rd.ui.rd",
+
     reduce: function(/*Array*/ a, /*Function*/ f, /*Object*/ z, /*Object?*/ o){
   			// summary: repeatedly applies a binary function to an array from left
   			//	to right using a seed value as a starting point; returns the final
@@ -78,8 +81,23 @@ dojo._listener.getDispatcher = function(){
       } else {
         return html;
       }
+    },  
+
+    toBase64: function(/*Object*/obj) {
+      //summary: returns a base64 string encoding of the JS object.
+      var byteKey = this.stringToBytes(dojo.toJson(obj).replace(/\n/g, ""));
+      return dojox.encoding.base64.encode(byteKey);
     },
-  
+
+    stringToBytes: function(/*String*/s) {
+      //summary: utility to convert string to bytes. :)
+      var b = [];
+      for(var i = 0; i < s.length; ++i){
+	b.push(s.charCodeAt(i));
+      }
+      return b;
+    },
+
     //Shortcut methods for dojo.publish and subscribe. rd.pub more aesthetically pleasing
     //than dojo.publish because it does not force the parameters to be in an array,
     //but rather as variable number of arguments to rd.pub. Also, rd.sub allows for passing
@@ -267,45 +285,44 @@ dojo._listener.getDispatcher = function(){
 	  && (instances = dijit.registry.byClass(moduleName))
 	  && instances.length) {
 	var module = dojo.getObject(moduleName);
-	var empty = {}, widget = dijit._Widget.prototype;
 
-	//Build a list of default properties.
-	var defaultProps = {};
-	for (var prop in module.prototype) {
-	  if (!(prop in empty)) {
-	    defaultProps[prop] = module.prototype[prop];
+	instances.forEach(dojo.hitch(this, function(instance) {
+	  this._updateInstance(instance, module);
+	}));
+      }
+    },
+
+    _updateInstance: function(/*Object*/instance, /*Function*/ctor) {
+      //summary: updates a single widget instance with a new instance of the
+      //same widget type.
+
+      //Build up a list of instance properties. It is an instance property
+      //if it differs from the defaultProps
+      var initProps = {}, widget = dijit._Widget.prototype, empty = {};
+      for (var prop in instance) {
+	if (!(prop in empty)
+	    && (!(prop in ctor.prototype) || ctor.prototype[prop] != instance[prop])) {
+	  //Do not pick up id values or dom nodes, or default widget properties.
+	  if (!(prop in widget) && !(prop in rd._skipInstanceProperties)) {
+	    initProps[prop] = instance[prop];
 	  }
 	}
-
-	instances.forEach(function(instance) {
-	  //Build up a list of instance properties. It is an instance property
-	  //if it differs from the defaultProps
-	  var initProps = {};
-	  for (var prop in instance) {
-	    if (!(prop in empty)
-		&& (!(prop in defaultProps) || defaultProps[prop] != instance[prop])) {
-	      //Do not pick up id values or dom nodes, or default widget properties.
-	      if (!(prop in widget) && !(prop in rd._skipInstanceProperties)) {
-		initProps[prop] = instance[prop];
-	      }
-	    }
-	  }
-
-	  var parentNode = instance.domNode.parentNode;
-	  var nextSibling = instance.domNode.nextSibling;
-	  //Destroy the old one first in case it is holding on to widgets
-	  //that will be recreated when new instance is created.
-	  instance.destroy();
-
-	  //Make the new instance and place it accordingly.
-	  var refreshed = new module(initProps);
-	  if (nextSibling) {
-	    parentNode.insertBefore(refreshed.domNode, nextSibling);
-	  } else {
-	    parentNode.appendChild(refreshed.domNode);
-	  }
-	});
       }
+
+      var parentNode = instance.domNode.parentNode;
+      var nextSibling = instance.domNode.nextSibling;
+      //Destroy the old one first in case it is holding on to widgets
+      //that will be recreated when new instance is created.
+      instance.destroy();
+
+      //Make the new instance and place it accordingly.
+      var refreshed = new ctor(initProps);
+      if (nextSibling) {
+	parentNode.insertBefore(refreshed.domNode, nextSibling);
+      } else {
+	parentNode.appendChild(refreshed.domNode);
+      }
+      
     },
 
     extensionEnabled: function(/*String*/extName, /*String*/moduleName,/*Boolean?*/enabled) {

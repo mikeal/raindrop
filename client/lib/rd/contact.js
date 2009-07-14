@@ -128,6 +128,40 @@ dojo.mixin(rd.contact, {
     this.get(contactIds, callback, errback);
   },
 
+  addIdentity: function(/*String*/contactId, /*Object*/identity,
+                        /*Function*/callback, /*Function?*/errback) {
+    //summary: adds the given identity to a contact specified by contactId
+    //by creating a raindrop document that connects the contact to the identity.
+    //SHOULD NOT be used if identity existed before, and already has an
+    //rd.identity.contacts record. Use merge() for that case.
+
+    var extId = rd.uiExtId;
+    var schemaId = "rd.identity.contacts";
+
+    //Generate the new document.
+    var idtyMap = {
+      rd_ext_id: extId,
+      rd_key: identity.rd_key,
+      rd_schema_id: schemaId,
+      rd_source: [identity._id],
+      rd_megaview_expandable: ["contacts"], 
+      contacts: [
+        [contactId, null]
+      ]
+    };
+
+    idtyMap._id = 'rc!identity.' + rd.toBase64(idtyMap.rd_key) + '!' + extId + '!' + schemaId;
+
+    //Insert the document.
+    rd.store.put(idtyMap, dojo.hitch(this, function() {
+      //Update the data store.
+      this._mapIdtyToContact(idtyMap, contactId);
+      this._attachIdentity(identity);
+
+      callback();
+    }), errback);
+  },
+
   merge: function(/*String*/sourceContactId, /*String*/targetContactId,
                   /*Function*/callback, /*Function?*/errback) {
     //summary: merges two contacts by figuring out which one has the fewer
@@ -281,29 +315,7 @@ dojo.mixin(rd.contact, {
         } else {
           for (var i = 0, row; row = json.rows[i]; i++) {
             // check we really have an identity record...
-            rdkey = row.value.rd_key;
-            var idid = rdkey[1];
-            var cid = row.key[2][0];
-            var relationship = row.key[2][1];
-            var idtyStringKey = idid.join("|");
-
-            //Hold onto the document ID for this identity map,
-            //for use in updating/merging identity/contact relationships
-            this._idtyMapIds[idtyStringKey] = row.id;
-
-            //Store identities by contactId
-            var byContact = this._byContact[cid];
-            if (!byContact) {
-              byContact = this._byContact[cid] = [];
-            }
-            byContact.push(idid);
-
-            //Then store the contact by identity.
-            var byIdty = this._byIdty[idtyStringKey];
-            if (!byIdty) {
-              byIdty = this._byIdty[idtyStringKey] = [];
-            }
-            byIdty.push(cid);
+            this._mapIdtyToContact(row.value, row.key[2][0]);
           }
 
           if (this._listStatus == "needFetch") {
@@ -318,6 +330,32 @@ dojo.mixin(rd.contact, {
         this._onload();
       })
     });
+  },
+
+  _mapIdtyToContact: function(/*Object*/idtyMapDoc, /*String*/contactId) {
+    //summary: given a new identity, map it correctly to the contact in internal storage
+
+    rdkey = idtyMapDoc.rd_key;
+    var idid = rdkey[1];
+    var idtyStringKey = idid.join("|");
+  
+    //Hold onto the document ID for this identity map,
+    //for use in updating/merging identity/contact relationships
+    this._idtyMapIds[idtyStringKey] = idtyMapDoc._id;
+  
+    //Store identities by contactId
+    var byContact = this._byContact[contactId];
+    if (!byContact) {
+      byContact = this._byContact[contactId] = [];
+    }
+    byContact.push(idid);
+
+    //Then store the contact by identity.
+    var byIdty = this._byIdty[idtyStringKey];
+    if (!byIdty) {
+      byIdty = this._byIdty[idtyStringKey] = [];
+    }
+    byIdty.push(contactId);
   },
 
   _loadIdtys: function(/*String|Array*/contactId, /*Function*/callback, /*Function?*/errback){
@@ -348,42 +386,7 @@ dojo.mixin(rd.contact, {
         }
 
         for (var i = 0, idty; idty = foundIdtys[i]; i++) {
-          //Attach the identity record to contact. Use the first part
-          //of the identity as a property on the contact. This means for
-          //instance, only one twitter account will be on the contact at
-          //contact.twitter, but all identities are listed in contact.identities.
-          console.assert(idty.rd_key[0]=='identity', idty) // not an identity?
-          idid = idty.rd_key[1];
-          var cIds = this._byIdty[idid.join("|")];
-          if (cIds && cIds.length) {
-            for (var j = 0, cId; cId = cIds[j]; j++) {
-              var contact = this._store[cId];
-              var idType = idid[0];
-
-              //Only keep one property on the object
-              //with the idType, so that means first one
-              //in the list wins for that type of identity.
-              if (!contact[idType]) {
-                contact[idType] = idty;
-              }
-
-              if (!contact.identities) {
-                contact.identities = [];
-              }
-
-              //Make sure we do not add the same contact more than once.
-              if(dojo.indexOf(contact.identities, idty) == -1) {
-                contact.identities.push(idty);
-                
-                //If the contact does not have an image, use one
-                //on the identity if possible. First one with a picture wins.
-                if(idty.image && !contact.image) {
-                  contact.image = idty.image;
-                }
-              }
-            }
-          }
-
+          this._attachIdentity(idty);
         }
 
         //Now collect the contacts originally requested and do the callback.
@@ -397,6 +400,44 @@ dojo.mixin(rd.contact, {
     );
   },
   
+  _attachIdentity: function(/*Object*/idty) {
+    //summary: given an identity, attach it to the cache of the contact in the data store.
+    //Use the first part of the identity as a property on the contact. This means for
+    //instance, only one twitter account will be on the contact at
+    //contact.twitter, but all identities are listed in contact.identities.
+    console.assert(idty.rd_key[0]=='identity', idty) // not an identity?
+    idid = idty.rd_key[1];
+    var cIds = this._byIdty[idid.join("|")];
+    if (cIds && cIds.length) {
+      for (var j = 0, cId; cId = cIds[j]; j++) {
+        var contact = this._store[cId];
+        var idType = idid[0];
+
+        //Only keep one property on the object
+        //with the idType, so that means first one
+        //in the list wins for that type of identity.
+        if (!contact[idType]) {
+          contact[idType] = idty;
+        }
+
+        if (!contact.identities) {
+          contact.identities = [];
+        }
+
+        //Make sure we do not add the same contact more than once.
+        if(dojo.indexOf(contact.identities, idty) == -1) {
+          contact.identities.push(idty);
+          
+          //If the contact does not have an image, use one
+          //on the identity if possible. First one with a picture wins.
+          if(idty.image && !contact.image) {
+            contact.image = idty.image;
+          }
+        }
+      }
+    }
+  },
+
   _fetchAllIdentities: function() {
     //summary: fetches all the identities for all the contacts. Normally
     //a response to a rd.contact.list() call.

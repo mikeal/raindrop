@@ -127,6 +127,36 @@ dojo.declare("rdw.Message", [rdw._Base], {
   onContactSelected: function(/*String*/contactId) {
     //summary: handles a contact selection from the rdw.contactDropDown.
     console.log("Selected contact: " + contactId);
+
+    rdw.contactDropDown.close();
+
+    //Create the email identity record, then attach it to the contact.
+    rd.identity.createEmail(
+      this.messageBag,
+      dojo.hitch(this, function(identity) {
+        //identity created, now attach it to the contact.
+        rd.contact.addIdentity(
+          contactId,
+          identity,
+          dojo.hitch(this, function() {
+            //update this Message object's UI to show the new state.
+            //TODO: this may cause problems if some container holds
+            //on to this widget, since we will be changing the instance.
+            this.messageBag["rd.msg.ui"].known = true;
+            rd._updateInstance(this, rdw.Message);
+            //this.buildRendering();
+          }),
+          dojo.hitch(this, function(error) {
+            //error. TODO: make this better, inline.
+            alert(error);
+          })
+        );
+      }),
+      dojo.hitch(this, function(error) {
+        //error. TODO: make this better, inline.
+        alert(error);
+      })
+    );
   },
 
   addByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
