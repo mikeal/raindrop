@@ -16,6 +16,11 @@ logger = logging.getLogger(__name__)
 TRACE_IMAP = False
 
 def get_rdkey_for_email(msg_id):
+  # message-ids must be consistent everywhere we use them, and we decree
+  # the '<>' is stripped (if for no better reason than the Python email
+  # package's 'unquote' function will strip them by default...
+  if msg_id.startswith("<") and msg_id.endswith(">"):
+    msg_id = msg_id[1:-1]
   return ("email", msg_id)
 
 class ImapClient(imap4.IMAP4Client):
@@ -390,7 +395,7 @@ class ImapProvider(object):
       # same schema; multiple IMAP accounts, for example, may mean the same
       # rdkey ends up with multiple of these location records.
       # XXX - this is a limitation in the doc model we should fix!
-      ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, folder_path)
+      ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, ".".join(folder_path))
       to_up.append({'rd_key': list(rdkey),
                     'ext_id': ext_id,
                     'schema_id': 'rd.msg.location',
