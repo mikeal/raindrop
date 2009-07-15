@@ -121,23 +121,18 @@ dojo.mixin(rd.identity, {
     //The callback will receive the identity document as the only argument.
     var body = messageBag["rd.msg.body"];
     var from = body.from[1];
-    var extId = rd.uiExtId;
-    var schemaId = "rd.identity";
 
     //Generate the new document.
     var idty = {
       name: body.from_display,
       nickname: from,
-      rd_ext_id: extId,
       rd_key: [
         "identity",
         ["email", from]
       ],
-      rd_schema_id: schemaId,
+      rd_schema_id: "rd.identity",
       rd_source: [messageBag["rd.msg.email"]._id]
     };
-
-    idty._id = 'rc!identity.' + rd.toBase64(idty.rd_key) + '!' + extId + '!' + schemaId;
 
     //Insert the document.
     rd.store.put(idty, dojo.hitch(this, function() {

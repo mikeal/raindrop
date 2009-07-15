@@ -135,22 +135,16 @@ dojo.mixin(rd.contact, {
     //SHOULD NOT be used if identity existed before, and already has an
     //rd.identity.contacts record. Use merge() for that case.
 
-    var extId = rd.uiExtId;
-    var schemaId = "rd.identity.contacts";
-
     //Generate the new document.
     var idtyMap = {
-      rd_ext_id: extId,
       rd_key: identity.rd_key,
-      rd_schema_id: schemaId,
+      rd_schema_id: "rd.identity.contacts",
       rd_source: [identity._id],
       rd_megaview_expandable: ["contacts"], 
       contacts: [
         [contactId, null]
       ]
     };
-
-    idtyMap._id = 'rc!identity.' + rd.toBase64(idtyMap.rd_key) + '!' + extId + '!' + schemaId;
 
     //Insert the document.
     rd.store.put(idtyMap, dojo.hitch(this, function() {
