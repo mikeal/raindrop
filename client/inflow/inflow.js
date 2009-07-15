@@ -19,14 +19,17 @@ rd.require("rd.conversation");
 
   function clear() {
     //Makes sure to destroy any current widgets in the mainList
-      if (storiesWidget) {
-        storiesWidget.destroy();
-        storiesWidget = null;
-      }
-      if (contactsWidget) {
-        contactsWidget.destroy();
-        contactsWidget = null;
-      }
+    if (storiesWidget) {
+      storiesWidget.destroy();
+      storiesWidget = null;
+    }
+    if (contactsWidget) {
+      contactsWidget.destroy();
+      contactsWidget = null;
+    }
+
+    //Scroll to the top of the window.
+    window.scrollTo(0, 0);
   }
 
   var messageUpdater = null;

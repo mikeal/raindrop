@@ -263,7 +263,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
     var rdKey = ["ext", this.moduleName];
 
     this.moduleManifest = {
-      "_id": "rc!ext." + rd.toBase64(rdKey) + "!rd.core!rd.ext.uiext",
+      "_id": "rc!" + rdKey[0] + "." + rd.toBase64(rdKey[1]) + "!rd.core!rd.ext.uiext",
       "rd_key": rdKey,
       "rd_source": null,
       "rd_schema_id": "rd.ext.uiext",
