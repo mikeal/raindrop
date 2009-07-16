@@ -146,20 +146,18 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       var message = {
         rd_key: ["manually_created_doc", 1],
         rd_schema_id: "rd.msg.outgoing.simple",
-        items: {
-          from: [svc, sender.id],
-          //TODO: pull out the to_display somehow. Maybe update rd.account
-          //to fetch that info along with the ID.
-          from_display: sender.id,
-          to: [
-            ["email", to]
-          ],
-          //TODO: how to get proper to_display value?
-          to_display: [to],
-          body: body,
-          subject: subject,
-          outgoing_state: "outgoing"
-        }
+        from: [svc, sender.id],
+        //TODO: pull out the to_display somehow. Maybe update rd.account
+        //to fetch that info along with the ID.
+        from_display: sender.id,
+        to: [
+          ["email", to]
+        ],
+        //TODO: how to get proper to_display value?
+        to_display: [to],
+        body: body,
+        subject: subject,
+        outgoing_state: "outgoing"
       };
 
       //TODO: temporary hack to limit posting to just email
