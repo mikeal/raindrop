@@ -1,6 +1,7 @@
 //Main module definition
 dojo.provide("rd");
 
+dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojox.encoding.base64");
 dojo.require("couch");
 
@@ -96,6 +97,27 @@ dojo._listener.getDispatcher = function(){
 	b.push(s.charCodeAt(i));
       }
       return b;
+    },
+
+    toIfrs: function(/*Array*/items, /*String*/identifier, /*String*/label) {
+      //summary: creates a dojo.data.ItemFileReadStore for the array of objects
+      //specified in "items". "identifier" is the property to use on the objects
+      //in the items array as an ID for the object, and "label" is the property
+      //to use on the objects in the array to get the label for the object.
+      var data = {
+	items: items
+      };
+      
+      if (identifier) {
+	data.identifier = identifier;
+      }
+      if (label) {
+	data.label = label;
+      }
+
+      return new dojo.data.ItemFileReadStore({
+	data: data
+      });
     },
 
     //Shortcut methods for dojo.publish and subscribe. rd.pub more aesthetically pleasing

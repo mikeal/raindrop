@@ -54,7 +54,24 @@
   font-weight: bold;
   vertical-align: bottom;
 }
- 
+
+.QuickCompose .dijitComboBox input {
+  font-weight: normal;
+}
+
+.QuickCompose .to,
+.QuickCompose .subject {
+  font-size: smaller;
+  font-weight: normal;
+  letter-spacing: 0;
+}
+
+.QuickCompose .to input,
+.QuickCompose .subject input {
+  font-weight: normal;
+  width: 75%;
+}
+
 .QuickCompose textarea {
   border: 1px solid #AFAFAF;
   width:80%;

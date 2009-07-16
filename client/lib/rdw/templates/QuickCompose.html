@@ -1,13 +1,16 @@
 <div class="QuickCompose">
-  <div class="photo you"><img dojoAttachPoint="picture" class="photo you" src="${userPicUrl}" /></div>
+  <div class="photo you"><img dojoAttachPoint="pictureNode" class="photo you" src="${userPicUrl}" /></div>
   <div class="compose">
     <div class="info you"> <!-- in the future we could make this a combobox chooser -->
-      <span dojoAttachPoint="name" class="name you"></span>
-      <span dojoAttachPoint="address" class="medium you"></span>
+      <span dojoAttachPoint="nameNode" class="name you"></span>
+      <span dojoAttachPoint="addressNode" class="medium you"></span>
     </div>
     <form dojoAttachEvent="onsubmit: onSubmit">
-      <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textarea"></textarea>
+      <div class="to" dojoAttachPoint="toNode">To: <input type="text" class="toInput" dojoAttachPoint="toInputNode"></div>
+      <div class="subject" dojoAttachPoint="subjectNode">Subject: <input type="text" class="subjectInput" dojoAttachPoint="subjectInputNode"></div>
+      <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textAreaNode"></textarea>
       <input type="submit" value="${sendButtonText}"/>
     </form>
+    <div class="status" dojoAttachPoint="statusNode"></div>
   </div>
 </div>
