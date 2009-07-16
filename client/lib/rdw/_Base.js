@@ -27,42 +27,20 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
     return frag;
   },
 
-  createdForTopic: function(/*String*/topic, /*Object*/topicData) {
-    //summary: a widget can call this in postCreate if it created itself
-    //as a result of a topic publish by another widget. This function will
-    //inform the other widget that this widget was created for that topic,
-    //to allow the other widget to embed this widget as a child.
-    var other = topicData && topicData.widget;
-    if (other && other.addByTopic) {
-      other.addByTopic(this, topic, topicData);
-    }
-  },
-
-  destroyedForTopic: function(/*String*/topic, /*Object*/topicData) {
-    //summary: a widget can call this if it wants to tell another widget
-    //it has destroyed itself, so the other widget no longer tries to track
-    //it as a child. Should only be called if createdForTopic() was also called.
-    var other = topicData && topicData.widget;
-    if (other && other.removeByTopic) {
-      other.removeByTopic(this, topic, topicData);
-    }
-  },
-
-  addByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
-    //summary: For widgets that want to handle newly created subwidgets
-    //that respond to rd.pub() calls. Widgets are encouraged to override this
-    //method to do custom widget work, but call this.inherited() first.
+  addSupporting: function(/*Object*/widget) {
+    //summary: adds a supporting widget to the supportingWidgets array,
+    //to assist with proper widget cleanup.
     if (!this._supportingWidgets) {
       this._supportingWidgets = []
     }
 
-    this._supportingWidgets[widget];
+    this._supportingWidgets.push(widget);
   },
 
-  removeByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
-    //summary: For widgets that want to handle newly destroyed subwidgets
-    //that were created as a response to rd.pub() calls. Widgets are encouraged to override this
-    //method to do custom widget work, but call this.inherited() first.
+  removeSupporting: function(/*Object*/widget) {
+    //summary: removes a supporting widget from the supporting widgets
+    //array. Useful if the supporting widget is destroyed before this
+    //widget is destroyed.
     if (!this._supportingWidgets) {
       var index = dojo.indexOf(this._supportingWidgets, widget);
       if (index > -1) {

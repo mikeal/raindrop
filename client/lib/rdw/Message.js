@@ -12,6 +12,13 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
   type: "topic",
 
+  //The names of the helper widgets that
+  //handle reply and forward. By extending
+  //rdw.Message, you can modify the widgets used
+  //for these actions.
+  replyWidget: "rdw.ReplyForward",
+  forwardWidget: "rdw.ReplyForward",
+
   //Holds the aggregated message object.
   //Warning: this is a prototype property: be sure to
   //set it per instance.
@@ -114,11 +121,34 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (href && (href = href.split("#")[1])) {
       if (href == "know") {
         rdw.contactDropDown.open(evt.target, this, this.matches);
-      } else {
-        rd.pub("rdw.Message-" + href, {
-          widget: this,
-          messageBag: this.messageBag
-        });
+      } else if (href == "reply" || href == "forward") {
+          //Dynamically load the module that will handle
+          //the Reply/Forward action.
+          var module = this[href + "Widget"];
+          dojo["require"](module);
+          dojo.addOnLoad(dojo.hitch(this, function() {
+            module = dojo.getObject(module);
+
+            //If we have an existing response widget, despose of it properly.
+            if (this.responseWidget) {
+              this.removeSupporting(this.responseWidget)
+              this.responseWidget.destroy();
+            }
+
+            //Create the new response widget.
+            this.responseWidget = new module({
+              owner: this,
+              replyType: href,
+              messageBag: this.messageBag
+            });
+            this.addSupporting(this.responseWidget);
+
+            //Put the response widget in the toolDisplay
+            this.responseWidget.placeAt(this.toolDisplay);
+
+            //Hide the reply/forward controls.
+            this.tools.style.display = "none";
+          }));
       }
       evt.preventDefault();
     }
@@ -142,7 +172,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
             //on to this widget, since we will be changing the instance.
             this.messageBag["rd.msg.ui"].known = true;
             rd._updateInstance(this, rdw.Message);
-            //this.buildRendering();
           }),
           dojo.hitch(this, function(error) {
             //error. TODO: make this better, inline.
@@ -157,28 +186,10 @@ dojo.declare("rdw.Message", [rdw._Base], {
     );
   },
 
-  addByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
-    //summary: rdw._Base method override for reply/forward widget extensions.
-    this.inherited("addByTopic", arguments);
-
-    //If we have an existing response widget, despose of it
-    //properly, then use the new widget as the response widget.
-    if (this.responseWidget) {
-      this.removeByTopic(widget, topic, topicData);
-      this.responseWidget.destroy();
-    }
-    this.responseWidget = widget;
-
-    //Put the response widget in the toolDisplay
-    widget.placeAt(this.toolDisplay);
-
-    //Hide the reply/forward controls.
-    this.tools.style.display = "none";
-  },
-
-  removeByTopic: function(/*Object*/widget, /*String*/topic, /*Object*/topicData) {
-    //summary: rdw._Base method override for reply/forward widget extensions.
-    this.inherited("removeByTopic", arguments);
+  responseClosed: function() {
+    //summary: Called by this.responseWidget's instance, if it knows
+    //that it has been destroyed.
+    this.removeSupporting(this.responseWidget);
 
     //Show the reply/forward controls.
     this.tools.style.display = "";
