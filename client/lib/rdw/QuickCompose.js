@@ -1,6 +1,6 @@
 dojo.provide("rdw.QuickCompose");
 
-dojo.require("dijit.form.ComboBox");
+dojo.require("dijit.form.FilteringSelect");
 
 dojo.require("rdw._Base");
 dojo.require("rd.contact");
@@ -9,6 +9,12 @@ dojo.require("rd.store");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "QuickCompose.html"),
+
+  //The widget to use for address selection for the From value.
+  fromSelector: "dijit.form.FilteringSelect",
+
+  //The widget to use for person selector for the To value.
+  toSelector: "rdw.PersonSelector",
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
 
@@ -36,7 +42,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //types of sender identities that require the To field to show up.
   //See notes for allowedSenders for how to modify this object.
   showTo: {
-    imap: 1
+    imap: 1,
+    twitter: 1
   },
 
   //The types of account services that should show a subject field.
@@ -112,7 +119,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
                 }
               }
             }
-            
+
             if (!this.sender) {
               //Make a good guess based on the from address.
               var fromSvc = this.messageBag["rd.msg.body"].from[0];
@@ -141,17 +148,21 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
                 this.preferredSender + ": " + this.senders[this.preferredSender]
               :
                 sendList[0].name;
+
+            dojo["require"](this.fromSelector);
+            dojo.addOnLoad(dojo.hitch(this, function(){
+              //Put the list of sender identities in a combo box
+              this.fromSelectorWidget = new (dojo.getObject(this.fromSelector))({
+                store: rd.toIfrs(sendList, "name", "name"),
+                searchAttr: "name",
+                value: senderDisplay,
+                "class": this.addressNode.className,
+                onChange: dojo.hitch(this, "onSenderAddressChange")
+              }, this.addressNode);
   
-            //Put the list of sender identities in a combo box
-            this.addressComboBox = new dijit.form.ComboBox({
-              store: rd.toIfrs(sendList),
-              value: senderDisplay,
-              "class": this.addressNode.className,
-              onChange: dojo.hitch(this, "onSenderAddressChange")
-            }, this.addressNode);
-  
-            //Add to supporting widgets so widget destroys do the right thing.
-            this.supportingWidgets.push(this.addressComboBox);
+              //Add to supporting widgets so widget destroys do the right thing.
+              this.addSupporting(this.fromSelectorWidget);
+            }));
           }
 
           //Update To field
@@ -170,15 +181,15 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //summary: focus the text area if send is pressed w/ nothing to send
     var body = dojo.trim(this.textAreaNode.value);
     //TODO: need to account for multiple senders.
-    var to = dojo.trim(this.toInputNode.value);
+    var to = dojo.trim(this.toSelectorWidget.attr("value"));
 
     if (body == "" || to == "") {
       this.textAreaNode.focus();
     } else {
       this.updateStatus("Sending message.");
 
-      var senderValue = this.addressComboBox ?
-          this.addressComboBox.attr("value")
+      var senderValue = this.fromSelectorWidget ?
+          this.fromSelectorWidget.attr("value")
         :
           this.addressNode.innerHTML;
       var sender = this.parseSender(senderValue);
@@ -237,16 +248,41 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //so it needs to be parsed to get the right info.
     var svc = this.parseSender(sender).service;
     if (svc) {
-      dojo.style(this.toNode, "display", this.showTo[svc] ? "" : "none");
-      if (!this.showTo[svc]) {
-        this.toInputNode.value = "";
-      }
+      this.service = svc;
+      //Update To input, first by making sure selector widget is available.
+      dojo["require"](this.toSelector);
+      dojo.addOnLoad(dojo.hitch(this, "initToSelector"));
 
+      dojo.style(this.toNode, "display", this.showTo[svc] ? "" : "none");
+
+      //Show/hide subject.
       dojo.style(this.subjectNode, "display", this.showSubject[svc] ? "" : "none");
       if (!this.showSubject[svc]) {
         this.subjectInputNode.value = "";
       }
     }
+  },
+
+  initToSelector: function() {
+    //summary: work to do when the selector widget is known to be loaded and
+    //an instance needs to be inited.
+
+    //Remove previous selector.
+    if (this.toSelectorWidget) {
+      this.removeSupporting(this.toSelectorWidget);
+      this.toSelectorWidget.destroy();
+      this.toInputNode = dojo.create("input", {
+        type: "text",
+        "class": "toInput"
+      }, this.toNode);
+    }
+
+    this.toSelectorWidget = new (dojo.getObject(this.toSelector))({
+      type: "identity",
+      restriction: (this.service == "imap" ? "email" : this.service)
+    }, this.toInputNode);
+
+    this.addSupporting(this.toSelectorWidget);
   },
 
   parseSender: function(/*String*/sender) {

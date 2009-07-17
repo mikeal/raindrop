@@ -38,10 +38,12 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   updateFields: function(/*String*/sender) {
     //summary: override of QuickCompose method. Set the to, subject and
     //body appropriately here.
+    this.inherited("updateFields", arguments);
+
     var body = this.messageBag["rd.msg.body"];
 
     //Set To field
-    rd.escapeHtml(body.from[1], this.toInputNode);
+    this.defaultFromAddr = body.from[1];
 
     //Set Subject
     var subject = body.subject;
@@ -62,6 +64,12 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
 
     //TODO: do we need to store mail headers in the outgoing document to get
     //replies to thread correctly in other email clients?
+  },
+
+  initToSelector: function() {
+    //summary: override of QuickCompose, so the to can be preset.
+    this.inherited("initToSelector", arguments);
+    this.toSelectorWidget.attr("value", this.defaultFromAddr);
   },
 
   onCloseClick: function(evt) {
