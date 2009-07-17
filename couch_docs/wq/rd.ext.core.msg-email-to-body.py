@@ -1,4 +1,5 @@
-from email.utils import mktime_tz, parsedate_tz, getaddresses, parseaddr
+from email.utils import mktime_tz, parsedate_tz, parseaddr
+from email._parseaddr import AddressList
 from email.message import Message
 
 def decode_body_part(docid, body_bytes, charset=None):
@@ -42,8 +43,9 @@ def extract_preview(body):
     return preview_body[:140] + (preview_body[140:] and '...') # cute trick
 
 def fill_identity_info(val, identity_list, display_list):
-    for name, addr in getaddresses(val):
-        identity_list.append(['email', addr])
+    a = AddressList(val)
+    for name, addr in a.addresslist:
+        identity_list.append(['email', addr.lower()])
         display_list.append(name)
 
 def handler(doc):
@@ -54,7 +56,7 @@ def handler(doc):
     ret = {}
     if 'from' in headers:
         name, addr = parseaddr(headers['from'])
-        ret['from'] = ['email', addr]
+        ret['from'] = ['email', addr.lower()]
         ret['from_display'] = name
 
     if 'to' in headers:
