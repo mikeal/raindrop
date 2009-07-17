@@ -38,13 +38,16 @@ def user_to_raw(user):
         items['twitter_'+name.lower()] = val
     return items
 
-def tweet_to_raw(tweet):
+def tweet_to_raw(tweet): # Also used for direct messages....
     ret = {}
     for name, val in tweet.AsDict().iteritems():
         val = getattr(tweet, name)
         # simple hacks - users just become the user ID.
         if isinstance(val, twitter.User):
-            ret['twitter_'+name.lower()+'_name'] = val.GetName()
+            new_field_name = 'twitter_'+name.lower()
+            if not new_field_name.endswith('_name'):
+                new_field_name += '_name'
+            ret[new_field_name] = val.GetName()
             val = val.screen_name
         ret['twitter_'+name.lower()] = val
     ret['twitter_created_at_in_seconds'] = tweet.GetCreatedAtInSeconds()
@@ -82,35 +85,46 @@ class TwitterProcessor(object):
         me = self.twit.GetUser(self.twit._username)
         seen_friends = [me]
 
+        this_users = {} # probably lots of dupes
+        this_items = {} # tuple of (twitter_item, rd_key, schema_id)
+        keys = []
+
         # We need to be careful of rate-limiting, so we try and use
         # the min twitter requests possible to fetch our data.
         # GetFriendsTimeline is the perfect entry point - 200 tweets and
         # all info about twitting users in a single request.
         tl= yield threads.deferToThread(self.twit.GetFriendsTimeline,
                                         count=200)
-        this_users = {} # probably lots of dupes
-        this_tweets = {}
-        keys = []
         for status in tl:
-            keys.append(['rd.core.content', 'key-schema_id', [["tweet", status.id], 'rd.msg.tweet.raw']])
-            this_tweets[status.id] = status
+            rd_key = ['tweet', status.id]
+            schema_id = 'rd.msg.tweet.raw'
+            keys.append(['rd.core.content', 'key-schema_id', [rd_key, schema_id]])
+            this_items[status.id] = (status, rd_key, schema_id)
             this_users[status.user.screen_name] = status.user
+        # now the same thing for direct messages.
+        ml = yield threads.deferToThread(self.twit.GetDirectMessages)
+        for dm in ml:
+            rd_key = ['tweet-direct', dm.id]
+            schema_id = 'rd.msg.tweet-direct.raw'
+            keys.append(['rd.core.content', 'key-schema_id', [rd_key, schema_id]])
+            this_items[dm.id] = (dm, rd_key, schema_id)
+            if dm.sender_screen_name not in this_users: # don't override a valid one!
+                this_users[dm.sender_screen_name] = None # say we don't have this user object.
 
-        # execute a view to work out which of these tweets are new.
+        # execute a view to work out which of these tweets/messages are new.
         results = yield self.doc_model.open_view(keys=keys, reduce=False)
         seen_tweets = set()
         for row in results['rows']:
             seen_tweets.add(row['value']['rd_key'][1])
 
         infos = []
-        for tid in set(this_tweets.keys())-set(seen_tweets):
-            # create the schema for the tweet itself.
-            tweet = this_tweets[tid]
-            fields = tweet_to_raw(tweet)
-            rdkey = ['tweet', tid]
-            infos.append({'rd_key' : rdkey,
+        for tid in set(this_items.keys())-set(seen_tweets):
+            # create the schema for the tweet/message itself.
+            item, rd_key, schema_id = this_items[tid]
+            fields = tweet_to_raw(item)
+            infos.append({'rd_key' : rd_key,
                           'ext_id': self.rd_extension_id,
-                          'schema_id': 'rd.msg.tweet.raw',
+                          'schema_id': schema_id,
                           'items': fields})
 
         # now the same treatment for the users we found; although for users
@@ -134,6 +148,11 @@ class TwitterProcessor(object):
         # XXX - check fields later - for now just check they don't exist.
         for sn in set(this_users.keys())-set(seen_users.keys()):
             user = this_users[sn]
+            if user is None:
+                # this can happen if we have a direct message from the user
+                # but haven't seen any 'normal' tweets from them...
+                logger.info("Have unknown user %r - todo - fetch me!", sn)
+                continue
             items = user_to_raw(user)
             rdkey = ['identity', ['twitter', sn]]
             infos.append({'rd_key' : rdkey,
