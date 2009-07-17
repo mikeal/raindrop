@@ -2,9 +2,15 @@ dojo.provide("rdw.ReplyForward");
 
 dojo.require("rdw.QuickCompose");
 
+rd.addStyle("rdw.css.ReplyForward");
+
 dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   //Valid replyTypes: "reply" and "forward"
   replyType: "reply",
+
+  //Owner widget that is showing this instance.
+  //Used to tell owner if we destory ourselves.
+  owner: null,
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method.
@@ -27,19 +33,43 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     }, this.domNode, "first");
     
     dojo.connect(closeNode, "onclick", this, "onCloseClick");
+  },
 
-    //Tell cooperating widget so this widget is displayed properly.
-    if (this.topic) {
-      this.createdForTopic(this.topic, this.topicData);
+  updateFields: function(/*String*/sender) {
+    //summary: override of QuickCompose method. Set the to, subject and
+    //body appropriately here.
+    var body = this.messageBag["rd.msg.body"];
+
+    //Set To field
+    rd.escapeHtml(body.from[1], this.toInputNode);
+
+    //Set Subject
+    var subject = body.subject;
+    if (subject) {
+      subject = this.i18n[this.replyType + "SubjectPrefix"] + subject;
+    } else {
+      dojo.style(this.subjectInputNode, "display", "none");
     }
+    rd.escapeHtml(subject || "", this.subjectInputNode);
+  
+    //Set body.
+    //TODO: this is really hacky. Need a nice, localized time with
+    //the person's name, better quoting, etc... the \n\n is bad too.
+    this.textAreaNode.value = rd.escapeHtml(body.body).replace(/^/g, "> ") + "\n\n";
+    setTimeout(dojo.hitch(this, function() {
+      this.textAreaNode.focus();
+    }));
+
+    //TODO: do we need to store mail headers in the outgoing document to get
+    //replies to thread correctly in other email clients?
   },
 
   onCloseClick: function(evt) {
     //summary: handles clicks to close icon, destroying this widget.
 
     //Tell cooperating widget so this widget is displayed properly.
-    if (this.topic) {
-      this.destroyedForTopic(this.topic, this.topicData);
+    if (this.owner) {
+      this.owner.responseClosed();
     }
 
     this.destroy();
@@ -48,22 +78,3 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   }
 });
 
-;(function(){
-  //This widget listens for topic messages, so register them now.
-  var makeWidget = function(/*String*/type, /*String*/topic, /*Object*/topicData) {
-      //Right now, not doing anything with topicData.messageBag, but
-      //it should be used to pull out context for the message.
-      new rdw.ReplyForward({
-        replyType: type,
-        topic: topic,
-        topicData: topicData
-      });
-  };
-
-  //Subscribe and indicate this is an extension by passing in the extension's
-  //module name as the first argument.
-  rd.sub("rdw.ReplyForward", "rdw.Message-reply", dojo.partial(makeWidget, "reply", "rdw.Message-reply"));
-  rd.sub("rdw.ReplyForward", "rdw.Message-forward", dojo.partial(makeWidget, "forward", "rdw.Message-reply"));
-
-  rd.addStyle("rdw.css.ReplyForward");
-})();

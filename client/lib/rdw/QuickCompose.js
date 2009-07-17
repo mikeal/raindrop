@@ -12,6 +12,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
 
+  //Optional messageBag that this compose is related to.
+  messageBag: null,
+
   //The types of account services that QuickCompose supports for sending out messages.
   //You can modify this prototype property to add new values, or change the
   //values on instantiation. Note that changing on instantion means assigning
@@ -25,7 +28,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
 
   //The preferred sender to use as default when creating the QuickCompose.
   preferredSender: "imap",
-  
+
+  //If the compose should be restricted to a certain account type, set
+  //this property to the service type.
+  restrictedSender: "",
+
   //types of sender identities that require the To field to show up.
   //See notes for allowedSenders for how to modify this object.
   showTo: {
@@ -62,13 +69,17 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       //Build up a list of identity IDs, to find a contact to use for showing
       //things like a profile picture.
       var ids = [], empty = {};
-      this.senders = {};
+      this.senders = {}, accountsById = {};
       for (var prop in accounts) {
         if (!(prop in empty)) {
           ids.push([prop, accounts[prop].id]);
           if (prop in this.allowedSenders) {
             //Add to list of senders this QuickCompose can handle.
             this.senders[prop] = accounts[prop].id;
+          }
+          //Store a quick account lookup by account ID
+          if (accounts[prop].id) {
+            accountsById[accounts[prop].id] = accounts[prop];
           }
         }
       }
@@ -84,35 +95,68 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             rd.escapeHtml(this.contact.name, this.nameNode, "only");
           }
 
-          //Build up a data store object, only using senders that
-          //are known by QuickCompose to support sending.
-          var sendList = [];
-          for (var prop in this.senders) {
-            sendList.push({
-              name: prop + ": " + this.senders[prop]
-            })
+          if (this.messageBag) {
+            //Sender is restricted, just show it.
+            //First get the account to use for sending.
+            //By seeing who the message was sent to.
+            var body = this.messageBag && this.messageBag["rd.msg.body"];
+            if (body && body.to) {
+              for (var i = 0, to; to = body.to[i]; i++) {
+                this.sender = accountsById[to[1]];
+                if (this.sender) {
+                  var fromSvc = to[0];
+                  if (fromSvc == "email") {
+                    fromSvc = "imap";
+                  }
+                  break;
+                }
+              }
+            }
+            
+            if (!this.sender) {
+              //Make a good guess based on the from address.
+              var fromSvc = this.messageBag["rd.msg.body"].from[0];
+              //Convert to account type.
+              if (fromSvc == "email") {
+                fromSvc = "imap";
+              }
+              this.sender = accounts[fromSvc];
+            }
+
+            var senderDisplay = fromSvc + ": " + this.sender.id;
+            rd.escapeHtml(senderDisplay, this.addressNode, "only");
+          } else {
+            //Allow user to select a sender.
+            //Build up a data store object, only using senders that
+            //are known by QuickCompose to support sending.
+            var sendList = [];
+            for (var prop in this.senders) {
+              sendList.push({
+                name: prop + ": " + this.senders[prop]
+              })
+            }
+  
+            //Set up default value for the sender box.
+            senderDisplay = this.senders[this.preferredSender] ?
+                this.preferredSender + ": " + this.senders[this.preferredSender]
+              :
+                sendList[0].name;
+  
+            //Put the list of sender identities in a combo box
+            this.addressComboBox = new dijit.form.ComboBox({
+              store: rd.toIfrs(sendList),
+              value: senderDisplay,
+              "class": this.addressNode.className,
+              onChange: dojo.hitch(this, "onSenderAddressChange")
+            }, this.addressNode);
+  
+            //Add to supporting widgets so widget destroys do the right thing.
+            this.supportingWidgets.push(this.addressComboBox);
           }
 
-          //Set up default value for the sender box.
-          var value = this.senders[this.preferredSender] ?
-              this.preferredSender + ": " + this.senders[this.preferredSender]
-            :
-              sendList[0].name;
-
-          //Put the list of sender identities in a combo box
-          this.addressComboBox = new dijit.form.ComboBox({
-            store: rd.toIfrs(sendList),
-            value: value,
-            "class": this.addressNode.className,
-            onChange: dojo.hitch(this, "onSenderAddressChange")
-          }, this.addressNode);
-          //Add to supporting widgets so widget destroys do the right thing.
-          this.supportingWidgets.push(this.addressComboBox);
-
           //Update To field
-          this.updateFields(value);
+          this.updateFields(senderDisplay);
         }
-        
       }));
     }));
   },
@@ -133,7 +177,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     } else {
       this.updateStatus("Sending message.");
 
-      var sender = this.parseSender(this.addressComboBox.attr("value"));
+      var senderValue = this.addressComboBox ?
+          this.addressComboBox.attr("value")
+        :
+          this.addressNode.innerHTML;
+      var sender = this.parseSender(senderValue);
       var svc = sender.service;
       var senderId = sender.id;
       var subject = dojo.trim(this.subjectInputNode.value);
@@ -144,7 +192,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       }
 
       var message = {
-        rd_key: ["manually_created_doc", 1],
+        //TODO: make a better rd_key.
+        rd_key: ["manually_created_doc", (new Date()).getTime()],
         rd_schema_id: "rd.msg.outgoing.simple",
         from: [svc, sender.id],
         //TODO: pull out the to_display somehow. Maybe update rd.account

@@ -78,7 +78,14 @@ dojo._listener.getDispatcher = function(){
       //indicate sibling positions to refNode. position defaults to "last" if not specified.
       html = html && html.replace(/</g, "&lt;").replace(/>/g, "&gt;");
       if (refNode) {
-        return rd.html(html, refNode, position);
+	var name = refNode.nodeName.toLowerCase();
+	//If an input/textarea, just set value to the html,
+	//otherwise do fancy html placement options.
+	if (name == "input" || name == "textarea") {
+	  return refNode.value = html;
+	} else {
+	  return rd.html(html, refNode, position);
+	}
       } else {
         return html;
       }
