@@ -25,8 +25,12 @@ class Extension(object):
     def __init__(self, id, doc, handler, globs):
         self.id = id
         self.doc = doc
-        # make the source schema more convenient to use...
-        self.source_schema = doc['source_schema']
+        # make the source schemas more convenient to use...
+        # XXX - source_schema is deprecated
+        if 'source_schemas' in doc:
+            self.source_schemas = doc['source_schemas']
+        else:
+            self.source_schemas = [doc['source_schema']]
         self.handler = handler
         self.globs = globs
 
@@ -236,11 +240,13 @@ class Pipeline(object):
                 # fetch all items this extension says it depends on
                 if self.options.keys:
                     # But only for the specified rd_keys
-                    keys=[['rd.core.content', 'key-schema_id', [k, ext.source_schema]]
-                          for k in self.options.keys]
+                    keys = []
+                    for k in self.options.keys:
+                        for sch_id in ext.source_schemas:
+                            keys.append(['rd.core.content', 'key-schema_id', [k, sch_id]])
                 else:
                     # all rd_keys...
-                    keys=[['rd.core.content', 'schema_id', ext.source_schema]]
+                    keys=[['rd.core.content', 'schema_id', sch_id] for sch_id in ext.source_schemas]
                 result = yield dm.open_view(keys=keys,
                                             reduce=False)
                 logger.info("reprocessing %s - %d docs", ext.id,
@@ -283,7 +289,8 @@ class NewItemProcessor(object):
         self.doc_model = doc_model
         self.qs_by_schema = {}
         for q in work_queues:
-            self.qs_by_schema.setdefault(q.ext.source_schema, []).append(q)
+            for sch_id in q.ext.source_schemas:
+                self.qs_by_schema.setdefault(sch_id, []).append(q)
         self.total = 0
 
     @defer.inlineCallbacks
@@ -527,7 +534,7 @@ class MessageTransformerWQ(object):
 
             # our caller should have filtered the list to only the schemas
             # our extensions cares about.
-            assert src_doc['rd_schema_id'] == self.ext.source_schema, (src_doc, self.ext)
+            assert src_doc['rd_schema_id'] in self.ext.source_schemas, (src_doc, self.ext)
             # Now process it
             new_items = []
             func = self._get_ext_env(new_items, src_doc)
@@ -666,9 +673,9 @@ class MessageTransformerWQ(object):
                 mutter('skipping document %r: %s', src_id, why)
                 continue
     
-            if schema != self.ext.source_schema:
+            if schema not in self.ext.source_schemas:
                 mutter("skipping document %r - has schema %r but we want %r",
-                       src_id, schema, self.ext.source_schema)
+                       src_id, schema, self.ext.source_schemas)
                 continue
             # finally we have one!
             yield src_id, src_rev
