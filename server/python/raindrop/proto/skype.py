@@ -231,6 +231,9 @@ class TwistySkype(object):
         # XXX - this may bite us later - what happens when the chat subject
         # changes? :(  For now it offers serious speedups, so it goes in.
         doc['skype_chat_friendlyname'] = chat_props['skype_friendlyname']
+        # and the current members of the chat
+        doc['skype_chat_members'] = chat_props['skype_members']
+
         # we include the skype username with the ID as they are unique per user.
         rdkey = self.get_rdkey_for_msg(msg)
         pending.append({'rd_key' : rdkey,
