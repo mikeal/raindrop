@@ -107,18 +107,6 @@ class TestCaseWithDB(TestCase):
             ).addCallback(lambda _: self.pipeline.initialize()
             )
 
-    def get_last_by_seq(self, n=1):
-        def extract_row(result):
-            rows = result['rows']
-            assert len(rows)==n
-            return rows
-
-        return get_doc_model().db.listDocsBySeq(limit=n,
-                                                descending=True,
-                                                include_docs=True
-                ).addCallback(extract_row
-                )
-
     def failUnlessView(self, did, vid, expect, **kw):
         # Expect is a list of (key, value) tuples.  couch always returns
         # sorted keys, so we can just sort the expected items.
@@ -160,4 +148,4 @@ class TestCaseWithTestDB(TestCaseWithDB):
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol
         test_proto.test_num_test_docs += 1
-        return self.get_conductor().sync()
+        return self.get_conductor().sync(self.pipeline)

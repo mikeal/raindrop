@@ -6,7 +6,12 @@ logger = logging.getLogger(__name__)
 
 from ...proc import base
 
-# May be set to True or False by the test suite, or remains None for
+
+# May be set by the test suite.  Note some of our 'test' extensions also
+# refer to these variables, so just because they aren't referenced here
+# doesn't mean they aren't used!
+test_next_convert_fails = None
+test_emit_common_identities = False
 # "normal" behaviour
 test_emit_identities = False
 # overrides the config option.

@@ -11,52 +11,65 @@ logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
     use_chasing_pipeline = True
-    simple_exts = [
+    extensions = None # default extensions for test.
+    simple_extensions = [
             'rd.test.core.test_converter',
             'rd.ext.core.msg-rfc-to-email',
             'rd.ext.core.msg-email-to-body',
         ]
 
-
     @defer.inlineCallbacks
     def process_doc(self, exts = None):
-        self.pipeline.options.exts = exts
+        self.pipeline.options.exts = exts or self.extensions
+        self.pipeline.options.no_process = self.use_chasing_pipeline
+        # populate our test DB with the raw message(s).
+        _ = yield self.deferMakeAnotherTestMessage(None)
         if self.use_chasing_pipeline:
-            doc_model = get_doc_model()
-            # populate our test DB with the raw message(s).
-            _ = yield self.deferMakeAnotherTestMessage(None)
             # execute our pipeline
-            _ = self.pipeline.start()
-        else:
-            self.pipeline.prepare_sync_processor()
-            # make the test message - this should have done everything when
-            # it returns.
-            _ = yield self.deferMakeAnotherTestMessage(None)
-            self.pipeline.finish_sync_processor()
+            _ = yield self.pipeline.start()
+
+    def get_last_by_seq(self, n=1):
+        def extract_rows(result):
+            rows = result['rows']
+            ret = []
+            for row in rows:
+                if 'doc' in row:
+                    ret.append(row)
+                    if len(ret)>=n:
+                        break
+            assert len(ret)==n # may have too many deleted items and need to re-request?
+            return ret
+
+        return get_doc_model().db.listDocsBySeq(limit=n*2,
+                                                descending=True,
+                                                include_docs=True
+                ).addCallback(extract_rows
+                )
 
 
 class TestPipeline(TestPipelineBase):
+    extensions = TestPipelineBase.simple_extensions
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
         test_proto.test_next_convert_fails = False
         test_proto.test_emit_identities = False
 
         def check_targets_last(lasts_by_seq, target_types):
-            docs = [row['doc'] for row in lasts_by_seq if row['doc']['_id'].startswith('rc!')]
-            db_types = set(doc['rd_schema_id'] for doc in docs[:len(target_types)])
+            assert len(target_types)==len(lasts_by_seq)
+            db_types = set(row['doc']['rd_schema_id'] for row in lasts_by_seq)
             self.failUnlessEqual(db_types, target_types)
-            return docs
+            return target_types
 
         def check_targets(result, target_types):
             # Our targets should be the last written
-            return self.get_last_by_seq(len(target_types)*2,
+            return self.get_last_by_seq(len(target_types),
                         ).addCallback(check_targets_last, target_types
                         )
 
-        targets = set(('rd.msg.body', 'rd.msg.email', 'rd.msg.flags',
+        targets = set(('rd.msg.body', 'rd.msg.email', 'rd.msg.flags', 'rd.tags',
                        'rd.msg.rfc822', 'rd.msg.test.raw'))
         dm = get_doc_model()
-        return self.process_doc(self.simple_exts
+        return self.process_doc(
                 ).addCallback(check_targets, targets
                 )
 
@@ -67,17 +80,16 @@ class TestPipeline(TestPipelineBase):
 
         def check_targets_same(lasts, targets_b4):
             # Re-processing should not have modified the targets in any way.
-            db_ids = set(row['id'] for row in lasts if row['id'].startswith('rc!'))
-            expected = set(doc['_id'] for doc in targets_b4)
-            self.failUnlessEqual(db_ids, expected)
+            db_types = set(row['doc']['rd_schema_id'] for row in lasts)
+            self.failUnlessEqual(db_types, targets_b4)
 
         def check_nothing_done(whateva, targets_b4):
-            return self.get_last_by_seq(len(targets_b4)*2,
+            return self.get_last_by_seq(len(targets_b4),
                         ).addCallback(check_targets_same, targets_b4
                         )
 
         def reprocess(targets_b4):
-            return self.process_doc(self.simple_exts
+            return self.process_doc(
                         ).addCallback(check_nothing_done, targets_b4)
 
         return self.test_one_step(
@@ -88,22 +100,19 @@ class TestPipelineSync(TestPipeline):
     use_chasing_pipeline = False
 
 class TestErrors(TestPipelineBase):
+    extensions = ['rd.test.core.test_converter']
     def test_error_stub(self):
         # Test that when a converter fails an appropriate error record is
         # written
         test_proto.test_next_convert_fails = True
 
         def check_target_last(lasts):
-            expected = set(('core/error/msg',
-                            'workqueue!msg!rd.test.core.test_converter'))
-            types = set([row['doc']['type'] for row in lasts])
+            expected = set(('rd.core.error', 'rd.msg.test.raw'))
+            types = set([row['doc']['rd_schema_id'] for row in lasts])
             self.failUnlessEqual(types, expected)
 
-        exts = ['rs.test.core.test_converter']
-
         # open the test document to get its ID and _rev.
-        dm = get_doc_model()
-        return self.process_doc(exts
+        return self.process_doc(
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_target_last
                 )
@@ -113,7 +122,7 @@ class TestErrors(TestPipelineBase):
         dm = get_doc_model()
 
         def check_target_last(lasts, expected):
-            got = set(row['doc']['type'] for row in lasts)
+            got = set(row['doc']['rd_schema_id'] for row in lasts)
             self.failUnlessEqual(got, expected)
 
         def start_retry(result):
@@ -121,7 +130,8 @@ class TestErrors(TestPipelineBase):
             logger.info('starting retry for %r', result)
             return self.pipeline.start_retry_errors()
 
-        expected = set(('raw/message/rfc822',))
+        # after the retry we should have the 3 schemas created by our test proto
+        expected = set(('rd.msg.flags', 'rd.tags', 'rd.msg.rfc822', 'rd.msg.test.raw'))
         return self.test_error_stub(
                 ).addCallback(start_retry
                 ).addCallback(lambda whateva: self.get_last_by_seq(len(expected)
@@ -133,18 +143,16 @@ class TestErrors(TestPipelineBase):
         # when our test converter throws an error.
         def check_last_doc(lasts):
             # The tail of the DB should be as below:
-            expected = set(['workqueue!msg!rs.test.core.test_converter',
-                            'core/error/msg', 'proto/test'])
-            # Note the 'core/error/msg' is the failing conversion (ie, the
-            # error stub for the rfc822 message), and no 'email' record exists
-            # as it depends on the failing conversion.
-            got = set(l['doc']['type'] for l in lasts)
+            expected = set(['rd.core.error', 'rd.msg.test.raw'])
+            # Note the 'rd.core.error' is the failing conversion (ie, the
+            # error stub), and no 'later' records exist as they all depend
+            # on the failing conversion.
+            got = set(l['doc'].get('rd_schema_id') for l in lasts)
             self.failUnlessEqual(got, expected)
 
         test_proto.test_next_convert_fails = True
-        self.pipeline.options.exts = self.simple_exts
-        return self.pipeline.start(
-                ).addCallback(lambda whateva: self.get_last_by_seq(3)
+        return self.process_doc(
+                ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_last_doc
                 )
 

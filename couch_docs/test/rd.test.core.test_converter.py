@@ -1,10 +1,8 @@
 from email.message import Message
 
-num_converted = 0
-test_next_convert_fails = None
-test_emit_identities = False
-test_emit_common_identities = False
+from raindrop.proto import test as test_proto
 
+num_converted = 0
 
 # A 'converter' - takes a proto/test as input and creates a
 # 'rd.msg.rfc822 schema as output, which in turn will force the
@@ -15,8 +13,8 @@ def handler(src):
     # every 3rd message we process.
     global num_converted
     num_converted += 1
-    if test_next_convert_fails or \
-       (test_next_convert_fails is None and num_converted % 3 == 0):
+    if test_proto.test_next_convert_fails or \
+       (test_proto.test_next_convert_fails is None and num_converted % 3 == 0):
         raise RuntimeError("This is a test failure")
 
     # for the sake of testing, we fetch the raw attachment just to compare
@@ -51,7 +49,7 @@ def handler(src):
     # emit a 'tags' schema too just for fun
     emit_schema('rd.tags', {'tags': ['test1', 'test2']})
 
-    if test_emit_identities:
+    if test_proto.test_emit_identities:
         # and assertions about the existance of a couple of identities...
         # We want every 'test message' to result in 2 identities - one
         # unique to the message and one common across all.
@@ -59,6 +57,6 @@ def handler(src):
         items = [
             (('test_identity', str(me)), 'personal'),
         ]
-        if test_emit_common_identities:
+        if test_proto.test_emit_common_identities:
             items.append((('test_identity', 'common'), 'public'))
         emit_related_identities(items, {'name':'test protocol'})
