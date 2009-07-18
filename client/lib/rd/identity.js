@@ -21,6 +21,18 @@ dojo.mixin(rd.identity, {
     callback(this);
   },
 
+  listByType: function(/*String*/type, /*Function*/callback, /*Function?*/errback) {
+    //summary: returns a list of identities for a given type. The type field is
+    //the first array value in the identity ID that is part of the rd_key.
+    //So valid values might be like "email", "twitter" or "skype".
+    //The value passed to the callback will be an object, with the properties
+    //being ids of the identities, and the values for the properties will
+    //be the identity document.
+    this.list(dojo.hitch(this, function(idtys) {
+      callback(idtys[type]);
+    }), errback);
+  },
+
   get: function(/*Array*/identityId, /*Function*/callback, /*Function?*/errback) {
     //summary: fetches an identity based on an identity ID. It accepts either one
     //identityId or an array of identityIds to fetch.

@@ -60,7 +60,7 @@ rd.require("rd.conversation");
 
   //Register to listen for protocol link for Home.
   rd.sub("rd-protocol-home", function() {
-    rd.conversation.byTimeStamp(30, function(conversations) {
+    rd.conversation.byTimeStampDirect(30, function(conversations) {
       rd.pub("rd-display-conversations", conversations, {
         refreshConversations: function() {
           //TODO: this does not pass that the operation
