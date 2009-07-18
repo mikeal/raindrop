@@ -17,7 +17,7 @@ def handler(src_doc):
         logger.info('found %d twitter identities', len(my_identities))
 
     if src_doc['rd_schema_id'] == 'rd.msg.tweet.raw':
-        if src_doc['sender_screen_name'] in my_identities:
+        if src_doc['twitter_user'] in my_identities:
             val = 'from'
         elif 'twitter_in_reply_to_screen_name' in src_doc and \
            src_doc['twitter_in_reply_to_screen_name'] in my_identities:
@@ -29,7 +29,7 @@ def handler(src_doc):
     elif src_doc['rd_schema_id'] == 'rd.msg.tweet-direct.raw':
         # direct message - it would be unusual to have a direct message not
         # targetted at one of our accounts, but you never know..
-        if src_doc['sender_screen_name'] in my_identities:
+        if src_doc['twitter_sender_screen_name'] in my_identities:
             val = 'from'
         elif src_doc['twitter_recipient_screen_name'] in my_identities:
             val = "direct"
