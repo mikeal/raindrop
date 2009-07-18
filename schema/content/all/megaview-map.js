@@ -40,6 +40,7 @@ function(doc) {
     if (doc.rd_megaview_ignore_values)
       return
 
+    var rd_megaview_expandable = doc.rd_megaview_expandable || [];
     for (var prop in doc) {
         //Skip text fields that are big (better served by full
         //text search), private props and raindrop-housekeeping
@@ -49,7 +50,7 @@ function(doc) {
              || prop.indexOf("raindrop") == 0) {
           continue;
         }
-        
+
       var val;
       // don't emit long string values, but do still emit a row with NULL
       // so it can be found.
@@ -62,10 +63,9 @@ function(doc) {
       // elt can be expanded - eg 'tags'. We can't do this unconditionally as
       // things like identity_ids don't make sense expanded. Note we may also
       // want to unpack real objects?
-      var expand;
-      var look = doc.rd_megaview_expandable || [];
-      for (var i=0; i<look.length && !expand; i++) {
-        if (prop==look[i]) {
+      var expand = false;
+      for (var i=0; i<rd_megaview_expandable.length && !expand; i++) {
+        if (prop==rd_megaview_expandable[i]) {
           expand = true;
         }
       }
