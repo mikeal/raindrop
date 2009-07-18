@@ -181,7 +181,7 @@ class ImapProvider(object):
       for flags, delim, name in folders_use:
         folder_info = (delim, name)
         if delim in name:
-          todo_sub.append(name)
+          todo_sub.append(folder_info)
         elif name.lower()=='inbox':
           todo_top.insert(0, folder_info)
         else:
@@ -353,7 +353,11 @@ class ImapProvider(object):
     # the folder
     current = set()
     for result in results:
-      rdkey = get_rdkey_for_email(result['ENVELOPE'][-1])
+      msg_id = result['ENVELOPE'][-1]
+      if msg_id is None:
+        logger.debug('skipping item with %(ENVELOPE)s - no msg-id', result)
+        continue
+      rdkey = get_rdkey_for_email(msg_id)
       current.add(tuple(rdkey))
 
     # fetch all things in couch which (a) are currently tagged with this
@@ -425,6 +429,10 @@ class ImapProvider(object):
           continue
 
       msg_id = msg_info['ENVELOPE'][-1]
+      if msg_id is None:
+        logger.debug('skipping item with %(ENVELOPE)s - no msg-id', msg_info)
+        continue
+
       if msg_id in msg_infos:
         # This isn't a very useful check - we are only looking in a single
         # folder...
