@@ -17,6 +17,17 @@ test_emit_identities = False
 # overrides the config option.
 test_num_test_docs = None
 
+# A helper for the test suite to set/reset options.
+def set_test_options(next_convert_fails=False, emit_common_identities=False,
+                      emit_identities=False):
+    global test_next_convert_fails, test_emit_common_identities
+    global test_emit_identities
+
+    test_next_convert_fails = next_convert_fails
+    test_emit_common_identities = emit_common_identities
+    test_emit_identities = emit_identities
+
+
 class TestMessageProvider(object):
     # The 'id' of this extension
     # XXX - should be managed by our caller once these 'protocols' become

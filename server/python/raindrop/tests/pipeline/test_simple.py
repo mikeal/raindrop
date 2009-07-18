@@ -51,8 +51,9 @@ class TestPipeline(TestPipelineBase):
     extensions = TestPipelineBase.simple_extensions
     def test_one_step(self):
         # Test taking a raw message one step along its pipeline.
-        test_proto.test_next_convert_fails = False
-        test_proto.test_emit_identities = False
+        
+        test_proto.set_test_options(next_convert_fails=False,
+                                    emit_identities=False)
 
         def check_targets_last(lasts_by_seq, target_types):
             assert len(target_types)==len(lasts_by_seq)
@@ -104,7 +105,7 @@ class TestErrors(TestPipelineBase):
     def test_error_stub(self):
         # Test that when a converter fails an appropriate error record is
         # written
-        test_proto.test_next_convert_fails = True
+        test_proto.set_test_options(next_convert_fails=True)
 
         def check_target_last(lasts):
             expected = set(('rd.core.error', 'rd.msg.test.raw'))
@@ -126,7 +127,8 @@ class TestErrors(TestPipelineBase):
             self.failUnlessEqual(got, expected)
 
         def start_retry(result):
-            test_proto.test_next_convert_fails = False
+            test_proto.set_test_options(next_convert_fails=False,
+                                        emit_identities=False)
             logger.info('starting retry for %r', result)
             return self.pipeline.start_retry_errors()
 
@@ -150,7 +152,7 @@ class TestErrors(TestPipelineBase):
             got = set(l['doc'].get('rd_schema_id') for l in lasts)
             self.failUnlessEqual(got, expected)
 
-        test_proto.test_next_convert_fails = True
+        test_proto.set_test_options(next_convert_fails=True)
         return self.process_doc(
                 ).addCallback(lambda whateva: self.get_last_by_seq(2)
                 ).addCallback(check_last_doc

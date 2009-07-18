@@ -11,21 +11,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TestIDPipelineBase(TestCaseWithTestDB):
-    def get_pipeline(self):
-        opts = FakeOptions()
-        dm = get_doc_model()
-        return pipeline.Pipeline(dm, opts)
-
+    @defer.inlineCallbacks
     def process_doc(self, exts=None, emit_common_ids=True):
-        test_proto.test_emit_identities = True
-        test_proto.test_emit_common_identities = emit_common_ids
-        doc_model = get_doc_model()
-        if not pipeline.extensions: # XXX - *sob* - misplaced...
-            pipeline.load_extensions(doc_model)
-
-        p = self.get_pipeline()
-        p.options.exts = exts
-        return p.start()
+        test_proto.set_test_options(emit_identities=True,
+                                    emit_common_identities=emit_common_ids)
+        self.pipeline.options.exts = exts or ['rd.test.core.test_converter']
+        _ = yield self.deferMakeAnotherTestMessage(None)
+        _ = yield self.pipeline.start()
 
 
 class TestIDPipeline(TestIDPipelineBase):
@@ -79,9 +71,7 @@ class TestIDPipeline(TestIDPipelineBase):
             # and that will do!
 
         dm = get_doc_model()
-        exts = ['raindrop.proto.test.test_converter']
-
-        return self.process_doc(exts
+        return self.process_doc(
                 ).addCallback(check_it,
                 )
 
@@ -123,10 +113,8 @@ class TestIDPipeline(TestIDPipelineBase):
                 self.failUnless(this_rel in ['personal', 'public'], this_rel)
             # and that will do!
 
-        exts = ['raindrop.proto.test.test_converter']
         return self.test_one_testmsg(
-                ).addCallback(self.deferMakeAnotherTestMessage
-                ).addCallback(lambda _: self.process_doc(exts)
+                ).addCallback(lambda _: self.process_doc()
                 ).addCallback(check_it,
                 ).addCallback(self.deferVerifyCounts, 1, 3
                 )
@@ -169,10 +157,8 @@ class TestIDPipeline(TestIDPipelineBase):
             # and that will do!
 
 
-        exts = ['raindrop.proto.test.test_converter']
         return self.test_one_testmsg(
-                ).addCallback(self.deferMakeAnotherTestMessage
-                ).addCallback(lambda _: self.process_doc(exts, False)
+                ).addCallback(lambda _: self.process_doc(None, False)
                 ).addCallback(check_it,
                 ).addCallback(self.deferVerifyCounts, 2, 3
                 )
