@@ -21,7 +21,7 @@ def handler(src_doc):
                 logger.debug('found email address %r', un)
         logger.info('found %d email identities', len(my_identities))
 
-    to = src_doc['to']
+    to = src_doc.get('to', [])
     val = None
     # only us on the 'to' line?  That is 'direct'...
     if len(to)==1 and tuple(to[0]) in my_identities:
@@ -34,11 +34,10 @@ def handler(src_doc):
                 break
         else:
             val = 'broadcast'
-    if val:
-        # XXX - should this be part of the model?  That a schema can nominate
-        # fields to be 'combined'?  Or is that just part of the schema defn?
-        items = {'target' : val,
-                 'timestamp': src_doc['timestamp'],
-                 'target-timestamp': [val, src_doc['timestamp']],
-                 }
-        emit_schema('rd.msg.recip-target', items)
+    # XXX - should this be part of the model?  That a schema can nominate
+    # fields to be 'combined'?  Or is that just part of the schema defn?
+    items = {'target' : val,
+             'timestamp': src_doc['timestamp'],
+             'target-timestamp': [val, src_doc['timestamp']],
+             }
+    emit_schema('rd.msg.recip-target', items)
