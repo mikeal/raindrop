@@ -8,11 +8,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def get_ext_env(doc_model, new_items, src_doc, ext):
+def get_ext_env(doc_model, context, src_doc, ext):
     # Hack together an environment for the extension to run in
     # (specifically, provide the emit_schema etc globals)
     # NOTE: These are all called in the context of a worker thread and
     # are expected by the caller to block.
+    new_items = context['new_items']
     def emit_schema(schema_id, items, rd_key=None, confidence=None,
                     attachments=None):
         ni = {'schema_id': schema_id,
@@ -49,6 +50,7 @@ def get_ext_env(doc_model, new_items, src_doc, ext):
                     attachment=attachment, **kw)
 
     def open_view(*args, **kw):
+        context['did_query'] = True
         return threads.blockingCallFromThread(reactor,
                     doc_model.open_view, *args, **kw)
 

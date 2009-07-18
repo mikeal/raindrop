@@ -482,8 +482,8 @@ class MessageTransformerWQ(object):
     def get_queue_name(self):
         return self.ext.id
 
-    def _get_ext_env(self, new_items, src_doc):
-        new_globs = extenv.get_ext_env(self.doc_model, new_items, src_doc,
+    def _get_ext_env(self, context, src_doc):
+        new_globs = extenv.get_ext_env(self.doc_model, context, src_doc,
                                        self.ext)
         self.ext.globs.update(new_globs)
         return self.ext.handler
@@ -502,7 +502,7 @@ class MessageTransformerWQ(object):
             rows = result['rows']
             if rows:
                 dirty = False
-                for row in result['rows']:
+                for row in rows:
                     if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
                         dirty = True
                         break
@@ -512,7 +512,7 @@ class MessageTransformerWQ(object):
                 logger.debug("document %r is up-to-date", src_id)
                 continue # try the next one...
             to_del = []
-            for row in result['rows']:
+            for row in rows:
                 if 'error' not in row:
                     to_del.append({'_id' : row['id'],
                                    '_rev' : row['value']['_rev'],
@@ -537,7 +537,8 @@ class MessageTransformerWQ(object):
             assert src_doc['rd_schema_id'] in self.ext.source_schemas, (src_doc, self.ext)
             # Now process it
             new_items = []
-            func = self._get_ext_env(new_items, src_doc)
+            context = {'new_items': new_items}
+            func = self._get_ext_env(context, src_doc)
             logger.debug("calling %r with doc %r, rev %s", ext_id,
                          src_doc['_id'], src_doc['_rev'])
 
@@ -545,14 +546,15 @@ class MessageTransformerWQ(object):
             _ = yield threads.deferToThread(func, src_doc
                         ).addBoth(self._cb_converted_or_not, src_doc, new_items)
             logger.debug("extension %r generated %d new schemas", ext_id, len(new_items))
-            # If extensions only created schemas for the same bit of content,
-            # then we are safe to defer the writing of these docs...
-            # (In theory, if they wrote a different rd_key, they must have done
-            # a query etc to find it, and thus they may need that record written
-            # before they are executed again...)
-            must_save = False
+            # We try hard to batch writes; we earlier just checked to see if
+            # only the same key was written, but that still failed.  Last
+            # ditch attempt is to see if the extension made a query - if it
+            # did, then it will probably query next time, and will probably
+            # expect to see what it wrote last time
+            must_save = 'did_query' in context
             for i in new_items:
-                if i['rd_key'] != src_doc['rd_key']:
+                logger.debug('new schema item %(rd_key)r', i)
+                if not must_save and i['rd_key'] != src_doc['rd_key']:
                     must_save = True
                 ret.append(i)
             # 20 seems a nice sweet-spot to see reasonable perf...
