@@ -30,6 +30,17 @@ def path_part_nuke(path, count):
 
 LIB_DOC = 'lib' #'_design/files'
 
+# Content-types for file extensions.  This map is preferred over
+# mimetypes.guess_type(), and a warning will be issued if we can't get a mime
+# type after looking in both.
+RAINDROP_CONTENT_TYPES = {
+    '.json' : 'application/json',
+    '.java' : 'application/java',
+    '.psd' : 'application/octet-stream', # what are these?
+}
+
+RAINDROP_IGNORE = set(('.patch', '.diff', '.orig', '.zip'))
+
 # Updating design documents when not necessary can be expensive as all views
 # in that doc are reset. So we've created a helper - a simple 'fingerprinter'
 # which creates a dict, each entry holding the finterprint of a single item
@@ -106,8 +117,10 @@ def install_client_files(whateva, options):
 
     def _insert_file(path, couch_path, attachments, fp):
         f = open(path, 'rb')
-        ct = mimetypes.guess_type(path)[0]
-        if ct is None and sys.platform=="win32":
+        ct = RAINDROP_CONTENT_TYPES.get(os.path.splitext(path)[1])
+        if not ct:
+            ct = mimetypes.guess_type(path)[0]
+        if not ct and sys.platform=="win32":
             # A very simplistic check in the windows registry.
             import _winreg
             try:
@@ -136,7 +149,7 @@ def install_client_files(whateva, options):
             if os.path.isfile(path) and \
                not filename.startswith(".") and \
                not filename.endswith("~") and \
-               not filename.endswith(".zip"):
+               not os.path.splitext(path)[1] in RAINDROP_IGNORE:
                 _insert_file(path, couch_path + filename, attachments, fp)
             elif os.path.isdir(path):
                 new_couch_path = filename + "/"
