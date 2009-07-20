@@ -15,6 +15,14 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
     ids = [ids];
   }
 
+  //Skip the processing if no IDs passed in.
+  if (!ids.length) {
+    if (errback) {
+      errback("no ids");
+    }
+    return;
+  }
+
   //Convert the list to be conversations IDs if they were not before.
   if(ids[0].conversation_id) {
     convIds = [];
