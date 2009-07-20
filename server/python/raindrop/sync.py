@@ -130,7 +130,8 @@ class SyncConductor(object):
       try:
         _ = yield self._process_outgoing_row(row, outgoing_handlers, pipeline)
       except Exception:
-        logger.exception("Failed to processing doc %(id)r", row)
+        logger.error("Failed to process doc %r\n%s", row['id'],
+                     Failure().getTraceback())
     logger.info("outgoing sync done")
 
   @defer.inlineCallbacks

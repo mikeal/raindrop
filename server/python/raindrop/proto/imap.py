@@ -1,5 +1,6 @@
 from twisted.internet import protocol, ssl, defer, error, task
 from twisted.mail import imap4
+from twisted.python.failure import Failure
 import logging
 from email.utils import mktime_tz, parsedate_tz
 import time
@@ -10,6 +11,12 @@ from ..model import DocumentSaveError
 brat = base.Rat
 
 logger = logging.getLogger(__name__)
+
+def log_exception(msg, *args):
+  # inlineCallbacks don't work well with the logging module's handling of
+  # exceptions - we need to use the Failure() object...
+  msg = (msg % args) + "\n" + Failure().getTraceback()
+  logger.error(msg)
 
 # Set this to see IMAP lines printed to the console.
 # NOTE: lines printed may include your password!
@@ -191,7 +198,7 @@ class ImapProvider(object):
     try:
       _ = yield self._updateFolders(conn, todo)
     except:
-      logger.exception("Failed to update folder")
+      log_exception("Failed to update folder")
     logger.info('imap queue generation finished - waiting for queues to finish')
 
   @defer.inlineCallbacks
@@ -323,7 +330,7 @@ class ImapProvider(object):
     try:
       results = yield conn.fetchAll("%d:*" % (cached_uid_next,), True)
     except imap4.MismatchedQuoting, exc:
-      logger.exception("failed to fetchAll folder %r", folder_path)
+      log_exception("failed to fetchAll folder %r", folder_path)
       results = []
     logger.info("folder %r has %d new items", folder_path, len(results))
     if not results:
@@ -532,8 +539,8 @@ class ImapProvider(object):
       except:
         if not self.reactor.running:
           break
-        logger.exception('failed to process a message batch in folder %r',
-                         folder)
+        log_exception('failed to process a message batch in folder %r',
+                      folder)
 
   @defer.inlineCallbacks
   def _consumeWriteRequests(self):

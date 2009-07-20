@@ -63,7 +63,8 @@ class SMTPPostingClient(SMTPPostingClient_Base): #smtp.ESMTPClient):
                                              attachment='smtp_body')
                 self.data_file = StringIO(attach)
             except:
-                logger.exception("Failed to talk to couch")
+                logger.error("Failed to talk to couch\n%s",
+                             Failure().getTraceback())
                 self._disconnectFromServer()
 
         def do_base(result):
