@@ -262,3 +262,6 @@ class TwistySkype(object):
 class SkypeAccount(base.AccountBase):
   def startSync(self, conductor):
     return TwistySkype(self, conductor).attach()
+
+  def get_identities(self):
+    return [('skype', self.details['username'])]

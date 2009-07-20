@@ -1,20 +1,7 @@
 # Emit rd.msg.recip-target schemas for tweets and twitter private messages.
 
-# A set of twitter ids which mean 'me' - usually only 1, but you never know...
-my_identities = None
-
 def handler(src_doc):
-    global my_identities
-    if my_identities is None:
-        my_identities = set()
-        key=['rd.account', 'kind', 'twitter']
-        result = open_view(key=key, reduce=False, include_docs=True)
-        for row in result['rows']:
-            if 'doc' in row and 'username' in row['doc']:
-                un = row['doc']['username']
-                my_identities.add(un)
-                logger.debug('found twitter ID %r', un)
-        logger.info('found %d twitter identities', len(my_identities))
+    my_identities = get_my_identities()
 
     if src_doc['rd_schema_id'] == 'rd.msg.tweet.raw':
         if src_doc['twitter_user'] in my_identities:

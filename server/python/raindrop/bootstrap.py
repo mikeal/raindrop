@@ -18,6 +18,7 @@ from cStringIO import StringIO
 from .config import get_config
 from .model import get_db
 from .model import get_doc_model
+from . import proto
 
 import logging
 logger = logging.getLogger(__name__)
@@ -478,6 +479,16 @@ def check_accounts(whateva):
             del acct_info['password']
         except KeyError:
             pass
+        # Our account objects know how to turn this config info into the
+        # 'identity' list stored with the accounts - so get that.
+        try:
+            acct = proto.protocols[acct_info['kind']](dm, acct_info)
+            ids = acct.get_identities()
+            # turn tuples back into the lists the couch will return
+            acct_info['identities'] = [list(iid) for iid in ids]
+        except:
+            logger.exception("failed to fetch identities for %r", acct_id)
+
         new_info = {'rd_key' : rd_key,
                     'schema_id': 'rd.account',
                     'ext_id': 'raindrop.core',

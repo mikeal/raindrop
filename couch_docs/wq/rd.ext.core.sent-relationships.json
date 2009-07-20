@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Emits identities and contacts for people we send things to"
+    }
+  }
+}

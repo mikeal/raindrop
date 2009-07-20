@@ -205,7 +205,7 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
     def prepare_test_accounts(self, config):
         acct = config.accounts['test'] = {}
         acct['kind'] = 'smtp'
-        acct['username'] = 'test'
+        acct['username'] = 'test_raindrop@test.mozillamessaging.com'
         acct['id'] = 'smtp_test'
         acct['host'] = SMTP_SERVER_HOST
         acct['port'] = SMTP_SERVER_PORT

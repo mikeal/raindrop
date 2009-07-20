@@ -674,3 +674,10 @@ class IMAPAccount(base.AccountBase):
                                   start_writer()])
 
     lc.stop()
+
+  def get_identities(self):
+    username = self.details.get('username')
+    if '@' not in username:
+      logger.warning("IMAP account username isn't an email address - can't guess your identity")
+      return []
+    return [('email', username)]

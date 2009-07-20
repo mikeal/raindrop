@@ -195,3 +195,10 @@ class SMTPAccount(base.AccountBase):
         factory = SMTPClientFactory(self, conductor, src_doc, dest_doc)
         client = yield factory.connect()
         # apparently all done!
+
+    def get_identities(self):
+        username = self.details.get('username')
+        if '@' not in username:
+            logger.warning("SMTP account username isn't an email address - can't guess your identity")
+            return []
+        return [('email', username)]

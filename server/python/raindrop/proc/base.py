@@ -120,6 +120,22 @@ class AccountBase(Rat):
     # the saved state on the source doc will.
     pass
 
+  def get_identities(self):
+    """Return a sequence of 'identity ids' for each identity associated with
+    this account.
+
+    This is just a helper for the 'bootstrap' process - the 'official'
+    location of this list is inside the couch doc holding the account info.
+    """
+    raise NotImplementedError
+
+  def can_send_from(self, identity):
+    """Return True if we can send messages from the specified identity.  Any
+    identity may be passed, not just ones returned by get_identities
+    (although only one such address is likely to return True)
+    """
+    return False
+
   # helper function to manage the 'sent state' for an item.
   @defer.inlineCallbacks
   def _update_sent_state(self, src_doc, new_state, reason=None, message=None,

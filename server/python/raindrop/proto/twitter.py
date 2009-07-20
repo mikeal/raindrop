@@ -166,3 +166,6 @@ class TwitterProcessor(object):
 class TwitterAccount(base.AccountBase):
   def startSync(self, conductor):
     return TwitterProcessor(self, conductor).attach()
+
+  def get_identities(self):
+    return [('twitter', self.details['username'])]

@@ -54,11 +54,36 @@ def get_ext_env(doc_model, context, src_doc, ext):
         return threads.blockingCallFromThread(reactor,
                     doc_model.open_view, *args, **kw)
 
+    def get_my_identities(__my_identities=[]):
+        # XXX - can't use globals here!!
+        # Some extensions need to know which identity IDs mean the current
+        # user for various purposes - eg, "was it sent to/from me?".
+        # We could let such extensions use open_view, but then it would
+        # be flagged as a 'dynamic' extension when it isn't really.
+        # So - abstract some of that behind this helper.
+        # For now, assume identities don't change between runs.  Later we
+        # could listen for changes to account schemas in the pipeline and
+        # invalidate...
+        if not __my_identities:
+            result = threads.blockingCallFromThread(reactor,
+                        doc_model.open_view,
+                        startkey=["rd.account", "identities"],
+                        endkey=["rd.account", "identities", {}],
+                        reduce=False,
+                        )
+            for row in result['rows']:
+                iid = row['key'][2]
+                # can't use a set - identity_ids are lists!
+                if iid not in __my_identities:
+                    __my_identities.append(iid)
+        return __my_identities
+
     new_globs = {}
     new_globs['emit_schema'] = emit_schema
     new_globs['emit_related_identities'] = emit_related_identities
     new_globs['open_schema_attachment'] = open_schema_attachment
     new_globs['open_view'] = open_view
+    new_globs['get_my_identities'] = get_my_identities
     new_globs['logger'] = logging.getLogger('raindrop.ext.'+ext.id)
     return new_globs
 

@@ -1,26 +1,12 @@
 # Emit rd.msg.recip-target schemas for emails.
 
-# A set of email addresses which mean 'me'.
-my_identities = None
-
 def handler(src_doc):
     # We make our lives easier by using the rd.msg.body schema, but only
     # do emails...
     if src_doc['rd_key'][0] != 'email':
         return
 
-    global my_identities
-    if my_identities is None:
-        my_identities = set()
-        keys=[['rd.account', 'kind', 'imap'], ['rd.account', 'kind', 'smtp']]
-        result = open_view(keys=keys, reduce=False, include_docs=True)
-        for row in result['rows']:
-            if 'doc' in row and 'username' in row['doc']:
-                un = row['doc']['username']
-                my_identities.add(('email', un))
-                logger.debug('found email address %r', un)
-        logger.info('found %d email identities', len(my_identities))
-
+    my_identities = get_my_identities()
     to = src_doc.get('to', [])
     val = None
     # only us on the 'to' line?  That is 'direct'...
