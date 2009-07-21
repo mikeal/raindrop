@@ -60,7 +60,7 @@ rd.require("rd.conversation");
 
   //Register to listen for protocol link for Home.
   rd.sub("rd-protocol-home", function() {
-    rd.conversation.byTimeStampDirect(30, function(conversations) {
+    rd.conversation.direct(30, function(conversations) {
       rd.pub("rd-display-conversations", conversations, {
         refreshConversations: function() {
           //TODO: this does not pass that the operation
@@ -90,7 +90,7 @@ rd.require("rd.conversation");
   //Register to listen for protocol link for when a contact is
   //clicked on, probably from the face wall.
   rd.sub("rd-protocol-contact", function(/*String*/contactId) {
-    rd.conversation.byContact(contactId, function(conversations) {
+    rd.conversation.contact(contactId, function(conversations) {
       rd.pub("rd-display-conversations", conversations, {
         refreshConversations: function() {
           //TODO: this does not pass that the operation
@@ -98,6 +98,49 @@ rd.require("rd.conversation");
           rd.pub("rd-protocol-contact", contactId);
         }
       });      
+    });
+  });
+
+  //Register to listen for protocol link for Recent Broadcasts.
+  rd.sub("rd-protocol-recent-broadcast-conversations", function() {
+    rd.conversation.broadcast(30, function(conversations) {
+      rd.pub("rd-display-conversations", conversations, {
+        refreshConversations: function() {
+          //TODO: this does not pass that the operation
+          //is a refresh, so a bit destructive.
+          rd.pub("rd-protocol-recent-broadcast-conversations");
+        }
+      });
+    });
+  });
+
+  //Register to listen for protocol link for Mailing list.
+  rd.sub("rd-protocol-mailingList", function(listId) {
+    rd.conversation.mailingList(listId, 30, function(conversations) {
+      rd.pub("rd-display-conversations", conversations, {
+        refreshConversations: function() {
+          //TODO: this does not pass that the operation
+          //is a refresh, so a bit destructive.
+          rd.pub("rd-protocol-mailingList", listId);
+        }
+      });
+    });
+  });
+
+  //Register to listen for protocol link for imap folder locations.
+  rd.sub("rd-protocol-locationTag", function(listId) {
+    //Convert string to array.
+    if (typeof listId == "string") {
+      listId = listId.split(",");
+    }
+    rd.conversation.location(listId, 30, function(conversations) {
+      rd.pub("rd-display-conversations", conversations, {
+        refreshConversations: function() {
+          //TODO: this does not pass that the operation
+          //is a refresh, so a bit destructive.
+          rd.pub("rd-protocol-locationTag", listId);
+        }
+      });
     });
   });
 

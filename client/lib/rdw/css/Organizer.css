@@ -15,7 +15,7 @@
 }
 
 .Organizer > ol > li {
-  padding: 0.5em;
+  padding: 0.2em 0.5em;
 }
 
 .Organizer > ol > li:hover {
@@ -33,7 +33,12 @@
 }
 
 
-.Organizer > ol > li.MailingList > a {
+.Organizer > ol > li.mailingList > a {
   font-size: small;
   color: green;
+}
+
+.Organizer > ol > li.locationTag > a {
+  font-size: small;
+  color: blue;
 }

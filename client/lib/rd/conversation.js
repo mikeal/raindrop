@@ -1,6 +1,6 @@
 dojo.provide("rd.conversation");
 
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rd.contact");
 dojo.require("rd.message");
 
@@ -38,7 +38,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
   for (var i = 0, id; id = ids[i]; i++) {
     queryKeys.push(["rd.msg.conversation", "conversation_id", id]);
   }
-  couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+  rd.store.megaview({
     reduce: false,
     keys: queryKeys,
     success: dojo.hitch(this, function(convList) {
@@ -89,10 +89,10 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
 }
 
 dojo._mixin(rd.conversation, {
-  byMessageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
+  messageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
     //summary: gets conversations based on message IDs passed in. ids can be one string
     //message document ID or an array of string message document IDs.
-    
+
     //Find out if this is just one ID.
     var isOne = typeof ids == "string";
     if (isOne) {
@@ -103,7 +103,7 @@ dojo._mixin(rd.conversation, {
     for (var i = 0; i< ids.length; i++) {
       keys.push(['rd.core.content', 'key-schema_id', [ids[i], 'rd.msg.conversation']]);
     }
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       keys: keys,
       reduce: false,
       include_docs: true,
@@ -126,70 +126,83 @@ dojo._mixin(rd.conversation, {
     });    
   },
 
-  byTimeStampDirect: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+  direct: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent direct messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      reduce: false,
+    this._query({
       startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
       endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
-      limit: limit,
-      descending: true,
-      success: dojo.hitch(this, "_onTimeStampQueryDone", callback, errback)
-    });   
+      limit: limit      
+    }, callback, errback);   
   },
 
-  byTimeStamp: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+  broadcast: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: gets the most recent broadcast messages up to limit, then pulls
+    //the conversations associated with those messages. Conversation with
+    //the most recent message will be first.
+    this._query({
+      startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
+      endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
+      limit: limit      
+    }, callback, errback);
+  },
+
+  mailingList: function(/*String*/listId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: gets the most recent mailing list messages up to limit, then pulls
+    //the conversations associated with those messages. Conversation with
+    //the most recent message will be first.
+    rd.store.megaview({
+      key: ["rd.msg.email.mailing-list", "id", listId],
+      reduce: false,
+      limit: limit,
+      success: dojo.hitch(this, function(json) {
+        //Get message keys
+        var keys = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          keys.push(row.value.rd_key);
+        }
+
+        this.messageKey(keys, callback, errback);
+      })
+    });
+  },
+
+  location: function(/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: gets the most recent messages up to a limit for a given imap folder
+    //location ID, then pulls the conversations associated with those messages.
+    //Conversation with the most recent message will be first.
+    rd.store.megaview({
+      key: ["rd.msg.location", "location", locationId],
+      reduce: false,
+      limit: limit,
+      success: dojo.hitch(this, function(json) {
+        //Get message keys
+        var keys = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          keys.push(row.value.rd_key);
+        }
+
+        this.messageKey(keys, callback, errback);
+      })
+    });
+  },
+
+  latest: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent messages up to limit, then
     //pulls the conversations associated with those messages. Conversation with
     //the most recent message will be first.
 
     // XXX - this could be optimized as we again re-fetch these messages when
     // fetching all in the convo.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      reduce: false,
+    this._query({
       startkey: ["rd.msg.body", "timestamp", {}],
       endkey: ["rd.msg.body", "timestamp"],
-      limit: limit,
-      descending: true,
-      success: dojo.hitch(this, "_onTimeStampQueryDone", callback, errback)
-    });
+      limit: limit      
+    }, callback, errback);
   },
 
-  _onTimeStampQueryDone: function(/*Function*/callback, /*Function*/errback, /*Object*/json) {
-    //summary: handles fetching the conversations for the messages in the
-    //json returned from a timestamp-related query.
-
-    // The json has the rd_key for messages in timestamp order;
-    // now we need to fetch the 'rd.msg.conversation' schema to fetch the
-    // convo ID.
-    var keys = [];
-    for (var i = 0, row; row = json.rows[i]; i++) {
-      keys.push(['rd.core.content', 'key-schema_id', [row.value.rd_key, 'rd.msg.conversation']]);
-    }
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
-      keys: keys,
-      reduce: false,
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        // XXX - how to do sets better in js?????
-        // And can't we just avoid 'reduce=false' and let the the reduce
-        // function make them unique?
-        var convSet = {}
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          convSet[row.doc.conversation_id] = row.doc.conversation_id;
-        }
-        var convIds = [];
-        for (var cid in convSet) {
-          convIds.push(convSet[cid]);
-        }
-        this(convIds, callback, errback);
-      })
-    })
-  },
-
-  byContact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
+  contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
     //a given contact.
 
@@ -205,7 +218,7 @@ dojo._mixin(rd.conversation, {
         return;
       }
 
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      rd.store.megaview({
         reduce: false,
         keys: keys,
         success: dojo.hitch(this, function(json) {
@@ -223,7 +236,7 @@ dojo._mixin(rd.conversation, {
           }
 
           //Load the conversations based on these message IDs.
-          rd.conversation.byMessageKey(messageKeys, function(conversations) {
+          rd.conversation.messageKey(messageKeys, function(conversations) {
             //Sort the conversations.
             conversations.sort(function(a, b) {
               return a[0]['rd.msg.body'].timestamp > b[0]['rd.msg.body'].timestamp ? -1 : 1;
@@ -235,5 +248,55 @@ dojo._mixin(rd.conversation, {
         error: errback     
       });
     }), errback);
+  },
+
+  _query: function(/*Object*/args, /*Function*/callback, /*Function*/errback) {
+    //summary: handles fetching the conversations for the messages in the
+    //json returned from a timestamp-related query.
+
+    //Combine args with standard args for the megaview call.
+    var mvArgs = dojo._mixin({
+      reduce: false,
+      startkey: ["rd.msg.body", "timestamp", {}],
+      endkey: ["rd.msg.body", "timestamp"],
+      descending: true,
+      success: dojo.hitch(this, function(json) {
+        // The json has the rd_key for messages in timestamp order;
+        // now we need to fetch the 'rd.msg.conversation' schema to fetch the
+        // convo ID.
+        var keys = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          keys.push(['rd.core.content', 'key-schema_id', [row.value.rd_key, 'rd.msg.conversation']]);
+        }
+        rd.store.megaview({
+          keys: keys,
+          reduce: false,
+          include_docs: true,
+          success: dojo.hitch(this, function(json) {
+            // XXX - how to do sets better in js?????
+            // And can't we just avoid 'reduce=false' and let the the reduce
+            // function make them unique?
+            var convSet = {}
+            for (var i = 0, row; row = json.rows[i]; i++) {
+              convSet[row.doc.conversation_id] = row.doc.conversation_id;
+            }
+            var convIds = [];
+            for (var cid in convSet) {
+              convIds.push(convSet[cid]);
+            }
+            this(convIds, callback, errback);
+          })
+        });
+      }),
+      error: errback
+    }, args);
+
+    //If no descending preference is made, default to true,
+    //to get most recent items first.
+    if (!"descending" in mvArgs) {
+      mvArgs.descending = true;
+    }
+
+    rd.store.megaview(mvArgs);
   }
 });
