@@ -4,6 +4,7 @@ from twisted.python.failure import Failure
 import logging
 from email.utils import mktime_tz, parsedate_tz
 import time
+import re
 
 from ..proc import base
 from ..model import DocumentSaveError
@@ -676,8 +677,15 @@ class IMAPAccount(base.AccountBase):
     lc.stop()
 
   def get_identities(self):
-    username = self.details.get('username')
-    if '@' not in username:
-      logger.warning("IMAP account username isn't an email address - can't guess your identity")
-      return []
-    return [('email', username)]
+    addresses = self.details.get('addresses')
+    if not addresses:
+      username = self.details.get('username')
+      if '@' not in username:
+        logger.warning("IMAP account username isn't an email address - can't guess your identity")
+        ret = []
+      else:
+        ret = [['email', username]]
+    else:
+      ret = [['email', addy] for addy in re.split("[ ,]", addresses) if addy]
+    logger.debug("email identities for %r: %s", self.details['id'], ret)
+    return ret
