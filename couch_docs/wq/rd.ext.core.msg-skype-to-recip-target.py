@@ -5,7 +5,11 @@ def handler(src_doc):
     # 'skype' one :)
     my_identities = get_my_identities()
     skype_users = src_doc['skype_chat_members']
-    has_me = len(my_identities.union(set(skype_users))) != 0
+    has_me = False
+    for su in skype_users:
+        if su in my_identities:
+            has_me = True
+            break
     if src_doc['skype_from_handle'] in my_identities:
         val = 'from'
     elif has_me and len(skype_users)==2:
