@@ -4,7 +4,7 @@ __all__ = ['get_config']
 
 class Config(object):
   COUCH_DEFAULTS = {'host': 'localhost', 'port': 5984, 'name': 'raindrop'}
-  def __init__(self):
+  def __init__(self, filename=None):
     self.parser = ConfigParser.SafeConfigParser()
 
     self.couches = {'local': self.COUCH_DEFAULTS.copy()}
@@ -13,7 +13,7 @@ class Config(object):
     # XXX - this seems wrong: most of the time the 'config' - particularly the
     # list of accounts etc - will come from the DB.  The config file should only
     # be used during bootstrapping.
-    self.load()
+    self.load(filename)
 
 
   def dictifySection(self, section_name, defaults=None, name=None):
@@ -42,8 +42,10 @@ class Config(object):
       results[name] = value
     return results
 
-  def load(self):
-    self.parser.read([os.path.expanduser('~/.raindrop')])
+  def load(self, filename=None):
+    if not filename:
+      filename = [os.path.expanduser('~/.raindrop')]
+    self.parser.read(filename)
 
     COUCH_PREFIX = 'couch-'
     ACCOUNT_PREFIX = 'account-'
@@ -63,9 +65,16 @@ class Config(object):
     self.local_couch = self.couches['local']
     self.remote_couch = self.couches.get('remote') # may be None
 
+# Ack - this is hard - on one hand we want "global" as passing this as a param
+# everywhere is hard - on the other hand, the test suite etc makes this is a
+# PITA.
 CONFIG = None
 def get_config():
+  assert CONFIG is not None, "init_config not called!"
+  return CONFIG
+
+def init_config(config_file=None):
   global CONFIG
-  if CONFIG is None:
-    CONFIG = Config()
+  assert CONFIG is None, "already initialized"
+  CONFIG = Config(config_file)
   return CONFIG

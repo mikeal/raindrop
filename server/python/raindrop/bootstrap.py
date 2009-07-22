@@ -461,10 +461,11 @@ def update_apps(whateva):
 
 
 @defer.inlineCallbacks
-def check_accounts(whateva):
+def check_accounts(whateva, config=None):
     db = get_db()
-    config = get_config()
     dm = get_doc_model()
+    if config is None:
+        config = get_config()
 
     for acct_name, acct_info in config.accounts.iteritems():
         acct_id = "account!" + acct_info['id']

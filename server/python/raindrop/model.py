@@ -18,8 +18,6 @@ import paisley
 from .config import get_config
 
 
-config = get_config()
-
 class _NotSpecified:
     pass
 
@@ -249,7 +247,7 @@ class CouchDB(paisley.CouchDB):
 # instance should care about that.  Sadly, bootstrap.py is a (small; later)
 # problem here...
 def get_db(couchname="local", dbname=_NotSpecified):
-    dbinfo = config.couches[couchname]
+    dbinfo = get_config().couches[couchname]
     if dbname is _NotSpecified:
         dbname = dbinfo['name']
     key = couchname, dbname
@@ -576,29 +574,10 @@ def get_doc_model():
         _doc_model = DocumentModel(get_db())
     return _doc_model
 
-def nuke_db():
-    couch_name = 'local'
-    db = get_db(couch_name, None)
-    dbinfo = config.couches[couch_name]
-
-    def _nuke_failed(failure, *args, **kwargs):
-        if failure.value.status != '404':
-            failure.raiseException()
-        logger.info("DB doesn't exist!")
-
-    def _nuked_ok(d):
-        logger.info("NUKED DATABASE!")
-
-    deferred = db.deleteDB(dbinfo['name'])
-    deferred.addCallbacks(_nuked_ok, _nuke_failed)
-    return deferred
-
-
-
 def fab_db(whateva):
     couch_name = 'local'
     db = get_db(couch_name, None)
-    dbinfo = config.couches[couch_name]
+    dbinfo = get_config().couches[couch_name]
 
     def _create_failed(failure, *args, **kw):
         failure.trap(twisted.web.error.Error)
