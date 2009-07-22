@@ -11,12 +11,15 @@
       var dbPath = scp.getAttribute("data-dbpath");
       if( !dbPath) {
         //Figure a default DB based on url for rdconfig.
-        dbPath = src.split("/").slice(0, 3).join("/");
+        dbPath = src.split("/").slice(0, 4).join("/");
       }
       //Make sure dbPath ends in an end slash.
       if (dbPath.charAt(dbPath.length - 1) != "/") {
         dbPath += "/";
       }
+
+      //Check for app name, passed via rdconfig.js tag
+      var app = scp.getAttribute("data-app") || "";
     }
     i--;
   }
@@ -56,8 +59,10 @@
       ["dojox", "rdx"]
     ]
   };
-  
+
   djConfig.rd.dbPath = dbPath;
+
+  djConfig.rd.app = app;
 
   //If using API stubs, then adjust couch path.
   var query = location.search;
