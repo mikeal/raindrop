@@ -1,7 +1,7 @@
 # Emit rd.msg.recip-target schemas for tweets and twitter private messages.
 
 def handler(src_doc):
-    my_identities = get_my_identities()
+    my_identities = [iid[1] for iid in get_my_identities() if iid[0]=='twitter']
 
     if src_doc['rd_schema_id'] == 'rd.msg.tweet.raw':
         if src_doc['twitter_user'] in my_identities:
