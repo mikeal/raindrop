@@ -1,6 +1,6 @@
 # The first raindrop unittest!
 
-from twisted.internet import task, defer
+from twisted.internet import defer
 
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
 from raindrop.model import get_doc_model
