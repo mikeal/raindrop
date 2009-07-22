@@ -216,9 +216,15 @@ dojo.mixin(rd.identity, {
     if (!this._byImage) {
       this._byImage = [];
     }
-    
+
     if (idty.image) {
       this._byImage.push(idty.rd_key);
+      // Fix up the image URL; a leading '/' means it is a URL in our
+      // couch DB.
+      if (idty.image[0]=="/") {
+        // all this hard-coding of the DB name can't be good...
+        idty.image = "/raindrop" + idty.image;
+      }
     }
   },
 
