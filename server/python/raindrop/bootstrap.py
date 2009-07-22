@@ -372,7 +372,7 @@ def update_apps(whateva):
     all_rows = results['rows']
 
     # Convert couch config value for module paths
-    # to a JS string to be used in config.js
+    # to a JS string to be used in rdconfig.js
     subs = "subs: ["
     exts = "exts: ["
     paths = []
@@ -434,17 +434,17 @@ def update_apps(whateva):
 
     doc = yield db.openDoc(LIB_DOC, attachments=True)
 
-    # Find config.js skeleton on disk   
+    # Find rdconfig.js skeleton on disk   
     # we cannot go in a zipped egg...
     root_dir = path_part_nuke(model.__file__, 4)
-    config_path = os.path.join(root_dir, "client/lib/config.js")
+    config_path = os.path.join(root_dir, "client/lib/rdconfig.js")
 
-    # load config.js skeleton
+    # load rdconfig.js skeleton
     f = open(config_path, 'rb')
     data = f.read()
     f.close()
 
-    # update config.js contents with couch data
+    # update rdconfig.js contents with couch data
     data = data.replace("/*INSERT PATHS HERE*/", module_paths)
     data = data.replace("/*INSERT SUBS HERE*/", subs)
     data = data.replace("/*INSERT EXTS HERE*/", exts)
@@ -453,10 +453,10 @@ def update_apps(whateva):
         'content_type': "application/x-javascript; charset=UTF-8",
         'data': base64.b64encode(data)
     }
-    # save config.js in the files.
-    if doc["_attachments"]["config.js"] != new:
-        logger.info("config.js in %r has changed; updating", doc['_id'])
-        doc["_attachments"]["config.js"] = new
+    # save rdconfig.js in the files.
+    if doc["_attachments"]["rdconfig.js"] != new:
+        logger.info("rdconfig.js in %r has changed; updating", doc['_id'])
+        doc["_attachments"]["rdconfig.js"] = new
         _ = yield db.saveDoc(doc, LIB_DOC)
 
 

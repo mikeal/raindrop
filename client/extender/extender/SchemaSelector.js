@@ -1,7 +1,7 @@
 dojo.provide("extender.SchemaSelector");
 
 dojo.require("rdw._Base");
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("extender.SchemaExplorer");
 
 //Uses script-added styles to allow loading on demand at the cost of a
@@ -17,7 +17,7 @@ dojo.declare("extender.SchemaSelector", [rdw._Base], {
     //summary: dijit lifecycle method, after template is in the DOM.
 
     //First, get the list of schemas from a view.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       startkey: ["rd.core.content", "schema_id"],
       endkey: ["rd.core.content", "schema_id", {}],
       group: true,

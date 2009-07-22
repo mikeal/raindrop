@@ -68,7 +68,7 @@ dojo.declare("extender.BackEndEditor", [rdw._Base], {
 
   couchDocPath: function() {
     //summary: the path to the couchdb document
-    return "/raindrop/" + this.doc._id;
+    return rd.path + this.doc._id;
   },
 
   onSave: function(evt) {

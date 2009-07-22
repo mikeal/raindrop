@@ -26,6 +26,7 @@ dojo.provide("couch");
       }else if (options.success) {
         return options.success(response, ioArgs) || response;
       }
+      return response;
     }
   }
 
@@ -35,7 +36,7 @@ dojo.provide("couch");
     type = type.toUpperCase();
   
     //Make a new options so we do not tamper with existing options object.
-    var options = dojo.delegate(options);
+    options = dojo.delegate(options);
     dojo.mixin(options, {
       url: url,
       handleAs: "json",
@@ -44,7 +45,7 @@ dojo.provide("couch");
         contentType: "application/json"
       },
       iframeProxyUrl: djConfig.iframeProxyUrl,
-      handle: _handle,
+      handle: _handle
     });
 
     return dojo.xhr(type, options, (options.postData || options.putData));
@@ -94,8 +95,8 @@ dojo.provide("couch");
     //All extensions must return true for the row to be returned.
     return dojo.filter(rows, function(row, i, array) {
       var result = true;
-      for (var i = 0; i < extensions.length; i++) {
-        if (!extensions[i](row, i, array)) {
+      for (var ij = 0; j < extensions.length; j++) {
+        if (!extensions[j](row, j, array)) {
           result = false;
           break;
         }
@@ -116,15 +117,22 @@ couch = {
     db: function(name) {
       return {
         name: name,
-        uri: djConfig.couchUrl + "/" + encodeURIComponent(name) + "/",
+        //A bit of a hack to use rd.dbPath if loaded with rd stuff, to abstract
+        //away the path and name of the raindrop db. Prefer using rd.store
+        //instead of this file where possible.
+        uri: name == ("raindrop" && typeof rd != "undefined" && rd.dbPath) ?
+            rd.dbPath
+          :
+            djConfig.couchUrl + "/" + encodeURIComponent(name) + "/",
 
         compact: function(options) {
           return _call("POST", this.uri + "_compact", options, function(response, ioArgs) {
             var options = ioArgs.args;
             if (ioArgs.xhr.status == 202) {
               if (options.success) {
-                options.success(resp);
+                options.success(response);
               }
+              return response;
             } else {
               return Error("Invalid status: " + ioArgs.xhr.status);
             }
@@ -135,8 +143,9 @@ couch = {
             var options = ioArgs.args;
             if (ioArgs.xhr.status == 201) {
               if (options.success) {
-                options.success(resp);
+                options.success(response);
               }
+              return response;
             } else {
               return Error("Invalid status: " + ioArgs.xhr.status);
             }
@@ -176,7 +185,8 @@ couch = {
               if (ioArgs.xhr.status == 201) {
                 if (options.success) {
                   options.success(response);
-                }                
+                }
+                return response;
               } else {
                 return Error("Invalid status: " + ioArgs.xhr.status);              
               }          

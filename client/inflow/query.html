@@ -56,7 +56,7 @@
     }
   </style>
 
-  <script src="/raindrop/lib/config.js" charset="utf-8"></script>
+  <script src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
     rd.require("dijit.form.Textarea");
@@ -68,7 +68,7 @@
 
       //Get the list of views available for querying.
       rd.xhrGet({
-        url: "http://127.0.0.1:5984/raindrop/_all_docs?startkey=%22_design%2F%22&endkey=%22_design0%22&include_docs=true",
+        url: rd.dbPath + "_all_docs?startkey=%22_design%2F%22&endkey=%22_design0%22&include_docs=true",
         handleAs: "json",
         load: function(response, ioArgs) {
           //Get all the views from all the docs and make view URLs
@@ -142,7 +142,7 @@
             args = {};
             dojo.mixin(args, oldArgs);
 
-            var url = "/raindrop/" + args.url;
+            var url = rd.dbPath + args.url;
             delete args.url;
 
             //Prune out empty fields, automatically JSON-escape other fields.

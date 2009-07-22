@@ -1,7 +1,7 @@
 dojo.provide("extender.SchemaExplorer");
 
 dojo.require("rdw._Base");
-dojo.require("couch");
+dojo.require("rd.store");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
@@ -30,7 +30,7 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
     //Also used just to refresh the data displayed.
 
     //Get some sample documents for this schema.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       key: ["rd.core.content", "schema_id", this.schemaId],
       include_docs: true,
       reduce: false,

@@ -3,6 +3,7 @@ dojo.provide("rd.contact");
 dojo.require("dojo.DeferredList");
 
 dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rd._api");
 dojo.require("rd.identity");
 
@@ -267,7 +268,7 @@ dojo.mixin(rd.contact, {
     } else {
       // open all contacts - note this also includes contacts without
       // associated identities...
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      rd.store.megaview({
         key: ["rd.core.content", "schema_id", "rd.contact"],
         include_docs: true,
         reduce: false,
@@ -297,7 +298,7 @@ dojo.mixin(rd.contact, {
   _loadIdtyMapping: function() {
     //summary: loads the contact-identity mapping.
 
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       startkey: ["rd.identity.contacts", "contacts"],
       endkey: ["rd.identity.contacts", "contacts", {}],
       reduce: false,

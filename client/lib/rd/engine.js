@@ -1,7 +1,8 @@
 dojo.provide("rd.engine");
+dojo.require("rd");
 
 rd.engine = {
-  baseUrl: "/raindrop/_raindrop/",
+  baseUrl: rd.dbPath + "_raindrop/",
 
   //Milliseconds to use for the watch polling
   //to check when sync is done.

@@ -1,6 +1,6 @@
 dojo.provide("extender.UiManager");
 
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rdw._Base");
 dojo.require("extender.Editor");
 dojo.require("extender.BackEndEditor");
@@ -27,7 +27,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
     //summary: called by extender.Wizard when this instance is the current
     //panel activated in the display.
 
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       keys: [
         ["rd.core.content", "schema_id", "rd.ext.ui"],
         ["rd.core.content", "schema_id", "rd.ext.uiext"],

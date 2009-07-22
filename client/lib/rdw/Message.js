@@ -28,6 +28,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
   unknownUserTemplate: dojo.cache("rdw.templates", "MessageUnknown.html"),
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
+  unknownImgUrl: dojo.moduleUrl("rdw.resources", "unknown.png"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method

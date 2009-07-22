@@ -1,6 +1,6 @@
 dojo.provide("rd.tag");
 
-dojo.require("couch");
+dojo.require("rd.store");
 
 rd.tag = {
   /**
@@ -56,7 +56,7 @@ rd.tag = {
    * @private
    */
   _fetchGroupedIds: function(startKey, endKey, callback, errback) {
-     couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       startkey: startKey,
       endkey: endKey,
       group: true,

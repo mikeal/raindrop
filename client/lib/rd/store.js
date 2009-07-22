@@ -1,5 +1,7 @@
 dojo.provide("rd.store");
 
+dojo.require("couch");
+
 rd.store = {
   megaview: function(/*Object*/args) {
     //summary: thin wrapper around couch megaview call, just to avoid having
@@ -30,7 +32,7 @@ rd.store = {
               + doc.rd_schema_id;
     }
 
-    var docUrl = "/raindrop/" + doc._id;
+    var docUrl = rd.dbPath + doc._id;
     if (doc._rev) {
       docUrl += "?rev=" + doc._rev;
     }

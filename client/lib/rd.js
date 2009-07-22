@@ -42,6 +42,9 @@ dojo._listener.getDispatcher = function(){
 
 (function(){
   dojo.mixin(rd, {
+    //Set path to the raindrop database
+    dbPath: dojo.config.rd.dbPath,
+
     ready: dojo.addOnLoad,
   
     uiExtId: "rd.ui.rd",
