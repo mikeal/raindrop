@@ -1,12 +1,18 @@
 dojo.provide("rd.store");
 
 rd.store = {
+  megaview: function(/*Object*/args) {
+    //summary: thin wrapper around couch megaview call, just to avoid having
+    //to remember or copy/paste the megaview url.
+    return couch.db("raindrop").view("raindrop!content!all/_view/megaview", args);
+  },
+
   put: function(/*Object*/doc, /*Function*/callback, /*Function?*/errback) {
     //summary: puts a document in the raindrop data store.
     //If successful, callback is called with the doc as the only argument.
     //It will generate the _id and rd_ext_id on the document if it does
     //not exist. Warning: it modifies the doc object.
-    
+
     //Add generic UI extension ID if needed.
     if (!doc.rd_ext_id) {
       doc.rd_ext_id = rd.uiExtId;

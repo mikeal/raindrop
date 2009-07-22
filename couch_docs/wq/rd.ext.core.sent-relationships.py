@@ -7,7 +7,7 @@ def handler(doc):
         # same contact - but in the case of emails, each email addy is
         # (presumably) a different person.
         all_to = doc.get('to', []) + doc.get('cc', [])
-        all_display = [doc.get('to_display')] + doc.get('cc_display', [])
+        all_display = doc.get('to_display') + doc.get('cc_display', [])
         for idid, name in zip(all_to, all_display):
             # emit a sequence of (identity_id, relationship) tuples - where
             # all we know about this relationship is it is an email addy...

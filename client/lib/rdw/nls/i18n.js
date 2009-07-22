@@ -1,6 +1,7 @@
 ({
   annoying: "Annoying",
   annoyingTitle: "Click here to hide messages from this person.",
+  broadcast: "Recent Broadcasts",
   closeIcon: "X",
   contacts: "Contacts",
   forward: "forward",
