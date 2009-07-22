@@ -202,7 +202,9 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
         src_doc = yield doc_model.db.openDoc(result[0]['id'])
         defer.returnValue(src_doc)
 
-    def prepare_test_accounts(self, config):
+    def make_config(self):
+        config = TestCaseWithTestDB.make_config(self)
+        # now clobber it with out smtp account
         acct = config.accounts['test'] = {}
         acct['kind'] = 'smtp'
         acct['username'] = 'test_raindrop@test.mozillamessaging.com'
@@ -210,6 +212,7 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
         acct['host'] = SMTP_SERVER_HOST
         acct['port'] = SMTP_SERVER_PORT
         acct['ssl'] = False
+        return config
 
     @defer.inlineCallbacks
     def test_outgoing(self):

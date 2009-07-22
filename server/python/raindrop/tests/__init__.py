@@ -1,8 +1,12 @@
 # The raindrop test suite...
 import os
+import glob
+import json
+import base64
 from twisted.trial import unittest
+from twisted.internet import defer
 
-from raindrop.config import get_config
+import raindrop.config
 from raindrop.model import get_db, fab_db, get_doc_model
 from raindrop.proto import test as test_proto
 from ..pipeline import Pipeline
@@ -49,21 +53,8 @@ class TestCase(unittest.TestCase):
 
 class TestCaseWithDB(TestCase):
     """A test case that is setup to work with a temp database"""
-    def prepare_test_accounts(self, config):
-        pass
-
-    def prepare_config(self):
+    def prepare_test_db(self, config):
         # change the name of the DB used.
-        config = get_config()
-        dbinfo = config.couches['local']
-        dbinfo['name'] = 'raindrop_test_suite'
-        # We probably never want the user's accounts for auto testing.
-        config.accounts.clear()
-        self.prepare_test_accounts(config)
-
-    def prepare_test_db(self):
-        # change the name of the DB used.
-        config = get_config()
         dbinfo = config.couches['local']
         # then blindly nuke it.
         db = get_db('local', None)
@@ -84,12 +75,10 @@ class TestCaseWithDB(TestCase):
         def _nuked_ok(d):
             pass
 
-        # This needs more thought - not every test will want the user's
-        # accounts (indeed, I expect they will *not* want user's account...)
         return db.deleteDB(dbinfo['name']
                 ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
-                ).addCallback(bootstrap.check_accounts
+                ).addCallback(bootstrap.check_accounts, config
                 # client files are expensive (particularly dojo) and not
                 # necessary yet...
                 #).addCallback(bootstrap.install_client_files, FakeOptions()
@@ -97,15 +86,6 @@ class TestCaseWithDB(TestCase):
                 ).addCallback(bootstrap.insert_default_docs, FakeOptions()
                 ).addCallback(bootstrap.install_views, FakeOptions()
                 )
-
-    def setUp(self):
-        self.prepare_config()
-        opts = FakeOptions()
-        self.pipeline = Pipeline(get_doc_model(), opts)
-
-        return self.prepare_test_db(
-            ).addCallback(lambda _: self.pipeline.initialize()
-            )
 
     def failUnlessView(self, did, vid, expect, **kw):
         # Expect is a list of (key, value) tuples.  couch always returns
@@ -119,33 +99,109 @@ class TestCaseWithDB(TestCase):
             got_vals = [r['value'] for r in result['rows']]
             self.failUnlessEqual(got_vals, ex_vals)
 
-        return get_doc_model().open_view(did, vid, **kw
+        return self.get_doc_model().open_view(did, vid, **kw
                     ).addCallback(check_result
                     )
 
     def deferFailUnlessView(self, result, *args, **kw):
         return self.failUnlessView(*args, **kw)
 
+    def get_conductor(self, options=None):
+        if options is None:
+            options = FakeOptions()
+        sync._conductor = None # hack away the singleton...
+        return sync.get_conductor(options)
+
 
 class TestCaseWithTestDB(TestCaseWithDB):
     """A test case that is setup to work with a temp database pre-populated
     with 'test protocol' raw messages.
     """
-    def prepare_test_accounts(self, config):
+    def setUp(self):
+        raindrop.config.CONFIG = None
+        self.config = self.make_config()
+        opts = FakeOptions()
+        self.doc_model = get_doc_model()
+        self.pipeline = Pipeline(self.doc_model, opts)
+        return self.prepare_test_db(self.config
+            ).addCallback(lambda _: self.pipeline.initialize()
+            )
+
+    def make_config(self):
+        # change the name of the DB used.
+        config = raindrop.config.init_config()
+        dbinfo = config.couches['local']
+        dbinfo['name'] = 'raindrop_test_suite'
+        # We probably never want the user's accounts for auto testing.
+        # setup a simple test one.
+        config.accounts.clear()
         acct = config.accounts['test'] = {}
         acct['kind'] = 'test'
         acct['username'] = 'test'
         acct['num_test_docs'] = 0 # ignored!
         test_proto.test_num_test_docs = 0 # incremented later..
         acct['id'] = 'test'
+        return config
 
-    def get_conductor(self, options=None):
-        if options is None:
-            options = FakeOptions()
-        sync._conductor = None # hack away the singleton...
-        return sync.get_conductor(options)
-        
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol
         test_proto.test_num_test_docs += 1
         return self.get_conductor().sync(self.pipeline)
+
+
+class TestCaseWithCorpus(TestCaseWithDB):
+    def prepare_corpus_environment(self, corpus_name):
+        raindrop.config.CONFIG = None
+        cd = self.get_corpus_dir(corpus_name)
+        self.config = raindrop.config.init_config(os.path.join(cd, "raindrop"))
+        # hack our couch server in
+        dbinfo = self.config.couches['local']
+        dbinfo['name'] = 'raindrop_test_suite'
+        dbinfo['port'] = 5984
+        opts = FakeOptions()
+        self.doc_model = get_doc_model()
+        self.pipeline = Pipeline(self.doc_model, opts)
+        return self.prepare_test_db(self.config
+            ).addCallback(lambda _: self.pipeline.initialize()
+            )
+
+    def get_corpus_dir(self, name):
+        import raindrop.tests
+        return os.path.join(raindrop.tests.__path__[0], "corpora", name)
+
+    def gen_corpus_docs(self, corpus_name, item_spec="*"):
+        cwd = os.getcwd()
+        corpus_dir = self.get_corpus_dir(corpus_name)
+        num = 0
+        pattern = "%s/%s.json" % (corpus_dir, item_spec)
+        for filename in glob.iglob(pattern):
+            with open(filename) as f:
+                try:
+                    ob = json.load(f)
+                except ValueError, why:
+                    self.fail("%r has invalid json: %r" % (filename, why))
+                if '_id' not in ob:
+                    si = {'schema_id': ob['rd_schema_id'],
+                          'rd_key': ob['rd_key'],
+                          'ext_id': ob['rd_ext_id'],
+                          'items': []}
+                    ob['_id'] = self.doc_model.get_doc_id_for_schema_item(si)
+                for name, data in ob.get('_attachments', {}).iteritems():
+                    fname = os.path.join(corpus_dir, data['filename'])
+                    with open(fname, 'rb') as attach_f:
+                        enc_data = base64.encodestring(attach_f.read()).replace('\n', '')
+                        data['data'] = enc_data
+                yield ob
+                num += 1
+        self.failUnless(num, "failed to load any docs from %r matching %r" %
+                        (corpus_name, item_spec))
+
+    @defer.inlineCallbacks
+    def load_corpus(self, corpus_name, corpus_spec="*"):
+        _ = yield self.prepare_corpus_environment(corpus_name)
+        _ = yield self.prepare_test_db(self.config)
+        _ = yield self.pipeline.initialize()
+        docs = [d for d in self.gen_corpus_docs(corpus_name, corpus_spec)]
+        # this will do until we get lots...
+        _ = yield self.doc_model.db.updateDocuments(docs)
+        defer.returnValue(len(docs))
