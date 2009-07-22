@@ -14,6 +14,7 @@ from raindrop import bootstrap
 from raindrop import pipeline
 from raindrop import opts
 from raindrop.sync import get_conductor
+from raindrop.config import get_config, init_config
 
 logger = logging.getLogger('raindrop')
 
@@ -139,7 +140,6 @@ def show_view(result, parser, options, args):
         for arg in args:
             # don't use open_view as then we'd need to parse the query portion!
             # grrr - just to get the dbname :()
-            from raindrop.config import get_config
             dbinfo = get_config().couches['local']
             dbname = dbinfo['name']
             if arg.startswith("/"):
@@ -240,6 +240,8 @@ def main():
     options, args = parser.parse_args()
 
     opts.setup_logging(options)
+
+    init_config()
 
     # do this very early just to set the options
     get_conductor(options)
