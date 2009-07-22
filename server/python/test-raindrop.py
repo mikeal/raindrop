@@ -5,9 +5,20 @@
 # now we just do the simplest thing possible...
 
 import sys
+import os
+import tempfile
+
 # If no args specified run all tests...
 if len(sys.argv)==1:
     sys.argv.append('raindrop.tests')
 
-from twisted.scripts.trial import run
-run()
+import twisted.scripts.trial
+
+# poke into twisted to change one or 2 defaults - these can still be adjusted
+# via cmdline args...
+for opt in twisted.scripts.trial.Options.optParameters:
+    if opt[0]=='temp-directory' and opt[2]=='_trial_temp':
+        opt[2] = os.path.join(tempfile.gettempdir(), 'raindrop_trial_temp')
+
+# now run it...
+twisted.scripts.trial.run()
