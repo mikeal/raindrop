@@ -14,7 +14,7 @@ def handler(doc):
                 opener = urllib2.build_opener()
                 youTubeDataXML = opener.open(youTubeDataURL).read()
                 opener.close()
-            except HTTPError, exc:
+            except urllib2.HTTPError, exc:
                 if exc.code == 404:
                     logger.info("can't find the you tube video http://www.youtube.com/watch?v=%s",
                                   videoId)
