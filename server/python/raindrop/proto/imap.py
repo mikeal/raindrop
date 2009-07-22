@@ -417,7 +417,7 @@ class ImapProvider(object):
     if to_up:
       logger.info("folder %r info needs to update %d location records",
                   folder_path, len(to_up))
-      _ = yield self.doc_model.create_schema_items(to_up)
+      self.write_queue.put(to_up)
 
   def results_by_rdkey(self, infos):
     # Transform a list of IMAP infos into a map with the results keyed by the
@@ -536,7 +536,7 @@ class ImapProvider(object):
       logger.debug('checking %d items from %r', len(items), folder)
       try:
         num = yield self._processFolderBatch(conn, folder, items)
-        logger.debug('created %d items for %r', num, folder)
+        logger.debug('queued %d items for %r', num, folder)
       except:
         if not self.reactor.running:
           break
@@ -552,7 +552,7 @@ class ImapProvider(object):
         logger.info('write queue processor stopping')
         break
       # else a real set of schemas to write and process.
-      logger.debug('writing %d schema items', len(items))
+      logger.debug('write queue has %d schema items', len(items))
       try:
         _ = yield self.doc_model.create_schema_items(items)
       except DocumentSaveError, exc:
