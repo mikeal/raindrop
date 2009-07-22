@@ -1,0 +1,7 @@
+# This is a config file - just like the "real" config file - but used
+# for this test corpus.
+
+
+[account-imap]
+kind=imap
+username=raindrop_test_user@mozillamessaging.com

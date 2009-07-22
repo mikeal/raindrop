@@ -1,0 +1,7 @@
+Delivered-To: raindrop_test_user@mozillamessaging.com
+From: Raindrop Test User <raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <raindrop_test_recip@mozillamessaging.com>
+Date: Sat, 21 Jul 2009 12:13:14 -0000
+Message-Id: <d3d08a8a534c464881a95b75300e9011@something>
+
+Hello

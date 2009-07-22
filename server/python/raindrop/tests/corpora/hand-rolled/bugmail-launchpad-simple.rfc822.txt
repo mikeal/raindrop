@@ -1,0 +1,92 @@
+Delivered-To: raindrop_test_user@mozillamessaging.com
+Received: by 10.86.2.12 with SMTP id 12cs111734fgb;
+        Sat, 18 Jul 2009 06:18:58 -0700 (PDT)
+Received: by 10.150.144.3 with SMTP id r3mr3697504ybd.7.1247923136030;
+        Sat, 18 Jul 2009 06:18:56 -0700 (PDT)
+Return-Path: <tortoisehg-develop-bounces@lists.sourceforge.net>
+Received: from lists.sourceforge.net (lists.sourceforge.net [216.34.181.88])
+        by mx.google.com with ESMTP id 5si4777438gxk.19.2009.07.18.06.18.54;
+        Sat, 18 Jul 2009 06:18:56 -0700 (PDT)
+Received-SPF: pass (google.com: domain of tortoisehg-develop-bounces@lists.sourceforge.net designates 216.34.181.88 as permitted sender) client-ip=216.34.181.88;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of tortoisehg-develop-bounces@lists.sourceforge.net designates 216.34.181.88 as permitted sender) smtp.mail=tortoisehg-develop-bounces@lists.sourceforge.net
+Received: from localhost ([127.0.0.1] helo=sfs-ml-4.v29.ch3.sourceforge.com)
+	by 335xhf1.ch3.sourceforge.com with esmtp (Exim 4.69)
+	(envelope-from <tortoisehg-develop-bounces@lists.sourceforge.net>)
+	id 1MS9oP-0007Ht-Tq; Sat, 18 Jul 2009 13:18:49 +0000
+Received: from sfi-mx-2.v28.ch3.sourceforge.com ([172.29.28.122]
+	helo=mx.sourceforge.net)
+	by 335xhf1.ch3.sourceforge.com with esmtp (Exim 4.69)
+	(envelope-from <issues-noreply@bitbucket.org>) id 1MS9oP-0007Ho-1r
+	for tortoisehg-develop@lists.sourceforge.net;
+	Sat, 18 Jul 2009 13:18:49 +0000
+Received-SPF: pass (72vjzd1.ch3.sourceforge.com: domain of bitbucket.org
+	designates 75.101.141.151 as permitted sender)
+	client-ip=75.101.141.151;
+	envelope-from=issues-noreply@bitbucket.org; helo=bitbucket.org; 
+Received: from ec2-75-101-141-151.compute-1.amazonaws.com ([75.101.141.151]
+	helo=bitbucket.org) by 72vjzd1.ch3.sourceforge.com with esmtp 
+	(Exim 4.69) id 1MS9oK-0004JO-7I
+	for tortoisehg-develop@lists.sourceforge.net;
+	Sat, 18 Jul 2009 13:18:48 +0000
+Received: from domU-12-31-39-00-D4-C1.compute-1.internal
+	(localhost.localdomain [127.0.0.1])
+	by bitbucket.org (Postfix) with ESMTP id 6E475120A9
+	for <tortoisehg-develop@lists.sourceforge.net>;
+	Sat, 18 Jul 2009 13:18:43 +0000 (UTC)
+MIME-Version: 1.0
+From: issues-noreply@bitbucket.org
+To: tortoisehg-develop@lists.sourceforge.net
+Date: Sat, 18 Jul 2009 13:18:43 -0000
+Message-Id: <07316ced2329a69aa169f3b9c6467703@bitbucket.org>
+X-Spam-Score: -1.0 (-)
+X-Spam-Report: Spam Filtering performed by mx.sourceforge.net.
+	See http://spamassassin.org/tag/ for more details.
+	-1.5 SPF_CHECK_PASS SPF reports sender host as permitted sender for
+	sender-domain
+	-0.0 SPF_PASS               SPF: sender matches SPF record
+	0.1 RDNS_DYNAMIC           Delivered to trusted network by host with
+	dynamic-looking rDNS
+	0.4 AWL AWL: From: address is in the auto white-list
+X-Headers-End: 1MS9oK-0004JO-7I
+Subject: [thg-dev] New issue 416 in stable: Commit window appears on the top
+	left corner
+X-BeenThere: tortoisehg-develop@lists.sourceforge.net
+X-Mailman-Version: 2.1.9
+Precedence: list
+List-Id: <tortoisehg-develop.lists.sourceforge.net>
+List-Unsubscribe: <https://lists.sourceforge.net/lists/listinfo/tortoisehg-develop>,
+	<mailto:tortoisehg-develop-request@lists.sourceforge.net?subject=unsubscribe>
+List-Archive: <http://sourceforge.net/mailarchive/forum.php?forum_name=tortoisehg-develop>
+List-Post: <mailto:tortoisehg-develop@lists.sourceforge.net>
+List-Help: <mailto:tortoisehg-develop-request@lists.sourceforge.net?subject=help>
+List-Subscribe: <https://lists.sourceforge.net/lists/listinfo/tortoisehg-develop>,
+	<mailto:tortoisehg-develop-request@lists.sourceforge.net?subject=subscribe>
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Errors-To: tortoisehg-develop-bounces@lists.sourceforge.net
+
+New issue 416: Commit window appears on the top left corner
+http://bitbucket.org/tortoisehg/stable/issue/416/commit-window-appears-on-the-top-left
+
+fcorreia on Sat, 18 Jul 2009 15:18:43 +0200:
+
+Description:
+  On Nautilus, the commit window always appears on the top left corner of the screen. Would be nice if it appeared centered on the screen, or if it appeared on the last position it was the last time it was closed.
+
+Responsible:
+  tortoisehg
+-- 
+This is an issue notification from bitbucket.org.
+You are receiving this either because you are the
+owner of the issue, or you are following the issue.
+
+------------------------------------------------------------------------------
+Enter the BlackBerry Developer Challenge  
+This is your chance to win up to $100,000 in prizes! For a limited time, 
+vendors submitting new applications to BlackBerry App World(TM) will have
+the opportunity to enter the BlackBerry Developer Challenge. See full prize  
+details at: http://p.sf.net/sfu/Challenge
+_______________________________________________
+Tortoisehg-develop mailing list
+Tortoisehg-develop@lists.sourceforge.net
+https://lists.sourceforge.net/lists/listinfo/tortoisehg-develop
