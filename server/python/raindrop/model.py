@@ -467,8 +467,8 @@ class DocumentModel(object):
                 item_def['_rev'] = dinfo['rev']
                 new_items.append(item_def)
 
-            if dattach:
-                ds.append(self._cb_save_attachments(dinfo, dattach))
+                if dattach:
+                    ds.append(self._cb_save_attachments(dinfo, dattach))
         if errors:
             raise DocumentSaveError(errors)
 
