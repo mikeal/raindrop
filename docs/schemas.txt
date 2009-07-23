@@ -117,7 +117,7 @@ sent_state_reason: the 'reason' for the failure - may only make sense to
                    the protocol itself (eg, may be the SMTP error code and
                    response string)
 sent_state_message: an optional message for the failure for human consumption.
-    
+
 
 MAILING LISTS:
 ==============
@@ -127,17 +127,23 @@ rd.mailing-list:
 ** Notes **
 
 Information about a mailing list through which one or more messages have been
-received.
+received.  Only the "id" field is required; the others are optional and depend
+on their presence in the list-related headers of the message(s) from which
+they are derived.
 
 ** Fields **
 
-id:
-name:
-post:
-archive:
-help:
-subscribe:
-unsubscribe:
+id: the ID of the mailing list, as specified by the list itself; not guaranteed
+    to be unique, although we treat it like it is; we should perhaps combine it
+    with the domain from which it comes to reduce the possibility of two lists
+    with the same IDs being treated as the same list
+name: the name of the list, if it provides one; otherwise the front-end derives
+      a name from the ID
+post: the value of the list-post header
+archive: the value of the list-archive header
+help: the value of the list-help header
+subscribe: the value of the list-subscribe header
+unsubscribe: the value of the list-unsubscribe header
 
 
 IDENTITIES AND CONTACTS:
