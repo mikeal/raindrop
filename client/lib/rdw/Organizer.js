@@ -31,21 +31,41 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //Generate a list of links for the Organizer.
     //Use a name dispatch convention to allow extensions
     //to add other links.
+    this.listToPane = {};
     for (var i = 0, funcName; funcName = this.listOrder[i]; i++) {
+      //Create a TitlePane that will hold some items.
+      var pane = new dijit.TitlePane({}, dojo.place('<div>', this.domNode));
+      
+      //Create an empty ul inside the pane that is a drag source.
+      var node = dojo.place('<ol></ol>', pane.containerNode);
+      if (!pane._supportingWidgets) {
+        pane._supportingWidgets = [];
+      }
+
+      pane.listNodeDndSource = new dojo.dnd.Source(node);
+      pane._supportingWidgets.push(pane.listNodeDndSource);
+
+      pane.listNode = node;
+
+      //Remember this TitlePane and call method that populates it.
+      this.listToPane[funcName] = pane;
       this[funcName]();
     }
   },
 
   addItems: function(/*String*/type, /*String*/title, /*DOMNode or DocumentFragment*/items) {
     //summary: called by list functions to add items to the DOM.
-    //TODO: need to use listType and title
+    
+    var pane = this.listToPane[type];
+    pane.attr("title", title);
+
     var dndNodes = items;
     if (dndNodes.nodeType == 11) {
       dndNodes = dndNodes.childNodes;
     }
-    this.dndSource.insertNodes(false, dndNodes);
+    pane.listNodeDndSource.insertNodes(false, dndNodes);
 
-    dojo.place(items, this.listNode);
+    dojo.place(items, pane.listNode);
   },
 
   listMailingList: function() {

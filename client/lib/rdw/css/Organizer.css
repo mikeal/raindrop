@@ -1,8 +1,9 @@
 .Organizer {
   position: relative;
+  border: 1px solid gray;
 }
 
-.Organizer:hover ol {
+.Organizer:hover {
   border-color: #44617E;
   -moz-border-radius: 3px;
 }
@@ -11,34 +12,33 @@
   list-style: none;
   padding: 0px;
   margin: 0px;
-  border: 1px solid gray;
 }
 
-.Organizer > ol > li {
+.Organizer ol > li {
   padding: 0.2em 0.5em;
 }
 
-.Organizer > ol > li:hover {
+.Organizer ol > li:hover {
   background-color: #f9f9f9;
 }
 
-.Organizer > ol > li > a {
+.Organizer ol > li > a {
   text-decoration: none;
   background-color: transparent;
   color: #44617E;
 }
 
-.Organizer > ol > li > a[href*=home] {
+.Organizer ol > li > a[href*=home] {
   font-weight: bold;
 }
 
 
-.Organizer > ol > li.mailingList > a {
+.Organizer ol > li.mailingList > a {
   font-size: small;
   color: green;
 }
 
-.Organizer > ol > li.locationTag > a {
+.Organizer ol > li.locationTag > a {
   font-size: small;
   color: blue;
 }
