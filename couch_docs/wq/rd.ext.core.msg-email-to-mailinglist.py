@@ -64,7 +64,7 @@ def handler(doc):
 
     # Retrieve an existing document for the mailing list or create a new one.
     keys = [['rd.core.content', 'key-schema_id',
-             [['mailingList', id], 'rd.mailing-list']]]
+             [['mailing-list', id], 'rd.mailing-list']]]
     result = open_view(keys=keys, reduce=False, include_docs=True)
     # Build a map of the keys we actually got back.
     rows = [r for r in result['rows'] if 'error' not in r]
