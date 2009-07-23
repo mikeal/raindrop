@@ -10,7 +10,9 @@ rd.store = {
   },
 
   put: function(/*Object*/doc, /*Function*/callback, /*Function?*/errback) {
-    //summary: puts a document in the raindrop data store.
+    //summary: puts a document in the raindrop data store. If doc has a _rev
+    //value of "latest", the doc will first be fetched to get the latest _rev,
+    //and use that _rev for the doc update.
     //If successful, callback is called with the doc as the only argument.
     //It will generate the _id and rd_ext_id on the document if it does
     //not exist. Warning: it modifies the doc object.
@@ -31,6 +33,26 @@ rd.store = {
               + "!"
               + doc.rd_schema_id;
     }
+
+    if (doc._rev && doc._rev == "latest") {
+        //If caller indicates that the latest _rev should be used,
+        //fetch it and apply that _rev to the document for updating.
+        dojo.xhrGet({
+          url: rd.dbPath + doc._id,
+          load: function(response, ioArgs) {
+            doc._rev = response._rev;
+            this._put(doc, callback, errback);
+          },
+          error: errback
+        });
+    } else {
+      //Just do the update with the info available now in the doc.
+      this._put(doc, callback, errback);
+    }
+  },
+
+  _put: function(/*Object*/doc, /*Function*/callback, /*Function?*/errback) {
+    //summary: private utility to do the real send.
 
     var docUrl = rd.dbPath + doc._id;
     if (doc._rev) {
