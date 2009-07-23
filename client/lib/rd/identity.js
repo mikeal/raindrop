@@ -99,8 +99,8 @@ dojo.mixin(rd.identity, {
     } else {
       rd.store.megaview({
         reduce: false,
-        startkey: ['rd.identity', 'image'],
-        endkey: ['rd.identity', 'image', {}],
+        startkey: ["rd.identity", "image"],
+        endkey: ["rd.identity", "image", {}],
         success: function(json) {
           // We have all identities with images - now find out which of these
           // identities have sent a message...

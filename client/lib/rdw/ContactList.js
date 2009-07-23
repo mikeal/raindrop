@@ -30,6 +30,23 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
 
   postCreate: function() {
     //summary: dijit lifecycle method.
+    this._subs = [
+      rd.sub("rd-protocol-contacts", dojo.hitch(this, "fetchContacts"))
+    ];
+  },
+
+  fetchContacts: function() {
+    //summary: calls data API to get the list of contacts and
+    //calls update.
+    rd.contact.list(dojo.hitch(this, function(contacts) {
+      this.updateContacts(contacts);
+    }));
+  },
+
+  updateContacts: function(/*Array*/contacts) {
+    //summary: what it says on the tin. updates the display of contacts.
+
+    this.contacts = contacts;
 
     //Sort the contacts.
     //TODO: make this more intelligent.
@@ -94,8 +111,7 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
     }, this);
     
     //Listen to the dnd drop
-    this.dndDropHandle = dojo.subscribe("/dnd/drop", this, "onDndDrop");
-
+    this._subs.push(rd.sub("/dnd/drop", this, "onDndDrop"));
   },
 
   onDndDrop: function(/*Object*/source, /*Array*/droppedNodes, /*Boolean*/copy, /*Object*/target) {
@@ -125,7 +141,11 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
     for (var i = 0, source; source = this.dndSources[i]; i++) {
       source.destroy();
     }
-    dojo.unsubscribe(this.dndDropHandle);
+
+    //unsubscribe.
+    for (var i = 0, sub; sub = this._subs[i]; i++) {
+      rd.unsub(sub);
+    }
 
     this.inherited("destroy", arguments);
   }

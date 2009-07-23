@@ -14,135 +14,37 @@ rd.require("rd.conversation");
 //Main controller for the inflow app. Handles message routing
 //and converting it to UI display.
 
-(function(){
-  var storiesWidget, contactsWidget;
+inflow = {
+  showStories: function() {
+    //summary: shows the Stories widget and hides the ContactList widget.
+    dijit.byId("stories").domNode.style.display = "";
+    dijit.byId("contactList").domNode.style.display = "none";
+    window.scrollTo(0, 0);
+  },
 
-  function clear() {
-    //Makes sure to destroy any current widgets in the mainList
-    if (storiesWidget) {
-      storiesWidget.destroy();
-      storiesWidget = null;
-    }
-    if (contactsWidget) {
-      contactsWidget.destroy();
-      contactsWidget = null;
-    }
-
-    //Scroll to the top of the window.
+  showContacts: function() {
+    //summary: shows the ContactList widget and hides the Stories widget.
+    dijit.byId("stories").domNode.style.display = "none";
+    dijit.byId("contactList").domNode.style.display = "";
     window.scrollTo(0, 0);
   }
+};
 
-  var messageUpdater = null;
-
-  //Handle any request to display conversations.
-  rd.sub("rd-display-conversations", function(conversations, updater, isRefresh) {
-    //any conversation updater is assumed to have an refreshConversations()
-    //function in case the rd.engine.autoSync returns done and we need to refresh
-    //the display.
-    messageUpdater = updater;
-
-    //TODO: if isRefresh is true, just refresh the data, do not wipe out a conversation if
-    //it already exists.
-    clear();
-
-    storiesWidget = new rdw.Stories({
-      conversations: conversations
-    }, dojo.create("div", null, dojo.byId("mainList"), "only"));
-  });
-
-  //Register for rd.engine's auto update complete topic, so we can
-  //refresh the conversations as appropriate.
-  rd.sub("rd-engine-sync-done", function() {
-    if (messageUpdater && messageUpdater.refreshConversations) {
-      messageUpdater.refreshConversations();
-    }
-  });
-
-  //Register to listen for protocol link for Home.
-  rd.sub("rd-protocol-home", function() {
-    rd.conversation.direct(30, function(conversations) {
-      rd.pub("rd-display-conversations", conversations, {
-        refreshConversations: function() {
-          //TODO: this does not pass that the operation
-          //is a refresh, so a bit destructive.
-          rd.pub("rd-protocol-home");
-        }
-      });
-    });
-  });
-
-  //Register to listen for protocol link for Contacts.
-  rd.sub("rd-protocol-contacts", function() {
-    //Set messageUpdater to null so that any sync messages
-    //while viewing contacts does not mess up the contacts.
-    //Although, maybe contacts should also allow for updating?
-    messageUpdater = null;
-    
-    rd.contact.list(function(contacts) {
-      clear();
-
-      contactsWidget = new rdw.ContactList({
-        contacts: contacts
-      }, dojo.create("div", null, dojo.byId("mainList"), "only"));
-    });
-  });
-
-  //Register to listen for protocol link for when a contact is
-  //clicked on, probably from the face wall.
-  rd.sub("rd-protocol-contact", function(/*String*/contactId) {
-    rd.conversation.contact(contactId, function(conversations) {
-      rd.pub("rd-display-conversations", conversations, {
-        refreshConversations: function() {
-          //TODO: this does not pass that the operation
-          //is a refresh, so a bit destructive.
-          rd.pub("rd-protocol-contact", contactId);
-        }
-      });      
-    });
-  });
-
-  //Register to listen for protocol link for Recent Broadcasts.
-  rd.sub("rd-protocol-recent-broadcast-conversations", function() {
-    rd.conversation.broadcast(30, function(conversations) {
-      rd.pub("rd-display-conversations", conversations, {
-        refreshConversations: function() {
-          //TODO: this does not pass that the operation
-          //is a refresh, so a bit destructive.
-          rd.pub("rd-protocol-recent-broadcast-conversations");
-        }
-      });
-    });
-  });
-
-  //Register to listen for protocol link for Mailing list.
-  rd.sub("rd-protocol-mailingList", function(listId) {
-    rd.conversation.mailingList(listId, 30, function(conversations) {
-      rd.pub("rd-display-conversations", conversations, {
-        refreshConversations: function() {
-          //TODO: this does not pass that the operation
-          //is a refresh, so a bit destructive.
-          rd.pub("rd-protocol-mailingList", listId);
-        }
-      });
-    });
-  });
-
-  //Register to listen for protocol link for imap folder locations.
-  rd.sub("rd-protocol-locationTag", function(listId) {
-    //Convert string to array.
-    if (typeof listId == "string") {
-      listId = listId.split(",");
-    }
-    rd.conversation.location(listId, 30, function(conversations) {
-      rd.pub("rd-display-conversations", conversations, {
-        refreshConversations: function() {
-          //TODO: this does not pass that the operation
-          //is a refresh, so a bit destructive.
-          rd.pub("rd-protocol-locationTag", listId);
-        }
-      });
-    });
-  });
+(function(){
+  
+  //Subscribe to topics from organizer that can change the display.
+  rd.sub("rd-protocol-contacts", inflow, "showContacts");
+  var storyTopics = [
+    "rd-display-conversations",
+    "rd-protocol-direct",
+    "rd-protocol-contact",
+    "rd-protocol-broadcast",
+    "rd-protocol-mailingList",
+    "rd-protocol-locationTag"
+  ];
+  for (var i = 0, topic; topic = storyTopics[i]; i++) {
+    rd.sub(topic, inflow, "showStories");
+  }
 
   var extender = null;
   //Open the extender in a new sized window so it does not open
@@ -165,7 +67,7 @@ rd.require("rd.conversation");
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
     //Trigger the "home" action.
-    rd.pub("rd-protocol-home");
+    rd.pub("rd-protocol-direct");
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

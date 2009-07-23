@@ -22,7 +22,7 @@ dojo.declare("rdw.FaceWall", [rdw._Base], {
       //First, get the identityIds for the max count of people we want to show.
       var ids = [];
       for (var i = 0, idtyId; (idtyId = identityIds[i]) && (i < this.count); i++) {
-        ids.push(idtyId);
+        ids.push(idtyId[1]);
       }
 
       rd.contact.byIdentity(ids, dojo.hitch(this, function(contacts) {
