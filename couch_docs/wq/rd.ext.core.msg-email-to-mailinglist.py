@@ -59,7 +59,8 @@ def handler(doc):
         # XXX Should we perhaps leave the name blank here and make the front-end
         # do the deriving of it?  After all, it already does some additional
         # deriving, since it strips the @host.tld portion from this value.
-        id = name = doc['headers']['list-id']
+        id = doc['headers']['list-id']
+        name = ""
 
 
     # Retrieve an existing document for the mailing list or create a new one.
@@ -82,7 +83,9 @@ def handler(doc):
         # to make life easier on the front-end.
         # XXX reflect other list-related headers like (X-)Mailing-List
         # and Archived-At?
-        list = { 'id': id, 'name': name }
+        list = { 'id': id }
+        if name != "":
+            list['name'] = name
         for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
                     'list-unsubscribe']:
             if key in doc['headers']:

@@ -55,6 +55,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
       for (var i = 0, id; id = ids[i]; i++) {
         html += dojo.string.substitute('<li class="mailingList dojoDndItem"><a title="${id}" href="#rd:mailingList:${id}" >${name}</a></li>', {
           id: id,
+          //TODO: use the mailing list doc's "name" property if available.
           name: id.split(".")[0]
         });
       }
