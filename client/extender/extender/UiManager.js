@@ -1,6 +1,6 @@
 dojo.provide("extender.UiManager");
 
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rdw._Base");
 dojo.require("extender.Editor");
 dojo.require("extender.BackEndEditor");
@@ -17,7 +17,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
 
   extTemplate: '<li><a href="#uimanager-ext-${extType}-${source}:${targets}">${source}</a> extends: ${targets}</li>',
 
-  beTemplate: '<li><a href="#uimanager-ext-be-${rd_key.1}:${source_schema}">${rd_key.1}</a> runs after: ${source_schema}. ${info}</li>',
+  beTemplate: '<li><a href="#uimanager-ext-be-${rd_key.1}:${source_schemas}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
@@ -27,7 +27,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
     //summary: called by extender.Wizard when this instance is the current
     //panel activated in the display.
 
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       keys: [
         ["rd.core.content", "schema_id", "rd.ext.ui"],
         ["rd.core.content", "schema_id", "rd.ext.uiext"],

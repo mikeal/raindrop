@@ -1,7 +1,6 @@
 dojo.provide("rd.identity");
 
 dojo.require("dojo.io.script");
-dojo.require("couch");
 dojo.require("rd._api");
 dojo.require("rd.store");
 
@@ -98,7 +97,7 @@ dojo.mixin(rd.identity, {
     if (this._byImage) {
       callback(this._byImage);
     } else {
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      rd.store.megaview({
         reduce: false,
         startkey: ['rd.identity', 'image'],
         endkey: ['rd.identity', 'image', {}],
@@ -111,7 +110,7 @@ dojo.mixin(rd.identity, {
             // rd_key is ['identity', identity_id]
             keys.push(["rd.msg.body", "from", rd_key[1]]);
           }
-          couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+          rd.store.megaview({
             keys: keys,
             group: true,
             success: dojo.hitch(this, function(json) {
@@ -178,7 +177,7 @@ dojo.mixin(rd.identity, {
     //summary: pulls in all the identities, since we need them anyway to do
     //things like mark a message a from a known user. This may change if we
     //modify the backend to do more work.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       key: ["rd.core.content", "schema_id", "rd.identity"],
       reduce: false,
       include_docs: true,
@@ -222,8 +221,7 @@ dojo.mixin(rd.identity, {
       // Fix up the image URL; a leading '/' means it is a URL in our
       // couch DB.
       if (idty.image[0]=="/") {
-        // all this hard-coding of the DB name can't be good...
-        idty.image = "/raindrop" + idty.image;
+        idty.image = rd.dbPath + idty.image.substring(1, idty.image.length);
       }
     }
   },

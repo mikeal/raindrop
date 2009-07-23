@@ -1,6 +1,6 @@
 dojo.provide("rd.message");
 
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rd._api");
 dojo.require("rd.identity");
 
@@ -22,7 +22,7 @@ rd.message = rd._api._protectFunc(function(/*String|Array*/ids, /*Function*/call
     keys.push(['rd.core.content', 'key', id]);
   }
 
-  couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+  rd.store.megaview({
     keys: keys,
     include_docs: true,
     reduce: false,

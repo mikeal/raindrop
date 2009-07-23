@@ -1,7 +1,7 @@
 dojo.provide("extender.Editor");
 
 dojo.require("rdw._Base");
-dojo.require("couch");
+dojo.require("rd.store");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
@@ -131,7 +131,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
             }
 
             //Extension file updated, now update the manifest
-            var manifestUrl = "/raindrop/" + this.moduleManifest._id;
+            var manifestUrl = rd.dbPath + this.moduleManifest._id;
             if (this.moduleManifest._rev) {
               manifestUrl += "?rev=" + this.moduleManifest._rev;
             }
@@ -165,7 +165,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //summary: handles action to delete an extension.
     if (confirm("Delete this extension: " + this.moduleName + "?")) {
       //Delete the manifest document.
-      var manifestUrl = "/raindrop/" + this.moduleManifest._id;
+      var manifestUrl = rd.dbPath + this.moduleManifest._id;
       dojo.xhrGet({
         url: manifestUrl,
         handleAs: "json",
@@ -240,7 +240,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
   fetchManifest: function() {
     //summary: fetches the manifest for this extension. If no manifest exists,
     //create one for it.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       key: ["rd.core.content", "key", ["ext", this.moduleName]],
       include_docs: true,
       reduce: false,
@@ -279,14 +279,14 @@ dojo.declare("extender.Editor", [rdw._Base], {
   },
   
   updateConfigJs: function(/*String*/command) {
-    //summary: updates the config.js file with a change to the extension data.
+    //summary: updates the rdconfig.js file with a change to the extension data.
     //command can be "delete" or "save".
 
-    //Get the config.js text.
+    //Get the rdconfig.js text.
     dojo.xhrGet({
-      url: "/raindrop/lib/config.js",
+      url: rd.dbPath + "lib/rdconfig.js",
       load: dojo.hitch(this, function(configText, ioArgs) {
-        //Do the config.js mangling.
+        //Do the rdconfig.js mangling.
         var empty = {};
         for (var i = 0, targetName; targetName = this.targetNames[i]; i++) {
           var regExp = new RegExp('(,)?\\s*{\\s*["\']' + targetName + '["\']\\s*:\\s*["\']' + this.moduleName + '["\']\\s*}');
@@ -310,14 +310,14 @@ dojo.declare("extender.Editor", [rdw._Base], {
                         .replace(/exts\s*:\s*\[\s*,/, "exts: [");
         }
 
-        //Get the couch doc holding the config.js attachment, to get its version number.
+        //Get the couch doc holding the rdconfig.js attachment, to get its version number.
         dojo.xhrGet({
-          url: "/raindrop/lib",
+          url: rd.dbPath + "lib",
           handleAs: "json",
           load: dojo.hitch(this, function(response, ioArgs) {
             var _rev = response._rev;
             dojo.xhrPut({
-              url: "/raindrop/lib/config.js?rev=" + _rev,
+              url: rd.dbPath + "lib/rdconfig.js?rev=" + _rev,
               headers: {
                 "Content-Type": "application/javascript"
               },

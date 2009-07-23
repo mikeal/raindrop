@@ -1,23 +1,38 @@
 ;(function(){
   //Find raindrop location
   var scripts = document.getElementsByTagName("script");
-  var i = scripts.length - 1;
   var prefix = "";
-  while(i > -1){
+  for (var i = scripts.length - 1, scp; (i > -1) && (scp = scripts[i]); i--){
     var src = scripts[i].src;
-    if(src && src.indexOf("/raindrop/lib/config") != -1){
-      prefix = src.split("/").slice(0, 3).join("/") + "/raindrop/lib";
+    var index = src && src.indexOf("/rdconfig.js");
+    if(index && index != -1){
+      prefix = src.substring(0, index);
+      //Determine DB path
+      var dbPath = scp.getAttribute("data-dbpath");
+      if( !dbPath) {
+        //Figure a default DB based on url for rdconfig.
+        dbPath = src.split("/").slice(0, 4).join("/");
+      }
+      //Make sure dbPath ends in an end slash.
+      if (dbPath.charAt(dbPath.length - 1) != "/") {
+        dbPath += "/";
+      }
+
+      //Check for app name, passed via rdconfig.js tag
+      var app = scp.getAttribute("data-app") || "";
     }
     i--;
   }
 
+  //Determine DB path
+  
   var dojoPrefix = prefix.replace(/\/lib$/, "/dojo");
 
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.
     require: ["rd", "couch", "dojo.parser"],
     parseOnLoad: true,
-    //base is just bogus, just want paths to resolve to local html directory
+    //The "base" value is just bogus, just want paths to resolve to local html directory
     //for app-specific files.
     baseUrl: "./base/",
     couchUrl: prefix.split("/", 3).join("/"),
@@ -44,11 +59,15 @@
       ["dojox", "rdx"]
     ]
   };
-  
+
+  djConfig.rd.dbPath = dbPath;
+
+  djConfig.rd.app = app;
+
   //If using API stubs, then adjust couch path.
   var query = location.search;
   if (query && query.indexOf("apistub=1") != -1) {
-    djConfig.couchUrl += "/raindrop/apistub";
+    djConfig.couchUrl += rd.dbPath + "apistub";
     djConfig.useApiStub = true;
   }
   

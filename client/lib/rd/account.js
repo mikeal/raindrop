@@ -1,6 +1,6 @@
 dojo.provide("rd.account");
 
-dojo.require("couch");
+dojo.require("rd.store");
 dojo.require("rd._api");
 
 //Derives from rd._api
@@ -20,7 +20,7 @@ dojo.mixin(rd.account, {
 
   _load: function() {
     //summary: rd._api trigger for loading api data.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       key: ["rd.core.content", "schema_id", "rd.account"],
       reduce: false,
       include_docs: true,

@@ -1,11 +1,11 @@
 dojo.provide("rd.ext");
 
-dojo.require("couch");
+dojo.require("rd.store");
 
 rd.ext = {
   getUIExtension: function(/*Function*/callback, /*Function*/errback) {
     //summary: gets all UI extensions as couch documents.
-    couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+    rd.store.megaview({
       reduce: false,
       startkey: ['rd.identity', 'image'],
       endkey: ['rd.identity', 'image', {}],

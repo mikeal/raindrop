@@ -25,11 +25,11 @@
       text-decoration: underline;
     }
   </style>
-  <script src="http://127.0.0.1:5984/raindrop/lib/config.js" charset="utf-8"></script>
+  <script data-app="rd_list" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
   <script type="text/javascript" charset="utf-8">
+    dojo.require("rd.store");
     rd.addOnLoad(function(){
-      //http://127.0.0.1:5984/raindrop/_design/raindrop!apps!all/_view/all?limit=11
-      couch.db("raindrop").view("raindrop!content!all/_view/megaview", {
+      rd.store.megaview({
         key: ['rd.core.content', 'ext_id-schema_id', ["rd.core","rd.ext.ui"]],
         include_docs: true,
         reduce : false,
@@ -50,7 +50,7 @@
 </head>
 
 <body>
-  <h1 class="topheader"><a href="/raindrop/rd_list/index.html">raindrop</a></h1>
+  <h1 class="topheader"><a href="../rd_list/index.html">raindrop</a></h1>
   <ul></ul>
 </body>
 </html>
