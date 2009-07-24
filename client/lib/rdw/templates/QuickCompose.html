@@ -6,8 +6,18 @@
       <span dojoAttachPoint="addressNode" class="medium you"></span>
     </div>
     <form dojoAttachEvent="onsubmit: onSubmit">
-      <div class="to" dojoAttachPoint="toNode">To: <input type="text" class="toInput" dojoAttachPoint="toInputNode"></div>
-      <div class="subject" dojoAttachPoint="subjectNode">Subject: <input type="text" class="subjectInput" dojoAttachPoint="subjectInputNode"></div>
+      <div style="display:table;width:100%;">
+      <div class="to" dojoAttachPoint="toNode">
+        <label for="to">To:</label>
+        <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
+        <div class="new-window">&nbsp;</div>
+      </div>
+      <div class="subject" dojoAttachPoint="subjectNode">
+        <label for="subject">Subject:</label>
+        <div class="input"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
+        <div class="character-count">&nbsp;</div>
+      </div>
+      </div>
       <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textAreaNode"></textarea>
       <input type="submit" value="${sendButtonText}"/>
     </form>
