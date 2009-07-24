@@ -1,6 +1,7 @@
 dojo.provide("rdw.Summary");
 
 dojo.require("rdw._Base");
+dojo.require("rd.mailingList");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
   widgetsInTemplate: true,
@@ -97,7 +98,9 @@ dojo.declare("rdw.Summary", [rdw._Base], {
 
   mailingList: function(/*String*/listId) {
     //summary: responds to rd-protocol-mailingList topic.
-    rd.escapeHtml("Mailing List shown: " + listId, this.domNode);
+    rd.mailingList.get(listId, dojo.hitch(this, function(list) {
+      rd.escapeHtml("Mailing List shown: " + list.id, this.domNode);
+    }));
   },
 
   locationTag: function(/*String*/locationId) {
