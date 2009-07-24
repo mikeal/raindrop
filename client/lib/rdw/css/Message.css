@@ -7,6 +7,7 @@
 .Message div.photo {
   position: absolute;
   left: 0px;
+  top: 2px;
   width: 50px;
   height: 50px;
   vertical-align: top;
@@ -73,6 +74,10 @@
   border: 1px solid transparent;
 }
 
+.Message .header .from {
+  vertical-align: top;
+}
+
 .Message .from {
   text-decoration: none;
   font-weight: bold;
@@ -81,6 +86,7 @@
 }
 
 .Message .medium {
+  vertical-align: middle;
   font-size: x-small;
   font-family: Lucida Console, Monaco, monospace;
   color: #888;
@@ -135,8 +141,6 @@
 /* "reply" type of messages */
 .Message.reply {
   position: relative;
-  padding: 2px;
-  margin-bottom: 1ex;
   margin-left: 48px;
   /* border hack because we can't use padding here w/ the abs photo */
   border-left: 1em solid transparent;
@@ -150,6 +154,7 @@
   width: 38px;
   height: 38px;
   left: 2px;
+  top: 4px;
 }
 
 .Message.reply div.photo img.photo {
