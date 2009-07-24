@@ -1,11 +1,5 @@
 .Organizer {
   position: relative;
-  border: 1px solid gray;
-}
-
-.Organizer:hover {
-  border-color: #44617E;
-  -moz-border-radius: 3px;
 }
 
 .Organizer ol {
@@ -19,13 +13,12 @@
 }
 
 .Organizer ol > li:hover {
-  background-color: #f9f9f9;
 }
 
 .Organizer ol > li > a {
   text-decoration: none;
   background-color: transparent;
-  color: #44617E;
+  color: #496c7a;
 }
 
 .Organizer ol > li > a[href*=home] {
@@ -41,4 +34,37 @@
 .Organizer ol > li.locationTag > a {
   font-size: small;
   color: blue;
+}
+
+.Organizer > .dijitTitlePane {
+  position: relative;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneTitle {
+  background: none;
+  border: none;
+  color: #999;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneTitle.dijitOpen .dijitArrowNode {
+  background-position: -49px 0;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneTitle.dijitClosed .dijitArrowNode {
+  background-position: -28px 0;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneTitle > .dijitArrowNode {
+  position: absolute;
+  right: 1em;
+  top: 10px;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneContentOuter {
+  background: none;
+  border: none;
+}
+
+.Organizer > .dijitTitlePane > .dijitTitlePaneContentOuter .dijitTitlePaneContentInner {
+  padding: 0 0 0 0.5em;
 }
