@@ -17,28 +17,28 @@
   background-color: #bbbbbb;
 }
 
-.Message .close {
+.Message .process {
   position: absolute;
   right: 0px;
-  text-decoration: none;
   font-size: x-small;
-  font-weight: bold;
   visibility: hidden;
-  padding: 0.3ex 0.5ex;
-  border: 2px outset threedlightshadow;
-  -moz-border-radius: 0.5ex;
-  color: GrayText;
   opacity: 0.5;
 }
 
-.Message:hover .close {
+.Message:hover .process {
   visibility: visible;
 }
 
-.Message .close:hover {
+.Message .process:hover {
   border-color: #44617E;
   color: #44617E;
   opacity: 1.0;
+}
+
+.Message .process a {
+  text-decoration: none;
+  font-weight: bold;
+  color: #5b5b5b;
 }
 
 .Message .tools {
@@ -77,13 +77,13 @@
   text-decoration: none;
   font-weight: bold;
   font-family: Arial Black, Gadget, sans-serif;
-  color: #44617E;
+  color: #222;
 }
 
 .Message .medium {
   font-size: x-small;
   font-family: Lucida Console, Monaco, monospace;
-  color: #617B95;
+  color: #888;
 }
 
 .Message .subject {
@@ -102,7 +102,7 @@
   font-family: Verdana, Verdana, Geneva, sans-serif;
   line-height: 1.3em;
   color: #333;
-  margin-bottom: 0.5ex;
+  margin: 0.5ex 0px;
 }
 
 .Message > .message > .content > a {
@@ -116,11 +116,16 @@
 
 .Message > .message > .timestamp > span {
   text-transform: lowercase;
-  color: GrayText;
+  color: #5d5d5d;
 }
 
 .Message > .message > .timestamp > .additional {
   font-style: italic;
+  color: #9d9d9d;
+}
+
+.Message > .message > .timestamp:hover > .additional {
+  color: #5d5d5d;
 }
 
 .Message > .message > .timestamp > .additional:before {
@@ -132,35 +137,36 @@
   position: relative;
   padding: 2px;
   margin-bottom: 1ex;
-  margin-left: 22px;
-  background-color: #f8f8f8;
+  margin-left: 48px;
+  /* border hack because we can't use padding here w/ the abs photo */
+  border-left: 1em solid transparent;
 }
 
-.Message.reply > .close {
+.Message.reply > .process {
   display: none;
 }
 
 .Message.reply div.photo {
-  width: 26px;
-  height: 26px;
+  width: 38px;
+  height: 38px;
   left: 2px;
 }
 
 .Message.reply div.photo img.photo {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
 }
 
 .Message.reply .message {
-  margin-left: 26px;
+  margin-left: 36px;
 }
 
-.Message.reply .message .meta {
+.Message.reply .message .header .from {
   font-size: small;
 }
 
-.Message.reply .message .meta .medium {
-  font-size: x-small;
+.Message.reply .message .content {
+  margin: 0px;
 }
 
 .Message.reply .message .content .subject {
