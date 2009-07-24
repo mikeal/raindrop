@@ -515,54 +515,80 @@ def check_accounts(whateva, config=None):
 
 
 # Functions working with design documents holding views.
+@defer.inlineCallbacks
 def install_views(whateva, options):
     def _doc_not_found(failure):
         return None
 
-    def _got_existing_docs(results, docs):
-        put_docs = []
-        for (whateva, existing), doc in zip(results, docs):
-            if existing:
-                assert existing['_id']==doc['_id']
-                assert '_rev' not in doc
-                if not options.force and \
-                   doc['rd_fingerprints'] == existing.get('rd_fingerprints'):
-                    logger.debug("design doc %r hasn't changed - skipping",
-                                 doc['_id'])
-                    continue
-                existing.update(doc)
-                doc = existing
-            logger.info("design doc %r has changed - updating", doc['_id'])
-            put_docs.append(doc)
-        return get_db().updateDocuments(put_docs)
-    
+    db = get_db()
     schema_src = os.path.abspath(os.path.join(os.path.dirname(__file__),
                                               "../../../schema"))
 
-    docs = [d for d in generate_view_docs_from_filesystem(schema_src)]
+    # first see if we have erlang available...
+    extra_langs = []
+    config = yield db.get('/_config/native_query_servers')
+    if 'erlang' in config:
+        extra_langs = [('.erl', 'erlang')]
+    else:
+        # js is slower, so warn about that..
+        logger.warn("This couch server is not configured for erlang view servers")
+
+    docs = [d for d in generate_view_docs_from_filesystem(schema_src, extra_langs)]
     logger.debug("Found %d documents in '%s'", len(docs), schema_src)
     assert docs, 'surely I have *some* docs!'
     # ack - I need to open existing docs first to get the '_rev' property.
     dl = []
     for doc in docs:
-        deferred = get_db().openDoc(doc['_id']).addErrback(_doc_not_found)
+        deferred = db.openDoc(doc['_id']).addErrback(_doc_not_found)
         dl.append(deferred)
 
-    return defer.DeferredList(dl
-                ).addCallback(_got_existing_docs, docs)
+    results = yield defer.DeferredList(dl)
+
+    put_docs = []
+    for (whateva, existing), doc in zip(results, docs):
+        if existing:
+            assert existing['_id']==doc['_id']
+            assert '_rev' not in doc
+            if not options.force and \
+               doc['rd_fingerprints'] == existing.get('rd_fingerprints'):
+                logger.debug("design doc %r hasn't changed - skipping",
+                             doc['_id'])
+                continue
+            existing.update(doc)
+            doc = existing
+        logger.info("design doc %r has changed - updating", doc['_id'])
+        put_docs.append(doc)
+    if put_docs:
+        _ = yield get_db().updateDocuments(put_docs)
+        # and update the views immediately...
+        _ = yield get_doc_model()._update_important_views()
 
 
-def _build_views_doc_from_directory(ddir):
+def _build_views_doc_from_directory(ddir, extra_langs = []):
     # all we look for is the views.
     ret = {}
     fprinter = Fingerprinter()
     ret_views = ret['views'] = {}
     # The '-map.js' file is the 'trigger' for creating a view...
-    tail = "-map.js"
-    rtail = "-reduce.js"
+    langs = extra_langs + [(".js", "javascript")]
+    this_ext = this_lang = None
+    mtail = "-map"
+    rtail = "-reduce"
     files = os.listdir(ddir)
     for f in files:
         fqf = os.path.join(ddir, f)
+        # If we haven't determined the language for this doc yet...
+        if this_ext is None:
+            for ext, lang in langs:
+                if f.endswith(mtail + ext):
+                    this_ext = ext
+                    this_lang = lang
+                    logger.debug("View in %r is using language %r", ddir, lang)
+                    break
+        if this_ext is None:
+            continue
+
+        tail = mtail + this_ext
         if f.endswith(tail):
             view_name = f[:-len(tail)]
             try:
@@ -573,7 +599,7 @@ def _build_views_doc_from_directory(ddir):
             except (OSError, IOError):
                 logger.warning("can't open map file %r - skipping this view", fqf)
                 continue
-            fqr = os.path.join(ddir, view_name + rtail)
+            fqr = os.path.join(ddir, view_name + rtail + this_ext)
             try:
                 with open(fqr) as f:
                     data = f.read()
@@ -585,17 +611,18 @@ def _build_views_doc_from_directory(ddir):
                              fqr, view_name)
         else:
             # avoid noise...
-            if not f.endswith(rtail) and not f.startswith("."):
+            if not f.endswith(rtail + this_ext) and not f.startswith("."):
                 logger.info("skipping non-map/reduce file %r", fqf)
 
     ret['rd_fingerprints'] = fprinter.get_prints()
+    ret['language'] = this_lang
     logger.debug("Document in directory %r has views %s", ddir, ret_views.keys())
     if not ret_views:
         logger.warning("Document in directory %r appears to have no views", ddir)
     return ret
 
 
-def generate_view_docs_from_filesystem(root):
+def generate_view_docs_from_filesystem(root, extra_langs=[]):
     # We use the same file-system layout as 'CouchRest' does:
     # http://jchrisa.net/drl/_design/sofa/_show/post/release__couchrest_0_9_0
     # note however that we don't create a design documents in exactly the same
@@ -621,7 +648,7 @@ def generate_view_docs_from_filesystem(root):
                 logger.info("skipping document non-directory: %s", fq_doc)
                 continue
             # have doc - build a dict from its dir.
-            doc = _build_views_doc_from_directory(fq_doc)
+            doc = _build_views_doc_from_directory(fq_doc, extra_langs)
             # XXX - note the artificial 'raindrop' prefix - the intent here
             # is that we need some way to determine which design documents we
             # own, and which are owned by extensions...
