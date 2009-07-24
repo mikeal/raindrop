@@ -4,7 +4,7 @@
   broadcast: "Broadcasts",
   closeIcon: "X",
   contacts: "Contacts",
-  direct: "To Me",
+  direct: "Direct Messages",
   forward: "forward",
   forwardSubjectPrefix: "Fwd: ",
   home: "Home",
