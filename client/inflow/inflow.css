@@ -12,6 +12,10 @@
   font:100%/normal verdana,geneva,sans-serif;
 }
 
+body {
+  margin: 0px;
+}
+
 .rdwLoading {
   position: absolute;
   top: 1ex;
@@ -20,41 +24,20 @@
 
 #content {
   position: relative;
+  display: table;
   min-width: 25em;
-  max-width: 50em;
+  max-width: 55em;
 }
 
 #column1 {
-  max-width: 40em;
-  min-width: 10em;
+  display: table-cell;
+  width: 40em;
 }
 
 #column2 {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 10em;
+  display: table-cell;
+  width: 15em;
   min-height: 40ex;
-}
-
-/* Specific style overrides for this app */
-
-.Search,
-.Organizer,
-.FaceWall {
-  margin: 1.6ex 0.5em;
-  opacity: 0.3;
-}
-
-.Search:hover,
-.searchInputFocused,
-.Organizer:hover,
-.FaceWall:hover {
-  opacity: 1.0;
-}
-
-.Search:hover > form > input,
-.searchInputFocused > form > input {
-  border-color: #44617E;
-  -moz-border-radius: 3px;
+  background-color: #E8E8E8;
+  border-left: 2px solid #D8D8D8;
 }
