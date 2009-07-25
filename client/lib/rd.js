@@ -226,32 +226,39 @@ dojo._listener.getDispatcher = function(){
       return false;
     },
   
-    onDocClick: function(evt) {
+    onDocClick: function(/*Event||String*/evt) {
       //summary: Handles doc clicks to see if we need to
-      //use rd.pub to send out a protocol- topic.
-      var node = evt.target;
-      var href = node.href;
-      
-      if (!href && node.nodeName.toLowerCase() == "img") {
+      //use rd.pub to send out a protocol- topic. Also accepts a string
+      //that should be used as a fragment ID for the current URL. String
+      //should include starting # sign
+
+      if (typeof evt == "string") {
+	var node = null;
+	var href = evt;
+	location.href = href;
+      } else {
+	node = evt.target;
+	href = node.href;
+      }
+
+      if (!href && node && node.nodeName.toLowerCase() == "img") {
         //Small cheat to handle images that are hyperlinked.
         //May need to revisit this for the long term.
         href = node.parentNode.href;
       }
   
       if (href) {
-        href = href.split("#")[1];
-        if (href && href.indexOf("rd:") == 0) {
+        target = href.split("#")[1];
+        if (target && target.indexOf("rd:") == 0) {
           //Have a valid rd: protocol link.
-          href = href.split(":");
-          var proto = href[1];
+          target = target.split(":");
+          var proto = target[1];
   
           //Strip off rd: and protocol: for the final
           //value to pass to protocol handler.
-          href.splice(0, 2);
-          var value = href.join(":");
-          
-          dojo.stopEvent(evt);
-  
+          target.splice(0, 2);
+          var value = target.join(":");
+
           rd.pub("rd-protocol-" + proto, value);
         }
       }

@@ -38,6 +38,8 @@ body {
   display: table-cell;
   width: 15em;
   min-height: 40ex;
+  padding-top: 1ex;
   background-color: #E8E8E8;
   border-left: 2px solid #D8D8D8;
+  vertical-align: top;
 }

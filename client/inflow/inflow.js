@@ -67,8 +67,13 @@ inflow = {
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
-    //Trigger the "home" action.
-    rd.pub("rd-protocol-home");
+    //Trigger the first list of items to show. Favor a fragment ID on the URL.
+    var fragId = location.href.split("#")[1];
+    if (fragId) {
+      rd.onDocClick("#" + fragId);
+    } else {
+      rd.pub("rd-protocol-home");
+    }
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

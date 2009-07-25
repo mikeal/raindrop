@@ -14,7 +14,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   fromSelector: "dijit.form.FilteringSelect",
 
   //The widget to use for person selector for the To value.
-  toSelector: "rdw.PersonSelector",
+  toSelector: "rdw.DataSelector",
 
   blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
 
