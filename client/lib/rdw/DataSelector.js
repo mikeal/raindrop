@@ -54,7 +54,6 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     //ask each type for a Deferred object.
     var dfds = [];
     for (var i = 0, src; src = sources[i]; i++) {
-      console.log("Calling: " + src + "Deferred");
       dfds.push(this[src + "Deferred"]());
     }
 

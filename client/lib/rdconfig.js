@@ -19,7 +19,7 @@
       }
 
       //Check for app name, passed via rdconfig.js tag
-      var app = scp.getAttribute("data-app") || "";
+      var appName = scp.getAttribute("data-appname") || "";
     }
     i--;
   }
@@ -62,7 +62,7 @@
 
   djConfig.rd.dbPath = dbPath;
 
-  djConfig.rd.app = app;
+  djConfig.rd.appName = appName;
 
   //If using API stubs, then adjust couch path.
   var query = location.search;
