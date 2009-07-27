@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schema" : "rd.msg.email",
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates 'rd.msg.conversation' schemas for Delivery Status Notifications..."
+    }
+  }
+}
