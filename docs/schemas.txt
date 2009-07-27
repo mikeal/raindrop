@@ -139,6 +139,10 @@ id: the ID of the mailing list, as specified by the list itself; not guaranteed
     with the same IDs being treated as the same list
 name: the name of the list, if it provides one; otherwise the front-end derives
       a name from the ID
+status: the status of the user's subscription to the list; can be one of
+        the following values:
+          subscribed: the user is subscribed to the mailing list
+          (more values to follow as we implement subscription management)
 post: the value of the list-post header
 archive: the value of the list-archive header
 help: the value of the list-help header

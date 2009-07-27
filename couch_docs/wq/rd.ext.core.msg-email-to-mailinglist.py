@@ -73,7 +73,12 @@ def handler(doc):
     if rows:
         logger.debug("FOUND LIST %s for message %s", id, msg_id)
         assert 'doc' in rows[0], rows
-        # XXX Update the list info if it has changed.
+        # TODO update the list info if it has changed, including its status
+        # (i.e. subscribed), but only if the message we are currently processing
+        # is newer than the message from which we derived the list info
+        # we currently have in the datastore (newer messages are considered
+        # more authoritative, but we can't assume that we're processing messages
+        # in chronological order).
     else:
         logger.debug("CREATING LIST %s for message %s", id, msg_id)
     
@@ -82,7 +87,7 @@ def handler(doc):
         # to make life easier on the front-end.
         # XXX reflect other list-related headers like (X-)Mailing-List
         # and Archived-At?
-        list = { 'id': id }
+        list = { 'id': id, 'status': 'subscribed' }
         if name != "":
             list['name'] = name
         for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
