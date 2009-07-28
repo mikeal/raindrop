@@ -24,7 +24,7 @@ def failed_recipient(doc):
     #  1. We could look through the address book for similar identities
     #  2. In the UI we could offer a message "You tried to email X but the address appears incorrect"
     # XXX however currently we do nothing with it
-    failed_recipient = doc['headers'].get('x-failed-recipients')
+    failed_recipient = doc['headers']['x-failed-recipients'][0]
     logger.debug("found DSN failed recipient message intended for %s", failed_recipient)
 
     body = open_schema_attachment(doc, 'body')
