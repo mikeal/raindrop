@@ -101,16 +101,19 @@ def doc_from_bytes(docid, b):
     headers = doc['headers'] = {}
     # Given we have no opportunity to introduce an object which can ignore
     # the case of headers, we lowercase the keys
-    for hn, hv in msg.items():
-        headers[hn.lower()] = _safe_convert_header(hv)
-        # email.utils.unquote will do bad things to references headers (stripping
-        # initial and trailing <>'s, so we don't want to use it for the
-        # references header-- but other fields seem ok.  We split the references
-        # into a list here because why not.
-        if hn.lower() == 'references':
-            headers[hn.lower()] = extract_message_ids(hv)
-        else:
-            headers[hn.lower()] = unquote(headers[hn.lower()])
+    for hn in msg.keys():
+        vals = msg.get_all(hn)
+        if vals:
+            # first do any charset etc conversion...
+            vals = [_safe_convert_header(v) for v in vals]
+            if hn.lower() == 'references':
+                # email.utils.unquote will do bad things to references headers (stripping
+                # initial and trailing <>'s, so we don't want to use it for the
+                # references header-- but other fields seem ok.  We split the references
+                # into a list here because why not.
+                headers[hn.lower()] = [extract_message_ids(vals[0])]
+            else:
+                headers[hn.lower()] = [unquote(v) for v in vals]
 
     # XXX - technically msg objects are recursive; handling that requires
     # more thought.  For now, assume they are flat.

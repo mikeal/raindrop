@@ -1,6 +1,9 @@
 # Creates 'rd.msg.conversation' schemas for emails...
 def handler(doc):
-    headers = doc['headers']
+    # a 'rfc822' stores 'headers' as a dict, with each entry being a list.
+    # We only care about headers which rfc5322 must appear 0 or 1 times, so
+    # flatten the header values here...
+    headers = dict((k, v[0]) for (k, v) in doc['headers'].iteritems())
     self_header_message_id = headers.get('message-id')
     if not self_header_message_id:
         logger.warn("doc %r has no message id!", doc['_id'])

@@ -41,25 +41,26 @@ def handler(doc):
     logger.debug("list-* headers: %s",
                  [h for h in doc['headers'].keys() if h.startswith('list-')])
 
+    list_id = doc['headers']['list-id'][0]
+    msg_id = doc['headers']['message-id'][0]
 
     # Extract the ID and name of the mailing list from the message headers.
     # Note: I haven't actually seen a list-id value that includes the name
     # of the list, but this regexp was in the old JavaScript code for extracting
     # mailing list meta-data, so we do it here too.
-    match = re.search('([\W\w]*)\s*<(.+)>.*', doc['headers']['list-id'])
+    match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
     if (match):
         logger.debug("complex list-id header with name '%s' and ID '%s'",
               match.group(1), match.group(2))
         id = match.group(2)
         name = match.group(1)
     else:
-        logger.debug("simple list-id header with ID '%s'",
-                     doc['headers']['list-id'])
+        logger.debug("simple list-id header with ID '%s'", list_id)
         # In the absence of an explicit name, use the ID as the name.
         # XXX Should we perhaps leave the name blank here and make the front-end
         # do the deriving of it?  After all, it already does some additional
         # deriving, since it strips the @host.tld portion from this value.
-        id = doc['headers']['list-id']
+        id = list_id
         name = ""
 
 
@@ -70,13 +71,11 @@ def handler(doc):
     # Build a map of the keys we actually got back.
     rows = [r for r in result['rows'] if 'error' not in r]
     if rows:
-        logger.debug("FOUND LIST %s for message %s",
-                     id, doc['headers']['message-id'])
+        logger.debug("FOUND LIST %s for message %s", id, msg_id)
         assert 'doc' in rows[0], rows
         # XXX Update the list info if it has changed.
     else:
-        logger.debug("CREATING LIST %s for message %s",
-                     id, doc['headers']['message-id'])
+        logger.debug("CREATING LIST %s for message %s", id, msg_id)
     
         # For now just reflect the literal values of the various headers
         # into the doc; eventually we'll want to do some processing of them
@@ -89,13 +88,13 @@ def handler(doc):
         for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
                     'list-unsubscribe']:
             if key in doc['headers']:
-                logger.debug("setting %s to %s", key[5:], doc['headers'][key])
-                list[key[5:]] = doc['headers'][key]
+                val = doc['headers'][key][0]
+                logger.debug("setting %s to %s", key[5:], val)
+                list[key[5:]] = val
 
         emit_schema('rd.mailing-list', list, rd_key=["mailing-list", id])
 
 
     # Link to the message to its mailing list.
-    logger.debug("linking message %s to its mailing list %s",
-                 doc['headers']['message-id'], id)
+    logger.debug("linking message %s to its mailing list %s", msg_id, id)
     emit_schema('rd.msg.email.mailing-list', { 'list_id': id })
