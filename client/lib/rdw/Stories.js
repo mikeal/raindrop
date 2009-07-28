@@ -81,6 +81,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //cycle. Could cause too much memory churn in the browser.
 
     this.conversations = conversations;
+    // XXX updateConversations only gets called by a topic handler, which only
+    // get called by the anonymous functions created in _sub, which all call
+    // destroyStoryWidgets themselves before calling the topic handlers,
+    // so isn't this destroyStoryWidgets call redundant?
     this.destroyStoryWidgets();
 
     //Create new widgets.

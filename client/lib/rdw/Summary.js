@@ -1,7 +1,7 @@
 dojo.provide("rdw.Summary");
 
 dojo.require("rdw._Base");
-dojo.require("rd.mailingList");
+dojo.require("rdw.MailingList");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
   widgetsInTemplate: true,
@@ -58,10 +58,21 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     this.inherited("destroy", arguments);
   },
 
+  destroySupportingWidgets: function() {
+    //summary: removes the supporting widgets
+    if (this._supportingWidgets.length) {
+      var supporting;
+      while((supporting = this._supportingWidgets.shift())) {
+        supporting.destroy();
+      }
+    }
+  },
+
   _sub: function(/*String*/topicName, /*String*/funcName) {
     //summary: subscribes to the topicName and dispatches to funcName,
     //saving off the info in case a refresh is needed.
     this._subs.push(rd.sub(topicName, dojo.hitch(this, function() {
+      this.destroySupportingWidgets();
       this.clear();
       this[funcName].apply(this, arguments);
     })));
@@ -95,9 +106,10 @@ dojo.declare("rdw.Summary", [rdw._Base], {
 
   mailingList: function(/*String*/listId) {
     //summary: responds to rd-protocol-mailingList topic.
-    rd.mailingList.get(listId, dojo.hitch(this, function(list) {
-      rd.escapeHtml("Mailing List shown: " + list.id, this.domNode);
-    }));
+    this._supportingWidgets.push(
+      new rdw.MailingList({ id: listId },
+      dojo.create("div", null, this.domNode))
+    );
   },
 
   locationTag: function(/*String*/locationId) {
