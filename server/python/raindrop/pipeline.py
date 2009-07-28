@@ -159,12 +159,9 @@ class Pipeline(object):
                                 endkey=['rd.core.content', 'source', {}],
                                 reduce=False)
 
-        docs = []
-        to_del = [(row['id'], row['value']['_rev']) for row in result['rows']]
-        for id, rev in to_del:
-            docs.append({'_id': id, '_rev': rev, '_deleted': True})
-        logger.info('deleting %d messages', len(docs))
-        _ = yield self.doc_model.db.updateDocuments(docs)
+        to_del = [{'_id': row['id'], '_rev': row['value']['_rev']} for row in result['rows']]
+        logger.info('deleting %d messages', to_del)
+        _ = yield self.doc_model.delete_documents(to_del)
 
         # and rebuild our views
         logger.info("rebuilding all views...")
@@ -262,6 +259,9 @@ class Pipeline(object):
         # This is easy - just look for rd.core.error records and re-process
         # them - the rd.core.error record will be auto-deleted as we
         # re-process
+        # It does have the bad side-effect of re-running all extensions which
+        # also ran against the source of the error - that can be fixed, but
+        # later...
         key = ["rd.core.content", "schema_id", "rd.core.error"]
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
@@ -515,12 +515,11 @@ class MessageTransformerWQ(object):
             for row in rows:
                 if 'error' not in row:
                     to_del.append({'_id' : row['id'],
-                                   '_rev' : row['value']['_rev'],
-                                   '_deleted': True})
+                                   '_rev' : row['value']['_rev']})
             logger.debug("deleting %d docs previously created by %r",
                          len(to_del), src_id)
             if to_del:
-                _ = yield dm.db.updateDocuments(to_del)
+                _ = yield dm.delete_documents(to_del)
 
             # Get the source-doc and process it.
             src_doc = (yield dm.open_documents_by_id([src_id]))[0]
@@ -574,8 +573,10 @@ class MessageTransformerWQ(object):
             #    # connection failure details (but worse, that record might
             #    # actually be written - we might just be out of sockets...)
             #    result.raiseException()
-            logger.warn("Failed to process document %r: %s", src_doc['_id'],
-                        result)
+            # XXX - later we should use the extension's log, but for now
+            # use out log but include the extension name.
+            logger.warn("Extension %r failed to process document %r: %s",
+                        self.ext.id, src_doc['_id'], result)
             if self.options.get('stop_on_error', False):
                 logger.info("--stop-on-error specified - stopping queue")
                 self.failure = result
