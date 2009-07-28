@@ -62,7 +62,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //summary: subscribes to the topicName and dispatches to funcName,
     //saving off the info in case a refresh is needed.
     this._subs.push(rd.sub(topicName, dojo.hitch(this, function() {
-      this.destroyStoryWidgets();
+      this.destroyAllSupporting();
 
       if (topicName != "rd-engine-sync-done") {
         this._updateInfo = {
@@ -81,11 +81,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //cycle. Could cause too much memory churn in the browser.
 
     this.conversations = conversations;
-    // XXX updateConversations only gets called by a topic handler, which only
-    // get called by the anonymous functions created in _sub, which all call
-    // destroyStoryWidgets themselves before calling the topic handlers,
-    // so isn't this destroyStoryWidgets call redundant?
-    this.destroyStoryWidgets();
 
     //Create new widgets.
     //Use a document fragment for best performance
@@ -99,16 +94,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
     //Inject nodes all at once for best performance.
     this.domNode.appendChild(frag);
-  },
-
-  destroyStoryWidgets: function() {
-    //summary: removes the story widgets
-    if (this._supportingWidgets.length) {
-      var story;
-      while((story = this._supportingWidgets.shift())) {
-        story.destroy();
-      }
-    }
   },
 
   destroy: function() {
