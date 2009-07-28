@@ -13,8 +13,8 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
 
   // Nodes in the template.  Attached to instances via dojoAttachPoint.
   // Commented out because it isn't clear if they can/should be declared.
-  //_title: null,
-  //_subscriptionTool: null,
+  //titleNode: null,
+  //subscriptionToolNode: null,
 
   templatePath: dojo.moduleUrl("rdw.templates", "MailingList.html"),
 
@@ -38,17 +38,17 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
   },
 
   _display: function() {
-    rd.escapeHtml(this.doc.id, this._title, "only");
+    rd.escapeHtml(this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
     // TODO: make this reflect the status of the subscription.
     switch(this.doc.status) {
       case "subscribed":
-        rd.escapeHtml("Unsubscribe", this._subscriptionTool, "only");
+        rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
         break;
       case "unsubscribe-pending":
         // TODO: disable the link when in this state.
-        rd.escapeHtml("Unsubscribe Pending", this._subscriptionTool, "only");
+        rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
         break;
     }
   },
