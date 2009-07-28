@@ -1,8 +1,8 @@
-dojo.provide("rdw.MailingList");
+dojo.provide("rdw.MailingListSummary");
 
 dojo.require("rdw._Base");
 
-dojo.declare("rdw.MailingList", [rdw._Base], {
+dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   // The ID of the mailing list.  This must be passed to the constructor
   // so postCreate can use it to retrieve the document from the datastore.
   id: null,
@@ -16,7 +16,7 @@ dojo.declare("rdw.MailingList", [rdw._Base], {
   //titleNode: null,
   //subscriptionToolNode: null,
 
-  templatePath: dojo.moduleUrl("rdw.templates", "MailingList.html"),
+  templatePath: dojo.moduleUrl("rdw.templates", "MailingListSummary.html"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method before template is created.

@@ -1,7 +1,7 @@
 dojo.provide("rdw.Summary");
 
 dojo.require("rdw._Base");
-dojo.require("rdw.MailingList");
+dojo.require("rdw.MailingListSummary");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
   widgetsInTemplate: true,
@@ -107,7 +107,7 @@ dojo.declare("rdw.Summary", [rdw._Base], {
   mailingList: function(/*String*/listId) {
     //summary: responds to rd-protocol-mailingList topic.
     this._supportingWidgets.push(
-      new rdw.MailingList({ id: listId },
+      new rdw.MailingListSummary({ id: listId },
       dojo.create("div", null, this.domNode))
     );
   },
