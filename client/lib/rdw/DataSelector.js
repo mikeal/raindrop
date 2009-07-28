@@ -95,9 +95,13 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
   onSelectorChange: function(/*String*/value) {
     //summary: triggered when the selector's value changes. value should be
     //type:id.
-    
+    var item = this.selectorInstance.item;
+    if (!item) {
+      return;
+    }
+
     //Strip off type and dispatch to idSelected method on this instance.
-    var fullId = this.selectorInstance.item.id[0];
+    var fullId = item.id[0];
     var index = fullId.indexOf(":");
     if (index != -1) {
       var type = fullId.substring(0, index);

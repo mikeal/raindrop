@@ -97,3 +97,7 @@
   padding: 0.4ex;
   -moz-border-radius: 3px;
 }
+
+.QuickCompose .error {
+  color: red;
+}
