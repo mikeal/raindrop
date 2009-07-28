@@ -23,6 +23,11 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     "rd-protocol-locationTag": "locationTag"
   },
 
+  // The widget to display in the summary when the user selects a mailing list.
+  // We declare it here to enable extensions to override it with a custom widget
+  // by changing the value of this property.
+  mailingListSummaryWidget: "rdw.MailingListSummary",
+
   postMixInProperties: function() {
     //summary: dijit lifecycle method before template is created.
     this.inherited("postMixInProperties", arguments);
@@ -106,9 +111,29 @@ dojo.declare("rdw.Summary", [rdw._Base], {
 
   mailingList: function(/*String*/listId) {
     //summary: responds to rd-protocol-mailingList topic.
+
+    // It should be possible to load the MailingListSummary widget here rather
+    // than up top, but that doesn't work for some reason, so we load it up top
+    // for now and then instantiate the widget using the code below.
+
+    // Code that should work but doesn't:
+    //dojo["require"](this.mailingListSummaryWidget);
+    //dojo.addOnLoad(dojo.hitch(this, function(){
+    //  this.addSupporting(
+    //    new (dojo.getObject(this.mailingListSummaryWidget))(
+    //      { id: listId },
+    //      dojo.create("div", null, this.domNode)
+    //    )
+    //  );
+    //}));
+
+    // Code that works around the problem:
+    var constructor = eval(this.mailingListSummaryWidget);
     this._supportingWidgets.push(
-      new rdw.MailingListSummary({ id: listId },
-      dojo.create("div", null, this.domNode))
+      new constructor(
+        { id: listId },
+        dojo.create("div", null, this.domNode)
+      )
     );
   },
 
