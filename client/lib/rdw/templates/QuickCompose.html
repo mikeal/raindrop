@@ -18,7 +18,7 @@
         <div class="input"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
       </div>
       </div>
-      <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textAreaNode"></textarea>
+      <textarea dojoAttachEvent="onfocus: onFocusTextArea, onclick: onFocusTextArea" dojoAttachPoint="textAreaNode"></textarea>
       <input type="submit" value="${sendButtonText}"/>
     </form>
     <div class="status" dojoAttachPoint="statusNode"></div>

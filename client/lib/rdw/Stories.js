@@ -36,9 +36,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //summary: dijit lifecycle method before template is created.
     this.inherited("postMixInProperties", arguments);
 
-    //Use _supportingWidgets to track child widgets
-    //so that they get cleaned up automatically by dijit destroy.
-    this._supportingWidgets = [];
+    //Manually dealing with _supporting widgets instead of using
+    //addSupporting/removeSupporting since Story widgets can be
+    //removed fairly frequently.
+    if (!this._supportingWidgets) {
+      this._supportingWidgets = [];  
+    }
+
     this._subs = [];
   },
 
@@ -84,7 +88,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //and load up each story widget in there.
     var frag = dojo.doc.createDocumentFragment();
     for (var i = 0, conv; conv = this.conversations[i]; i++) {
-      this._supportingWidgets.push(new rdw.Story({
+      this.addSupporting(new rdw.Story({
          msgs: conv
        }, dojo.create("div", null, frag)));        
     }

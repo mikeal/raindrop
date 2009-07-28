@@ -539,15 +539,17 @@ dojo._listener.getDispatcher = function(){
   var extSubs = {};
   var extSubHandles = {};
   var empty = {};
-  for (var i = 0, subObj; subObj = subs[i]; i++) {
-    for (var topic in subObj) {
-      //Use empty to weed out stuff added by other JS code to Object.prototype
-      if (!empty[topic]) {
-	if (!extSubs[topic]) {
-	  extSubs[topic] = [];
-	  extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
+  if (subs) {
+    for (var i = 0, subObj; subObj = subs[i]; i++) {
+      for (var topic in subObj) {
+	//Use empty to weed out stuff added by other JS code to Object.prototype
+	if (!empty[topic]) {
+	  if (!extSubs[topic]) {
+	    extSubs[topic] = [];
+	    extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
+	  }
+	  extSubs[topic].push(subObj[topic]);
 	}
-	extSubs[topic].push(subObj[topic]);
       }
     }
   }

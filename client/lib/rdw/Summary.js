@@ -27,9 +27,6 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     //summary: dijit lifecycle method before template is created.
     this.inherited("postMixInProperties", arguments);
 
-    //Use _supportingWidgets to track child widgets
-    //so that they get cleaned up automatically by dijit destroy.
-    this._supportingWidgets = [];
     this._subs = [];
   },
 

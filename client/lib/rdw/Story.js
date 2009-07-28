@@ -18,12 +18,8 @@ dojo.declare("rdw.Story", [rdw._Base], {
     // Sort by date
     this.msgs.sort(function (a,b) {return a.timestamp > b.timestamp });
 
-    //Use _supportingWidgets to track child widgets
-    //so that they get cleaned up automatically by dijit destroy.
-    this._supportingWidgets = [];
-
     for (var i = 0, msg; msg = this.msgs[i]; i++) {
-      this._supportingWidgets.push(new rdw.Message({
+      this.addSupporting(new rdw.Message({
         messageBag: msg,
         type: first ? "" : "reply"
       }, dojo.create("div", null, this.domNode)));
