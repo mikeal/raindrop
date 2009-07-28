@@ -94,9 +94,12 @@ rd.pref.save = function(prefId, prefs, callback, errback) {
       if (doc._id) {
         prefs._id = doc._id;
       }
-      //Always operate against latest rev.
-      if (doc._rev) {
-        prefs._rev = doc._rev;
+
+      if (doc._rev && prefs._rev != doc._rev) {
+        var err = new Error("rd.docOutOfDate");
+        err.currentRev = doc._rev;
+        errback(err);
+        return;
       }
 
       //Fill in any rd_* properties

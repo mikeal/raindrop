@@ -10,12 +10,12 @@
       <div class="to" dojoAttachPoint="toNode">
         <label for="to">To:</label>
         <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
-        <div class="new-window">&nbsp;</div>
+        <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
+        <div class="newWindow">&nbsp;</div>
       </div>
       <div class="subject" dojoAttachPoint="subjectNode">
         <label for="subject">Subject:</label>
         <div class="input"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
-        <div class="character-count">&nbsp;</div>
       </div>
       </div>
       <textarea dojoAttachEvent="onfocus: onFocusTextArea" dojoAttachPoint="textAreaNode"></textarea>

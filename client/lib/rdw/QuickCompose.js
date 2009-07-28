@@ -24,23 +24,19 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //The types of account services that QuickCompose supports for sending out messages.
   //You can modify this prototype property to add new values, or change the
   //values on instantiation. Note that changing on instantion means assigning
-  //a new object to the instance's allowedSenders property. Otherwise, you
+  //a new object to the instance's allowedServices property. Otherwise, you
   //will modify the prototype property for all instances. The values correspond
   //to the account types on the account object from rd.account.
-  allowedSenders: {
+  allowedServices: {
     twitter: 1,
     imap: 1
   },
 
-  //The preferred sender to use as default when creating the QuickCompose.
-  preferredSender: "imap",
-
-  //If the compose should be restricted to a certain account type, set
-  //this property to the service type.
-  restrictedSender: "",
+  //The preferred service to use as default when creating the QuickCompose.
+  preferredService: "twitter",
 
   //types of sender identities that require the To field to show up.
-  //See notes for allowedSenders for how to modify this object.
+  //See notes for allowedServices for how to modify this object.
   showTo: {
     imap: 1,
     twitter: 1
@@ -71,6 +67,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //summary: dijit lifecycle method.
     this.inherited("postCreate", arguments);
 
+    //By default hide the To until widget is focused.
+    dojo.style(this.toNode, "display", "none");
+
     //See if a twitter icon can be pulled in for the user.
     rd.account.all(dojo.hitch(this, function(accounts) {
       //Build up a list of identity IDs, to find a contact to use for showing
@@ -80,10 +79,18 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       for (var prop in accounts) {
         if (!(prop in empty)) {
           ids.push([prop, accounts[prop].id]);
-          if (prop in this.allowedSenders) {
+          if (prop in this.allowedServices) {
             //Add to list of senders this QuickCompose can handle.
             this.senders[prop] = accounts[prop].id;
+
+            //Allow each sender type to do specific init actions
+            //for UI binding.
+            var init = this[prop + "Init"];
+            if (init) {
+              init.call(this);
+            }
           }
+
           //Store a quick account lookup by account ID
           if (accounts[prop].id) {
             accountsById[accounts[prop].id] = accounts[prop];
@@ -144,10 +151,12 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             }
   
             //Set up default value for the sender box.
-            senderDisplay = this.senders[this.preferredSender] ?
-                this.preferredSender + ": " + this.senders[this.preferredSender]
+            senderDisplay = this.senders[this.preferredService] ?
+                this.preferredService + ": " + this.senders[this.preferredService]
               :
                 sendList[0].name;
+
+            this.sender = this.parseSender(senderDisplay);
 
             dojo["require"](this.fromSelector);
             dojo.addOnLoad(dojo.hitch(this, function(){
@@ -175,6 +184,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   onFocusTextArea: function(evt) {
     //summary: expand the text area from it's simple entry space
     dojo.style(this.textAreaNode, "height", "12ex");
+
+    //Only show To once text area focused.
+    var svc = this._determineSender();
+    svc = svc && svc.service;
+    dojo.style(this.toNode, "display", this.showTo[svc] ? "" : "none");
   },
 
   onSubmit: function(evt) {
@@ -188,11 +202,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     } else {
       this.updateStatus("Sending message.");
 
-      var senderValue = this.fromSelectorWidget ?
-          this.fromSelectorWidget.attr("value")
-        :
-          this.addressNode.innerHTML;
-      var sender = this.parseSender(senderValue);
+      var sender = this._determineSender();
       var svc = sender.service;
       var senderId = sender.id;
       var subject = dojo.trim(this.subjectInputNode.value);
@@ -246,19 +256,34 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //summary: updates the display of the subject/to boxes depending on the
     //type of sender name. Note "sender" is a string formatted as "service: username",
     //so it needs to be parsed to get the right info.
-    var svc = this.parseSender(sender).service;
+
+    var oldSvc = this.sender.service;
+    var senderObj = this.parseSender(sender)
+    var svc = senderObj.service;
     if (svc) {
-      this.service = svc;
+      //Save the sender for later use.
+      this.sender = senderObj;
+
+      //Call inactive method for previous sender service.
+      var func = this[oldSvc + "Inactive"];
+      if (func) {
+        func.call(this);
+      }
+
       //Update To input, first by making sure selector widget is available.
       dojo["require"](this.toSelector);
       dojo.addOnLoad(dojo.hitch(this, "initToSelector"));
-
-      dojo.style(this.toNode, "display", this.showTo[svc] ? "" : "none");
 
       //Show/hide subject.
       dojo.style(this.subjectNode, "display", this.showSubject[svc] ? "" : "none");
       if (!this.showSubject[svc]) {
         this.subjectInputNode.value = "";
+      }
+
+      //Call active method for current sender service.
+      var func = this[svc + "Active"];
+      if (func) {
+        func.call(this);
       }
     }
   },
@@ -270,16 +295,17 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //Remove previous selector.
     if (this.toSelectorWidget) {
       this.removeSupporting(this.toSelectorWidget);
+      var parentNode = this.toSelectorWidget.domNode.parentNode;
       this.toSelectorWidget.destroy();
       this.toInputNode = dojo.create("input", {
         type: "text",
         "class": "toInput"
-      }, this.toNode);
+      }, parentNode);
     }
 
     this.toSelectorWidget = new (dojo.getObject(this.toSelector))({
       type: "identity",
-      restriction: (this.service == "imap" ? "email" : this.service)
+      restriction: (this.sender.service == "imap" ? "email" : this.sender.service)
     }, this.toInputNode);
 
     this.addSupporting(this.toSelectorWidget);
@@ -309,5 +335,59 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     this.statusTimeout = setTimeout(dojo.hitch(this, function(){
       this.statusNode.innerHTML = "";
     }), 5000);
+  },
+
+  _determineSender: function() {
+    //summary: looks at the selector widget or HTML to get the sender name,
+    //and parse into a usable object.
+    var senderValue = this.fromSelectorWidget ?
+      this.fromSelectorWidget.attr("value")
+    :
+      this.addressNode.innerHTML;
+
+    return this.sender = this.parseSender(senderValue);
+  },
+
+  //****** Start twitter methods.************//
+  twitterInit: function() {
+    //summary: specific init function for binding to the UI for twitter actions.
+    this.connect(this.textAreaNode, "onkeyup", "twitterOnKeyUp");
+  },
+
+  twitterActive: function() {
+    //summary: specific twitter call for when twitter service is active in QuickCompose.
+    dojo.removeClass(this.countNode, "error");
+    this._isTwitterOver = false;
+    this.twitterCheckCount();
+  },
+
+  twitterInactive: function() {
+    //summary: specific twitter call for when twitter service is no longer active QuickCompose.
+    dojo.removeClass(this.countNode, "error");
+    this.countNode.innerHTML = "";
+  },
+
+  twitterOnKeyUp: function(/*Event*/evt) {
+    //summary: twitter check for max character count. Only do the count if
+    //twitter is the active service.
+    if (this.sender.service == "twitter") {
+      this.twitterCheckCount();
+    }
+  },
+
+  twitterLimit: 140,
+
+  twitterCheckCount: function() {
+    //summary: check the character count in the textarea.
+    var count = this.twitterLimit - this.textAreaNode.value.length;
+    if (count < 0) {
+      dojo.addClass(this.countNode, "error");
+      this._isTwitterOver = true;
+    } else if (this._isTwitterOver) {
+      dojo.removeClass(this.countNode, "error");
+      this._isTwitterOver = false;
+    }
+    this.countNode.innerHTML = count;
   }
+  //****** End twitter methods.************//
 });

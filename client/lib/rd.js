@@ -46,7 +46,7 @@ dojo._listener.getDispatcher = function(){
     dbPath: dojo.config.rd.dbPath,
 
     //Set app name for sure in configuration/preferences
-    app: dojo.config.rd.app,
+    appName: dojo.config.rd.appName,
 
     ready: dojo.addOnLoad,
   
