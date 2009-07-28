@@ -128,9 +128,8 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     //}));
 
     // Code that works around the problem:
-    var constructor = eval(this.mailingListSummaryWidget);
     this._supportingWidgets.push(
-      new constructor(
+      new (dojo.getObject(this.mailingListSummaryWidget))(
         { id: listId },
         dojo.create("div", null, this.domNode)
       )
