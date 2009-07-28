@@ -34,6 +34,50 @@
 
 import re
 
+def _get_subscribed_identity(headers):
+    # Get the user's email identities and determine which one is subscribed
+    # to the mailing list that sent a message with the given headers.
+
+    identities = get_my_identities()
+    logger.debug("identities: %s", identities);
+
+    email_identities = [i for i in identities if i[0] == 'email'];
+
+    # TODO: figure out what to do if the user has no email identities.
+    if len(email_identities) == 0:
+        logger.debug("no email identities")
+        return None
+
+    # If the user only has one email identity, it *should* be the one subscribed
+    # to the list.
+    # XXX could an alias not in the set of identities be subscribed to the list?
+    if len(email_identities) == 1:
+        logger.debug("one email identity: %s", email_identities[0])
+        return email_identities[0]
+
+    logger.debug("multiple email identities: %s", email_identities);
+
+    # If the user has multiple email identities, try to narrow down the one
+    # subscribed to the list using the Delivered-To header, which lists will
+    # sometimes set to the subscribed email address.
+    # TODO: figure out what to do if there are multiple Delivered-To headers.
+    if 'delivered_to' in headers:
+        logger.debug("Delivered-To: %s", headers['delivered-to']);
+        dt_identities = [i for i in email_identities
+                           if i[1] == headers['delivered_to'][0]]
+        if len(dt_identities) == 1:
+            logger.debug("one Delivered-To identity: %s", dt_identities[0])
+            return dt_identities[0]
+
+    # TODO: try to use the Received headers to narrow down the identity.
+
+    # We have multiple identities, and we haven't narrowed down the one
+    # subscribed to the list.  Pick the first one and hope for the best.
+    # XXX Is this what we should be doing?  Maybe we should pick none of them
+    # and make the front-end prompt the user for the address with which
+    # they are subscribed to the list.
+    return email_identities[0]
+
 def handler(doc):
     if 'list-id' not in doc['headers']:
         return
@@ -70,26 +114,35 @@ def handler(doc):
     result = open_view(keys=keys, reduce=False, include_docs=True)
     # Build a map of the keys we actually got back.
     rows = [r for r in result['rows'] if 'error' not in r]
+
     if rows:
         logger.debug("FOUND LIST %s for message %s", id, msg_id)
         assert 'doc' in rows[0], rows
+
         # TODO update the list info if it has changed, including its status
         # (i.e. subscribed), but only if the message we are currently processing
         # is newer than the message from which we derived the list info
         # we currently have in the datastore (newer messages are considered
         # more authoritative, but we can't assume that we're processing messages
         # in chronological order).
+
     else:
         logger.debug("CREATING LIST %s for message %s", id, msg_id)
-    
+
+        list = {
+            'id': id,
+            'status': 'subscribed',
+            'identity': _get_subscribed_identity(doc['headers'])
+        }
+
+        if name != "":
+            list['name'] = name
+
         # For now just reflect the literal values of the various headers
         # into the doc; eventually we'll want to do some processing of them
         # to make life easier on the front-end.
         # XXX reflect other list-related headers like (X-)Mailing-List
         # and Archived-At?
-        list = { 'id': id, 'status': 'subscribed' }
-        if name != "":
-            list['name'] = name
         for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
                     'list-unsubscribe']:
             if key in doc['headers']:
