@@ -52,3 +52,27 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(sorted(doc['cc_display']),
                              sorted(['Raindrop Test Recipient 2',
                                      'Raindrop Test Recipient 3']))
+
+    @defer.inlineCallbacks
+    def test_simple_recips(self):
+        ndocs = yield self.load_corpus("hand-rolled", "sent-email-simple")
+        self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
+        _ = yield self.pipeline.start()
+
+        # All people we sent mail to should get an identity and contact
+        # record.
+        for addy in ['raindrop_test_recip@mozillamessaging.com',
+                     'raindrop_test_recip2@mozillamessaging.com',
+                     'raindrop_test_recip3@mozillamessaging.com']:
+            rd_key = ['identity', ['email', addy]]
+            sch_id = 'rd.identity.exists'
+            key = ["rd.core.content", "key-schema_id", [rd_key, sch_id]]
+            result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                    include_docs=True)
+            self.failUnlessEqual(len(result['rows']), 1, addy)
+            # and the contact
+            
+            key = ["rd.core.content", "key-schema_id", [rd_key, "rd.identity.contacts"]]
+            result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                    include_docs=True)
+            self.failUnlessEqual(len(result['rows']), 1, addy)
