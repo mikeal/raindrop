@@ -46,7 +46,7 @@ from twisted.python.failure import Failure
 from zope.interface import implements
 from twisted.internet import interfaces
 
-from raindrop import pipeline, model, opts
+from raindrop import pipeline, model, opts, config
 from raindrop.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
@@ -301,6 +301,7 @@ def main():
         parser.error("this program accepts no args")
 
     opts.setup_logging(options)
+    config.init_config()
 
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
