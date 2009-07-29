@@ -47,5 +47,16 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
         this._supportingWidgets.splice(index, 1);
       }
     }
+  },
+
+  destroyAllSupporting: function() {
+    //summary: destroys all supporting widgets, and removes them
+    //from the _supportingWidgets array.
+    if (this._supportingWidgets && this._supportingWidgets.length) {
+      var widget;
+      while((widget = this._supportingWidgets.shift())) {
+        widget.destroy();
+      }
+    }
   }
 });

@@ -41,6 +41,9 @@ rd.store = {
       url: docUrl,
       putData: dojo.toJson(doc),
       load: function(response, ioArgs) {
+        if (response.rev) {
+          doc._rev = response.rev;
+        }
         callback(doc);
       },
       error: errback

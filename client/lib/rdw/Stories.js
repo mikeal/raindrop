@@ -36,9 +36,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //summary: dijit lifecycle method before template is created.
     this.inherited("postMixInProperties", arguments);
 
-    //Use _supportingWidgets to track child widgets
-    //so that they get cleaned up automatically by dijit destroy.
-    this._supportingWidgets = [];
+    //Manually dealing with _supporting widgets instead of using
+    //addSupporting/removeSupporting since Story widgets can be
+    //removed fairly frequently.
+    if (!this._supportingWidgets) {
+      this._supportingWidgets = [];  
+    }
+
     this._subs = [];
   },
 
@@ -58,7 +62,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //summary: subscribes to the topicName and dispatches to funcName,
     //saving off the info in case a refresh is needed.
     this._subs.push(rd.sub(topicName, dojo.hitch(this, function() {
-      this.destroyStoryWidgets();
+      this.destroyAllSupporting();
 
       if (topicName != "rd-engine-sync-done") {
         this._updateInfo = {
@@ -77,30 +81,19 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //cycle. Could cause too much memory churn in the browser.
 
     this.conversations = conversations;
-    this.destroyStoryWidgets();
 
     //Create new widgets.
     //Use a document fragment for best performance
     //and load up each story widget in there.
     var frag = dojo.doc.createDocumentFragment();
     for (var i = 0, conv; conv = this.conversations[i]; i++) {
-      this._supportingWidgets.push(new rdw.Story({
+      this.addSupporting(new rdw.Story({
          msgs: conv
        }, dojo.create("div", null, frag)));        
     }
 
     //Inject nodes all at once for best performance.
     this.domNode.appendChild(frag);
-  },
-
-  destroyStoryWidgets: function() {
-    //summary: removes the story widgets
-    if (this._supportingWidgets.length) {
-      var story;
-      while((story = this._supportingWidgets.shift())) {
-        story.destroy();
-      }
-    }
   },
 
   destroy: function() {

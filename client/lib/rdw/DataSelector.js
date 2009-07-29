@@ -33,10 +33,6 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
   postMixInProperties: function() {
     //summary: dijit lifecycle method run before template evaluated
     this.inherited("postMixInProperties", arguments);
-
-    if (!this.supportingWidgets) {
-      this.supportingWidgets = [];
-    }
   },
 
   postCreate: function() {
