@@ -681,7 +681,12 @@ class IMAPAccount(base.AccountBase):
     if not addresses:
       username = self.details.get('username')
       if '@' not in username:
-        logger.warning("IMAP account username isn't an email address - can't guess your identity")
+        logger.warning(
+          "IMAP account '%s' specifies a username that isn't an email address.\n"
+          "This account should have an 'addresses=' entry added to the config\n"
+          "file with a list of email addresses to be used with this account\n"
+          "or raindrop will not be able to detect items sent by you.",
+          self.details['id'])
         ret = []
       else:
         ret = [['email', username]]
