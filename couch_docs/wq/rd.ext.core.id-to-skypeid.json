@@ -1,7 +1,7 @@
 {
   "schemas" : {
     "rd.ext.workqueue" : {
-        "source_schema" : "rd.identity.exists",
+        "source_schemas" : "rd.identity.exists",
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "Creates 'rd.identity.skype' and rd.identity schemas"

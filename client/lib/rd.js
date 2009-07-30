@@ -9,6 +9,13 @@ dojo.require("couch");
 This file provides some basic environment services running in raindrop.
 */
 
+//Delegate to native JSON parsing where available.
+if (typeof JSON != "undefined" && JSON.parse) {
+  dojo.fromJson = function(text) {
+    return JSON.parse(text);
+  }
+}
+
 //Override a function in dojo so that we can cancel publish calls by returning false
 //from a listener.
 dojo._listener.getDispatcher = function(){

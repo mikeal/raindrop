@@ -1,7 +1,7 @@
 {
   "schemas" : {
     "rd.ext.workqueue" : {
-        "source_schema" : "rd.msg.rfc822",
+        "source_schemas" : "rd.msg.rfc822",
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "Creates 'rd.msg.email' schemas from raw rfc822 streams"

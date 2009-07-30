@@ -2,6 +2,7 @@ dojo.provide("rdw.DataSelector");
 
 dojo.require("dojo.DeferredList");
 dojo.require("rdw._Base");
+dojo.require("rd.MegaviewStore");
 
 dojo.declare("rdw.DataSelector", [rdw._Base], {
   templateString: '<div class="rdwDataSelector dijitReset dijitInlineTable dijitLeft"><div dojoAttachPoint="selectorNode"></div></div>',
@@ -75,7 +76,7 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     dojo["require"](this.comboWidget);
     dojo.addOnLoad(dojo.hitch(this, function(){
       this.selectorInstance = new (dojo.getObject(this.comboWidget))({
-        store: rd.toIfrs(this.items, "id", "name"),
+        store: new rd.MegaviewStore(), //rd.toIfrs(this.items, "id", "name"),
         onChange: dojo.hitch(this, "onSelectorChange")      
       }, this.selectorNode);
   
@@ -96,19 +97,13 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
       return;
     }
 
-    //Strip off type and dispatch to idSelected method on this instance.
-    var fullId = item.id[0];
-    var index = fullId.indexOf(":");
-    if (index != -1) {
-      var type = fullId.substring(0, index);
-      var id = fullId.substring(index + 1, fullId.length);
-      this[type + "Selected"](id);
-    }
+    //Dispatch to idSelected method on this instance.
+    this[item.type + "Selected"](item.id);
 
     this.onDataSelected({
-      type: type,
-      id: id,
-      value: value
+      type: item.type,
+      id: item.id,
+      value: item.name
     });
   },
 
