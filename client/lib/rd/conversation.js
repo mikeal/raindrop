@@ -153,7 +153,7 @@ dojo._mixin(rd.conversation, {
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
     rd.store.megaview({
-      key: ["rd.msg.email.mailing-list", "id", listId],
+      key: ["rd.msg.email.mailing-list", "list_id", listId],
       reduce: false,
       limit: limit,
       success: dojo.hitch(this, function(json) {

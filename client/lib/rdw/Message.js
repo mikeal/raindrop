@@ -145,10 +145,10 @@ dojo.declare("rdw.Message", [rdw._Base], {
             this.addSupporting(this.responseWidget);
 
             //Put the response widget in the toolDisplay
-            this.responseWidget.placeAt(this.toolDisplay);
+            this.responseWidget.placeAt(this.toolDisplayNode);
 
             //Hide the reply/forward controls.
-            this.tools.style.display = "none";
+            this.toolsNode.style.display = "none";
           }));
       }
       evt.preventDefault();
@@ -193,6 +193,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.removeSupporting(this.responseWidget);
 
     //Show the reply/forward controls.
-    this.tools.style.display = "";
+    this.toolsNode.style.display = "";
   }
 });

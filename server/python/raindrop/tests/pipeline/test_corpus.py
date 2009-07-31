@@ -1,7 +1,6 @@
 from twisted.internet import defer
 
-from raindrop.tests import TestCaseWithCorpus, FakeOptions
-from raindrop.model import get_doc_model
+from raindrop.tests import TestCaseWithCorpus
 from raindrop.proto import test as test_proto
 
 class TestSimpleCorpus(TestCaseWithCorpus):
@@ -15,10 +14,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         defer.returnValue(rows[0]['value'])
 
     @defer.inlineCallbacks
-    def test_all_work(self):
-        ndocs = yield self.load_corpus("hand-rolled")
-        self.failUnless(ndocs, "failed to load any corpus docs")
-        _ = yield self.pipeline.start()
+    def check_all_worked(self, ndocs):
         # now some sanity checks on the processing.
         # should be zero error records.
         num = yield self.get_num_with_key(
@@ -51,3 +47,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                 num = yield self.get_num_with_key(
                             ["rd.msg.body", what, name])
                 self.failUnless(num, (what, name))
+
+    @defer.inlineCallbacks
+    def test_async(self):
+        ndocs = yield self.load_corpus("hand-rolled")
+        self.failUnless(ndocs, "failed to load any corpus docs")
+        _ = yield self.pipeline.start()
+        _ = yield self.check_all_worked(ndocs)

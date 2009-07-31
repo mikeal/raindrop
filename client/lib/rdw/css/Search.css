@@ -1,5 +1,6 @@
 .Search {
   position: relative;
+  padding-left: 0.5em;
 }
 
 .Search > form {
@@ -8,12 +9,12 @@
 }
 
 .Search > form > input {
-  width: 100%;
   border: 1px solid gray;
+  -moz-border-radius: 3px;
   background-image: url('chrome://global/skin/icons/Search-glass.png');
   background-repeat: no-repeat;
   background-attachment: scroll;
-  background-color: transparent;
+  background-color: #fff;
   background-position: 97% center;
 }
 

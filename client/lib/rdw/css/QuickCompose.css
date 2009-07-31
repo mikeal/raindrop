@@ -59,17 +59,35 @@
   font-weight: normal;
 }
 
-.QuickCompose .to,
-.QuickCompose .subject {
-  font-size: smaller;
+.QuickCompose .compose > form div.to,
+.QuickCompose .compose > form div.subject {
+  display: table-row;
+  margin: 0.5em 0px;
+  font-size: x-small;
   font-weight: normal;
+  text-transform: uppercase;
   letter-spacing: 0;
+  color: #c7c7c7;
+}
+
+.QuickCompose div.to label ,
+.QuickCompose .to div,
+.QuickCompose .subject label,
+.QuickCompose .subject div {
+  display: table-cell;
+}
+
+.QuickCompose div.to label ,
+.QuickCompose .subject label {
+  width: 1em; /*  force down to only size of text */
+  text-align: right;
 }
 
 .QuickCompose .to input,
 .QuickCompose .subject input {
   font-weight: normal;
-  width: 75%;
+  width: 80%;
+  margin-left: 1em;
 }
 
 .QuickCompose textarea {
@@ -78,4 +96,8 @@
   height: 3ex;
   padding: 0.4ex;
   -moz-border-radius: 3px;
+}
+
+.QuickCompose .error {
+  color: red;
 }

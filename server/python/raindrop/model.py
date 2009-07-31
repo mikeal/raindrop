@@ -325,6 +325,20 @@ class DocumentModel(object):
         bits = ['rc', key_part, ext_id, sch_id]
         return "!".join(bits)
 
+    @defer.inlineCallbacks
+    def delete_documents(self, docs):
+        for doc in docs:
+            doc['_deleted'] = True
+        results = yield self.db.updateDocuments(docs)
+        # XXX - this error handling is also duplicated below.
+        errors = []
+        for doc, dinfo in zip(docs, results):
+            if 'error' in dinfo:
+                # presumably an unexpected error :(
+                errors.append(dinfo)
+        if errors:
+            raise DocumentSaveError(errors)
+
     def create_schema_items(self, item_defs):
         docs = []
         for si in item_defs:
@@ -342,9 +356,9 @@ class DocumentModel(object):
             doc['_id'] = id
             if '_rev' in si:
                 doc['_rev'] = si['_rev']
-            if 'deleted' in si:
+            if '_deleted' in si:
                 assert '_rev' in si, 'must know _rev to delete!!'
-                doc['deleted'] = True
+                doc['_deleted'] = True
                 # that's all!
                 continue
 

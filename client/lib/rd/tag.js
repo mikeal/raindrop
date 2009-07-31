@@ -33,8 +33,8 @@ rd.tag = {
    */
   lists: function(callback, errback) {
     this._fetchGroupedIds(
-      ['rd.msg.email.mailing-list', 'id'],
-      ['rd.msg.email.mailing-list', 'id', {}],
+      ['rd.mailing-list', 'id'],
+      ['rd.mailing-list', 'id', {}],
       callback,
       errback
     );

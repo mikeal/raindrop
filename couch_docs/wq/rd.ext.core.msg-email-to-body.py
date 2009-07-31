@@ -49,8 +49,10 @@ def fill_identity_info(val, identity_list, display_list):
         display_list.append(name)
 
 def handler(doc):
-    # a 'rfc822' stores 'headers' as a dict
-    headers = doc['headers']
+    # a 'rfc822' stores 'headers' as a dict, with each entry being a list.
+    # We only care about headers which rfc5322 must appear 0 or 1 times, so
+    # flatten the header values here...
+    headers = dict((k, v[0]) for (k, v) in doc['headers'].iteritems())
     # for now, 'from' etc are all tuples of [identity_type, identity_id]
     callbacks = []
     ret = {}

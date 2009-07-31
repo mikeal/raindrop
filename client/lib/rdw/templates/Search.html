@@ -1,12 +1,7 @@
-<div class="Search" dojoAttachPoint="search">
+<div class="Search">
     <form>
-      <input dojoAttachEvent="onfocus: focusSearchInput,onblur: blurSearchInput" type="text"/>
+      <div dojoType="rdw.DataSelector" type="all" dojoAttachPoint="dataSelector"></div>
     </form>
-    <ol dojoAttachEvent="onclick: onClick">
-      <li><a href="#recent">recent search</a></li>
-      <li><a href="#recent">recent search</a></li>
-      <li><a href="#recent">recent search</a></li>
-      <!-- limit to 3 -->
-      <!-- eventually we'll want a /see all/ link -->
+    <ol dojoAttachPoint="recentListNode">
     </ol>
 </div>

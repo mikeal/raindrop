@@ -234,15 +234,21 @@ dojo.mixin(rd.identity, {
       url: "http://twitter.com/users/show/" + identityId[1] + ".json",
       callbackParamName: "callback",
       handle: dojo.hitch(this, function(data) {
-        //TODO: need to handle errors, and throttle error requests
-        //so error does not cascade more error calls.
         if(data instanceof Error) {
-          if (errback) {
-            errback(data, identityId);
-          }
+          //Create a fake record to avoid hitting the API too much.
+          var doc = {
+            identity_id: [
+              "twitter",
+              identityId[1]
+            ],
+            name: identityId[1],
+            nickname: identityId[1],
+            _isFake: true,
+            _error: data
+          };
         } else {
           //Normalize twitter data to our data type.
-          var doc = {
+          doc = {
             identity_id: [
               "twitter",
               data.screen_name
@@ -251,14 +257,14 @@ dojo.mixin(rd.identity, {
             nickname: data.screen_name,
             url: data.url,
             image: data.profile_image_url
-          }
-
-          //Save in our store and do callback.
-          var idty = dojo.getObject(identityId[0], true, this)[identityId[1]] = doc;
-
-          //TODO: save this info back to the couch?
-          callback([idty]);
+          };
         }
+
+        //Save in our store and do callback.
+        var idty = dojo.getObject(identityId[0], true, this)[identityId[1]] = doc;
+
+        //TODO: save this info back to the couch? But only for non-fake records?
+        callback([idty]);
       })
     });
   }

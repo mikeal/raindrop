@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>raindrop</title>
+  <title>Raindrop Inflow</title>
   
   <link type="text/css" rel="stylesheet" href="inflow.css">
 
-  <script data-app="inflow" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
+  <script data-appname="inflow" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
     rd.require("inflow");
@@ -14,11 +14,11 @@
 <body class="tundra">
 <div rdType="rdw.Loading"></div>
 
-<a class="extendLink" href="/raindrop/extender/index.html">Extend</a>
   <div id="content">
     <div id="column1">
       <div rdType="rdw.QuickCompose"></div>
       <div id="mainList">
+        <div id="summary" rdType="rdw.Summary"></div>
         <div id="contactList" rdType="rdw.ContactList"></div>
         <div id="stories" rdType="rdw.Stories"></div>
       </div>
@@ -29,5 +29,6 @@
       <div rdType="rdw.FaceWall"></div>
     </div>
   </div>
+  <a class="extendLink" href="/raindrop/extender/index.html">Extend</a>
 </body>
 </html>

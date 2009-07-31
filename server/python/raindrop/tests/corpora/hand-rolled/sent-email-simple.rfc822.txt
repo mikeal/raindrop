@@ -1,6 +1,10 @@
+X-Raindrop-Note: Note how some addresses aren't all lower case - they 
+X-Raindrop-Note: should be normalized.
 Delivered-To: raindrop_test_user@mozillamessaging.com
-From: Raindrop Test User <raindrop_test_user@mozillamessaging.com>
-To: Raindrop Test Recipient <raindrop_test_recip@mozillamessaging.com>
+From: Raindrop Test User <Raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <Raindrop_test_recip@mozillamessaging.com>
+CC: Raindrop Test Recipient 2 <Raindrop_test_recip2@mozillamessaging.com>, 
+ Raindrop Test Recipient 3 <raindrop_test_recip3@mozillamessaging.com>
 Date: Sat, 21 Jul 2009 12:13:14 -0000
 Message-Id: <d3d08a8a534c464881a95b75300e9011@something>
 

@@ -1,5 +1,5 @@
 <div class="Message ${type}">
-  <a href="#" class="close">${i18n.closeIcon}</a>
+  <div class="process"><a href="#">${i18n.closeIcon}</a></div>
   <div class="photo"><img class="photo" dojoAttachPoint="userPicNode" src="${userPicUrl}" /></div>
   <div class="message">
     <div class="header">
@@ -11,14 +11,14 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="tools" dojoAttachPoint="tools" dojoAttachEvent="onclick: onToolClick">
+    <div class="tools" dojoAttachPoint="toolsNode" dojoAttachEvent="onclick: onToolClick">
       <a href="#reply">${i18n.reply}</a> <a href="#forward">${i18n.forward}</a>
     </div>
     <div class="timestamp" title="${utcTime}">
       <span class="friendly">${friendlyTime}</span>
       <span class="additional">${additionalTime}</span>
     </div>
-    <div class="toolAction" dojoAttachPoint="toolDisplay">
+    <div class="toolAction" dojoAttachPoint="toolDisplayNode">
     </div>
   </div>
 </div>

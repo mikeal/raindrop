@@ -1,5 +1,5 @@
 <div class="Message MessageUnknown ${type}">
-  <a href="#" class="close">${i18n.closeIcon}</a>
+  <div class="process"><a href="#">${i18n.closeIcon}</a></div>
   <div class="photo"><img class="photo" src="${unknownImgUrl}"/></div>
   <div class="message">
     <div class="header">
@@ -11,7 +11,7 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="tools" dojoAttachPoint="tools" dojoAttachEvent="onclick: onToolClick">
+    <div class="tools" dojoAttachPoint="toolsNode" dojoAttachEvent="onclick: onToolClick">
       <a title="${i18n.spamTitle}" href="#spam">${i18n.spam}</a>
       <a title="${i18n.annoyingTitle}" href="#block">${i18n.annoying}</a>
       <a title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode"></a>
@@ -20,7 +20,7 @@
       <span class="friendly">${friendlyTime}</span>
       <span class="additional">${additionalTime}</span>
     </div>
-    <div class="toolAction" dojoAttachPoint="toolDisplay">
+    <div class="toolAction" dojoAttachPoint="toolDisplayNode">
     </div>
   </div>
 </div>
