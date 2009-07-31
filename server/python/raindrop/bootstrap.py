@@ -565,7 +565,7 @@ def install_views(whateva, options):
 
 
 def _build_views_doc_from_directory(ddir, extra_langs = []):
-    # all we look for is the views.
+    # all we look for is the views.  And the lists.  And the shows :)
     ret = {}
     fprinter = Fingerprinter()
     ret_views = ret['views'] = {}
@@ -574,13 +574,16 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
     this_ext = this_lang = None
     mtail = "-map"
     rtail = "-reduce"
+    ltail = "-list"
+    stail = "-show"
     files = os.listdir(ddir)
-    for f in files:
-        fqf = os.path.join(ddir, f)
+    for fn in files:
+        fqf = os.path.join(ddir, fn)
+        used = False
         # If we haven't determined the language for this doc yet...
         if this_ext is None:
             for ext, lang in langs:
-                if f.endswith(mtail + ext):
+                if fn.endswith(mtail + ext):
                     this_ext = ext
                     this_lang = lang
                     logger.debug("View in %r is using language %r", ddir, lang)
@@ -589,8 +592,8 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
             continue
 
         tail = mtail + this_ext
-        if f.endswith(tail):
-            view_name = f[:-len(tail)]
+        if fn.endswith(tail):
+            view_name = fn[:-len(tail)]
             try:
                 with open(fqf) as f:
                     data = f.read()
@@ -604,15 +607,30 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
                 with open(fqr) as f:
                     data = f.read()
                     ret_views[view_name]['reduce'] = data
-                    fprinter.get_finger(view_name+rtail).update(data)
+                    fprinter.get_finger(view_name+rtail+this_ext).update(data)
             except (OSError, IOError):
                 # no reduce - no problem...
                 logger.debug("no reduce file %r - skipping reduce for view '%s'",
                              fqr, view_name)
         else:
+            pass
             # avoid noise...
-            if not f.endswith(rtail + this_ext) and not f.startswith("."):
-                logger.info("skipping non-map/reduce file %r", fqf)
+            #if not fn.endswith(rtail + this_ext) and not fn.startswith("."):
+            #    logger.info("skipping non-map/reduce/list/show file %r", fqf)
+
+        tail = ltail + this_ext
+        if fn.endswith(tail):
+            list_name = fn[:-len(tail)]
+            try:
+                with open(fqf) as f:
+                    data = f.read()
+                    ret_lists = ret.setdefault('lists', {})
+                    ret_lists[list_name] = data
+                    fprinter.get_finger(list_name+tail).update(data)
+            except (OSError, IOError):
+                logger.warning("can't open list file %r - skipping this list", fqf)
+                continue
+
 
     ret['rd_fingerprints'] = fprinter.get_prints()
     ret['language'] = this_lang
