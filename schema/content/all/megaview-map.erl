@@ -102,18 +102,18 @@ fun({ThisDoc}) ->
             FilteredFixed
         end,
         % finally the results
-        lists:map( 
-         fun(K) -> [K, Value] end, 
+        lists:foreach(
+            fun (K) -> Emit(K, Value) end,
          AllKeys )
     end,
 
-    case proplists:get_value(<<"rd_megaview_ingore_doc">>, ThisDoc) of
+    case proplists:get_value(<<"rd_megaview_ignore_doc">>, ThisDoc) of
     undefined ->
         SchemaID = proplists:get_value(<<"rd_schema_id">>, ThisDoc),
         case SchemaID of
-            undefined -> [];
+            undefined -> none;
             _         -> Emit_for_rd_item(ThisDoc, SchemaID)
         end;
-    _ -> []
+    _ -> none
     end
 end.
