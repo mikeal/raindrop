@@ -5,6 +5,7 @@ import sys
 import optparse
 import logging
 import json
+import datetime
 
 from twisted.internet import reactor, defer, task
 from twisted.python.failure import Failure
@@ -219,6 +220,7 @@ def delete_docs(result, parser, options):
 
 def main():
     # build the args we support.
+    start = datetime.datetime.now()
     all_args = {}
     for n, v in globals().iteritems():
         if callable(v) and getattr(v, '__doc__', None):
@@ -340,6 +342,7 @@ def main():
     logger.debug('starting reactor')
     reactor.run()
     logger.debug('reactor done')
+    print "raindrops were falling for", str(datetime.datetime.now()-start)
 
 
 if __name__=='__main__':
