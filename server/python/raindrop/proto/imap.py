@@ -46,6 +46,8 @@ class ImapClient(imap4.IMAP4Client):
       del self.tags[tag]
       self.waiting = None
       self._flushQueue()
+      # *sob* - but it doesn't always do a great job at ignoring them - most
+      # other handlers of imap4.IMAP4Exceptions are also handling this :(
 
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
@@ -199,7 +201,7 @@ class ImapProvider(object):
     try:
       _ = yield self._updateFolders(conn, todo)
     except:
-      log_exception("Failed to update folder")
+      log_exception("Failed to update folders")
     logger.info('imap queue generation finished - waiting for queues to finish')
 
   @defer.inlineCallbacks
@@ -241,17 +243,25 @@ class ImapProvider(object):
     # treatment...
     for delim, name in all_names:
       if name not in caches:
-        _ = yield conn.select(name)
-        _ = yield self._checkQuickRecent(conn, name, 20)
+        try:
+          _ = yield conn.select(name)
+          _ = yield self._checkQuickRecent(conn, name, 20)
+        except imap4.IMAP4Exception, exc:
+          logger.error("Failed to check %r for quick items: %s", name, exc)
 
     # Now update the cache for all folders...
     sync_by_name = {}
     for delim, name in all_names:
-      info = yield conn.select(name)
-      logger.debug("info for %r is %r", name, info)
+      try:
+        info = yield conn.select(name)
+        logger.debug("info for %r is %r", name, info)
+  
+        cache_doc = caches.get(name, {})
+        update_doc = yield self._syncFolderInfo(conn, name, info, cache_doc)
+      except imap4.IMAP4Exception, exc:
+        logger.error("Failed to synch folder %r: %s", name, exc)
+        continue
 
-      cache_doc = caches.get(name, {})
-      update_doc = yield self._syncFolderInfo(conn, name, info, cache_doc)
       if update_doc is not None:
         items = {'uidvalidity': update_doc['uidvalidity'],
                  'infos': update_doc['infos']
