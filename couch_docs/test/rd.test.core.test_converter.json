@@ -1,7 +1,7 @@
 {
   "schemas" : {
     "rd.ext.workqueue" : {
-        "source_schemas" : "rd.msg.test.raw",
+        "source_schemas" : ["rd.msg.test.raw"],
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "A test converter"

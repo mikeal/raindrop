@@ -1,7 +1,7 @@
 {
   "schemas" : {
     "rd.ext.workqueue" : {
-        "source_schemas" : "rd.msg.email",
+        "source_schemas" : ["rd.msg.email"],
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "Creates 'rd.mailing-list' schemas for mailing lists and 'rd.msg.email.mailing-list' schemas for emails..."
