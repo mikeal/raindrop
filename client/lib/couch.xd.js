@@ -41,9 +41,7 @@ dojo.provide("couch");
       url: url,
       handleAs: "json",
       beforeSuccess: beforeSuccess,
-      headers: {
-        contentType: "application/json"
-      },
+      contentType: "application/json",
       iframeProxyUrl: djConfig.iframeProxyUrl,
       handle: _handle
     });
@@ -67,7 +65,7 @@ dojo.provide("couch");
         if (encodeExceptions[name]) continue;
         var value = options[name];
         // keys will result in a POST, so we don't need them in our GET part
-        if (name == "keys" || name == "ioPublish") continue;
+        if (name == "keys" || name == "ioPublish" || name == "headers") continue;
         if (name == "key" || name == "startkey" || name == "endkey") {
           value = toJSON(value);
         }

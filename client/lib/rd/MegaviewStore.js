@@ -19,11 +19,19 @@ dojo.declare("rd.MegaviewStore", null, {
   //This is a prototype property, so adding to it affects all instances,
   //where reassigning a new array on an instance will just affect that instance.
   //an array of schemaQueryTypes can be passed to the constructor as well.
+  //"identityContact" is a valid value, but not default. "identityContact" will load
+  //Contacts that match for the identity too.
   schemaQueryTypes: [
     "contact",
     "mailingList",
     "locationTag"
   ],
+
+  //A restriction that can be used on the schemaQueryType. Useful mainly for
+  //"identityContact" schemaQueryType, that
+  //limits the types of identities and associated contacts to that type.
+  //Could also be used by extensions that add support for other schemaQueryTypes.
+  subType: "",
 
   constructor: function(/*Object?*/ args) {
     //summary: constructs an instance. Acceptable properties on the args
@@ -33,6 +41,9 @@ dojo.declare("rd.MegaviewStore", null, {
     args = args || {};
     if (args.schemaQueryTypes) {
       this.schemaQueryTypes = args.schemaQueryTypes;
+    }
+    if (args.subType) {
+      this.subType = args.subType;
     }
   },
 
@@ -229,6 +240,83 @@ dojo.declare("rd.MegaviewStore", null, {
     //type: the type of item. Should match the schemaQueryType that generated
     //these items.
     this._items.push.apply(this._items, items);
+  },
+
+  identityContactQuery: function(/*String*/query, /*Number*/ count) {
+    //summary: does an rd.identity.contacts query for the "identityContact" schemaQueryType.
+    //console.log("identityContactQuery", query, count);
+    var dfd = new dojo.Deferred();
+
+    dojo["require"]("rd.contact");
+    dojo.addOnLoad(dojo.hitch(this, function() {
+      var args = {
+        key: ["rd.core.content", "schema_id", "rd.identity.contacts"],
+        reduce: false,
+        ioPublish: false,
+        identity: query,
+        type: this.subType || "",
+        include_docs: true,
+        success: dojo.hitch(this, function(json) {
+          var items = [];
+          //TODO, just collect the contactIds if include_docs on a list view
+          //would give back the docs.
+          var idtys = [];
+          var ids = {}; //Make sure names are unique.
+          for (var i = 0, row; row = json.rows[i]; i++) {
+            var name = row.value.rd_key[1][1];
+            if (!name || ids[name]) {
+              continue;
+            }
+            //emit the identity.
+            items.push({
+              id: name,
+              type: "identity",
+              name: name
+            });
+            idtys.push(row.value.rd_key[1]);
+            ids[name] = 1;
+          }
+          this._addItems(items);
+  
+          //Now request the contact records.
+          rd.contact.byIdentity(
+            idtys,
+            dojo.hitch(this, function(contacts) {
+              var items = [];
+              if (contacts) {
+                for (var i = 0, contact; contact = contacts[i]; i++) {
+                  if (!contact.name || !ids[contact.name]) {
+                    continue;
+                  }
+                  items.push({
+                    id: contact.rd_key[1],
+                    type: "contact",
+                    name: contact.name
+                  });
+                  ids[contact.name] = 1;
+                }
+                this._addItems(items);
+              }
+              dfd.callback();
+            }),
+            function(err) {
+              dfd.errback(err);
+            }
+          );
+        }),
+        error: function(err) {
+          dfd.errback(err);
+        }
+      };
+  
+      if (count && count != Infinity) {
+        args.limit = count;
+      }
+  
+      rd.store.megaviewList("rdidentity", args);
+    }));
+
+    return dfd;   
   },
 
   contactQuery: function(/*String*/query, /*Number*/ count) {

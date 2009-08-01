@@ -300,8 +300,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     }
 
     this.toSelectorWidget = new (dojo.getObject(this.toSelector))({
-      type: "identity",
-      restriction: (this.sender.service == "imap" ? "email" : this.sender.service)
+      type: "identityContact",
+      subType: (this.sender.service == "imap" ? "email" : this.sender.service)
     }, this.toInputNode);
 
     this.addSupporting(this.toSelectorWidget);

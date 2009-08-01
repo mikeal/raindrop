@@ -9,6 +9,11 @@ rd.store = {
     return couch.db("raindrop").view("raindrop!content!all/_view/megaview", args);
   },
 
+  megaviewList: function(/*String*/ listName, /*Object*/args) {
+    //summary: thin wrapper around the couch lists for the megaview call.
+    return couch.db("raindrop").view("raindrop!content!all/_list/" + listName + "/megaview", args);
+  },
+
   put: function(/*Object*/doc, /*Function*/callback, /*Function?*/errback) {
     //summary: puts a document in the raindrop data store.
     //If successful, callback is called with the doc as the only argument.

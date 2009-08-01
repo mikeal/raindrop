@@ -9,10 +9,10 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
 
   comboWidget: "dijit.form.ComboBox",
 
-  //type can have values of "identity", "contact", "mailingList" or "locationTag"
+  //type can have values of "identityContact", "contact", "mailingList" or "locationTag"
   //by default. Extensions can add other types by creating a typeLoaded function
   //on this widget.
-  type: "identity",
+  type: "identityContact",
 
   //If type is set to "all", this is the list of data stores
   //to aggregate together. Extensions can add other types by pushing
@@ -21,11 +21,11 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
   //just to affect that instance's list.
   allType: ["contact", "mailingList", "locationTag"],
 
-  //Restrict the type of records. For type: "identity", then restriction
-  //could have values like "twitter", "email", in other words, the first array
-  //value of the identity ID. restriction can also be an array of values.
-  //It is required when using type: identity.
-  restriction: "",
+  //Restrict the type of records further. Useful in the default case only
+  //for type: "identityContact".
+  //values are like "twitter", "email", in other words, the first array
+  //value of the identity ID.
+  subType: "",
 
   //An initial value that will be used after
   //the person docs from the couch have loaded.
@@ -43,24 +43,12 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     this.items = [];
 
     //Figure out what data sources to use.
-    var sources = this.allType;
+    this.sources = this.allType;
     if (this.type != "all") {
-      sources = [this.type];
+      this.sources = [this.type];
     }
 
-    //ask each type for a Deferred object.
-    var dfds = [];
-    for (var i = 0, src; src = sources[i]; i++) {
-      dfds.push(this[src + "Deferred"]());
-    }
-
-    //Use a DeferredList to wait for all the deferred actions
-    //to finish firing, then create the widget.
-    var dfdList = new dojo.DeferredList(dfds);
-    dfdList.addCallback(dojo.hitch(this, function(response) {
-      this.createWidget();
-      return response;
-    }));
+    this.createWidget();
   },
 
   createWidget: function() {
@@ -75,11 +63,16 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     //Load the code for the widget then create and initialize it.
     dojo["require"](this.comboWidget);
     dojo.addOnLoad(dojo.hitch(this, function(){
+      //Create the selector widget.
       this.selectorInstance = new (dojo.getObject(this.comboWidget))({
-        store: new rd.MegaviewStore(), //rd.toIfrs(this.items, "id", "name"),
+        store: new rd.MegaviewStore({
+          schemaQueryTypes: this.sources,
+          subType: this.subType
+        }),
         onChange: dojo.hitch(this, "onSelectorChange")      
       }, this.selectorNode);
-  
+
+      //Pass initial value to selector if it was set.
       if (this.initialValue) {
         this.selectorInstance.attr("value", this.initialValue);
       }
@@ -132,83 +125,9 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     rd.onDocClick("#rd:contact:" + contactId);  
   },
 
-  contactDeferred: function() {
-    //summary: Pulls in contacts data, returns a dojo.Deferred.
-    var dfd = new dojo.Deferred();
-
-    dojo["require"]("rd.contact");
-    dojo.addOnLoad(dojo.hitch(this, function() {
-      rd.contact.list(dojo.hitch(this, function(contacts) {
-        if (!contacts) {
-          dfd.callback(true);
-          return;
-        }
-
-        //Need to create new array so data store operations do
-        //not touch the rd.contact internal data store,
-        //and to make the ID simpler for the widget data store.
-        var contactList = []
-        for(var i = 0, contact; contact = contacts[i]; i++) {
-          if (contact.name) {
-            this.items.push({
-              id: "contact:" + contact.rd_key[1],
-              name: contact.name
-            });
-          }
-        }
-        dfd.callback(true);
-      }),
-      function(error) {
-        //error case
-        dfd.errback(error);
-      });
-    }));
-
-    return dfd; //dojo.Deferred
-  },
-
   identitySelected: function(/*String*/identityId) {
     //summary: dispatch function when an identity is selected.
     rd.onDocClick("#rd:identity:" + list);
-  },
-
-  identityDeferred: function() {
-    //summary: shows identities data, optionally restricted by
-    //the restriction value, and returns a Deferred.
-    var dfd = new dojo.Deferred();
-
-    dojo["require"]("rd.identity");
-    dojo.addOnLoad(dojo.hitch(this, function() {
-      rd.identity.list(dojo.hitch(this, function(idtys) {
-        var idtyList = [];
-        //Figure out what type restrictions are needed.
-        var types = this.restriction;
-        if (typeof types == "string") {
-          types = [types];
-        }
-    
-        //Pull out the identities into an array.
-        for (var i = 0, type; type = types[i]; i++) {
-          var obj = idtys[type], empty = {};
-          for (var prop in obj) {
-            if (!(prop in empty)) {        
-              var src = obj[prop];
-              idtyList.push({
-                id: "identity:" + src._id,
-                name: src.nickname
-              });
-            }
-          }
-        }
-        dfd.callback(true);
-      }),
-      function(error) {
-        //error case
-        dfd.errback(error);
-      });
-    }));
-
-    return dfd; //dojo.Deferred
   },
 
   mailingListSelected: function(/*String*/list) {
@@ -216,66 +135,8 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
     rd.onDocClick("#rd:mailingList:" + list);  
   },
 
-  mailingListDeferred: function() {
-    //summary: Pulls in mailing list data, returns a dojo.Deferred.
-    var dfd = new dojo.Deferred();
-
-    dojo["require"]("rd.tag");
-    dojo.addOnLoad(dojo.hitch(this, function() {
-      rd.tag.lists(dojo.hitch(this, function(lists) {
-        if (!lists) {
-          dfd.callback(true);
-          return;
-        }
-
-        for(var i = 0, name; name = lists[i]; i++) {
-          this.items.push({
-            id: "mailingList:" + name,
-            name: name
-          });
-        }
-        dfd.callback(true);
-      }),
-      function(error) {
-        //error case
-        dfd.errback(error);
-      });
-    }));
-
-    return dfd; //dojo.Deferred
-  },
-
   locationTagSelected: function(/*String*/location) {
     //summary: dispatch function when a locationTag is selected.
     rd.onDocClick("#rd:locationTag:" + location);
-  },
-
-  locationTagDeferred: function() {
-    //summary: Pulls in location tag (imap folder) data, returns a dojo.Deferred.
-    var dfd = new dojo.Deferred();
-
-    dojo["require"]("rd.tag");
-    dojo.addOnLoad(dojo.hitch(this, function() {
-      rd.tag.locations(dojo.hitch(this, function(locs) {
-        if (!locs) {
-          dfd.callback(true);
-          return;
-        }
-
-        for(var i = 0, loc; loc = locs[i]; i++) {
-          this.items.push({
-            id: "locationTag:" + loc.toString(),
-            name: loc.join("/")
-          });
-        }
-        dfd.callback(true);
-      }),
-      function(error) {
-        //error case
-        dfd.errback(error);
-      });
-    }));
-
-    return dfd; //dojo.Deferred    
   }
 });
