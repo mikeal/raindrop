@@ -68,15 +68,15 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
           }
           html += dojo.string.substitute(this.propTemplate, {
             name: prop,
-            value: value
+            value: rd.escapeHtml(value)
           });
         }
         if (html) {
           dojo.place(html, this.tbodyNode, "only");
         }
-        
+
         //Show the complete exampe documents.
-        this.exampleNode.innerHTML = dojo.toJson(this.docs, true);
+        rd.escapeHtml(dojo.toJson(this.docs, true), this.exampleNode, "only");
       })
     });
   },
