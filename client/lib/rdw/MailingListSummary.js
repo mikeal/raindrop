@@ -41,14 +41,18 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     rd.escapeHtml(this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
-    // TODO: make this reflect the status of the subscription.
     switch(this.doc.status) {
       case "subscribed":
         rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
         break;
       case "unsubscribe-pending":
+      case "unsubscribe-confirmed":
         // TODO: disable the link when in this state.
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
+        break;
+      case "unsubscribed":
+        // TODO: disable the link when in this state.
+        rd.escapeHtml("Unsubscribed", this.subscriptionToolNode, "only");
         break;
     }
   },

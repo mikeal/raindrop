@@ -142,7 +142,12 @@ name: the name of the list, if it provides one; otherwise the front-end derives
 status: the status of the user's subscription to the list; can be one of
         the following values:
           subscribed: the user is subscribed to the mailing list
-          (more values to follow as we implement subscription management)
+          unsubscribe-pending: we have sent a request to the mailing list
+              to unsubscribe the user; we are waiting to hear back
+          unsubscribe-confirmed: the mailing list requested confirmation
+              of the unsubscription request, and we confirmed it
+          unsubscribed: the mailing list has notified us that it has
+              unsubscribed the user from the list
 post: the value of the list-post header
 archive: the value of the list-archive header
 help: the value of the list-help header
