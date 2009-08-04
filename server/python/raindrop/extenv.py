@@ -56,9 +56,8 @@ def get_ext_env(doc_model, context, src_doc, ext):
 
     def update_documents(docs):
         context['did_query'] = True
-        return doc_model.update_documents(docs)
-        #return threads.blockingCallFromThread(reactor,
-        #            doc_model.update_documents, docs)
+        return threads.blockingCallFromThread(reactor,
+                    doc_model.update_documents, docs)
 
     def get_my_identities(__my_identities=[]):
         # XXX - can't use globals here!!
