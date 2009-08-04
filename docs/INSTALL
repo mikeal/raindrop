@@ -10,17 +10,40 @@ Installation Steps
 
 Install Python 2.6 or later (note that Python 3 is not yet supported).
 
-Install couchdb 0.9.  This currently means you need to google for
-instructions that work only on Linux - Windows doesn't work.  If you want to
-work on Windows you must install Couch on a Linux box and point your windows
-~/.raindrop file at the server.  On Mac, you can use the MacPorts version.
+  - Mac -
+    sudo port install python26 python_select
+    sudo python_select python26
+
+Install couchdb trunk (tested w/ r799680)  This currently means you need to
+google for instructions that work only on Linux - Windows doesn't work.  If
+you want to work on Windows you must install Couch on a Linux box and point
+your windows ~/.raindrop file at the server.
+
+  - Mac -
+    sudo port install subversion
+    svn co http://svn.apache.org/repos/asf/couchdb/trunk couchdb
+    ( will require deps, best to 'sudo port install couchdb-devel )
+
+Couchdb can be run without installing via a 'dev' install.
+  cd couchdb; ./bootstrap && ./configure && make && make dev
+
+Now from the same couchdb directory run the "run" command under the
+utils directory.
+
+  ./utils/run
+
+Install twisted.
+
+  - Mac -
+    sudo port install py26-twisted
 
 Install Python setuptools.
 
+  - Mac -
+    sudo port install py26-setuptools
+
 Install the couchdb-python bindings (0.5 or later)
   easy_install couchdb 
-
-Install twisted.
 
 Install 'paisley' from launchpad.
   easy_install paisley
