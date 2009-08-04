@@ -196,7 +196,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     // url.path == the email address
     // url.query == can contain subject and/or body parameters
 
-    var params = this._extractParams(url.query);
+    var params = url.query ? this._extractParams(url.query) : {};
 
     var message = {
       //TODO: make a better rd_key.
