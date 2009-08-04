@@ -45,12 +45,21 @@ Install Python setuptools.
 Install the couchdb-python bindings (0.5 or later)
   easy_install couchdb 
 
+  - Mac Ports -
+    easy_install-2.6 couchdb
+
 Install 'paisley' from launchpad.
   easy_install paisley
+
+  - Mac Ports -
+    easy_install-2.6 paisley
 
 Perhaps install 'simplejson' (Myk: paisley requires it, but easy_install
 didn't auto-install it when I installed paisley):
   easy_install simplejson
+
+  - Mac Ports -
+    easy_install-2.6 simplejson
 
 Either install raindrop:
   cd raindrop/server/python
@@ -71,8 +80,14 @@ the latest code, but if that does not work, switch to 0.8.
 skype: Skype4Py (link?)
   easy_install Skype4Py
 
+  - Mac Ports -
+    easy_install-2.6 Skype4Py
+
 twitter: python-twitter (link?)
   easy_install python-twitter
+
+  - Mac Ports -
+    easy_install-2.6 python-twitter
 
 configure raindrop:
   * edit ~/.raindrop
