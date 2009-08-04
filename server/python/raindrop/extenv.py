@@ -54,6 +54,12 @@ def get_ext_env(doc_model, context, src_doc, ext):
         return threads.blockingCallFromThread(reactor,
                     doc_model.open_view, *args, **kw)
 
+    def update_documents(docs):
+        context['did_query'] = True
+        return doc_model.update_documents(docs)
+        #return threads.blockingCallFromThread(reactor,
+        #            doc_model.update_documents, docs)
+
     def get_my_identities(__my_identities=[]):
         # XXX - can't use globals here!!
         # Some extensions need to know which identity IDs mean the current
@@ -83,6 +89,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
     new_globs['emit_related_identities'] = emit_related_identities
     new_globs['open_schema_attachment'] = open_schema_attachment
     new_globs['open_view'] = open_view
+    new_globs['update_documents'] = update_documents
     new_globs['get_my_identities'] = get_my_identities
     new_globs['logger'] = logging.getLogger('raindrop.ext.'+ext.id)
     return new_globs

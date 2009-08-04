@@ -289,6 +289,18 @@ class DocumentModel(object):
         return self.db.openView(docId, viewId, *args, **kwargs)
 
     @defer.inlineCallbacks
+    def update_documents(self, docs):
+        logger.info("attempting to update documents - %r", docs)
+        results = yield self.db.updateDocuments(docs)
+        errors = []
+        for doc, dinfo in zip(docs, results):
+            if 'error' in dinfo:
+                # presumably an unexpected error :(
+                errors.append(dinfo)
+        if errors:
+            raise DocumentSaveError(errors)
+
+    @defer.inlineCallbacks
     def open_documents_by_id(self, doc_ids):
         """Open documents by the already constructed docid"""
         logger.debug("attempting to open documents %r", doc_ids)
