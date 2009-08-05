@@ -157,7 +157,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
             dojo["require"](this.fromSelector);
             dojo.addOnLoad(dojo.hitch(this, function(){
               //Put the list of sender identities in a combo box
-              this.fromSelectorWidget = new (dojo.getObject(this.fromSelector))({
+              var ctor = dojo.getObject(this.fromSelector);
+
+              this.fromSelectorWidget = new ctor({
                 store: rd.toIfrs(sendList, "name", "name"),
                 searchAttr: "name",
                 value: senderDisplay,

@@ -188,7 +188,7 @@ dojo._mixin(rd.conversation, {
     });
   },
 
-  latest: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+  latest: function(/*Number*/limit, /*Number*/skip, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent messages up to limit, then
     //pulls the conversations associated with those messages. Conversation with
     //the most recent message will be first.
@@ -198,7 +198,8 @@ dojo._mixin(rd.conversation, {
     this._query({
       startkey: ["rd.msg.body", "timestamp", {}],
       endkey: ["rd.msg.body", "timestamp"],
-      limit: limit      
+      limit: limit,
+      skip: skip
     }, callback, errback);
   },
 

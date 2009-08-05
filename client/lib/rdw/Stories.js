@@ -15,6 +15,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //for the messages that match the criteria.
   messageLimit: 30,
 
+  //The number of "pages" (skips) to do for the conversations calls
+  //for the home view.
+  homeSkipLimit: 5,
+
   //List of topics to listen to and modify contents based
   //on those topics being published. Note that this is an object
   //on the rdw.Stories prototype, so modifying it will affect
@@ -29,6 +33,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-mailingList": "mailingList",
     "rd-protocol-locationTag": "locationTag"
   },
+
+  //List of modules that may want to group messages in the home view.
+  //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
+  //for each entry in this array.
+  homeGroups: [
+    "rdw.story.TwitterTimeLine"
+  ],
 
   templateString: '<ol class="Stories"></ol>',
 
@@ -119,7 +130,120 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   home: function() {
     //summary: responds to rd-protocol-home topic.
-    rd.conversation.latest(this.messageLimit, dojo.hitch(this, "updateConversations"));
+
+    //reset stored state.
+    this.conversations = [];
+    this._frag = dojo.doc.createDocumentFragment();
+    this._groups = [];
+    this._skip = 0;
+
+    //Be sure homeGroups are loaded.
+    if (!this.homeGroupModules) {
+      for (var i = 0, module; module = this.homeGroups[i]; i++) {
+        dojo["require"](module);
+      }
+
+      dojo.addOnLoad(dojo.hitch(this, function(){
+        this.homeGroupModules = [];
+        for (var i = 0, module; module = this.homeGroups[i]; i++) {
+          var mod = dojo.getObject(module);
+          this.homeGroupModules.push(mod);
+        }
+        this._renderHome();
+      }));
+    } else {
+      this._renderHome();
+    }
+  },
+
+  _renderHome: function() {
+    //summary: does the actual display of the home view.
+    rd.conversation.latest(this.messageLimit, this._skip, dojo.hitch(this, function(conversations) {
+      //The home view groups messages by type. So, for each message in each conversation,
+      //figure out where to put it.
+      if (conversations && conversations.length) {
+        this.conversations = this.conversations.concat(conversations);
+  
+        for (var i = 0, convo; convo = conversations[i]; i++) {
+          var leftOver = [];
+          for (var j = 0, msgBag; msgBag = convo[j]; j++) {
+            //Feed the message to existing created groups.
+            if (!this._groupHandled(msgBag, this._groups)) {
+              //Existing group could not handle it, see if there is a new group
+              //handler that can handle it.
+              var handler = this._getHomeGroup(msgBag);
+              if (handler) {
+                var widget = new handler({
+                  msgs: [msgBag],
+                  displayOnCreate: false
+                }, dojo.create("div", null, this._frag));
+                this._groups.push(widget);
+                this.addSupporting(widget);
+              } else {
+                leftOver.push(msgBag);
+              }
+            }
+          }
+  
+          //If any messsages not handled by a group in a conversation
+          //are left over, create a regular story for them.
+          if (leftOver.length) {
+            var widget = new rdw.Story({
+              msgs: leftOver,
+              displayOnCreate: false
+            }, dojo.create("div", null, this._frag));
+            this._groups.push(widget);
+            this.addSupporting(widget);
+          }
+        }
+      }
+
+      if (conversations && conversations.length && this._groups.length < this.messageLimit && this._skip < this.homeSkipLimit) {
+        //Keep fetching more messages until we get a good list of things to
+        //show since grouping can eat up a lot of messages. Limit it by number
+        //of "pages" (skips) we do in the result so we don't get infinite recursion.
+        //Also stop if the last call did not get any more conversations.
+        this._skip += 1;
+        this._renderHome();
+      } else {
+        //Now ask all the groups to render themselves, conversation sorting
+        //is now done.
+        for (var i = 0, group; group = this._groups[i]; i++) {
+          group.display();
+        }
+  
+        //Inject nodes all at once for best performance.
+        this.domNode.appendChild(this._frag);
+      }
+    }));   
+  },
+
+  _groupHomeConversations: function(/*Array*/conversations) {
+    //summary: handles sorting the conversations into groups. May be
+    //called recursively to build up enough groups for the page.
+    
+  },
+
+  _groupHandled: function(/*Object*/msgBag, /*Array*/groups) {
+    //summary: if a group in the groups array can handle the msgBag, give
+    //it to that group and return true.
+    for (var i = 0, group; group = groups[i]; i++) {
+      if (group.canHandle && group.canHandle(msgBag)) {
+        group.addMessage(msgBag);
+        return true;
+      }
+    }
+    return false;
+  },
+
+  _getHomeGroup: function(/*Object*/msgBag) {
+    //summary: determines if there is a home group that can handle the message.
+    for (var i = 0, module; module = this.homeGroupModules[i]; i++) {
+      if (module.prototype.canHandle(msgBag)) {
+        return module;
+      }
+    }
+    return null;
   },
 
   contact: function(/*String*/contactId) {

@@ -2,7 +2,9 @@ dojo.provide("rdw._Base");
 
 dojo.require("dojo.cache");
 dojo.require("dojo.string");
-dojo.require("dijit.dijit");
+dojo.require("dijit._Widget");
+dojo.require("dijit._Templated");
+
 dojo.require("rd");
 
 dojo.requireLocalization("rdw", "i18n");

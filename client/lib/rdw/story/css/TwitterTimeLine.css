@@ -1,0 +1,35 @@
+
+.rdwStoryTwitterTimeLine .tweetList {
+  font-size: smaller;
+}
+
+.rdwStoryTwitterTimeLine .header,
+.rdwStoryTwitterTimeLine .content,
+.rdwStoryTwitterTimeLine .timestamp {
+  display: inline;
+}
+
+.rdwStoryTwitterTimeLine .tools {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine .Message div.photo {
+  width: 20px;
+  height: 20px;
+}
+
+.rdwStoryTwitterTimeLine .Message img.photo {
+  width: 18px;
+  height: 18px;
+}
+
+.rdwStoryTwitterTimeLine .Message .message {
+  margin-left: 20px;
+}
+
+.rdwStoryTwitterTimeLine .moreLess {
+  position: absolute;
+  right: 10ex;
+  color: #44617E;
+  cursor: pointer;
+}

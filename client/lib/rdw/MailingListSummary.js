@@ -41,18 +41,14 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     rd.escapeHtml(this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
+    // TODO: make this reflect the status of the subscription.
     switch(this.doc.status) {
       case "subscribed":
         rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
         break;
       case "unsubscribe-pending":
-      case "unsubscribe-confirmed":
         // TODO: disable the link when in this state.
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
-        break;
-      case "unsubscribed":
-        // TODO: disable the link when in this state.
-        rd.escapeHtml("Unsubscribed", this.subscriptionToolNode, "only");
         break;
     }
   },
@@ -119,30 +115,6 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     );
   },
 
-  _extractParams: function(query) {
-    var params = {};
-
-    for each (var param in query.split("&")) {
-      var name, value;
-
-      if (param.indexOf("=") != -1) {
-        var components = param.split("=");
-        name = components[0];
-        value = decodeURIComponent(components[1]);
-      }
-      else {
-        name = param;
-        value = null;
-      }
-
-      // TODO: make this support multiple same-named params (put their values
-      // into an array?).
-      params[name] = value;
-    }
-
-    return params;
-  },
-
   /**
    * Unsubscribe from a mailing list.
    *
@@ -200,7 +172,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     // url.path == the email address
     // url.query == can contain subject and/or body parameters
 
-    var params = url.query ? this._extractParams(url.query) : {};
+    var params = dojo.queryToObject(url.query);
 
     var message = {
       //TODO: make a better rd_key.

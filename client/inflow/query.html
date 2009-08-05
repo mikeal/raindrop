@@ -120,7 +120,7 @@
 
           //Convert form controls into HTML.
           for (var i = 0, input; input = inputs[i]; i++) {
-            var html = dojo.string.substitute(
+            var html = rd.string.substitute(
               '<label><span class="label">${name}:</span> <input type="text" name="${name}" value="${value}" size="40"/></label>',
               {
                 name: input,
@@ -140,7 +140,7 @@
             //form history.
             var oldArgs = args;
             args = {};
-            dojo.mixin(args, oldArgs);
+            rd.mixin(args, oldArgs);
 
             var url = rd.dbPath + args.url;
             delete args.url;
@@ -184,7 +184,7 @@
             var keys = args.keys;
             if (keys) {
               delete args.keys;
-              xhrArgs.url = xhrArgs.url + "?" + dojo.objectToQuery(args);
+              xhrArgs.url = xhrArgs.url + "?" + rd.objectToQuery(args);
               delete xhrArgs.content;
 
               xhrArgs.postData = '{"keys": ' + keys + '}';
@@ -199,7 +199,7 @@
           function output(/*String*/ text) {
             rawOutputText = text;
             //summary: output the text, depending on formatting options.
-            var useHyperlink = dojo.byId("hyperLinkIds").checked;
+            var useHyperlink = rd.byId("hyperLinkIds").checked;
             if (arguments.length) {
               //Setter case
               if (useHyperlink) {
@@ -208,22 +208,22 @@
                   return '"id":"<a href="/_utils/document.html?raindrop/' + sub1 + '" target="_blank">' + sub1 + '</a>"';
                 });
                 rdw.byId("outputText").domNode.style.display = "none";
-                dojo.byId("outputSpan").style.display = "block";
+                rd.byId("outputSpan").style.display = "block";
 
-                dojo.byId("outputSpan").innerHTML = text;
+                rd.byId("outputSpan").innerHTML = text;
               } else {
                 rdw.byId("outputText").domNode.style.display = "block";
-                dojo.byId("outputSpan").style.display = "none";
+                rd.byId("outputSpan").style.display = "none";
 
                 rdw.byId("outputText").attr("value", text);
               }
             } else {
               //Getter case.
-              return useHyperlink ? dojo.byId("outputSpan").innerHTML : dw.byId("outputText").attr("value");
+              return useHyperlink ? rd.byId("outputSpan").innerHTML : dw.byId("outputText").attr("value");
             }
           }
 
-          dojo.query("#hyperLinkIds").onclick(function(evt) {
+          rd.query("#hyperLinkIds").onclick(function(evt) {
             output(rawOutputText);
           });
 
@@ -244,7 +244,7 @@
           function submitQuery(evt) {
             //summary: grabs the forms fields, adds to history and submits query.
             if (evt) {
-              dojo.stopEvent(evt);
+              rd.stopEvent(evt);
             }
 
             var args = rd.formToObject("masterForm");
@@ -254,7 +254,7 @@
           }
 
           //Bind to onsubmit for the form.
-          rd.connect(dojo.byId("masterForm"), "onsubmit", submitQuery);
+          rd.connect(rd.byId("masterForm"), "onsubmit", submitQuery);
 
 
 
@@ -269,10 +269,10 @@
           //********************************************
           function setForm(args) {
             //summary: sets the form fields based on the args.
-            var form = dojo.byId("masterForm");
+            var form = rd.byId("masterForm");
             for (var prop in args) {
               if (prop == "url") {
-                dojo.query(form[prop]).val(args[prop]);
+                rd.query(form[prop]).val(args[prop]);
               } else {
                 form[prop].value = args[prop];
               }
@@ -286,12 +286,12 @@
             }
             //console.log(evt, evt.target, evt.currentTarget);
 
-            if (evt.keyCode == dojo.keys.UP_ARROW) {
+            if (evt.keyCode == rd.keys.UP_ARROW) {
                if (historyIndex > 0) {
                 historyIndex -= 1;
                 showHistory();
               }
-           } else if (evt.keyCode == dojo.keys.DOWN_ARROW) {
+           } else if (evt.keyCode == rd.keys.DOWN_ARROW) {
               if (historyIndex < historyCache.length - 1) {
                 historyIndex += 1;
                 showHistory();
@@ -300,16 +300,16 @@
           });
           
           //Save last query in a cookie for now. Also rehydrate last query from cookie if available.
-          var oldArgs = dojo.cookie("lastQuery");
+          var oldArgs = rd.cookie("lastQuery");
           if (oldArgs) {
-            setForm(dojo.fromJson(oldArgs));
+            setForm(rd.fromJson(oldArgs));
             submitQuery();
           }
 
           //When page is being unloaded save query to a cookie.
-          dojo.connect(window, "onbeforeunload", function(evt) {
+          rd.connect(window, "onbeforeunload", function(evt) {
             var args = rd.formToObject("masterForm");
-            dojo.cookie("lastQuery", dojo.toJson(args), { expires: 25 });
+            rd.cookie("lastQuery", rd.toJson(args), { expires: 25 });
           });
         }
       });

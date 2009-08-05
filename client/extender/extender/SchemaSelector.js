@@ -9,7 +9,7 @@ dojo.require("extender.SchemaExplorer");
 rd.addStyle("extender.css.SchemaSelector");
 
 dojo.declare("extender.SchemaSelector", [rdw._Base], {
-  templatePath: dojo.moduleUrl("extender.templates", "SchemaSelector.html"),
+  templateString: dojo.cache("extender.templates", "SchemaSelector.html"),
 
   schemaTemplate: '<li><a href="#${name}">${name}</a></li>',
 
