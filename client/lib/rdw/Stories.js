@@ -158,7 +158,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   _renderHome: function() {
     //summary: does the actual display of the home view.
-    rd.conversation.latest(this.messageLimit, this._skip, dojo.hitch(this, function(conversations) {
+    rd.conversation.latest(this.messageLimit, (this._skip * this.messageLimit), dojo.hitch(this, function(conversations) {
       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
       if (conversations && conversations.length) {
