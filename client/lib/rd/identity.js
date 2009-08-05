@@ -174,19 +174,46 @@ dojo.mixin(rd.identity, {
   },
 
   _load: function() {
-    //summary: pulls in all the identities, since we need them anyway to do
-    //things like mark a message a from a known user. This may change if we
-    //modify the backend to do more work.
+    //summary: pulls in all the identities we care about, since we need them
+    // anyway to do things like mark a message a from a known user.  Ones we
+    // care about are those associated with a contact.
     rd.store.megaview({
-      key: ["rd.core.content", "schema_id", "rd.identity"],
+      startkey: ["rd.identity.contacts", "contacts"],
+      endkey: ["rd.identity.contacts", "contacts", {}],
       reduce: false,
-      include_docs: true,
       success: dojo.hitch(this, function(json) {
-        //Save off identity docs in our store for all the identities.
+        // build a 'set' of identity IDs.  Each rd_key is of form
+        // ['identity', identity_id].
+        var ours = {};
         for (var i = 0, row; row = json.rows[i]; i++) {
-          this._storeIdty(row.doc);
+          var rd_key = row['value']['rd_key'];
+          ours[rd_key] = {'rd_key': rd_key};
         }
-        this._onload();
+        // now get the 'rd.identity' schema for all which have them.
+        var keys = [];
+        for each (var idty in ours) {
+          keys.push(["rd.core.content", "key-schema_id", [idty['rd_key'], "rd.identity"]]);
+        }
+        rd.store.megaview({
+          keys: keys,
+          reduce: false,
+          include_docs: true,
+          success: dojo.hitch(this, function(json) {
+            // Update our 'set' of identities
+            for (var i = 0, row; row = json.rows[i]; i++) {
+              ours[row.doc.rd_key] = row.doc;
+            }
+            // and now load every identity
+            for each (var idty in ours) {
+              this._storeIdty(idty);
+            }
+            this._onload();
+          }),
+          error: dojo.hitch(this, function(err) {
+            this._error = err;
+            this._onload();
+          })
+        });
       }),
       error: dojo.hitch(this, function(err) {
         this._error = err;
