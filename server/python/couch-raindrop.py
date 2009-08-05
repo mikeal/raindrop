@@ -174,14 +174,7 @@ def sync_messages(req):
         pl = yield _get_pipeline(req)
         conductor.options = pl.options # *sob*
         num = None
-        if not pl.options.no_process:
-            pl.prepare_sync_processor()
-        try:
-            _ = yield conductor.sync(None)
-        finally:
-            if not pl.options.no_process:
-                num = pl.finish_sync_processor()
-        defer.returnValue(num)
+        _ = yield conductor.sync(pl)
 
     return _start_async("sync-messages", _sync_messages, req)
 
