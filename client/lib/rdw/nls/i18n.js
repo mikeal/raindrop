@@ -1,4 +1,5 @@
 ({
+  add: "Add",
   annoying: "Annoying",
   annoyingTitle: "Click here to hide messages from this person.",
   broadcast: "Broadcasts",

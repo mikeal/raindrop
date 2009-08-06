@@ -7,6 +7,8 @@ dojo.require("rd.contact");
 dojo.declare("rdw.ContactSelector", [rdw._Base], {
   templateString: '<div class="rdwContactSelector" dojoAttachEvent="onclick: onClick"><ul dojoAttachPoint="listNode"></ul></div>',
 
+  addTemplate: '<li class="add"><a href=#rdw.ContactSelector:add><span class="name">${i18n.add}</span></a></li>',
+
   contactTemplate: '<li class="${extraClass}"><a href=#rdw.ContactSelector:${contactId}><img src=${imgUrl}> <span class="name">${name}</span></a></li>',
 
   //The JS object that controls this ContactSelector instance.
@@ -26,27 +28,6 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
     this.update();
   },
 
-  destroy: function() {
-    //summary: dijit lifecycle method.
-    if (this.newContactNode) {
-      delete this.newContactNode;
-      delete this.newContactEditNode;
-    }
-    this.inherited("destroy", arguments);
-  },
-
-  makeNewContactNode: function() {
-    //summary: creates a node to use for creating a new contact. Only do
-    //this once and attach event handlers in here.
-    this.newContactNode = dojo.create("li", {
-      innerHTML: '<input class="newContact" type="text">'
-    });
-
-    this.newContactEditNode = this.newContactNode.firstChild;
-    this.connect(this.newContactEditNode, "onkeypress", "onNewContactKeyPress");
-    this.connect(this.newContactEditNode, "onclick", "onNewContactClick");
-  },
-
   onNewContactKeyPress: function(/*Event*/evt) {
     //summary: handles key presses in the new contact area so if Enter is
     //chosen, the name is grabbed and submitted.
@@ -59,7 +40,6 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
         rd.pub("rdw.ContactSelector-selected", {name: name});
       }
 
-      this.newContactEditNode.value = "";
       dojo.stopEvent(evt);
     }
   },
@@ -70,52 +50,59 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
     evt.stopPropagation();
   },
 
-  update: function(/*Array*/preferred) {
+  update: function(/*String?*/suggestedAddName, /*Array?*/preferred) {
     //summary: updates the display of the contacts.
-    if (preferred) {
-      this.preferred = preferred;
-    }
-
-    if (!this.newContactNode) {
-      this.makeNewContactNode();
-    }
+    this.suggestedAddName = suggestedAddName;
+    this.preferred = preferred;
 
     //Generate the contacts html, starting with the preferred list.
     //Keep a hashmap of the preferred ids, to make weeding them out of the full
     //list easier.
     var prefIds = {};
     var html = '';
+    
+    if (this.suggestedAddName) {
+      html += dojo.string.substitute(this.addTemplate, {
+        name: rd.escapeHtml(this.suggestedAddName),
+        i18n: this.i18n
+      });
+    }
+
     if (this.preferred) {
       for(var i = 0, contact; contact = this.preferred[i]; i++) {
-        var contactId = contact.rd_key[1];
-        html += dojo.string.substitute(this.contactTemplate, {
-          contactId: contactId,
-          imgUrl: contact.image || this.blankImgUrl,
-          name: contact.name,
-          extraClass: "preferred"
-        });
-        prefIds[contactId] = 1;
+        //Only include contacts with names.
+        if (contact.name) {
+          var contactId = contact.rd_key[1];
+          html += dojo.string.substitute(this.contactTemplate, {
+            contactId: contactId,
+            imgUrl: contact.image || this.blankImgUrl,
+            name: contact.name,
+            extraClass: "preferred"
+          });
+          prefIds[contactId] = 1;
+        }
       }
     }
 
     //Generate html for the rest of the contacts.
     rd.contact.list(dojo.hitch(this, function(contacts) {
       for(var i = 0, contact; contact = contacts[i]; i++) {
-        var contactId = contact.rd_key[1];
-        if (!prefIds[contactId]) {
-          html += dojo.string.substitute(this.contactTemplate, {
-            contactId: contactId,
-            imgUrl: contact.image || this.blankImgUrl,
-            name: contact.name,
-            extraClass: ""
-          });
+        //Only include contacts with names.
+        if (contact.name) {
+          var contactId = contact.rd_key[1];
+          if (!prefIds[contactId]) {
+            html += dojo.string.substitute(this.contactTemplate, {
+              contactId: contactId,
+              imgUrl: contact.image || this.blankImgUrl,
+              name: contact.name,
+              extraClass: ""
+            });
+          }
         }
       }
 
       if (html) {
-        this.listNode.innerHTML = "";
-        this.listNode.appendChild(this.newContactNode);
-        dojo.place(html, this.listNode);
+        dojo.place(html, this.listNode, "only");
       }
     }));
   },
@@ -132,13 +119,21 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
 
     if (href && (href = href.split("#")[1])) {
       if (href.indexOf("rdw.ContactSelector:") == 0) {
+        //Pull out contactId, it may be just an add new contact
+        //request, so construct contact data appropriately.
         var contactId = href.split(":")[1];
-        if (this.controller && this.controller.onContactSelected) {
-          this.controller.onContactSelected({contactId: contactId});
+        if (contactId == "add") {
+          var contact = {name: this.suggestedAddName};
         } else {
-          rd.pub("rdw.ContactSelector-selected", {contactId: contactId});
+          contact = {contactId: contactId};
         }
-        this.newContactEditNode.value = "";
+
+        //Notify controller or broadcast selection.
+        if (this.controller && this.controller.onContactSelected) {
+          this.controller.onContactSelected(contact);
+        } else {
+          rd.pub("rdw.ContactSelector-selected", contact);
+        }
         evt.preventDefault();
       } else {
         //Did not click on an interesting link. Stop the event
