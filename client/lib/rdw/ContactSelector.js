@@ -26,10 +26,58 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
     this.update();
   },
 
+  destroy: function() {
+    //summary: dijit lifecycle method.
+    if (this.newContactNode) {
+      delete this.newContactNode;
+      delete this.newContactEditNode;
+    }
+    this.inherited("destroy", arguments);
+  },
+
+  makeNewContactNode: function() {
+    //summary: creates a node to use for creating a new contact. Only do
+    //this once and attach event handlers in here.
+    this.newContactNode = dojo.create("li", {
+      innerHTML: '<input class="newContact" type="text">'
+    });
+
+    this.newContactEditNode = this.newContactNode.firstChild;
+    this.connect(this.newContactEditNode, "onkeypress", "onNewContactKeyPress");
+    this.connect(this.newContactEditNode, "onclick", "onNewContactClick");
+  },
+
+  onNewContactKeyPress: function(/*Event*/evt) {
+    //summary: handles key presses in the new contact area so if Enter is
+    //chosen, the name is grabbed and submitted.
+    if (evt.keyCode == dojo.keys.ENTER) {
+      var name = dojo.trim(evt.target.value);
+
+      if (this.controller && this.controller.onContactSelected) {
+        this.controller.onContactSelected({name: name});
+      } else {
+        rd.pub("rdw.ContactSelector-selected", {name: name});
+      }
+
+      this.newContactEditNode.value = "";
+      dojo.stopEvent(evt);
+    }
+  },
+
+  onNewContactClick: function(/*Event*/evt) {
+    //summary: clicks on the text box should not bubble out so we can keep
+    //the menu up.
+    evt.stopPropagation();
+  },
+
   update: function(/*Array*/preferred) {
     //summary: updates the display of the contacts.
     if (preferred) {
       this.preferred = preferred;
+    }
+
+    if (!this.newContactNode) {
+      this.makeNewContactNode();
     }
 
     //Generate the contacts html, starting with the preferred list.
@@ -65,7 +113,9 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
       }
 
       if (html) {
-        dojo.place(html, this.listNode, "only");
+        this.listNode.innerHTML = "";
+        this.listNode.appendChild(this.newContactNode);
+        dojo.place(html, this.listNode);
       }
     }));
   },
@@ -84,10 +134,11 @@ dojo.declare("rdw.ContactSelector", [rdw._Base], {
       if (href.indexOf("rdw.ContactSelector:") == 0) {
         var contactId = href.split(":")[1];
         if (this.controller && this.controller.onContactSelected) {
-          this.controller.onContactSelected(contactId);
+          this.controller.onContactSelected({contactId: contactId});
         } else {
-          rd.pub("rdw.ContactSelector-selected", contactId);
+          rd.pub("rdw.ContactSelector-selected", {contactId: contactId});
         }
+        this.newContactEditNode.value = "";
         evt.preventDefault();
       } else {
         //Did not click on an interesting link. Stop the event

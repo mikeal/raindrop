@@ -80,6 +80,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
 
+    this.subscribe("rd-contact-updated", "onContactUpdated");
+
     if (!this.known) {
       //This identity is unknown. Try to make a suggestion for
       //who it might be.
@@ -155,7 +157,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     }
   },
 
-  onContactSelected: function(/*String*/contactId) {
+  onContactSelected: function(/*Object*/contact) {
     //summary: handles a contact selection from the rdw.contactDropDown.
     rdw.contactDropDown.close();
 
@@ -165,14 +167,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
       dojo.hitch(this, function(identity) {
         //identity created, now attach it to the contact.
         rd.contact.addIdentity(
-          contactId,
+          contact,
           identity,
           dojo.hitch(this, function() {
-            //update this Message object's UI to show the new state.
-            //TODO: this may cause problems if some container holds
-            //on to this widget, since we will be changing the instance.
-            this.messageBag["rd.msg.ui"].known = true;
-            rd._updateInstance(this, rdw.Message);
           }),
           dojo.hitch(this, function(error) {
             //error. TODO: make this better, inline.
@@ -194,5 +191,24 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
     //Show the reply/forward controls.
     this.toolsNode.style.display = "";
+  },
+
+  onContactUpdated: function(/*Object*/contact) {
+    //summary: called when a contact is updated (more likely a new contact or
+    //old contact associated with an identity)
+    var idtys = contact.identities;
+    if (idtys && idtys.length) {
+      var from = this.messageBag["rd.msg.body"] && this.messageBag["rd.msg.body"].from;
+      for (var i = 0, idty; idty = idtys[i]; i++) {
+        var id = idty.rd_key[1];
+        if (id[1] == from[1] && id[0] == from[0]) {
+          //update this Message object's UI to show the new state.
+          //TODO: this may cause problems if some container holds
+          //on to this widget, since we will be changing the instance.
+          this.messageBag["rd.msg.ui"].known = true;
+          rd._updateInstance(this, dojo.getObject(this.declaredClass));
+        }
+      }
+    }
   }
 });

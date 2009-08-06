@@ -129,32 +129,49 @@ dojo.mixin(rd.contact, {
     this.get(contactIds, callback, errback);
   },
 
-  addIdentity: function(/*String*/contactId, /*Object*/identity,
+  addIdentity: function(/*Object*/contact, /*Object*/identity,
                         /*Function*/callback, /*Function?*/errback) {
-    //summary: adds the given identity to a contact specified by contactId
+    //summary: adds the given identity to a contact specified by contact
     //by creating a raindrop document that connects the contact to the identity.
+    //This method create the contact document if it does not exist, and also create
+    //a rd.identity.contacts reo
     //SHOULD NOT be used if identity existed before, and already has an
     //rd.identity.contacts record. Use merge() for that case.
+    // contact:
+    //    an object that has either a contactId or name property. If no
+    //    contactId, then it is assumed a new contact needs to be created
+    //    with the given name property.
+    if (contact.contactId) {
+      this._makeRdIdentityContacts(identity, contact.contactId, callback, errback);
+    } else if (contact.name) {
+      //Create the contact record first.Dynamically load the uuid stuff we need
+      //for the contacts.
+      dojo["require"]("dojox.uuid.generateRandomUuid");
+      dojo["require"]("dojox.uuid.Uuid");
+      dojo.addOnLoad(dojo.hitch(this, function(){
+        var uuid = dojox.uuid;
+        uuid.Uuid.setGenerator(uuid.generateRandomUuid);
+        var uid = (new uuid.Uuid()).toString();
 
-    //Generate the new document.
-    var idtyMap = {
-      rd_key: identity.rd_key,
-      rd_schema_id: "rd.identity.contacts",
-      rd_source: [identity._id],
-      rd_megaview_expandable: ["contacts"], 
-      contacts: [
-        [contactId, null]
-      ]
-    };
+        var contactDoc = {
+          name: contact.name,
+          rd_key:["contact", uid],
+          rd_schema_id: "rd.contact",
+          rd_source: [identity._id]
+        }
 
-    //Insert the document.
-    rd.store.put(idtyMap, dojo.hitch(this, function() {
-      //Update the data store.
-      this._mapIdtyToContact(idtyMap, contactId);
-      this._attachIdentity(identity);
-
-      callback();
-    }), errback);
+        //Insert the document.
+        rd.store.put(contactDoc, dojo.hitch(this, function(contact) {
+          //Update our cache
+          this._store.push(contact);
+          this._store[uid] = contact;
+          //Finish with creating the rd.identity.contacts record.
+          this._makeRdIdentityContacts(identity, uid, callback, errback);
+        }), errback);
+      }));
+    } else if (errback) {
+      errback("Invalid contact object passed to rd.contact.addIdentity");
+    }
   },
 
   merge: function(/*String*/sourceContactId, /*String*/targetContactId,
@@ -461,6 +478,32 @@ dojo.mixin(rd.contact, {
         })
       );
     }
+  },
+
+  _makeRdIdentityContacts: function(/*Object*/identity, /*String*/contactId,
+                                    /*Function*/callback, /*Function?*/errback) {
+    //summary: just makes an rd.identity.contacts record.
+
+    //Generate the new rd.identity.contacts document.
+    var idtyMap = {
+      rd_key: identity.rd_key,
+      rd_schema_id: "rd.identity.contacts",
+      rd_source: [identity._id],
+      rd_megaview_expandable: ["contacts"], 
+      contacts: [
+        [contactId, null]
+      ]
+    };
+
+    //Insert the document.
+    rd.store.put(idtyMap, dojo.hitch(this, function() {
+      //Update the data store.
+      this._mapIdtyToContact(idtyMap, contactId);
+      this._attachIdentity(identity);
+
+      callback();
+      rd.pub("rd-contact-updated", this._store[contactId]);
+    }), errback);
   },
 
   _hasNameMatch: function(/*String*/from, /*Array*/names) {
