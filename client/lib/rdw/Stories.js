@@ -38,7 +38,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
   //for each entry in this array.
   homeGroups: [
-    "rdw.story.TwitterTimeLine"
+    "rdw.story.TwitterTimeLine",
+    "rdw.story.MailingList"
   ],
 
   templateString: '<ol class="Stories"></ol>',
@@ -133,9 +134,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
     //reset stored state.
     this.conversations = [];
-    this._frag = dojo.doc.createDocumentFragment();
     this._groups = [];
     this._skip = 0;
+    this._displayCount = 0;
 
     //Be sure homeGroups are loaded.
     if (!this.homeGroupModules) {
@@ -168,7 +169,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           var leftOver = [];
           for (var j = 0, msgBag; msgBag = convo[j]; j++) {
             //Feed the message to existing created groups.
-            if (!this._groupHandled(msgBag, this._groups)) {
+            if (!this._groupHandled(msgBag)) {
               //Existing group could not handle it, see if there is a new group
               //handler that can handle it.
               var handler = this._getHomeGroup(msgBag);
@@ -177,28 +178,31 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                   msgs: [msgBag],
                   displayOnCreate: false
                 }, dojo.create("div", null, this._frag));
+                widget._isGroup = true;
                 this._groups.push(widget);
                 this.addSupporting(widget);
+                this._displayCount += 1;
               } else {
                 leftOver.push(msgBag);
+                this._displayCount += 1;
               }
             }
           }
-  
+
           //If any messsages not handled by a group in a conversation
           //are left over, create a regular story for them.
           if (leftOver.length) {
             var widget = new rdw.Story({
               msgs: leftOver,
               displayOnCreate: false
-            }, dojo.create("div", null, this._frag));
+            }, dojo.create("div"));
             this._groups.push(widget);
             this.addSupporting(widget);
           }
         }
       }
 
-      if (conversations && conversations.length && this._groups.length < this.messageLimit && this._skip < this.homeSkipLimit) {
+      if (conversations && conversations.length && this._displayCount <= this.messageLimit && this._skip < this.homeSkipLimit) {
         //Keep fetching more messages until we get a good list of things to
         //show since grouping can eat up a lot of messages. Limit it by number
         //of "pages" (skips) we do in the result so we don't get infinite recursion.
@@ -206,28 +210,37 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         this._skip += 1;
         this._renderHome();
       } else {
-        //Now ask all the groups to render themselves, conversation sorting
-        //is now done.
+        this._sortGroups();
+
+        //Add all the widgets to the DOM and ask them to display.
+        var frag = dojo.doc.createDocumentFragment();
         for (var i = 0, group; group = this._groups[i]; i++) {
+          group.placeAt(frag);
           group.display();
         }
   
         //Inject nodes all at once for best performance.
-        this.domNode.appendChild(this._frag);
+        this.domNode.appendChild(frag);
       }
     }));   
   },
 
-  _groupHomeConversations: function(/*Array*/conversations) {
-    //summary: handles sorting the conversations into groups. May be
-    //called recursively to build up enough groups for the page.
-    
+  _sortGroups: function() {
+    //summary: handles sorting the groups. Default behavior
+    //is to have true groups at the bottom, below regular
+    //message groups.
+    var regular = [];
+    var groupie = [];
+    for (var i = 0, group; group = this._groups[i]; i++) {
+      group._isGroup ? groupie.push(group) : regular.push(group);
+    }
+    this._groups = regular.concat(groupie);
   },
 
-  _groupHandled: function(/*Object*/msgBag, /*Array*/groups) {
+  _groupHandled: function(/*Object*/msgBag) {
     //summary: if a group in the groups array can handle the msgBag, give
     //it to that group and return true.
-    for (var i = 0, group; group = groups[i]; i++) {
+    for (var i = 0, group; group = this._groups[i]; i++) {
       if (group.canHandle && group.canHandle(msgBag)) {
         group.addMessage(msgBag);
         return true;
