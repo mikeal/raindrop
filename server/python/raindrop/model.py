@@ -13,6 +13,7 @@ try:
     import simplejson as json
 except ImportError:
     import json # Python 2.6
+    sys.modules['simplejson'] = json # for paisley on 2.6...
 
 import paisley
 from .config import get_config
