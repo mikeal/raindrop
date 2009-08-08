@@ -329,8 +329,10 @@ class ImapProvider(object):
     else:
       cached_uid_next = 1
 
-    suidn = int(server_info['UIDNEXT'])
-    if suidn <= cached_uid_next:
+    suidn = int(server_info.get('UIDNEXT', -1))
+    if suidn == -1:
+      logger.warn("This server doesn't provide UIDNEXT - it will take longer to synch...")
+    elif suidn <= cached_uid_next:
       logger.info('folder %r is up-to-date', folder_path)
       if force_return:
         defer.returnValue(cache_doc)
