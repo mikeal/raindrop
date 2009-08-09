@@ -41,6 +41,9 @@ def get_program_options():
     yield Option("", "--log-file", action="store",
                 help="Specifies the name of the log file to use.  Default is "
                      "stderr if stderr is a terminal, else $TEMP/raindrop.log")
+    yield Option("", "--color", action="store_true", dest="use_color",
+                 default=False,
+                 help="Use ANSI color when available.")
 
 
 def get_request_options():
@@ -81,6 +84,21 @@ def get_request_options():
                 help="Maximum age of an item to fetch.  eg, '30 seconds', "
                      "'2weeks'.")
 
+class LevelColorFormatter(logging.Formatter):
+    RESET = '\x1b[0m'
+    LEVEL_DECILE_TO_COLOR = [
+        '\x1b[0;30m', # 0-9  : ridiculously detailed. hard to read dark grey
+        '\x1b[1;30m', # 10-19: DEBUG dark grey
+        '\x1b[0;37m', # 20-29: INFO grey
+        '\x1b[0;33m', # 30-39: WARNING yellow / brown
+        '\x1b[0;31m', # 40-49: ERROR red
+        '\x1b[1;31m', # 50-  : CRITICAL bright red
+    ]
+    def format(self, record):
+        s = logging.Formatter.format(self, record)
+        level_decile = min(5, record.levelno // 10)
+        return self.LEVEL_DECILE_TO_COLOR[level_decile] + s + self.RESET
+
 # possibly misplaced....
 def setup_logging(options):
     init_errors = []
@@ -88,6 +106,12 @@ def setup_logging(options):
     if not filename and not sys.stderr.isatty():
         filename = os.path.join(tempfile.gettempdir(), "raindrop.log")
     logging.basicConfig(filename=filename)
+    if options.use_color:
+        handler = logging.root.handlers[0]
+        color_formatter = LevelColorFormatter(handler.formatter._fmt,
+                                              handler.formatter.datefmt)
+        handler.setFormatter(color_formatter)
+
     for val in options.log_level: # a list of all --log-level options...
         try:
             name, level = val.split("=", 1)
