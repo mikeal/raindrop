@@ -44,6 +44,9 @@ def get_program_options():
     yield Option("", "--color", action="store_true", dest="use_color",
                  default=False,
                  help="Use ANSI color when available.")
+    yield Option("", "--debug", action="store_true", dest="debug",
+                 default=False,
+                 help="Enable debug mode; breaking on exceptions.")
 
 
 def get_request_options():

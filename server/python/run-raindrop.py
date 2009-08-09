@@ -285,6 +285,10 @@ def main():
     
         sys.exit(0)
 
+    if options.debug:
+        import twisted.python.failure
+        twisted.python.failure.startDebugMode()
+
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
     d = defer.Deferred()
