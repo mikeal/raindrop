@@ -35,6 +35,15 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   replyStyle: "",
 
   /**
+   * sorting to use for messages. Unlike rdw.Story, the twitter timeline
+   * should show most recent tweet first. This method should not use
+   * the "this" variable.
+   */
+  msgSort: function (a,b) {
+    return a["rd.msg.body"].timestamp < b["rd.msg.body"].timestamp
+  },
+
+  /**
    * Determines if TwitterTimeLine can support this message.
    *
    * @param messageBag {object} the collection of message schemas for a message.

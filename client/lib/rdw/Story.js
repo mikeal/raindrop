@@ -13,6 +13,10 @@ dojo.declare("rdw.Story", [rdw._Base], {
   //method will need to be called at the appropriate time.
   displayOnCreate: true,
 
+  //The name of the constructor function (module) that should be used
+  //to show individual messages.
+  messageCtorName: "rdw.Message",
+
   //Limit to number of messages. If value is -1, then it means
   //show all.
   messageLimit: -1,
@@ -43,7 +47,9 @@ dojo.declare("rdw.Story", [rdw._Base], {
    * @param messageBag {object} the collection of message schemas for a message.
    */
   addMessage: function(messageBag) {
-    this.msgs.push(messageBag);
+    if (messageBag) {
+      this.msgs.push(messageBag);
+    }
     if (this._displayed) {
       this.display();
     }
@@ -60,11 +66,15 @@ dojo.declare("rdw.Story", [rdw._Base], {
 
     //Create the messages.
     var limit = this.messageLimit > -1 ? this.messageLimit : this.msgs.length;
-    for (var i = 0, msg; (i < limit) && (msg = this.msgs[i]); i++) {
-      this.addSupporting(new rdw.Message({
-        messageBag: msg,
-        type: i == 0 ? "" : this.replyStyle
-      }, dojo.create("div", null, this.containerNode)));
-    };
+    dojo["require"](this.messageCtorName);
+    dojo.addOnLoad(dojo.hitch(this, function() {
+      var ctor = dojo.getObject(this.messageCtorName);
+      for (var i = 0, msg; (i < limit) && (msg = this.msgs[i]); i++) {
+        this.addSupporting(new ctor({
+          messageBag: msg,
+          type: i == 0 ? "" : this.replyStyle
+        }, dojo.create("div", null, this.containerNode)));
+      };
+    }));
   }
 });

@@ -5,9 +5,10 @@ from urllib import urlencode, quote
 import base64
 
 import twisted.web.error
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.python.failure import Failure
 from twisted.internet.task import coiterate
+from twisted.web.client import HTTPClientFactory
 
 try:
     import simplejson as json
@@ -81,6 +82,25 @@ def _encode_options(options):
 
 
 class CouchDB(paisley.CouchDB):
+    def __init__(self, host, port=5984, dbName=None, username=None, password=None):
+        paisley.CouchDB.__init__(self, host, port, dbName)
+        self.username = username
+        self.password = password
+
+    def _getPage(self, uri, **kwargs):
+        """
+        C{getPage}-like.
+        """
+        url = self.url_template % (uri,)
+        kwargs["headers"] = headers = {"Accept": "application/json"}
+        if self.username:
+            auth = base64.b64encode(self.username + ":" + self.password)
+            headers["Authorization"] = "Basic " + auth
+        factory = HTTPClientFactory(url, **kwargs)
+        reactor.connectTCP(self.host, self.port, factory)
+        return factory.deferred
+
+
     def postob(self, uri, ob):
         # This seems to not use keep-alives etc where using twisted.web
         # directly does?
@@ -257,7 +277,8 @@ def get_db(couchname="local", dbname=_NotSpecified):
     except KeyError:
         pass
     logger.info("Connecting to couchdb at %s", dbinfo)
-    db = CouchDB(dbinfo['host'], dbinfo['port'], dbname)
+    db = CouchDB(dbinfo['host'], dbinfo['port'], dbname,
+                 dbinfo.get('username'), dbinfo.get('password'))
     DBs[key] = db
     return db
 

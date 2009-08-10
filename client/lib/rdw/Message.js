@@ -123,7 +123,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var href = evt.target.href;
     if (href && (href = href.split("#")[1])) {
       if (href == "know") {
-        rdw.contactDropDown.open(evt.target, this, this.matches);
+        rdw.contactDropDown.open(evt.target, this, this.fromName, this.matches);
       } else if (href == "reply" || href == "forward") {
           //Dynamically load the module that will handle
           //the Reply/Forward action.

@@ -3,7 +3,7 @@ dojo.provide("rdw.contactDropDown");
 dojo.require("rdw.ContactSelector");
 
 rdw.contactDropDown = {
-  open: function(/*DOMNode*/domNode, /*Object?*/controller, /*Array?*/preferredContacts) {
+  open: function(/*DOMNode*/domNode, /*Object?*/controller, /*String?*/suggestedAddName, /*Array?*/preferredContacts) {
     //Opens an dropdown with a ContactSelector near the domNode, passing
     //the optional preferredContacts to ContactSelector.    
     if (this.domNode == domNode && this._isOpen == true) {
@@ -20,7 +20,7 @@ rdw.contactDropDown = {
       }), 10);
     }
     this.selector.controller = controller;
-    this.selector.update(preferredContacts);
+    this.selector.update(suggestedAddName, preferredContacts);
 
     //Show the ContactSelector.
     dijit.popup.open({
