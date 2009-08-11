@@ -30,7 +30,7 @@
 
   djConfig = {
     debugAtAllCosts: true, //comment  this out for faster loading.
-    require: ["rd", "couch", "dojo.parser"],
+    require: ["rd"],
     parseOnLoad: true,
     //The "base" value is just bogus, just want paths to resolve to local html directory
     //for app-specific files.

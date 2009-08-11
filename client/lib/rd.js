@@ -3,8 +3,6 @@ dojo.provide("rd");
 
 dojo.require("dojo.data.ItemFileReadStore");
 dojo.require("dojox.encoding.base64");
-dojo.require("couch");
-
 /*
 This file provides some basic environment services running in raindrop.
 */
