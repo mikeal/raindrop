@@ -18,7 +18,8 @@
 .Organizer ol > li > a {
   text-decoration: none;
   background-color: transparent;
-  color: #496c7a;
+  color: #1A1A1A;
+  font-size: small;
 }
 
 .Organizer ol > li > a[href*=home] {

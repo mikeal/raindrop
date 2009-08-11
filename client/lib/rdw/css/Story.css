@@ -2,10 +2,10 @@
 
 .Story {
   max-width: 80ex;
-  margin: .75em 0px;
+  margin: 8px 0px;
   padding: 0px;
-  border-bottom: 1px solid #e1e1e1;
 }
+
 .Story:last-child {
   margin-bottom: 0px;
 }

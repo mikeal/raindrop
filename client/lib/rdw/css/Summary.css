@@ -1,4 +1,6 @@
 .rdwSummary {
-  -moz-border-radius:3px;
-  border-color:#44617E;
+  font-size: x-small;
+  color: #939598;
+  margin: 12px;
+  height: 12px;
 }

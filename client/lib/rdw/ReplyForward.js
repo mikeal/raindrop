@@ -30,7 +30,7 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
       href: "#",
       "class": "close",
       innerHTML: this.i18n.closeIcon
-    }, this.domNode, "first");
+    }, this.actionsNode, "first");
     
     dojo.connect(closeNode, "onclick", this, "onCloseClick");
   },

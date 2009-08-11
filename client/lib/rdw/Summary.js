@@ -98,7 +98,13 @@ dojo.declare("rdw.Summary", [rdw._Base], {
 
   contact: function(/*String*/contactId) {
     //summary: responds to rd-protocol-contact topic.
-    
+    rd.contact.get(contactId, dojo.hitch(this, function(contact) {
+      //Use megaview to select all messages based on the identity
+      //IDs.
+      var keys = rd.map(contact.identities, dojo.hitch(this, function(identity) {
+            rd.escapeHtml("Person: " + contact.name + identity.rd_key[1], this.domNode);
+      }));
+    }), function() { });
   },
 
   direct: function() {

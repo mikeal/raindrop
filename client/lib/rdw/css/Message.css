@@ -2,16 +2,26 @@
 
 .Message {
   position: relative;
+  background-color: #FFF;
+  padding-bottom: 10px;
+  -moz-border-radius-bottomleft: 5px;
+  -moz-border-radius-bottomright: 5px;
+  -moz-border-radius-topleft: 5px;
+  -moz-border-radius-topright: 5px;
+}
+
+.Message:hover {
+  background-color: #FAE6E6;
 }
 
 .Message div.photo {
   position: absolute;
-  left: 0px;
-  top: 2px;
-  width: 50px;
-  height: 50px;
+  left: 8px;
+  top: 8px;
+  width: 24px;
+  height: 24px;
   vertical-align: top;
-  background-color: #666666;
+  background-color: #F1F2F2;
 }
 
 .Message.MessageUnknown div.photo {
@@ -20,7 +30,8 @@
 
 .Message .process {
   position: absolute;
-  right: 0px;
+  right: 8px;
+  top: 10px;
   font-size: x-small;
   visibility: hidden;
   opacity: 0.5;
@@ -42,20 +53,53 @@
   color: #5b5b5b;
 }
 
+.Message .process2 {
+  position: absolute;
+  right: 28px;
+  top: 10px;
+  font-size: x-small;
+  visibility: hidden;
+  opacity: 0.5;
+}
+
+.Message:hover .process2 {
+  visibility: visible;
+}
+
+.Message .process2:hover {
+  border-color: #44617E;
+  color: #44617E;
+  opacity: 1.0;
+}
+
+.Message .process2 a {
+  text-decoration: none;
+  font-weight: bold;
+  color: #5b5b5b;
+}
+
 .Message .tools {
   position: absolute;
-  right: 0px;
+  right: 8px;
+  bottom: 8px;
   font-size: x-small;
   visibility: hidden;
 }
 
 .Message .tools a {
-  color: GrayText;
+  color: #FFF;
   opacity: 0.5;
+  text-decoration: none;
+  background-color: #1a1a1a;
+  padding: 1px 5px;
+  -moz-border-radius-bottomleft: 0.2em;
+  -moz-border-radius-bottomright: 0.2em;
+  -moz-border-radius-topleft: 0.2em;
+  -moz-border-radius-topright: 0.2em;
 }
 
 .Message .tools:hover a {
-  color: #0066dd;
+  color: #FFF;
   opacity: 1;
 }
 
@@ -64,38 +108,39 @@
 }
 .Message .message {
   max-width: 70ex;
-  margin-left: 50px;
-  padding-left: 1em;
+  margin-left: 40px;
+  margin-right: 8px;
+  padding: 8px 0px 8px 0px;
 }
 
 .Message img.photo {
-  width: 48px;
-  height: 48px;
-  border: 1px solid transparent;
+  width: 24px;
+  height: 24px;
+  display: none;
 }
 
 .Message .header .from {
-  vertical-align: top;
+  font-size: small;
+  text-transform: capitalize;
 }
 
 .Message .from {
   text-decoration: none;
   font-weight: bold;
-  font-family: Arial Black, Gadget, sans-serif;
-  color: #222;
+  font-family: Arial, Verdana, sans-serif;
+  color: #1A1A1A;
 }
 
 .Message .medium {
-  vertical-align: middle;
-  font-size: x-small;
-  font-family: Lucida Console, Monaco, monospace;
+  font-size: small;
+  font-family: Arial, Verdana, sans-serif;
   color: #888;
 }
 
 .Message .subject {
   padding-right: 1em;
   font-weight: bold;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, Verdana, sans-serif;
 }
 
 .Message .subject:empty {
@@ -105,33 +150,50 @@
 .Message > .message > .content {
   overflow: hidden;
   font-size: small;
-  font-family: Verdana, Verdana, Geneva, sans-serif;
+  font-family: Arial, Verdana, sans-serif;
   line-height: 1.3em;
-  color: #333;
+  color: #1A1A1A;
   margin: 0.5ex 0px;
 }
 
 .Message > .message > .content > a {
-  color: #44617E;
+  color: #1A1A1A;
+}
+
+.Message > .message > .content > a:hover {
+  color: #D2232A;
 }
 
 .Message > .message > .timestamp {
   font-size: x-small;
-  font-family: Lucida Sans Unicode, Lucida Grande, sans-serif;
+  font-family: Arial, Verdana, sans-serif;
+  font-size:x-small;
+  position:absolute;
+  right:8px;
+  text-align:right;
+  top:11px;
+}
+
+.Message:hover .timestamp {
+  visibility: hidden;
 }
 
 .Message > .message > .timestamp > span {
   text-transform: lowercase;
-  color: #5d5d5d;
+  font-family: Georgia, times, serif;
+  font-style: italic;
+  color: #888888;
 }
 
 .Message > .message > .timestamp > .additional {
+  font-family: Georgia, times, serif;
   font-style: italic;
-  color: #9d9d9d;
+  color: #888888;
+  visibility: hidden;
 }
 
 .Message > .message > .timestamp:hover > .additional {
-  color: #5d5d5d;
+  color: #888888;
 }
 
 .Message > .message > .timestamp > .additional:before {
@@ -141,7 +203,8 @@
 /* "reply" type of messages */
 .Message.reply {
   position: relative;
-  margin-left: 48px;
+  margin-left: 64px;
+  margin-top: 8px;
   /* border hack because we can't use padding here w/ the abs photo */
   border-left: 1em solid transparent;
 }
@@ -151,23 +214,20 @@
 }
 
 .Message.reply div.photo {
-  width: 38px;
-  height: 38px;
-  left: 2px;
-  top: 4px;
+  display: none;
 }
 
 .Message.reply div.photo img.photo {
-  width: 36px;
-  height: 36px;
+  display: none;
 }
 
 .Message.reply .message {
-  margin-left: 36px;
+  margin-left: 0px;
 }
 
 .Message.reply .message .header .from {
   font-size: small;
+  text-transform: capitalize;
 }
 
 .Message.reply .message .content {

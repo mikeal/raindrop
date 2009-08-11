@@ -4,6 +4,8 @@ dojo.require("dojo.DeferredList");
 dojo.require("rdw._Base");
 dojo.require("rd.MegaviewStore");
 
+rd.addStyle("rdw.css.DataSelector");
+
 dojo.declare("rdw.DataSelector", [rdw._Base], {
   templateString: '<div class="rdwDataSelector dijitReset dijitInlineTable dijitLeft"><div dojoAttachPoint="selectorNode"></div></div>',
 

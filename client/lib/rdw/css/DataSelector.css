@@ -1,0 +1,58 @@
+.rdwDataSelector .dijitButtonNode .dijitArrowButtonInner {
+  background-image: url("i/arrow_down.gif");
+  background: visible none no-repeat scroll center center;
+}
+
+.rdwDataSelector .dijitValidationIcon {
+  padding: 0 !important;
+}
+
+.rdwDataSelector .dijitTextBox input.dijitReset, 
+.rdwDataSelector .dijitComboBox input.dijitReset, 
+.rdwDataSelector .dijitSpinner input.dijitReset {
+  background-color: #FFF !important;
+  -moz-box-sizing:border-box;
+  padding: 5px;
+  -moz-border-radius-bottomleft:5px;
+  -moz-border-radius-bottomright:0px;
+  -moz-border-radius-topleft:5px;
+  -moz-border-radius-topright:0px;
+}
+
+.rdwDataSelector .dijitTextBox, 
+.rdwDataSelector .dijitComboBox, 
+.rdwDataSelector .dijitSpinner {
+  border:none;
+  vertical-align:middle;
+  width:15em;
+}
+
+.rdwDataSelector div.dijitArrowButton {
+  float:right;
+}
+
+.rdwDataSelector .dijitArrowButton {
+  padding:5px;
+}
+
+.rdwDataSelector .dijitButtonNode, 
+.rdwDataSelector .dijitButtonNode * {
+  cursor:pointer;
+}
+
+.rdwDataSelector .dijitButtonNode {
+  background-color:#FFFFFF;
+  line-height:normal;
+  margin:0;
+  text-align:center;
+  vertical-align:middle;
+  white-space:nowrap;
+  border: none !important;
+  -moz-border-radius-bottomright:5px;
+  -moz-border-radius-topright:5px;
+}
+
+.rdwDataSelector .dijitRight {
+  background-position:right top;
+  background-repeat:no-repeat;
+}

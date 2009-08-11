@@ -18,9 +18,59 @@
   font-size: smaller;
 }
 
-.QuickCompose.reply input,
-.QuickCompose.forward input {
-  font-size: smaller;
-  font-weight: normal;
-  letter-spacing: 0.1ex;
+.QuickCompose.reply .send,
+.QuickCompose.forward .send {
+  font-size: x-small;
+  font-weight: bold;
+}
+
+.Message .QuickCompose {
+  background-color: transparent;
+  position: relative;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  -moz-border-radius-bottomleft: 5px;
+  -moz-border-radius-bottomright: 5px;
+}
+
+.Message .QuickCompose .info {
+  color: #666666;
+  font-size: small;
+  margin: 0px;
+}
+
+.Message .QuickCompose .info .name {
+  font-family: Arial Black, Gadget, sans-serif;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+}
+
+.Message .QuickCompose .info .medium {
+  font-family: Arial, Verdana, sans-serif;
+  font-size: small;
+}
+
+.Message .QuickCompose form {
+  display: block;
+  margin: 0px;
+  padding: 0px;
+}
+
+.Message:hover .QuickCompose textarea {
+  background-color: #FFF;
+}
+
+.QuickCompose .close{
+  -moz-border-radius-bottomleft:5px;
+  -moz-border-radius-bottomright:5px;
+  -moz-border-radius-topleft:5px;
+  -moz-border-radius-topright:5px;
+  background-color:#1A1A1A;
+  color:#FFFFFF;
+  font-size:x-small;
+  font-weight:bold;
+  padding:2px 5px;
+  text-decoration:none;
+  text-transform:uppercase;
 }

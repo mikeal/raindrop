@@ -1,4 +1,4 @@
-@import url("/raindrop/dojo/dijit/themes/tundra/tundra.css");
+@import url("/raindrop/dojo/dijit/themes/dijit.css");
 @import url("/raindrop/lib/rdw/css/Loading.css");
 @import url("/raindrop/lib/rdw/css/QuickCompose.css");
 @import url("/raindrop/lib/rdw/css/Summary.css");
@@ -9,11 +9,16 @@
 @import url("/raindrop/lib/rdw/css/FaceWall.css");
 
 * {
-  font:100%/normal verdana,geneva,sans-serif;
+  font:100%/normal arial,verdana,geneva,sans-serif;
 }
 
 body {
-  margin: 0px;
+  background-color: #f1f2f2;
+  margin: 0px 8px 0px 8px;
+}
+
+a img{
+  border: none;
 }
 
 .rdwLoading {
@@ -23,10 +28,25 @@ body {
 }
 
 #content {
+  margin-left: 75px;
   position: relative;
   display: table;
   min-width: 25em;
   max-width: 55em;
+}
+
+#newcompose {
+  background-image: url("i/compose.png");
+  position: fixed;
+  height: 75px;
+  width: 75px;
+  top: 110px;
+  left: 9px;
+  font-weight: bold;
+  font-size: small;
+  text-align: center;
+  line-height: 75px;
+  color: #FFF;
 }
 
 #column1 {
@@ -38,8 +58,6 @@ body {
   display: table-cell;
   width: 15em;
   min-height: 40ex;
-  padding-top: 1ex;
-  background-color: #E8E8E8;
-  border-left: 2px solid #D8D8D8;
+  padding-top: 110px;
   vertical-align: top;
 }

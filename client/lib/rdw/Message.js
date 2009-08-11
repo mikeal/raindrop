@@ -41,9 +41,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
     this.fromId = msgDoc.from[1];
     this.fromName = msgDoc.from_display || this.fromId;
-    this.subject = null;
-    this.subject = rd.escapeHtml(msgDoc.subject ?
-                                msgDoc.subject.replace(/^Re:/,'') : "");
+    this.subject = rd.hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
 
     //TODO: make message transforms extensionized.
     this.message = rd.hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
