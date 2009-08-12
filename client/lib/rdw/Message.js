@@ -108,7 +108,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
       if (this.userPicNode && user.image) {
         this.userPicNode.src = user.image;
       }
-      if (user.name) {
+      if (user.name && this.fromNameNode) {
         this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
       }
       //Don't worry about errors, just will not show pic.
