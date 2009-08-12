@@ -136,6 +136,10 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
    * @param list {object} the list from which to unsubscribe
    */
   onSubscription: function() {
+    // Don't do anything unless the user is subscribed to the list.
+    if (this.doc.status != "subscribed")
+      return;
+
     // TODO: do all this in the mailing list extractor extension so we know
     // whether or not we understand how to unsubscribe from this mailing list
     // right from the start and can enable/disable the UI accordingly.
