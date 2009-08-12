@@ -38,7 +38,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   },
 
   _display: function() {
-    rd.escapeHtml(this.doc.id, this.titleNode, "only");
+    rd.escapeHtml("Mailing List: " + this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
     // TODO: make this reflect the status of the subscription.
