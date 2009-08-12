@@ -28,6 +28,10 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     this._refresh();
   },
 
+  _log: function(message) {
+    console.log("rdw.MailingListSummary: " + message);
+  },
+
   /**
    * Whether or not we are currently in the process of getting the document
    * in order to refresh the widget.  Locks invokation of the asynchronous
@@ -38,7 +42,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
 
   _refresh: function() {
     if (this._refreshLock) {
-      console.log("refresh invoked before previous one finished; ignoring");
+      this._log("refresh invoked before previous one finished; ignoring");
       return;
     }
 
@@ -47,7 +51,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     this._get(
       dojo.hitch(this, function() {
         this._refreshLock = false;
-        console.log("refresh took " + (new Date() - startTime) + "ms");
+        this._log("refresh took " + (new Date() - startTime) + "ms");
         this._updateView();
       }),
       dojo.hitch(this, function(error) {
@@ -69,7 +73,6 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     rd.escapeHtml("Mailing List: " + this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
-    // TODO: make this reflect the status of the subscription.
     switch(this.doc.status) {
       case "subscribed":
         if (this._intervalID) {
@@ -80,12 +83,21 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
         this.subscriptionToolNode.className = "button";
         break;
       case "unsubscribe-pending":
+      case "unsubscribe-confirmed":
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
         this.subscriptionToolNode.className = "message";
         if (!this._intervalID) {
           this._intervalID =
             window.setInterval(dojo.hitch(this, this._refresh), 10000);
         }
+        break;
+      case "unsubscribed":
+        if (this._intervalID) {
+          window.clearInterval(this._intervalID);
+          this._intervalID = null;
+        }
+        rd.escapeHtml("Unsubscribed", this.subscriptionToolNode, "only");
+        this.subscriptionToolNode.className = "message";
         break;
     }
   },
