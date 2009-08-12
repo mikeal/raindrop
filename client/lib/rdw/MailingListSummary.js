@@ -25,19 +25,46 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
+    this._refresh();
+  },
 
+  /**
+   * Whether or not we are currently in the process of getting the document
+   * in order to refresh the widget.  Locks invokation of the asynchronous
+   * _get method so we don't try to get the document again before the previous
+   * request has concluded.
+   */
+  _refreshLock: false,
+
+  _refresh: function() {
+    if (this._refreshLock) {
+      console.log("refresh invoked before previous one finished; ignoring");
+      return;
+    }
+
+    var startTime = new Date();
+    this._refreshLock = true;
     this._get(
       dojo.hitch(this, function() {
-        this._display();
+        this._refreshLock = false;
+        console.log("refresh took " + (new Date() - startTime) + "ms");
+        this._updateView();
       }),
       dojo.hitch(this, function(error) {
+        this._refreshLock = false;
         // XXX Display some message to the user about the error retrieving
         // the mailing list from the datastore?
       })
     );
   },
 
-  _display: function() {
+  /**
+   * The ID of the periodic timer that refreshes the widget while an unsubscribe
+   * operation is pending.
+   */
+  _intervalID: null,
+
+  _updateView: function() {
     // TODO: make this localizable.
     rd.escapeHtml("Mailing List: " + this.doc.id, this.titleNode, "only");
 
@@ -45,12 +72,20 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     // TODO: make this reflect the status of the subscription.
     switch(this.doc.status) {
       case "subscribed":
+        if (this._intervalID) {
+          window.clearInterval(this._intervalID);
+          this._intervalID = null;
+        }
         rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
         this.subscriptionToolNode.className = "button";
         break;
       case "unsubscribe-pending":
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
         this.subscriptionToolNode.className = "message";
+        if (!this._intervalID) {
+          this._intervalID =
+            window.setInterval(dojo.hitch(this, this._refresh), 10000);
+        }
         break;
     }
   },
@@ -68,6 +103,8 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
       reduce: false,
       include_docs: true,
       success: dojo.hitch(this, function(json) {
+        // ??? Should we pass the doc to the callback rather than assigning it
+        // to a property of this object here?
         if (json.rows.length > 0)
           this.doc = json.rows[0].doc;
         callback();
@@ -166,7 +203,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     this.doc.status = "unsubscribe-pending";
     this._put(
       dojo.hitch(this, function(doc) {
-        this._display();
+        this._updateView();
         this._unsubscribe(match[0]);
       }),
       dojo.hitch(this, function(error) {
