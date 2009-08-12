@@ -7,7 +7,8 @@ dojo.require("dijit._Templated");
 
 dojo.require("rd");
 
-dojo.requireLocalization("rdw", "i18n");
+//TODO: remove the ROOT call to allow dynamic locale determination
+dojo.requireLocalization("rdw", "i18n", "ROOT");
 
 //Base "class" for all rdw widgets.
 dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
@@ -16,6 +17,7 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
     this.inherited("postMixInProperties", arguments);
 
     //Set default i18n bundle
+    //TODO: remove the ROOT call to allow dynamic locale determination
     this.i18n = dojo.i18n.getLocalization("rdw", "i18n");
   },
 
