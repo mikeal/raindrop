@@ -45,10 +45,11 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     switch(this.doc.status) {
       case "subscribed":
         rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
+        this.subscriptionToolNode.className = "button";
         break;
       case "unsubscribe-pending":
-        // TODO: disable the link when in this state.
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
+        this.subscriptionToolNode.className = "message";
         break;
     }
   },

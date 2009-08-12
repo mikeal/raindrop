@@ -1,0 +1,26 @@
+.MailingListSummary > .tools {
+  /* Use float to align tools to the right-hand side of the summary pane.
+   * The Message widget uses absolute positioning to achieve this effect;
+   * should we do the same here? */
+  float: right;
+}
+
+.MailingListSummary > .tools > a.button {
+  background-color: #1A1A1A;
+  color: #FFF;
+  border: none;
+  -moz-border-radius-bottomleft: 5px;
+  -moz-border-radius-bottomright: 5px;
+  -moz-border-radius-topleft: 5px;
+  -moz-border-radius-topright: 5px;
+  vertical-align: middle;
+  font-size: x-small;
+  padding: 1px 5px;
+}
+
+.MailingListSummary > .tools > a.message {
+  /* Put styles here that affect tools when they are in a message state,
+   * meaning they display an informative message rather than being a control
+   * users can manipulate, like the subscription tool when the user is in
+   * the process of being unsubscribed. */
+}
