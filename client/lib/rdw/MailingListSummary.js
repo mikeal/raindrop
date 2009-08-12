@@ -38,6 +38,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   },
 
   _display: function() {
+    // TODO: make this localizable.
     rd.escapeHtml("Mailing List: " + this.doc.id, this.titleNode, "only");
 
     // TODO: make this localizable.
