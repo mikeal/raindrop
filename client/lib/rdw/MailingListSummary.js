@@ -257,7 +257,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     dojo.store.put(
       message,
       dojo.hitch(this, function(message) {
-        alert("unsubscribe request sent");
+        //alert("unsubscribe request sent");
       }),
       dojo.hitch(this, function(error) {
         alert("error sending unsubscribe request: " + error);
