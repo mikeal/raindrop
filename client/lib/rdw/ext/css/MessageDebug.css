@@ -1,5 +1,5 @@
 .Message:hover > .message > .debug {
-  visibility: hidden;
+  visibility: visible;
 }
 
 .Message > .message > .debug {
