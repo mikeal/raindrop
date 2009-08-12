@@ -8,6 +8,7 @@
 .MailingListSummary > .tools > a.button {
   background-color: #1A1A1A;
   color: #FFF;
+  opacity: 0.5;
   border: none;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
@@ -16,6 +17,11 @@
   vertical-align: middle;
   font-size: x-small;
   padding: 1px 5px;
+  cursor: pointer;
+}
+
+.MailingListSummary > .tools:hover > a.button {
+  opacity: 1;
 }
 
 .MailingListSummary > .tools > a.message {
