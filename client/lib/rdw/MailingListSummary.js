@@ -143,6 +143,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     // TODO: do all this in the mailing list extractor extension so we know
     // whether or not we understand how to unsubscribe from this mailing list
     // right from the start and can enable/disable the UI accordingly.
+    // TODO: If we can't unsubscribe the user, explain it to them nicely.
     if (!this.doc.unsubscribe)
       throw "can't unsubscribe from mailing list; no unsubscribe info";
     var regex = this._getLinkExtractorRegex(["mailto"]);
@@ -150,6 +151,12 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     if (match == null)
       throw "can't unsubscribe from mailing list; no mailto: URL";
     //alert("unsubscribe URL: " + match[0]);
+
+    if (!confirm("Are you sure you want to unsubscribe from " + this.doc.id + "?  " +
+                 "You won't receive messages from the mailing list anymore, " +
+                 "and if you resubscribe later you won't receive the messages " +
+                 "that were sent to the list while you were unsubscribed."))
+      return;
 
     // TODO: retrieve the list from the store again and make sure its status
     // is still "subscribed" and we're still able to unsubscribe from it.
@@ -176,7 +183,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     // url.path == the email address
     // url.query == can contain subject and/or body parameters
 
-    var params = dojo.queryToObject(url.query);
+    var params = url.query ? dojo.queryToObject(url.query) : {};
 
     var message = {
       //TODO: make a better rd_key.
