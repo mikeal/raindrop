@@ -58,6 +58,10 @@ dojo.declare("rdw.Story", [rdw._Base], {
   display: function() {
     //summary: displays the messages in the story.
 
+    //Set the state as displayed, in case widgets are refreshed for extensions.
+    this.displayOnCreate = true;
+    this._displayed = true;
+
     //Clean up any existing widgets.
     this.destroyAllSupporting();
 
