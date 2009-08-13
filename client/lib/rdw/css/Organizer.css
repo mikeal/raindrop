@@ -29,12 +29,12 @@
 
 .Organizer ol > li.mailingList > a {
   font-size: small;
-  color: green;
+  color: #1a1a1a;
 }
 
 .Organizer ol > li.locationTag > a {
   font-size: small;
-  color: blue;
+  color: #1a1a1a;
 }
 
 .Organizer > .dijitTitlePane {
@@ -44,7 +44,10 @@
 .Organizer > .dijitTitlePane > .dijitTitlePaneTitle {
   background: none;
   border: none;
-  color: #999;
+  color: #1a1a1a;
+  padding: 0.2em 0.3em;
+  font-weight: bold;
+  font-size: small;
 }
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneTitle.dijitOpen .dijitArrowNode {

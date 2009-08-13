@@ -6,7 +6,7 @@
 .rdwStoryTwitterTimeLine .header,
 .rdwStoryTwitterTimeLine .content,
 .rdwStoryTwitterTimeLine .timestamp {
-  display: inline;
+  display: block;
 }
 
 .rdwStoryTwitterTimeLine .tools {
@@ -14,6 +14,7 @@
 }
 
 .rdwStoryTwitterTimeLine .Message div.photo {
+  display: none;
   width: 20px;
   height: 20px;
 }
@@ -24,7 +25,8 @@
 }
 
 .rdwStoryTwitterTimeLine .Message .message {
-  margin-left: 20px;
+  margin-left: 8px;
+  padding-top: 12px;
 }
 
 .rdwStoryTwitterTimeLine .moreLess {
