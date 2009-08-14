@@ -6,6 +6,10 @@
   padding: 0px;
 }
 
+.Story:hover .Message {
+  background-color: #FAE6E6;
+}
+
 .Story:last-child {
   margin-bottom: 0px;
 }

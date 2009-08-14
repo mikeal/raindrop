@@ -100,9 +100,29 @@
 .QuickCompose .to input,
 .QuickCompose .subject input {
   font-weight: normal;
-  width: 80%;
+  width: 100%;
   margin-left: 1em;
+  background-color: #F1F2F2;
+  color: #888888;
+  padding: 5px;
+  -moz-border-radius: 5px;
+  border: none;
 }
+
+.Message:hover .QuickCompose .to input,
+.Message:hover .QuickCompose .subject input {
+  background-color: #FFF;
+}
+
+.Story:hover .QuickCompose .to input,
+.Story:hover .QuickCompose .subject input {
+  background-color: #FFF;
+}
+
+.QuickCompose:hover .to input,
+.QuickCompose:hover .subject input {
+  background-color: #FFF;
+ }
 
 .QuickCompose textarea {
   border: none;
@@ -149,6 +169,13 @@
 .QuickCompose:hover .rdwDataSelector .dijitComboBox input.dijitReset,
 .QuickCompose:hover .dijitComboBox input.dijitReset, 
 .QuickCompose:hover .rdwDataSelector .dijitSpinner input.dijitReset {
+  background-color: #FFF !important;
+}
+
+.Story:hover .rdwDataSelector .dijitTextBox input.dijitReset, 
+.Story:hover .rdwDataSelector .dijitComboBox input.dijitReset,
+.Story:hover .dijitComboBox input.dijitReset, 
+.Story:hover .rdwDataSelector .dijitSpinner input.dijitReset {
   background-color: #FFF !important;
 }
 

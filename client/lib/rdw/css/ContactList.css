@@ -23,6 +23,10 @@
   -moz-border-radius: 5px;
 }
 
+.contact:hover {
+  background-color: #FAE6E6;
+}
+
 .ContactList .photoSection {
   display: inline-block;
   width: 48px;
@@ -33,6 +37,7 @@
 .ContactList .contact .photo {
   width: 48px;
   height: 48px;
+  background-color: #888;
 }
 
 

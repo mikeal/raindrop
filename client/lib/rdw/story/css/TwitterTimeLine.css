@@ -1,12 +1,37 @@
+.rdwStoryTwitterTimeLine {
+  width: 50%;
+}
 
 .rdwStoryTwitterTimeLine .tweetList {
   font-size: smaller;
+  background-color: #FFF;
+  -moz-border-radius: 5px;
+  padding: 8px;
+  width: 100%;
+}
+
+.rdwStoryTwitterTimeLine:hover .tweetList {
+  background-color: #FAE6E6;
+}
+
+.rdwStoryTwitterTimeLine .Message {
+  background-color: transparent;
+  -moz-border-radius: 0px;
+  margin-bottom: 5px;
+  padding: 0;
+  border-bottom: 1px dotted #888888;
+}
+
+.rdwStoryTwitterTimeLine .Message:hover {
+  background-color: transparent;
 }
 
 .rdwStoryTwitterTimeLine .header,
 .rdwStoryTwitterTimeLine .content,
 .rdwStoryTwitterTimeLine .timestamp {
   display: block;
+  border-bottom: none;
+  padding-bottom: 0;
 }
 
 .rdwStoryTwitterTimeLine .tools {
@@ -25,13 +50,79 @@
 }
 
 .rdwStoryTwitterTimeLine .Message .message {
-  margin-left: 8px;
-  padding-top: 12px;
+  margin-left: 0px;
+  padding-top: 0px;
 }
 
 .rdwStoryTwitterTimeLine .moreLess {
   position: absolute;
-  right: 10ex;
-  color: #44617E;
+  right: 50%;
+  color: #FFF;
   cursor: pointer;
+  padding: 1px 5px;
+  background-color: #1a1a1a;
+  -moz-border-radius: 5px;
+  font-size: x-small;
+  text-transform: uppercase;
+  font-weight: bold;
+  margin-top: 8px;
+}
+
+.rdwStoryTwitterTimeLine .Message .process {
+  position: absolute;
+  right: 0px;
+  top: 2px;
+  font-size: x-small;
+  visibility: hidden;
+  opacity: 0.5;
+}
+
+.rdwStoryTwitterTimeLine .Message:hover .process {
+  visibility: visible;
+}
+
+.rdwStoryTwitterTimeLine .Message .process:hover {
+  border-color: #44617E;
+  color: #44617E;
+  opacity: 1.0;
+}
+
+.rdwStoryTwitterTimeLine .Message .process a {
+  text-decoration: none;
+  font-weight: bold;
+  color: #5b5b5b;
+}
+
+.rdwStoryTwitterTimeLine .Message .process2 {
+  position: absolute;
+  right: 20px;
+  top: 2px;
+  font-size: x-small;
+  visibility: hidden;
+  opacity: 0.5;
+}
+
+.rdwStoryTwitterTimeLine .Message:hover .process2 {
+  visibility: visible;
+}
+
+.rdwStoryTwitterTimeLine .Message .process2:hover {
+  border-color: #44617E;
+  color: #44617E;
+  opacity: 1.0;
+}
+
+.rdwStoryTwitterTimeLine .Message .process2 a {
+  text-decoration: none;
+  font-weight: bold;
+  color: #5b5b5b;
+}
+
+.rdwStoryTwitterTimeLine .message > .timestamp > span {
+  top: 2px;
+  right: 0px;
+}
+
+.rdwStoryTwitterTimeLine .Message .medium {
+  display: none;
 }

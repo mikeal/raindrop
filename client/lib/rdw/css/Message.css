@@ -22,11 +22,14 @@
   width: 24px;
   height: 24px;
   vertical-align: top;
-  background-color: #F1F2F2;
+  background-color: transparent;
+  -moz-border-radius: 5px;
+  background-image: url("i/icon_twitter_bird.png");
 }
 
 .Message.MessageUnknown div.photo {
-  background-color: #F1F2F2;
+  background-color: transparent;
+  background-image: url("i/icon_direct_message.png");
 }
 
 .Message .process {
@@ -120,6 +123,11 @@
   display: none;
 }
 
+.Message .header {
+  border-bottom: 1px dotted #888888;
+  padding-bottom: 2px;
+}
+
 .Message .header .from {
   font-size: small;
   text-transform: capitalize;
@@ -136,12 +144,14 @@
   font-size: small;
   font-family: Arial, Verdana, sans-serif;
   color: #888;
+  display: none;
 }
 
 .Message .subject {
-  padding-right: 1em;
+  padding-right: 0;
   font-weight: bold;
   font-family: Arial, Verdana, sans-serif;
+  display: block;
 }
 
 .Message .subject:empty {
@@ -154,11 +164,12 @@
   font-family: Arial, Verdana, sans-serif;
   line-height: 1.3em;
   color: #1A1A1A;
-  margin: 0.5ex 0px;
+  margin: 6px 0 0.5ex;
 }
 
 .Message > .message > .content > a {
-  color: #1A1A1A;
+  color: #888888;
+  text-decoration: none;
 }
 
 .Message > .message > .content > a:hover {
@@ -182,7 +193,7 @@
   font-style: italic;
   color: #888888;
   position:absolute;
-  top:11px;
+  top:10px;
   right:8px;
 }
 
@@ -211,7 +222,11 @@
 }
 
 .Message.reply > .process {
-  display: none;
+  display: visible;
+}
+
+.Message.reply > .process2 {
+  display: visible;
 }
 
 .Message.reply div.photo {
@@ -232,9 +247,10 @@
 }
 
 .Message.reply .message .content {
-  margin: 0px;
+  margin-top: 6px;
 }
 
 .Message.reply .message .content .subject {
   display: none;
 }
+
