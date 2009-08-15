@@ -1,0 +1,15 @@
+{
+  "schemas" : {
+    "rd.ext.uiext" : {
+      "exts": {
+        "inflow": "rdw.ext.MailingList"
+        "rd.conversation": "rdw.ext.MailingList",
+        "rd.MegaviewStore": "rdw.ext.MailingList",
+        "rdw.DataSelector": "rdw.ext.MailingList",
+        "rdw.Organizer": "rdw.ext.MailingList",
+        "rdw.Summary": "rdw.ext.MailingList",
+        "rdw.Stories": "rdw.ext.MailingList",
+      }
+    }
+  }
+}

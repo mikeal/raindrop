@@ -16,6 +16,20 @@ rd.require("rd.conversation");
 //and converting it to UI display.
 
 inflow = {
+  //Topics that change the view to the contact view.
+  contactTopics: [
+    "rd-protocol-contacts"
+  ],
+
+  //Topics that change the view to the story view.
+  storyTopics: [
+    "rd-protocol-home",
+    "rd-protocol-direct",
+    "rd-protocol-contact",
+    "rd-protocol-broadcast",
+    "rd-protocol-locationTag"
+  ],
+
   showStories: function() {
     //summary: shows the Stories widget and hides the ContactList widget.
     dijit.byId("stories").domNode.style.display = "";
@@ -32,21 +46,6 @@ inflow = {
 };
 
 (function(){
-  
-  //Subscribe to topics from organizer that can change the display.
-  rd.sub("rd-protocol-contacts", inflow, "showContacts");
-  var storyTopics = [
-    "rd-protocol-home",
-    "rd-protocol-direct",
-    "rd-protocol-contact",
-    "rd-protocol-broadcast",
-    "rd-protocol-mailingList",
-    "rd-protocol-locationTag"
-  ];
-  for (var i = 0, topic; topic = storyTopics[i]; i++) {
-    rd.sub(topic, inflow, "showStories");
-  }
-
   var extender = null;
   //Open the extender in a new sized window so it does not open
   //as a tab.
@@ -67,6 +66,14 @@ inflow = {
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
+    //Subscribe to topics from organizer that can change the display.
+    for (var i = 0, topic; topic = inflow.contactTopics[i]; i++) {
+      rd.sub(topic, inflow, "showContacts");
+    }
+    for (i = 0; topic = inflow.storyTopics[i]; i++) {
+      rd.sub(topic, inflow, "showStories");
+    }
+
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
     if (fragId) {

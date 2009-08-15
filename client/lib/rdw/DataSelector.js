@@ -11,7 +11,7 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
 
   comboWidget: "dijit.form.ComboBox",
 
-  //type can have values of "identityContact", "contact", "mailingList" or "locationTag"
+  //type can have values of "identityContact", "contact", or "locationTag"
   //by default. Extensions can add other types by creating a typeLoaded function
   //on this widget.
   type: "identityContact",
@@ -21,7 +21,7 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
   //new values to this array. Note that this is an array on the prototype for
   //this widget. Just reassign this property to a new array on an instance
   //just to affect that instance's list.
-  allType: ["contact", "mailingList", "locationTag"],
+  allType: ["contact", "locationTag"],
 
   //Restrict the type of records further. Useful in the default case only
   //for type: "identityContact".
@@ -130,11 +130,6 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
   identitySelected: function(/*String*/identityId) {
     //summary: dispatch function when an identity is selected.
     rd.onDocClick("#rd:identity:" + list);
-  },
-
-  mailingListSelected: function(/*String*/list) {
-    //summary: dispatch function when a mailingList is selected.
-    rd.onDocClick("#rd:mailingList:" + list);  
   },
 
   locationTagSelected: function(/*String*/location) {

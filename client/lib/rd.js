@@ -424,16 +424,37 @@ dojo._listener.getDispatcher = function(){
 		extType = "add";
 		targetObj = proto;
 	      } else {
-		if (prop in proto) {
+		//If the prototype has the property, then favor that over
+		//a module property, if the prototype exists.
+		if (proto && prop in proto) {
 		  targetObj = proto;
 		}
 	      }
 
-	      //Inform developer if there is no match for the extension.
-	      if (extType != "add" && (!(prop in targetObj) || !dojo.isFunction(targetObj[prop]))) {
+	      var extValue = extension[type];
+	      if (targetObj[prop] instanceof Array && extValue[prop] instanceof Array) {
+		//An array extension. Only allow for before or after.
+		if (type == "before") {
+		  targetObj[prop] = extValue[prop].concat(targetObj[prop]);
+		} else {
+		  targetObj[prop] = targetObj[prop].concat(extValue[prop]);
+		}
+	      } else if(typeof targetObj[prop] == "object") {
+		//Object extension, so like a mixin. Should only be for simple
+		//properties that are numbers or strings.
+		if (type == "add" || type == "addToPrototype") {
+		  dojo._mixin(targetObj[prop], extValue[prop]);
+		} else {
+		  console.error("Invalid object extension type, '" + type + "', for extension on object "
+			      + moduleName
+			      + " for property: " 
+			      + prop + ". Only 'add' or 'addToPrototype' is allowed for object extensions");
+		}
+	      } else if (extType != "add" && (!(prop in targetObj) || !dojo.isFunction(targetObj[prop]))) {
+		//Inform developer if there is no match for the extension.
 		console.error("Trying to register a '" + type + "' extension on object "
 			      + moduleName
-			      + "for non-existent function property: " 
+			      + " for non-existent function property: " 
 			      + prop);
 	      } else {
 		this["_ext_" + extType](extKey, type, targetObj, prop, targetObj[prop]);
@@ -501,7 +522,7 @@ dojo._listener.getDispatcher = function(){
 	extFunc = extFunc && extFunc[prop];
 	if (extFunc && !rd._extDisabled[extKey]) {
 	  extFunc.target = oldValue;
-	  var ret = extFunc.apply(this, args);
+	  var ret = extFunc.apply(this, arguments);
 	  delete extFunc.target;
 	  return ret;
 	} else {
@@ -516,7 +537,7 @@ dojo._listener.getDispatcher = function(){
 	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
 	extFunc = extFunc && extFunc[prop];
 	if (extFunc && !rd._extDisabled[extKey]) {
-	  return extFunc.apply(this, args);
+	  return extFunc.apply(this, arguments);
 	} else {
 	  return oldValue.apply(this, arguments);
 	}
@@ -528,11 +549,12 @@ dojo._listener.getDispatcher = function(){
       obj[prop] = function() {
 	var extFunc = rd._exts[extKey] && rd._exts[extKey][type];
 	extFunc = extFunc && extFunc[prop];
+	//If extension is not disabled, execute the function,
+	//otherwise ignore the call.
 	if (extFunc && !rd._extDisabled[extKey]) {
-	  return extFunc.apply(this, args);
-	} else {
-	  throw new Error("Invalid 'add' extension point call for property: " + prop);
+	  return extFunc.apply(this, arguments);
 	}
+	return null;
       }
     }
   });

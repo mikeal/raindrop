@@ -148,26 +148,6 @@ dojo._mixin(rd.conversation, {
     }, callback, errback);
   },
 
-  mailingList: function(/*String*/listId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    //summary: gets the most recent mailing list messages up to limit, then pulls
-    //the conversations associated with those messages. Conversation with
-    //the most recent message will be first.
-    rd.store.megaview({
-      key: ["rd.msg.email.mailing-list", "list_id", listId],
-      reduce: false,
-      limit: limit,
-      success: dojo.hitch(this, function(json) {
-        //Get message keys
-        var keys = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          keys.push(row.value.rd_key);
-        }
-
-        this.messageKey(keys, callback, errback);
-      })
-    });
-  },
-
   location: function(/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent messages up to a limit for a given imap folder
     //location ID, then pulls the conversations associated with those messages.

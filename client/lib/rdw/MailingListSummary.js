@@ -2,6 +2,8 @@ dojo.provide("rdw.MailingListSummary");
 
 dojo.require("rdw._Base");
 
+rd.addStyle("rdw.css.MailingListSummary");
+
 dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   // The ID of the mailing list.  This must be passed to the constructor
   // so postCreate can use it to retrieve the document from the datastore.

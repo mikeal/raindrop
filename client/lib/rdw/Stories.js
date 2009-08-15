@@ -30,7 +30,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
     "rd-protocol-broadcast": "broadcast",
-    "rd-protocol-mailingList": "mailingList",
     "rd-protocol-locationTag": "locationTag"
   },
 
@@ -38,8 +37,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
   //for each entry in this array.
   homeGroups: [
-    "rdw.story.TwitterTimeLine",
-    "rdw.story.MailingList"
+    "rdw.story.TwitterTimeLine"
   ],
 
   templateString: '<ol class="Stories"></ol>',
@@ -272,11 +270,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   broadcast: function() {
     //summary: responds to rd-protocol-broadcast topic.
     rd.conversation.broadcast(this.messageLimit, dojo.hitch(this, "updateConversations"));
-  },
-
-  mailingList: function(/*String*/listId) {
-    //summary: responds to rd-protocol-mailingList topic.
-    rd.conversation.mailingList(listId, this.messageLimit, dojo.hitch(this, "updateConversations"));
   },
 
   locationTag: function(/*String*/locationId) {

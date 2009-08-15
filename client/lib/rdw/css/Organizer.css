@@ -26,12 +26,6 @@
   font-weight: bold;
 }
 
-
-.Organizer ol > li.mailingList > a {
-  font-size: small;
-  color: #1a1a1a;
-}
-
 .Organizer ol > li.locationTag > a {
   font-size: small;
   color: #1a1a1a;

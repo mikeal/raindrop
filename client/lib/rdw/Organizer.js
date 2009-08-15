@@ -18,7 +18,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   //push new items to this array and define matching function
   //on Organizer to extend Organizer listing.
   listOrder: [
-    "listMailingList",
     "listLocation"
   ],
 
@@ -33,8 +32,14 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //to add other links.
     this.listToPane = {};
     for (var i = 0, funcName; funcName = this.listOrder[i]; i++) {
-      //Create a TitlePane that will hold some items.
+      //The extension funcName may not exist, so ignore if not defined
+      if (!this[funcName]) {
+        continue;
+      }
+
+      //Create a TitlePane that will hold some items, initially hidden.
       var pane = new dijit.TitlePane({}, dojo.place('<div>', this.domNode));
+      pane.domNode.style.display = "none";
       
       //Create an empty ul inside the pane that is a drag source.
       var node = dojo.place('<ol></ol>', pane.containerNode);
@@ -66,24 +71,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     pane.listNodeDndSource.insertNodes(false, dndNodes);
 
     dojo.place(items, pane.listNode);
-  },
-
-  listMailingList: function() {
-    //summary: shows a list of mailing lists available for viewing.
-    rd.tag.lists(dojo.hitch(this, function(ids) {
-      var html = "";
-      for (var i = 0, id; id = ids[i]; i++) {
-        html += dojo.string.substitute('<li class="mailingList dojoDndItem"><a title="${id}" href="#rd:mailingList:${id}" >${name}</a></li>', {
-          id: id,
-          //TODO: use the mailing list doc's "name" property if available.
-          name: id.split(".")[0]
-        });
-      }
-
-      if (html) {
-        this.addItems("listMailingList", "Mailing Lists", dojo._toDom(html));
-      }
-    }));
+    pane.domNode.style.display = "";
   },
 
   listLocation: function() {

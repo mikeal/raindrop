@@ -23,7 +23,6 @@ dojo.declare("rd.MegaviewStore", null, {
   //Contacts that match for the identity too.
   schemaQueryTypes: [
     "contact",
-    "mailingList",
     "locationTag"
   ],
 
@@ -340,45 +339,6 @@ dojo.declare("rd.MegaviewStore", null, {
             id: row.value.rd_key[1],
             type: "contact",
             name: name
-          });
-        }
-        this._addItems(items);
-        dfd.callback();
-      }),
-      error: function(err) {
-        dfd.errback(err);
-      }
-    };
-
-    if (count && count != Infinity) {
-      args.limit = count;
-    }
-
-    rd.store.megaview(args);
-    return dfd;
-  },
-
-  mailingListQuery: function(/*String*/query, /*Number*/ count) {
-    //summary: does a mailingList query for the "mailingList" schemaQueryType.
-    //console.log("mailingListQuery", query, count);
-    var dfd = new dojo.Deferred();
-
-    var args = {
-      startkey: ["rd.mailing-list", "id", query],
-      endkey: ["rd.mailing-list", "id", query + "\u9999"],
-      reduce: false,
-      ioPublish: false,
-      success: dojo.hitch(this, function(json) {
-        var items = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          var name = row.key[2];
-          if (!name) {
-            continue;
-          }
-          items.push({
-            id: row.value.rd_key[1],
-            type: "mailingList",
-            name: row.key[2]
           });
         }
         this._addItems(items);
