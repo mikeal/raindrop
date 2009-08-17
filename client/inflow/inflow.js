@@ -1,16 +1,16 @@
 dojo.provide("inflow");
 
-rd.require("rdw.Loading");
-rd.require("rdw.QuickCompose");
-rd.require("rdw.Search");
-rd.require("rdw.Summary");
-rd.require("rdw.ContactList");
-rd.require("rdw.Stories");
-rd.require("rdw.Organizer");
-rd.require("rdw.FaceWall");
+dojo.require("rdw.Loading");
+dojo.require("rdw.QuickCompose");
+dojo.require("rdw.Search");
+dojo.require("rdw.Summary");
+dojo.require("rdw.ContactList");
+dojo.require("rdw.Stories");
+dojo.require("rdw.Organizer");
+dojo.require("rdw.FaceWall");
 
-rd.require("rd.engine");
-rd.require("rd.conversation");
+dojo.require("rd.engine");
+dojo.require("rd.conversation");
 
 //Main controller for the inflow app. Handles message routing
 //and converting it to UI display.
