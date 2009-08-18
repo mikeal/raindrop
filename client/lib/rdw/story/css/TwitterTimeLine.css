@@ -8,10 +8,11 @@
   -moz-border-radius: 5px;
   padding: 8px;
   width: 100%;
+  -moz-box-sizing: border-box;
 }
 
 .rdwStoryTwitterTimeLine:hover .tweetList {
-  background-color: #FAE6E6;
+  background-color: #FFFF99;
 }
 
 .rdwStoryTwitterTimeLine .Message {
@@ -19,7 +20,7 @@
   -moz-border-radius: 0px;
   margin-bottom: 5px;
   padding: 0;
-  border-bottom: 1px dotted #888888;
+  border-bottom: 1px dotted #1a1a1a;
 }
 
 .rdwStoryTwitterTimeLine .Message:hover {
@@ -52,6 +53,7 @@
 .rdwStoryTwitterTimeLine .Message .message {
   margin-left: 0px;
   padding-top: 0px;
+  margin-right: 0px;
 }
 
 .rdwStoryTwitterTimeLine .moreLess {

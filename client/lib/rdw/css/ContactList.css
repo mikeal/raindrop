@@ -24,7 +24,7 @@
 }
 
 .contact:hover {
-  background-color: #FAE6E6;
+  background-color: #FFFF99;
 }
 
 .ContactList .photoSection {
@@ -32,12 +32,12 @@
   width: 48px;
   height: 48px;
   vertical-align: top;
+  background-image: url("i/icon_avatar.png");
 }
 
 .ContactList .contact .photo {
   width: 48px;
   height: 48px;
-  background-color: #888;
 }
 
 

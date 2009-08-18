@@ -9,7 +9,7 @@
 }
 
 .QuickCompose:hover {
-  background-color:#FAE6E6;
+  background-color:#FFFF99;
 }
 
 .QuickCompose div.photo {
@@ -65,6 +65,11 @@
   font-weight: bold;
   float: right;
   margin-top: 8px;
+  margin-right: 0px;
+}
+
+.Message .QuickCompose .send {
+  margin-right: 52px;
 }
 
 .QuickCompose .dijitComboBox input {
@@ -102,7 +107,7 @@
   font-weight: normal;
   width: 100%;
   margin-left: 1em;
-  background-color: #F1F2F2;
+  background-color: #E6E6E6;
   color: #888888;
   padding: 5px;
   -moz-border-radius: 5px;
@@ -129,7 +134,7 @@
   width: 100%;
   height: 24px;
   -moz-border-radius: 5px;
-  background-color: #F1F2F2;
+  background-color: #E6E6E6;
   font-size: small;
   -moz-box-sizing:border-box;
   padding: 8px;
@@ -156,7 +161,7 @@
 .QuickCompose .rdwDataSelector .dijitComboBox input.dijitReset,
 .QuickCompose .dijitComboBox input.dijitReset, 
 .QuickCompose .rdwDataSelector .dijitSpinner input.dijitReset {
-  background-color: #F1F2F2 !important;
+  background-color: #E6E6E6 !important;
   -moz-box-sizing:border-box;
   padding: 6px !important;
   -moz-border-radius-bottomleft:5px;
@@ -209,7 +214,7 @@
 
 .QuickCompose .rdwDataSelector .dijitButtonNode,
 .QuickCompose .dijitButtonNode {
-  background-color:#F1F2F2;
+  background-color:#E6E6E6;
   line-height:normal;
   margin:0;
   text-align:center;
@@ -225,8 +230,8 @@
   background-color:#FFF;
 }
 
-.Message:hover .rdwDataSelector .dijitButtonNode,
-.Message:hover .dijitButtonNode {
+.Story:hover .rdwDataSelector .dijitButtonNode,
+.Story:hover .dijitButtonNode {
   background-color:#FFF;
 }
 

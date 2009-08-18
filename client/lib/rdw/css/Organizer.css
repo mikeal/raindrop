@@ -39,7 +39,7 @@
   background: none;
   border: none;
   color: #1a1a1a;
-  padding: 0.2em 0.3em;
+  padding: 0.4em 0.3em;
   font-weight: bold;
   font-size: small;
 }
@@ -65,4 +65,14 @@
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneContentOuter .dijitTitlePaneContentInner {
   padding: 0 0 0 0.5em;
+}
+
+.dijitTitlePaneTextNode {
+ font-weight: bold !important;
+}
+
+.dijitArrowNodeInner {
+  display:inline-block;
+  margin-left:-3px;
+  width:8px;
 }

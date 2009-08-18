@@ -11,10 +11,6 @@
   margin-bottom: 8px;
 }
 
-.Message:hover {
-  background-color: #FAE6E6;
-}
-
 .Message div.photo {
   position: absolute;
   left: 8px;
@@ -84,26 +80,43 @@
 
 .Message .tools {
   position: absolute;
-  right: 8px;
-  bottom: 8px;
+  right: 47px;
+  top: 10px;
   font-size: x-small;
   visibility: hidden;
 }
 
 .Message .tools a {
-  color: #FFF;
+  background-color: transparent;
+  width: 16px;
+  height: 16px;
   opacity: 0.5;
   text-decoration: none;
-  background-color: #1a1a1a;
-  padding: 1px 5px;
-  -moz-border-radius-bottomleft: 0.2em;
-  -moz-border-radius-bottomright: 0.2em;
-  -moz-border-radius-topleft: 0.2em;
-  -moz-border-radius-topright: 0.2em;
+  overflow:hidden;
+  display: inline-block;
+  text-indent: -40em;
+  margin-right: 1px;
 }
 
-.Message .tools:hover a {
-  color: #FFF;
+.Message .tools a.identity {
+  background-image: url("i/icon_identity.png");
+  width: 16px;
+  height: 16px;
+}
+
+.Message .tools a.reply {
+  background-image: url("i/icon_reply.png");
+  width: 16px;
+  height: 16px;
+}
+
+.Message .tools a.fwd {
+  background-image: url("i/icon_fwd.png");
+  width: 16px;
+  height: 16px;
+}
+
+.Message .tools a:hover {
   opacity: 1;
 }
 
@@ -124,7 +137,7 @@
 }
 
 .Message .header {
-  border-bottom: 1px dotted #888888;
+  border-bottom: 1px dotted #1a1a1a;
   padding-bottom: 2px;
 }
 
@@ -168,12 +181,13 @@
 }
 
 .Message > .message > .content > a {
-  color: #888888;
-  text-decoration: none;
+  color: #1a1a1a;
+  text-decoration: underline;
 }
 
 .Message > .message > .content > a:hover {
-  color: #D2232A;
+  color: #1a1a1a;
+  text-decoration: none;
 }
 
 .Message > .message > .timestamp {
@@ -191,7 +205,7 @@
   text-transform: lowercase;
   font-family: Georgia, times, serif;
   font-style: italic;
-  color: #888888;
+  color: #666666;
   position:absolute;
   top:10px;
   right:8px;

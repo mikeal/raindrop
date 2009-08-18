@@ -74,7 +74,10 @@
   color:#FFFFFF;
   font-size:x-small;
   font-weight:bold;
-  padding:2px 5px;
+  padding:1px 5px;
   text-decoration:none;
   text-transform:uppercase;
+  position: absolute;
+  right: 0px;
+  bottom:0px;
 }
