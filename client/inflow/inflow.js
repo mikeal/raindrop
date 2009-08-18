@@ -1,5 +1,6 @@
 dojo.provide("inflow");
 
+dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
@@ -77,7 +78,7 @@ inflow = {
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
     if (fragId) {
-      rd.onDocClick("#" + fragId);
+      rd.dispatchFragId(fragId);
     } else {
       rd.pub("rd-protocol-home");
     }

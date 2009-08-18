@@ -39,6 +39,7 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
     }
 
     this._supportingWidgets.push(widget);
+    return widget;
   },
 
   removeSupporting: function(/*Object*/widget) {

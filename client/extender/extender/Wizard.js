@@ -136,7 +136,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
           this.forwardNode.style.visibility = "hidden";
         }
         this.backNode.style.visibility = "visible";
-        
+
         //Hide the other panels so they are not visible during a resize
         this.updatePanelVisibility();
 

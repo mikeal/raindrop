@@ -124,16 +124,16 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
 
   contactSelected: function(/*String*/contactId) {
     //summary: dispatch function when a contact is selected.
-    rd.onDocClick("#rd:contact:" + contactId);  
+    rd.setFragId("rd:contact:" + contactId);  
   },
 
   identitySelected: function(/*String*/identityId) {
     //summary: dispatch function when an identity is selected.
-    rd.onDocClick("#rd:identity:" + list);
+    rd.setFragId("rd:identity:" + list);
   },
 
   locationTagSelected: function(/*String*/location) {
     //summary: dispatch function when a locationTag is selected.
-    rd.onDocClick("#rd:locationTag:" + location);
+    rd.setFragId("rd:locationTag:" + location);
   }
 });

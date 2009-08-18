@@ -3,6 +3,8 @@ dojo.provide("rdw.Stories");
 dojo.require("rdw._Base");
 dojo.require("rdw.Story");
 
+dojo.require("dojox.fx.scroll");
+
 dojo.declare("rdw.Stories", [rdw._Base], {
   //Array of conversations to show.
   //Warning: this is a prototype property,
@@ -30,7 +32,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
     "rd-protocol-broadcast": "broadcast",
-    "rd-protocol-locationTag": "locationTag"
+    "rd-protocol-locationTag": "locationTag",
+    "rd-protocol-conversation": "conversation"
   },
 
   //List of modules that may want to group messages in the home view.
@@ -40,21 +43,18 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rdw.story.TwitterTimeLine"
   ],
 
-  templateString: '<ol class="Stories"></ol>',
+  //The keycode to use for actions that should expand to a full conversation
+  //view for a message.
+  convoKeyCode: dojo.keys.RIGHT_ARROW,
+  
+  //The keycode to use for actions that should return to the summary
+  //view for a message.
+  summaryKeyCode: dojo.keys.LEFT_ARROW,
 
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method before template is created.
-    this.inherited("postMixInProperties", arguments);
-
-    //Manually dealing with _supporting widgets instead of using
-    //addSupporting/removeSupporting since Story widgets can be
-    //removed fairly frequently.
-    if (!this._supportingWidgets) {
-      this._supportingWidgets = [];  
-    }
-
-    this._subs = [];
-  },
+  templateString: '<div class="rdwStories" dojoAttachEvent="onkeypress: onKeyPress">'
+                + '  <ol dojoAttachPoint="listNode"></ol>'
+                + '  <ol dojoAttachPoint="convoNode"></ol>'
+                + '</div>',
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
@@ -68,12 +68,31 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  onKeyPress: function(/*Event*/evt) {
+    //summary: handles key presses for navigation. If the key press is
+    //for something that should show a full conversation view then trigger
+    //it.
+    if (evt.keyCode == this.convoKeyCode) {
+      //Get the active, focused element and see if it is widget with a message
+      var id = dojo.doc.activeElement.id;
+      var widget = id && dijit.byId(id);
+      var messageBag = widget && widget.messageBag;
+      var convoId = messageBag
+                    && messageBag["rd.msg.conversation"]
+                    && messageBag["rd.msg.conversation"].conversation_id;
+      if (convoId) {
+        rd.setFragId("rd:conversation:" + convoId);
+      }
+    } else if (evt.keyCode == this.summaryKeyCode && this.viewType == "conversation") {
+      //Just go back in the browser history.
+      dojo.global.back();
+    }
+  },
+
   _sub: function(/*String*/topicName, /*String*/funcName) {
     //summary: subscribes to the topicName and dispatches to funcName,
     //saving off the info in case a refresh is needed.
-    this._subs.push(rd.sub(topicName, dojo.hitch(this, function() {
-      this.destroyAllSupporting();
-
+    this.subscribe(topicName, dojo.hitch(this, function() {
       if (topicName != "rd-engine-sync-done") {
         this._updateInfo = {
           funcName: funcName,
@@ -81,37 +100,133 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         };
       }
       this[funcName].apply(this, arguments);
-    })));
+    }));
   },
 
-  updateConversations: function(/*Array*/conversations) {
+  updateConversations: function(/*String*/viewType, /*Array*/conversations) {
     //summary: updates the display of conversations by updating the
     //rdw.Story objects.
     //TODO: try to reuse a Story object instead of destroy/create
     //cycle. Could cause too much memory churn in the browser.
 
-    this.conversations = conversations;
+    //Hold on to conversations in case we need to refresh based on extension
+    //action.
+    if (viewType == "conversation") {
+      this.oneConversation = conversations;
+      
+      //Clean up old convoWidget
+      if (this.convoWidget) {
+        this.removeSupporting(this.convoWidget);
+        this.convoWidget.destroy();
+      }
 
-    //Create new widgets.
-    //Use a document fragment for best performance
-    //and load up each story widget in there.
-    var frag = dojo.doc.createDocumentFragment();
-    for (var i = 0, conv; conv = this.conversations[i]; i++) {
-      this.addSupporting(new rdw.Story({
-         msgs: conv
-       }, dojo.create("div", null, frag)));        
+      //Make new convoWidget.
+      this.convoWidget = new rdw.Story({
+        msgs: this.oneConversation
+      }, dojo.create("div", null, this.convoNode));
+    } else {
+      this.destroyAllSupporting();
+
+      //Showing summaries of a few conversations.
+      this.conversations = conversations;
+
+      //Create new widgets.
+      //Use a document fragment for best performance
+      //and load up each story widget in there.
+      var frag = dojo.doc.createDocumentFragment();
+      for (var i = 0, conv; conv = this.conversations[i]; i++) {
+        this.addSupporting(new rdw.Story({
+           msgs: conv
+         }, dojo.create("div", null, frag)));        
+      }
+
+      //Inject nodes all at once for best performance.
+      this.listNode.appendChild(frag);
     }
 
-    //Inject nodes all at once for best performance.
-    this.domNode.appendChild(frag);
+    this.transition(viewType);
+  },
+
+  transition: function(/*String*/viewType) {
+    //summary: transitions the display to the appropriate
+    //viewType. Basically, allow switching from a summary
+    //of conversations to one conversation and back.
+
+    //Skip the animation on the first display of this widget.
+    if (!this._postRender) {
+      this._postRender = true;
+      return;
+    }
+
+    if (this.viewType != viewType) {
+      //Create a div used for scrolling.
+      if (!this._scrollNode) {
+        this._scrollNode = dojo.create("div", { "class": "scrollArea"});
+      }
+
+      //Fix the widths of divs for the scroll effect to work.
+      var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth;
+      var oldDomNodeWidth = this.domNode.style.width;
+      this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
+      var oldListNodeWidth = this.listNode.style.width;
+      this.listNode.style.width = newDomNodeWidth + "px";
+      var oldConvoNodeWidth = this.convoNode.style.width;
+      this.convoNode.style.width = newDomNodeWidth + "px";
+
+      //Use the scrollNode as the parent, to make things easy to scroll.
+      this._scrollNode.appendChild(this.listNode);
+      this._scrollNode.appendChild(this.convoNode);
+      this.domNode.appendChild(this._scrollNode);
+ 
+      //Make sure both lists are visible.
+      this.listNode.style.display = "";
+      this.convoNode.style.display = "";
+
+      if (viewType == "conversation") {
+        this.domNode.scrollLeft = 0;
+        var x = newDomNodeWidth;
+      } else {
+        this.domNode.scrollLeft = newDomNodeWidth;
+        x = 0;
+      }
+
+      dojox.fx.smoothScroll({
+        win: this.domNode,
+        target: { x: x, y: 0},
+        duration: 500,
+        onEnd: dojo.hitch(this, function() {
+          //Only show the correct node.
+          if (viewType == "conversation") {
+            this.listNode.style.display = "none";
+            this.convoNode.style.display = "";       
+          } else {
+            this.listNode.style.display = "";
+            this.convoNode.style.display = "none";       
+          }
+
+          //Pull the nodes out scrollNode          
+          this.domNode.removeChild(this._scrollNode);
+          this.domNode.appendChild(this.listNode);
+          this.domNode.appendChild(this.convoNode);
+
+          //Remove fixed widths on the nodes.
+          this.domNode.style.width = oldDomNodeWidth;
+          this.listNode.style.width = oldListNodeWidth;
+          this.convoNode.style.width = oldConvoNodeWidth;
+          
+          //Reset scroll.
+          this.domNode.scrollLeft = 0;
+        })
+      }).play();
+
+      this.viewType = viewType;
+    }
   },
 
   destroy: function() {
     //summary: dijit lifecycle method.
-
-    //Clean up subscriptions.
-    for (var i = 0, sub; sub = this._subs[i]; i++) {
-      rd.unsub(sub);
+    if (this.convoWidget) {
+      this.convoWidget.destroy();
     }
     this.inherited("destroy", arguments);
   },
@@ -160,6 +275,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     rd.conversation.latest(this.messageLimit, (this._skip * this.messageLimit), dojo.hitch(this, function(conversations) {
       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
+      this.destroyAllSupporting();
+
       if (conversations && conversations.length) {
         this.conversations = this.conversations.concat(conversations);
   
@@ -259,17 +376,17 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   contact: function(/*String*/contactId) {
     //summary: responds to rd-protocol-contact topic.
-    rd.conversation.contact(contactId, dojo.hitch(this, "updateConversations"));
+    rd.conversation.contact(contactId, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   direct: function() {
     //summary: responds to rd-protocol-direct topic.
-    rd.conversation.direct(this.messageLimit, dojo.hitch(this, "updateConversations"));
+    rd.conversation.direct(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   broadcast: function() {
     //summary: responds to rd-protocol-broadcast topic.
-    rd.conversation.broadcast(this.messageLimit, dojo.hitch(this, "updateConversations"));
+    rd.conversation.broadcast(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   locationTag: function(/*String*/locationId) {
@@ -280,7 +397,12 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       locationId = locationId.split(",");
     }
 
-    rd.conversation.location(locationId, this.messageLimit, dojo.hitch(this, "updateConversations"));
+    rd.conversation.location(locationId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+  },
+
+  conversation: function(/*String*/convoId) {
+    //summary: responds to requests to view a conversation.
+    rd.conversation(convoId, dojo.hitch(this, "updateConversations", "conversation"));
   }
   //**************************************************
   //end topic subscription endpoints

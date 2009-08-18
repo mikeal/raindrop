@@ -191,8 +191,8 @@ dojo.mixin(rd.identity, {
         }
         // now get the 'rd.identity' schema for all which have them.
         var keys = [];
-        for each (var idty in ours) {
-          keys.push(["rd.core.content", "key-schema_id", [idty['rd_key'], "rd.identity"]]);
+        for (var prop in ours) {
+          keys.push(["rd.core.content", "key-schema_id", [ours[prop]['rd_key'], "rd.identity"]]);
         }
         rd.store.megaview({
           keys: keys,
@@ -204,8 +204,8 @@ dojo.mixin(rd.identity, {
               ours[row.doc.rd_key] = row.doc;
             }
             // and now load every identity
-            for each (var idty in ours) {
-              this._storeIdty(idty);
+            for (var prop in ours) {
+              this._storeIdty(ours[prop]);
             }
             this._onload();
           }),

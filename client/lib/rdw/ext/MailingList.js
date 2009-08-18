@@ -106,7 +106,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.DataSelector", {
 
     mailingListSelected: function(/*String*/list) {
       //summary: dispatch function when a mailingList is selected.
-      rd.onDocClick("#rd:mailingList:" + list);  
+      rd.setFragId("rd:mailingList:" + list);  
     }
   }
 });
@@ -167,7 +167,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Stories", {
 
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
-      rd.conversation.mailingList(listId, this.messageLimit, dojo.hitch(this, "updateConversations"));
+      rd.conversation.mailingList(listId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
     }
   }
 });

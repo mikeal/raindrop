@@ -231,41 +231,26 @@ dojo._listener.getDispatcher = function(){
       return false;
     },
   
-    onDocClick: function(/*Event||String*/evt) {
-      //summary: Handles doc clicks to see if we need to
-      //use rd.pub to send out a protocol- topic. Also accepts a string
-      //that should be used as a fragment ID for the current URL. String
-      //should include starting # sign
+    setFragId: function(/*String*/fragId) {
+      //summary: sets the current page to a fragment ID.
+      location.href = "#" + fragId;
+    },
 
-      if (typeof evt == "string") {
-	var node = null;
-	var href = evt;
-	location.href = href;
-      } else {
-	node = evt.target;
-	href = node.href;
-      }
+    dispatchFragId: function(/*String*/fragId) {
+      //summary: converts a qualifying fragment ID (url #hash value)
+      //into a rd-protocol topic. Useful if want to dispatch a protocol
+      //topic without changing the page URL.
+      if (fragId && fragId.indexOf("rd:") == 0) {
+	//Have a valid rd: protocol link.
+	fragId = fragId.split(":");
+	var proto = fragId[1];
 
-      if (!href && node && node.nodeName.toLowerCase() == "img") {
-        //Small cheat to handle images that are hyperlinked.
-        //May need to revisit this for the long term.
-        href = node.parentNode.href;
-      }
-  
-      if (href) {
-        target = href.split("#")[1];
-        if (target && target.indexOf("rd:") == 0) {
-          //Have a valid rd: protocol link.
-          target = target.split(":");
-          var proto = target[1];
-  
-          //Strip off rd: and protocol: for the final
-          //value to pass to protocol handler.
-          target.splice(0, 2);
-          var value = target.join(":");
+	//Strip off rd: and protocol: for the final
+	//value to pass to protocol handler.
+	fragId.splice(0, 2);
+	var value = fragId.join(":");
 
-          rd.pub("rd-protocol-" + proto, value);
-        }
+	rd.pub("rd-protocol-" + proto, value);
       }
     },
 
@@ -602,6 +587,6 @@ dojo._listener.getDispatcher = function(){
 
 dojo.addOnLoad(function(){
   //Register an onclick handler on the body to handle "#rd:" protocol URLs.
-  dojo.connect(document.documentElement, "onclick", rd, "onDocClick");
+  rd.sub("rd.onHashChange", rd, "dispatchFragId");
 });
 

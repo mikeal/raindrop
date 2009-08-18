@@ -1,10 +1,19 @@
 @import url("Story.css");
 
-.Stories {
+.rdwStories {
+  overflow: hidden;
+}
+
+.rdwStories .scrollArea {
+  overflow: auto;
+  width: 8000px;
+}
+
+.rdwStories ol {
   position: relative;
   display: block;
+  float: left;
   list-style: none;
   padding: 0px 12px 0px 12px; 
   margin: 0px;
 }
-
