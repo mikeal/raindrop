@@ -2,6 +2,10 @@
   width: 50%;
 }
 
+.rdwStoryTwitterTimeLine .tweetHeader {
+  font-size: x-small;
+}
+
 .rdwStoryTwitterTimeLine .tweetList {
   font-size: smaller;
   background-color: #FFF;

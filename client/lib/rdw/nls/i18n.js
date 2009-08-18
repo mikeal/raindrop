@@ -12,7 +12,7 @@
   less: "less",
   loading: "loading...",
   more: "more",
-  poundCount: "(#${count})",
+  poundCount: "(${count})",
   reply: "send reply",
   replySubjectPrefix: "Re: ",
   send: "send",

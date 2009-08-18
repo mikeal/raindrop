@@ -9,9 +9,8 @@ rd.addStyle("rdw.story.css.TwitterTimeLine");
  */
 dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   templateString: '<li class="rdwStoryTwitterTimeLine"> \
-                    <span dojoAttachPoint="countNode"></span> Twitter Timeline \
+                    <div class="tweetHeader">Twitter Timeline <span dojoAttachPoint="countNode"></span></div> \
                     <div class="tweetList" dojoAttachPoint="containerNode"></div> \
-                    <a class="moreLess" dojoAttachPoint="moreLessNode" dojoAttachEvent="onclick: onMoreLessClick">${i18n.more}</a> \
                   </li>',
 
   /**
