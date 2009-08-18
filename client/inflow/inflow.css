@@ -42,7 +42,7 @@ a img{
 }
 
 #newcompose {
-  background-color: #1a1a1a;
+  background-color: yellow;
   -moz-border-radius: 37px;
   position: fixed;
   height: 75px;
@@ -53,7 +53,7 @@ a img{
   font-size: small;
   text-align: center;
   line-height: 75px;
-  color: #FFF;
+  color: #666;
 }
 
 #column1 {
