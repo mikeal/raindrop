@@ -54,6 +54,8 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //Set the enabled state
     //Only check for the first target. Only allowing a global
     //disable for all moduleName+targetName combinations.
+    //This is just an initial guess based on the loaded app.
+    //The definitive answer comes when the manifest is loaded via fetchManifest.
     this.enabledNode.checked = opener.rd.extensionEnabled(this.moduleName, this.targetNames[0]);
 
     //Bind to resize and make sure size is initially correct.
@@ -207,9 +209,16 @@ dojo.declare("extender.Editor", [rdw._Base], {
   },
 
   enableExtension: function(/*Boolean*/enabled) {
+    //Update the manifest.
+    if (enabled) {
+      delete this.moduleManifest.disabled;
+    } else {
+      this.moduleManifest.disabled = true;
+    }
+    //Update the runtime display
     for(var i = 0, target; target = this.targetNames[i]; i++) {
       opener.rd.extensionEnabled(this.moduleName, target, enabled);
-    }  
+    }
   },
 
   updateStatus: function(message) {
@@ -251,9 +260,11 @@ dojo.declare("extender.Editor", [rdw._Base], {
         } else {
           this.generateManifest();
         }
+        this.enabledNode.checked = !this.moduleManifest.disabled;
       }),
       error: dojo.hitch(this, function(json) {
         this.generateManifest();
+        this.enabledNode.checked = !this.moduleManifest.disabled;
       })
     });
   },
@@ -269,6 +280,11 @@ dojo.declare("extender.Editor", [rdw._Base], {
       "rd_schema_id": "rd.ext.uiext",
       "rd_ext_id": "rd.core"
     };
+
+    //Set the disabled state
+    if (!this.enabledNode.checked) {
+      this.moduleManifest.disabled = true;
+    }
 
     //Set the module mapping.
     var mapping = {};
@@ -290,7 +306,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
         var empty = {};
         for (var i = 0, targetName; targetName = this.targetNames[i]; i++) {
           var regExp = new RegExp('(,)?\\s*{\\s*["\']' + targetName + '["\']\\s*:\\s*["\']' + this.moduleName + '["\']\\s*}');
-          if (command == "delete") {
+          if (command == "delete" || !this.enabledNode.checked) {
             configText = configText.replace(regExp, "");
           } else if (command == "save" && !regExp.test(configText)) {
             //Save a new entry, it is not an existing entry.

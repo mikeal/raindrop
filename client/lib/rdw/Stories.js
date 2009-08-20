@@ -263,9 +263,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           var mod = dojo.getObject(module);
           this.homeGroupModules.push(mod);
         }
+        this.destroyAllSupporting();
         this._renderHome();
       }));
     } else {
+      this.destroyAllSupporting();
       this._renderHome();
     }
   },
@@ -275,8 +277,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     rd.conversation.latest(this.messageLimit, (this._skip * this.messageLimit), dojo.hitch(this, function(conversations) {
       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
-      this.destroyAllSupporting();
-
       if (conversations && conversations.length) {
         this.conversations = this.conversations.concat(conversations);
   
@@ -292,7 +292,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                 var widget = new handler({
                   msgs: [msgBag],
                   displayOnCreate: false
-                }, dojo.create("div", null, this._frag));
+                }, dojo.create("div"));
                 widget._isGroup = true;
                 this._groups.push(widget);
                 this.addSupporting(widget);

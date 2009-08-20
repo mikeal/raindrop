@@ -371,14 +371,38 @@ dojo._listener.getDispatcher = function(){
 	  }
 	}
 
+	//If the extension is not in the active list update it.
+	var reqExts = dojo.config.rd.exts;
+	var exts = reqExts[moduleName];
+	if (!exts) {
+	  reqExts[moduleName] = [extName];
+	  this.checkLoadExtension(extName, moduleName);
+	} else if (dojo.indexOf(exts, extName) == -1) {
+	  exts.push(extName);
+	  this.checkLoadExtension(extName, moduleName);
+	}
+
 	var ret = rd._extDisabled[key] = !enabled;
 
-	//Update instances of the module.
-	rd._updateInstances(moduleName);
+	//rd.checkLoadExtension could load code asynchronously,
+	//so do the following work in a dojo.addOnLoad callback.
+	dojo.addOnLoad(dojo.hitch(this, function() {
+	  //Update instances of the module.
+	  rd._updateInstances(moduleName);
+	}));
 
 	return ret;
       } else {
 	return !rd._extDisabled[key];
+      }
+    },
+
+    checkLoadExtension: function(/*String*/extName, /*String*/moduleName) {
+      //summary: if the moduleName is loaded, then load the extName
+      //at least once. Should only be called when enabling/disabling extensions
+      //that may have not been loaded before.
+      if (dojo._loadedModules[moduleName] && !dojo._loadedModules[extName]) {
+	dojo["require"](extName);
       }
     },
 

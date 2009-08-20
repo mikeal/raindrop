@@ -406,6 +406,11 @@ def update_apps(whateva):
                     "key": key,
                     "value": doc["modulePaths"][key]
                 })
+        
+        # skip disabled extensions
+        if 'disabled' in doc and doc['disabled'] == True:
+            continue;
+
         try:
             extender = doc["exts"]
         except KeyError:

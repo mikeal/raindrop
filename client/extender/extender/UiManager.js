@@ -43,7 +43,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
         var empty = {};
         for (var i= 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
           //Check for object extensions
-          if (!doc.disabled && doc.exts) {
+          if (doc.exts) {
             for (var prop in doc.exts) {
               if (!(prop in empty)) {
                 var key = doc.exts[prop];
@@ -58,7 +58,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
           }
 
           //Check for topic extensions
-          if (!doc.disabled && doc.subscriptions) {
+          if (doc.subscriptions) {
             for (var prop in doc.subscriptions) {
               if (!(prop in empty)) {
                 var key = doc.subscriptions[prop];
@@ -73,7 +73,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
           }
           
           //Back end extension.
-          if (!doc.disabled && doc.rd_schema_id == "rd.ext.workqueue") {
+          if (doc.rd_schema_id == "rd.ext.workqueue") {
               var keyName = doc.rd_key.join(",");
               beKeys.push(keyName);
               this.beExts[keyName] = doc;
@@ -83,7 +83,7 @@ dojo.declare("extender.UiManager", [rdw._Base], {
         //Show the object and subscription extensions in the DOM.
         this.insertExtensionHtml("ext", extKeys, extNames, this.extNode);
         this.insertExtensionHtml("sub", subKeys, subNames, this.subNode);
-        
+
         //Show the back end extensions.
         if (beKeys.length) {
           beKeys.sort();
