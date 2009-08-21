@@ -155,3 +155,6 @@
   visibility: hidden;
 }
 
+.tweetList .Message .message {
+  padding-bottom: 0;
+}

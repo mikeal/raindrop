@@ -47,6 +47,11 @@
   font-size: small;
 }
 
+.Organizer ol > li > a:hover {
+  text-decoration: underline;
+}
+
+
 .Organizer ol > li > a[href*=home] {
   font-weight: bold;
 }
@@ -54,6 +59,10 @@
 .Organizer ol > li.locationTag > a {
   font-size: small;
   color: #1a1a1a;
+}
+
+.Organizer ol > li.locationTag > a:hover {
+  text-decoration: underline;
 }
 
 .Organizer > .dijitTitlePane {
@@ -97,7 +106,12 @@
 }
 
 .dijitTitlePaneTextNode {
- font-weight: bold !important;
+  font-weight: bold !important;
+  cursor: pointer;
+}
+
+.dijitTitlePaneTextNode:hover {
+  text-decoration: underline !important;
 }
 
 .dijitArrowNodeInner {

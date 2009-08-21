@@ -2,8 +2,8 @@
 
 .Story {
   max-width: 80ex;
-  margin: 0 0 8px 0px;
-  padding: 0 0 10px 0;
+  margin: 0;
+  padding: 0 0 26px 0;
 }
 
 .Story:hover .Message {
@@ -15,25 +15,19 @@
 }
 
 .Story .tools {
-  -moz-border-radius-bottomleft:5px;
-  -moz-border-radius-bottomright:5px;
-  background-color:#888;
   height:18px;
   position:absolute;
   right:8px;
   font-style: italic;
   font-size: small;
-  font-family: Georgia, times, serif;
-  text-align: center;
   color: #FFF;
   line-height: 17px;
-  background-image: url("i/bg_reply.png");
-  background-repeat: repeat-x; 
   opacity: 0.75;
+  visibility: hidden;
 }
 
-.Story .tools:hover {
-  background-color: #333;
+.Story:hover .tools {
+  visibility: visible;
 }
 
 .Story .tools a {
@@ -44,6 +38,38 @@
   color: #FFF;
   line-height: 17px;
   text-decoration: none;
+}
+
+.Story .tools .reply {
+  padding: 0 6px 0 6px;
+  background-image: url("i/bg_reply.png");
+  background-repeat: repeat-x;
+  background-color: #888;
+  height: 18px;
+  -moz-border-radius-bottomleft: 5px;
+  -moz-border-radius-bottomright: 5px;
+  display: inline-block;
+  display: -moz-inline-box;
+}
+
+.Story .tools .reply:hover {
+  background-color: #333;
+}
+
+.Story .tools .moreMessages {
+  padding: 0 6px 0 6px;
+  background-image: url("i/bg_reply.png");
+  background-repeat: repeat-x;
+  background-color: #888;
+  height: 18px;
+  -moz-border-radius-bottomleft: 5px;
+  -moz-border-radius-bottomright: 5px;
+  display: inline-block;
+  display: -moz-inline-box;
+}
+
+.Story .tools .moreMessages:hover {
+  background-color: #333;
 }
 
 .triangle {

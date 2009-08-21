@@ -92,16 +92,17 @@
 .QuickCompose div.to label ,
 .QuickCompose .subject label {
   font-size:small;
-  text-align:right;
+  text-align:left;
   text-transform:none;
-  width:1em; /*  force down to only size of text */
+  width: 55px;
+  display: inline-block;
+  font-weight:bold;
 }
 
 .QuickCompose .to input,
 .QuickCompose .subject input {
   font-weight: normal;
   width: 100%;
-  margin-left: 1em;
   background-color: #E6E6E6;
   color: #888888;
   padding: 5px;
@@ -118,11 +119,6 @@
 .Story:hover .QuickCompose .subject input {
   background-color: #FFF;
 }
-
-.QuickCompose:hover .to input,
-.QuickCompose:hover .subject input {
-  background-color: #FFF;
- }
 
 .QuickCompose textarea {
   border: none;
@@ -220,8 +216,19 @@
 .QuickCompose .characterCount {
   display: inline-block;
   display: -moz-inline-box;
+  float: right;
+  line-height: 25px;
 }
 
 .dijitTextBox input, .dijitComboBox input, .dijitSpinner input {
   display: table !important;
+}
+
+.Story .QuickCompose {
+  margin: 8px 0 0 0;
+  -moz-border-radius: 5px;
+}
+
+.Story:hover .QuickCompose {
+  background-color: #FFB0B0;
 }

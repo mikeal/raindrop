@@ -14,7 +14,7 @@
 
 body {
   background-color: #888;
-  margin: 0px 8px 0px 0px;
+  margin: 0px 0px 0px 0px;
   background-image: url("i/bg.png");
 }
 
@@ -44,9 +44,6 @@ a img{
   background-image: url("i/bg.png");
   background-color: #e6e6e6;
   border-right: 1px solid #777;
-  border-bottom: 1px solid #777;
-  margin-bottom: 25px;
-  -moz-border-radius-bottomright: 5px;
 }
 
 #newcompose {
@@ -62,7 +59,7 @@ a img{
 #column1 {
   display: table-cell;
   width: 40em;
-  padding-bottom: 100px;
+  padding-bottom: 24px;
 }
 
 #column2 {
@@ -72,4 +69,17 @@ a img{
   vertical-align: top;
   background-color: #e6e6e6;
   -moz-border-radius-bottomright: 5px;
+  padding-bottom: 200px;
+}
+
+#footer {
+  display: block;
+  height: 100px;
+  background-color: #333;
+  border-top: 1px solid #1a1a1a;
+  padding: 12px;
+  font-size: x-small;
+  color: #FFF;
+  font-weight: bold;
+  opacity: 0.8;
 }

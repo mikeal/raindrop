@@ -6,9 +6,11 @@
     </div>
     <form dojoAttachEvent="onsubmit: onSubmit">
       <div style="display:table;width:100%;">
-      <div class="to" dojoAttachPoint="toNode">
-        From: <span dojoAttachPoint="addressNode" class="medium you"></span>
-        <label for="to">To:</label>
+      <div class="subject" dojoAttachPoint="toNode">
+        <label for="subject">From:</label>
+        <span dojoAttachPoint="addressNode" class="medium you"></span>
+        </label>
+        <label style="margin-left: 10px; width: 25px;" for="to">To:</label>
         <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
         <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
         <div class="newWindow">&nbsp;</div>
