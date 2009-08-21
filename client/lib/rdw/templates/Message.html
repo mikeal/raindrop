@@ -12,7 +12,7 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="tools" dojoAttachPoint="toolsNode" dojoAttachEvent="onclick: onToolClick">
+    <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
       <!-- reply, forward
       <a class="reply" href="#reply">${i18n.reply}</a>
       <a class="fwd" href="#forward">${i18n.forward}</a>
@@ -22,11 +22,6 @@
       <span class="friendly">${friendlyTime}</span>
       <!--<span class="additional">${additionalTime}</span>-->
     </div>
-    <div class="toolAction" dojoAttachPoint="toolDisplayNode">
-    </div>
-  </div>
-  <div class="storyreply" dojoAttachEvent="onclick: onToolClick">
-  <a class="reply" href="#reply">reply</a>
   </div>
   <div class="triangle"></div>
 </div>

@@ -77,7 +77,7 @@
   color: #5b5b5b;
 }
 
-.Message .tools {
+.Message .actions {
   position: absolute;
   right: 47px;
   top: 10px;
@@ -85,7 +85,7 @@
   visibility: hidden;
 }
 
-.Message .tools a {
+.Message .actions a {
   background-color: transparent;
   width: 16px;
   height: 16px;
@@ -98,29 +98,17 @@
   margin-right: 1px;
 }
 
-.Message .tools a.identity {
+.Message .actions a.identity {
   background-image: url("i/icon_identity.png");
   width: 16px;
   height: 16px;
 }
 
-.Message .tools a.reply {
-  background-image: url("i/icon_reply.png");
-  width: 16px;
-  height: 16px;
-}
-
-.Message .tools a.fwd {
-  background-image: url("i/icon_fwd.png");
-  width: 16px;
-  height: 16px;
-}
-
-.Message .tools a:hover {
+.Message .actions a:hover {
   opacity: 1;
 }
 
-.Message:hover .tools {
+.Message:hover .actions {
   visibility: visible;
 }
 .Message .message {
@@ -233,14 +221,6 @@
   margin-top: 8px;
   /* border hack because we can't use padding here w/ the abs photo */
   border-left: 8px solid transparent;
-}
-
-.Message.reply > .process {
-  display: visible;
-}
-
-.Message.reply > .process2 {
-  display: visible;
 }
 
 .Message.reply div.photo {

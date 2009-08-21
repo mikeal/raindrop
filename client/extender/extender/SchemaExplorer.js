@@ -68,7 +68,7 @@ dojo.declare("extender.SchemaExplorer", [rdw._Base], {
           }
           html += dojo.string.substitute(this.propTemplate, {
             name: prop,
-            value: rd.escapeHtml(value)
+            value: rd.escapeHtml(value + "")
           });
         }
         if (html) {

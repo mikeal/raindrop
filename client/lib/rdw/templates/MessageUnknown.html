@@ -12,24 +12,13 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="tools" dojoAttachPoint="toolsNode" dojoAttachEvent="onclick: onToolClick">
-      <!-- spam, annoying, reply, foward
-      <a title="${i18n.spamTitle}" href="#spam">${i18n.spam}</a>
-      <a title="${i18n.annoyingTitle}" href="#block">${i18n.annoying}</a>
-      <a class="reply" href="#reply">${i18n.reply}</a>
-      <a class="fwd" href="#forward">${i18n.forward}</a>
-      -->
+    <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
       <a class="identity" title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode" ></a>
     </div>
     <div class="timestamp" title="${utcTime}">
       <span class="friendly">${friendlyTime}</span>
       <span class="additional">${additionalTime}</span>
     </div>
-    <div class="toolAction" dojoAttachPoint="toolDisplayNode">
-    </div>
-  </div>
-  <div class="storyreply" dojoAttachEvent="onclick: onToolClick">
-  <a class="reply" href="#reply">reply</a>
   </div>
   <div class="triangle"></div>
 </div>

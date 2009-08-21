@@ -150,3 +150,8 @@
 .rdwStoryTwitterTimeLine .Message .medium {
   display: none;
 }
+
+.rdwStoryTwitterTimeLine .Message .triangle {
+  visibility: hidden;
+}
+

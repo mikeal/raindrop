@@ -26,7 +26,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method.
     this.history = [this];
-    
+
     this.backNode.style.visibility = "hidden";
     this.forwardNode.style.visibility = "hidden";
 
@@ -37,7 +37,10 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     //do initial calculation.
     this.connect(window, "onresize", "onResize");
     this.onResize();
-    
+
+    //Listen for hash changes so back/forward browser buttons work.
+    this.subscribe("rd.onHashChange", this, "onHashChange");
+
     //Other UI setup, start animations.
     $(".miners > ul > li", this.domNode).each(function() {
       var d = new Date();
@@ -231,6 +234,11 @@ dojo.declare("extender.Wizard", [rdw._Base], {
     //Make sure to update scrollLeft location of master container, since
     //the size of the panels changed.
     this.panelContainerNode.scrollLeft = width * this.historyIndex;
+  },
+
+  onHashChange: function(/*String*/value) {
+    //summary: triggers when the hash changes. Used for navigation purposes.
+    
   },
 
   updatePanelVisibility: function() {

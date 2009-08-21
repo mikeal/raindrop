@@ -14,14 +14,13 @@
   margin-bottom: 0px;
 }
 
-.storyreply {
+.Story .tools {
   -moz-border-radius-bottomleft:5px;
   -moz-border-radius-bottomright:5px;
   background-color:#888;
   height:18px;
   position:absolute;
   right:8px;
-  width:64px;
   font-style: italic;
   font-size: small;
   font-family: Georgia, times, serif;
@@ -33,11 +32,11 @@
   opacity: 0.75;
 }
 
-.storyreply:hover {
+.Story .tools:hover {
   background-color: #333;
 }
 
-.storyreply a {
+.Story .tools a {
   font-style: italic;
   font-size: small;
   font-family: Georgia, times, serif;
@@ -45,18 +44,6 @@
   color: #FFF;
   line-height: 17px;
   text-decoration: none;
-}
-
-.Story .Message .storyreply {
-  visibility: hidden;
-}
-
-.Story:hover .Message:last-child .storyreply {
-  visibility: visible;
-}
-
-.rdwStoryTwitterTimeLine .Message .storyreply {
-  visibility: hidden;
 }
 
 .triangle {
@@ -72,10 +59,10 @@
   background-image: url("i/tri_pink.png");
 }
 
-.Story .Message:last-child .triangle {
-  visibility: hidden;
+.Story .Message:last-child {
+  margin-bottom: 0;
 }
 
-.rdwStoryTwitterTimeLine .Message .triangle {
+.Story .Message:last-child .triangle {
   visibility: hidden;
 }

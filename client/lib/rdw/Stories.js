@@ -307,10 +307,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           //If any messsages not handled by a group in a conversation
           //are left over, create a regular story for them.
           if (leftOver.length) {
-            var widget = new rdw.Story({
-              msgs: leftOver,
-              displayOnCreate: false
-            }, dojo.create("div"));
+            var widget = this.createHomeStory(leftOver);
             this._groups.push(widget);
             this.addSupporting(widget);
           }
@@ -335,9 +332,21 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         }
   
         //Inject nodes all at once for best performance.
-        this.domNode.appendChild(frag);
+        this.listNode.appendChild(frag);
       }
     }));   
+  },
+
+  createHomeStory: function(/*Array*/msgs) {
+    //summary: creates a Story widget for the Home view. The Story widget
+    //should not display itself immediately since prioritization of the home
+    //widgets still needs to be done. Similarly, it should not try to attach
+    //to the document's DOM yet. Override for more custom behavior/subclasses.
+    return new rdw.Story({
+      msgs: msgs,
+      messageLimit: 3,
+      displayOnCreate: false
+    }, dojo.create("div")); //rdw.Story
   },
 
   _sortGroups: function() {
