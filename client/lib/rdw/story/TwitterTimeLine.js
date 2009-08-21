@@ -9,9 +9,8 @@ rd.addStyle("rdw.story.css.TwitterTimeLine");
  */
 dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   templateString: '<li class="rdwStoryTwitterTimeLine"> \
-                    <div class="tweetHeader">Twitter Timeline <span dojoAttachPoint="countNode"></span></div> \
-                    <div class="tweetList" dojoAttachPoint="containerNode"></div> \
-                  </li>',
+                    <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Fresh tweets!</div></div> \
+                   </li>',
 
   /**
    * Indicates what state the widget is in, more or less.

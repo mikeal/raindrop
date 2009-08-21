@@ -3,13 +3,79 @@
 .Story {
   max-width: 80ex;
   margin: 8px 0px;
-  padding: 0px;
+  padding: 0 0 10px 0;
 }
 
 .Story:hover .Message {
-  background-color: #FFFF99;
+  background-color: #FFB0B0;
 }
 
 .Story:last-child {
   margin-bottom: 0px;
+}
+
+.storyreply {
+  -moz-border-radius-bottomleft:5px;
+  -moz-border-radius-bottomright:5px;
+  background-color:#888;
+  height:18px;
+  position:absolute;
+  right:8px;
+  width:64px;
+  font-style: italic;
+  font-size: small;
+  font-family: Georgia, times, serif;
+  text-align: center;
+  color: #FFF;
+  line-height: 17px;
+  background-image: url("i/bg_reply.png");
+  background-repeat: repeat-x; 
+  opacity: 0.75;
+}
+
+.storyreply:hover {
+  background-color: #333;
+}
+
+.storyreply a {
+  font-style: italic;
+  font-size: small;
+  font-family: Georgia, times, serif;
+  text-align: center;
+  color: #FFF;
+  line-height: 17px;
+  text-decoration: none;
+}
+
+.Story .Message .storyreply {
+  visibility: hidden;
+}
+
+.Story:hover .Message:last-child .storyreply {
+  visibility: visible;
+}
+
+.rdwStoryTwitterTimeLine .Message .storyreply {
+  visibility: hidden;
+}
+
+.triangle {
+  background-color: transparent;
+  height:8px;
+  position: absolute;
+  right:24px;
+  width:16px;
+  background-image: url("i/tri_white.png");
+}
+
+.Story:hover .Message .triangle {
+  background-image: url("i/tri_pink.png");
+}
+
+.Story .Message:last-child .triangle {
+  visibility: hidden;
+}
+
+.rdwStoryTwitterTimeLine .Message .triangle {
+  visibility: hidden;
 }

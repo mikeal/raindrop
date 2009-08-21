@@ -29,6 +29,7 @@
 
 .rdwDataSelector div.dijitArrowButton {
   float:right;
+  margin-right: 0.5em;
 }
 
 .rdwDataSelector .dijitArrowButton {
@@ -55,4 +56,12 @@
 .rdwDataSelector .dijitRight {
   background-position:right top;
   background-repeat:no-repeat;
+}
+
+.dijitMenu {
+  border: none !important;
+}
+
+.dijitMenuItem {
+  font-size: small !important;
 }

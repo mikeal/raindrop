@@ -1,22 +1,29 @@
 .rdwStoryTwitterTimeLine {
   width: 50%;
-}
-
-.rdwStoryTwitterTimeLine .tweetHeader {
-  font-size: x-small;
+  font-size: small;
+  font-weight: bold;
 }
 
 .rdwStoryTwitterTimeLine .tweetList {
-  font-size: smaller;
   background-color: #FFF;
   -moz-border-radius: 5px;
-  padding: 8px;
+  padding: 12px 8px 8px 8px;
   width: 100%;
   -moz-box-sizing: border-box;
 }
 
+.rdwStoryTwitterTimeLine .tweetList .tweetTitle {
+  font-size: small;
+  font-weight: bold;
+  padding-bottom: 2px;
+  border-bottom: 1px dotted #1a1a1a;
+  background-image: url("i/bg_tweetlist.png");
+  background-repeat: no-repeat;
+  background-position: right;
+}
+
 .rdwStoryTwitterTimeLine:hover .tweetList {
-  background-color: #FFFF99;
+  background-color: #FFB0B0;
 }
 
 .rdwStoryTwitterTimeLine .Message {
@@ -37,6 +44,7 @@
   display: block;
   border-bottom: none;
   padding-bottom: 0;
+  margin-top: 6px;
 }
 
 .rdwStoryTwitterTimeLine .tools {
@@ -65,13 +73,23 @@
   right: 50%;
   color: #FFF;
   cursor: pointer;
-  padding: 1px 5px;
-  background-color: #1a1a1a;
-  -moz-border-radius: 5px;
-  font-size: x-small;
-  text-transform: uppercase;
-  font-weight: bold;
-  margin-top: 8px;
+  width: 64px;
+  height: 18px;
+  background-color: #888;
+  -moz-border-radius-bottomright: 5px;
+  -moz-border-radius-bottomleft: 5px;
+  font-size: small;
+  text-align: center;
+  margin-right: 8px;
+  font-family: Georgia, times, serif;
+  font-style: italic;
+  background-image: url("i/bg_reply.png");
+  line-height: 17px;
+  opacity: 0.75;
+}
+
+.rdwStoryTwitterTimeLine .moreLess:hover {
+  background-color: #333;
 }
 
 .rdwStoryTwitterTimeLine .Message .process {

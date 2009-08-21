@@ -3,7 +3,6 @@
 .Message {
   position: relative;
   background-color: #FFF;
-  padding-bottom: 10px;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
   -moz-border-radius-topleft: 5px;
@@ -94,6 +93,7 @@
   text-decoration: none;
   overflow:hidden;
   display: inline-block;
+  display: -moz-inline-box;
   text-indent: -40em;
   margin-right: 1px;
 }
@@ -182,12 +182,12 @@
 
 .Message > .message > .content > a {
   color: #1a1a1a;
-  text-decoration: underline;
+  text-decoration: none;
 }
 
 .Message > .message > .content > a:hover {
   color: #1a1a1a;
-  text-decoration: none;
+  text-decoration: underline;
 }
 
 .Message > .message > .timestamp {
@@ -205,7 +205,7 @@
   text-transform: lowercase;
   font-family: Georgia, times, serif;
   font-style: italic;
-  color: #666666;
+  color: #1a1a1a;
   position:absolute;
   top:10px;
   right:8px;

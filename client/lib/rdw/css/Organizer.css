@@ -5,11 +5,36 @@
 .Organizer ol {
   list-style: none;
   padding: 0px;
-  margin: 0px;
+  margin: 0px 0px 3px 0px;
 }
 
 .Organizer ol > li {
-  padding: 0.2em 0.5em;
+  padding: 0.2em 20px;
+  margin-left: 0.5em;
+}
+
+#rdUnique1 {
+  background-image: url("i/menu/icon_home.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+#rdUnique2 {
+  background-image: url("i/menu/icon_directmessage.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+#rdUnique3 {
+  background-image: url("i/menu/icon_broadcasts.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+#rdUnique4 {
+  background-image: url("i/menu/icon_contacts.png");
+  background-repeat: no-repeat;
+  background-position: left center;
 }
 
 .Organizer ol > li:hover {
@@ -36,12 +61,16 @@
 }
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneTitle {
-  background: none;
   border: none;
   color: #1a1a1a;
   padding: 0.4em 0.3em;
   font-weight: bold;
   font-size: small;
+  padding: 0.2em 20px;
+  margin-left: 0.6em;
+  background-image: url("i/menu/icon_mail.png");
+  background-repeat: no-repeat;
+  background-position: left center;
 }
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneTitle.dijitOpen .dijitArrowNode {
@@ -64,7 +93,7 @@
 }
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneContentOuter .dijitTitlePaneContentInner {
-  padding: 0 0 0 0.5em;
+  padding: 0 0 0 0;
 }
 
 .dijitTitlePaneTextNode {
@@ -72,7 +101,7 @@
 }
 
 .dijitArrowNodeInner {
-  display:inline-block;
+  display: none;
   margin-left:-3px;
   width:8px;
 }

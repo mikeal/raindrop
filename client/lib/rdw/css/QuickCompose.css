@@ -8,10 +8,6 @@
   -moz-border-radius-bottomright: 5px;
 }
 
-.QuickCompose:hover {
-  background-color:#FFFF99;
-}
-
 .QuickCompose div.photo {
   display: none;
 }
@@ -52,20 +48,20 @@
 .QuickCompose .send {
   /* eventually we'll use some real styling so this is more of a subtle button
     instead of the very visible OS button that it is now */
-  background-color: #1A1A1A;
-  color: #FFF;
-  border: none;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
+  background-color: #1A1A1A;
+  color: #FFF;
+  border: none;
   vertical-align: middle;
-  font-size: x-small;
-  text-transform: uppercase;
-  font-weight: bold;
+  font-size: small;
+  font-style: italic;
   float: right;
   margin-top: 8px;
   margin-right: 0px;
+  font-family: Georgia, times, serif;
 }
 
 .Message .QuickCompose .send {
@@ -78,12 +74,11 @@
 
 .QuickCompose .compose > form div.to,
 .QuickCompose .compose > form div.subject {
-
   margin: 0.5em 0px;
   font-size: small;
   font-weight: normal;
   letter-spacing: 0;
-  color: #888888;
+  color: #1a1a1a;
   height: 30px;
 }
 
@@ -91,7 +86,7 @@
 .QuickCompose .to div,
 .QuickCompose .subject label,
 .QuickCompose .subject div {
-  color: #888888;
+  color: #1a1a1a;
 }
 
 .QuickCompose div.to label ,
@@ -140,10 +135,6 @@
   padding: 8px;
 }
 
-.QuickCompose:hover textarea {
-  background-color: #FFF;
-}
-
 .QuickCompose .error {
   color: red;
 }
@@ -170,24 +161,10 @@
   -moz-border-radius-topright:0px;
 }
 
-.QuickCompose:hover .rdwDataSelector .dijitTextBox input.dijitReset, 
-.QuickCompose:hover .rdwDataSelector .dijitComboBox input.dijitReset,
-.QuickCompose:hover .dijitComboBox input.dijitReset, 
-.QuickCompose:hover .rdwDataSelector .dijitSpinner input.dijitReset {
-  background-color: #FFF !important;
-}
-
 .Story:hover .rdwDataSelector .dijitTextBox input.dijitReset, 
 .Story:hover .rdwDataSelector .dijitComboBox input.dijitReset,
 .Story:hover .dijitComboBox input.dijitReset, 
 .Story:hover .rdwDataSelector .dijitSpinner input.dijitReset {
-  background-color: #FFF !important;
-}
-
-.Message:hover .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Message:hover .rdwDataSelector .dijitComboBox input.dijitReset,
-.Message:hover .dijitComboBox input.dijitReset, 
-.Message:hover .rdwDataSelector .dijitSpinner input.dijitReset {
   background-color: #FFF !important;
 }
 
@@ -225,11 +202,6 @@
   -moz-border-radius-topright:5px;
 }
 
-.QuickCompose:hover .rdwDataSelector .dijitButtonNode,
-.QuickCompose:hover .dijitButtonNode {
-  background-color:#FFF;
-}
-
 .Story:hover .rdwDataSelector .dijitButtonNode,
 .Story:hover .dijitButtonNode {
   background-color:#FFF;
@@ -242,8 +214,14 @@
 
 .QuickCompose div.input {
   display: inline-block;
+  display: -moz-inline-box;
 }
 
 .QuickCompose .characterCount {
   display: inline-block;
+  display: -moz-inline-box;
+}
+
+.dijitTextBox input, .dijitComboBox input, .dijitSpinner input {
+  display: table !important;
 }

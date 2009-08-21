@@ -20,8 +20,7 @@
 
 .QuickCompose.reply .send,
 .QuickCompose.forward .send {
-  font-size: x-small;
-  font-weight: bold;
+  font-size: small;
 }
 
 .Message .QuickCompose {
@@ -66,18 +65,18 @@
 }
 
 .QuickCompose .close{
-  -moz-border-radius-bottomleft:5px;
-  -moz-border-radius-bottomright:5px;
-  -moz-border-radius-topleft:5px;
-  -moz-border-radius-topright:5px;
-  background-color:#1A1A1A;
-  color:#FFFFFF;
-  font-size:x-small;
-  font-weight:bold;
-  padding:1px 5px;
-  text-decoration:none;
-  text-transform:uppercase;
-  position: absolute;
-  right: 0px;
-  bottom:0px;
+-moz-border-radius-bottomleft:5px;
+-moz-border-radius-bottomright:5px;
+-moz-border-radius-topleft:5px;
+-moz-border-radius-topright:5px;
+background-color:#1A1A1A;
+bottom:0;
+color:#FFFFFF;
+font-family:georgia;
+font-size:small;
+font-style:italic;
+padding:1px 8px;
+position:absolute;
+right:0;
+text-decoration:none;
 }

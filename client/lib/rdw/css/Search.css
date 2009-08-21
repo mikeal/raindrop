@@ -21,7 +21,8 @@
 .Search ol {
   list-style: none;
   padding: 0px;
-  margin: 0.5em 0px;
+  margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .Search > ol > li {
@@ -36,4 +37,10 @@
 
 .Search > ol > li > a:hover {
   text-decoration: underline;
+}
+
+.recentsearches {
+  font-weight: bold;
+  font-size: x-small;
+  margin-top: 10px; 
 }
