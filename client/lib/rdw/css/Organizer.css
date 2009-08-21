@@ -13,25 +13,25 @@
   margin-left: 0.5em;
 }
 
-#rdUnique1 {
+.Organizer ol > li[type="home"] {
   background-image: url("i/menu/icon_home.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-#rdUnique2 {
+.Organizer ol > li[type="direct"] {
   background-image: url("i/menu/icon_directmessage.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-#rdUnique3 {
+.Organizer ol > li[type="broadcast"] {
   background-image: url("i/menu/icon_broadcasts.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-#rdUnique4 {
+.Organizer ol > li[type="contacts"] {
   background-image: url("i/menu/icon_contacts.png");
   background-repeat: no-repeat;
   background-position: left center;
