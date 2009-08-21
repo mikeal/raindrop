@@ -71,8 +71,19 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   _intervalID: null,
 
   _updateView: function() {
-    // TODO: make this localizable.
-    rd.escapeHtml("Mailing List: " + this.doc.id, this.titleNode, "only");
+    //ID is required
+    rd.escapeHtml(this.doc.id, this.idNode, "only");
+    this.idNode.href = this.doc.post;
+
+    //Name is not a required field so we check for it
+    if (this.doc.name)
+      rd.escapeHtml(this.doc.name, this.nameNode, "only");
+
+     //Archive is not a required field, check for it
+    if (this.doc.archive) {
+      rd.escapeHtml(this.doc.archive, this.archiveNode, "only");
+      this.archiveNode.href = this.doc.archive;
+    }
 
     // TODO: make this localizable.
     switch(this.doc.status) {

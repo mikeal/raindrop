@@ -11,6 +11,7 @@
   home: "Home",
   less: "less",
   loading: "loading...",
+  mailingList: "Mailing List",
   messageSingular: "message",
   messagePlural: "messages",
   more: "more",
@@ -23,6 +24,7 @@
   sent: "Sent",
   spam: "spam",
   spamTitle: "Click here to mark this email as spam.\nFurther messages from this person will be hidden.",
+  starred: "Starred",
   whoKnown: "Is this ${name}?",
   whoTitle: "Associate this identity with a contact.",
   whoUnknown: "This person is..." 
