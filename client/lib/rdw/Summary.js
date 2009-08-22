@@ -18,7 +18,9 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
     "rd-protocol-broadcast": "broadcast",
-    "rd-protocol-locationTag": "locationTag"
+    "rd-protocol-locationTag": "locationTag",
+    "rd-protocol-starred": "starred",
+    "rd-protocol-sent": "sent"
   },
 
   postMixInProperties: function() {
@@ -111,6 +113,16 @@ dojo.declare("rdw.Summary", [rdw._Base], {
   locationTag: function(/*String*/locationId) {
     //summary: responds to rd-protocol-locationTag topic.
     rd.escapeHtml("Folder location: " + locationId, this.domNode);
+  },
+
+  starred: function(/*String*/locationId) {
+    //summary: responds to rd-protocol-starred topic.
+    rd.escapeHtml("Starred Messages (unimplemented)", this.domNode);
+  },
+
+  sent: function(/*String*/locationId) {
+    //summary: responds to rd-protocol-sent topic.
+    rd.escapeHtml("Sent Messages", this.domNode);
   }
   //**************************************************
   //end topic subscription endpoints

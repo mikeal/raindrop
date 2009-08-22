@@ -33,6 +33,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-direct": "direct",
     "rd-protocol-broadcast": "broadcast",
     "rd-protocol-locationTag": "locationTag",
+    "rd-protocol-starred": "starred",
+    "rd-protocol-sent": "sent",
     "rd-protocol-conversation": "conversation"
   },
 
@@ -407,6 +409,16 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
 
     rd.conversation.location(locationId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+  },
+
+  starred: function() {
+    //summary: responds to rd-protocol-broadcast topic.
+    rd.conversation.starred(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+  },
+
+  sent: function() {
+    //summary: responds to rd-protocol-broadcast topic.
+    rd.conversation.sent(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   conversation: function(/*String*/convoId) {

@@ -168,6 +168,43 @@ dojo._mixin(rd.conversation, {
     });
   },
 
+  starred: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    /* Not yet implemented */
+  },
+
+  sent: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary get all conversations sent by the user according to their account
+    //identities and related contacts
+    rd.account.all(dojo.hitch(this, function(accounts) {
+      //Remap the services that count, from uses "email", not "imap"
+      var allowedServices = {
+        twitter: "twitter",
+        imap: "email"
+      };
+
+      //Build up a list of identity IDs for yourself
+      var empty = {};
+      var senders = [];
+      for (var prop in accounts) {
+        if (!(prop in empty)) {
+          if (prop in allowedServices) {
+            //Add to list of senders we are willing to handle
+            senders.push([allowedServices[prop], accounts[prop].id])
+          }
+        }
+      }
+
+      //Lookup the array of contacts by the array of identities
+      rd.contact.byIdentity(senders, dojo.hitch(this, function(contacts){
+        var contact_ids = rd.map(contacts, function(contact) {
+          return contact.rd_key[1];
+        });
+        this.contact(contact_ids, callback, errback);
+      }));
+
+    }));
+  },
+
   latest: function(/*Number*/limit, /*Number*/skip, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent messages up to limit, then
     //pulls the conversations associated with those messages. Conversation with
@@ -183,7 +220,7 @@ dojo._mixin(rd.conversation, {
     }, callback, errback);
   },
 
-  contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
+  contact: function(/*String|Array*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
     //a given contact.
 
@@ -191,7 +228,15 @@ dojo._mixin(rd.conversation, {
     rd.contact.get(contactId, dojo.hitch(this, function(contact) {
       //Use megaview to select all messages based on the identity
       //IDs.
-      var keys = rd.map(contact.identities, function(identity) {
+      var identities = contact.identities;
+      if (dojo.isArray(contact)) {
+        identities = [];
+        for (var i = 0, c; c = contact[i]; i++) {
+          identities = identities.concat(c.identities);
+        }
+      }
+
+      var keys = rd.map(identities, function(identity) {
         return ["rd.msg.body", "from", identity.rd_key[1]];
       });
       if (!keys) {
