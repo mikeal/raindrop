@@ -1,5 +1,5 @@
-.QuickCompose.reply div.photo,
-.QuickCompose.forward div.photo {
+.rdwReplyForward .QuickCompose.reply div.photo,
+.rdwReplyForward .QuickCompose.forward div.photo {
   position: relative;
   width: 24px;
   height: 24px;
@@ -7,23 +7,23 @@
   background-color: #efefef;
 }
 
-.QuickCompose.reply div.photo img.photo,
-.QuickCompose.forward div.photo img.photo {
+.rdwReplyForward .QuickCompose.reply div.photo img.photo,
+.rdwReplyForward .QuickCompose.forward div.photo img.photo {
   width: 24px;
   height: 24px;
 }
 
-.QuickCompose.reply .info .name,
-.QuickCompose.forward .info .name {
+.rdwReplyForward .QuickCompose.reply .info .name,
+.rdwReplyForward .QuickCompose.forward .info .name {
   font-size: smaller;
 }
 
-.QuickCompose.reply .send,
-.QuickCompose.forward .send {
+.rdwReplyForward .QuickCompose.reply .send,
+.rdwReplyForward .QuickCompose.forward .send {
   font-size: small;
 }
 
-.Message .QuickCompose {
+.rdwReplyForward .Message .QuickCompose {
   background-color: transparent;
   position: relative;
   max-width: 100%;
@@ -33,38 +33,39 @@
   -moz-border-radius-bottomright: 5px;
 }
 
-.Message .QuickCompose .info {
+.rdwReplyForward .Message .QuickCompose .info {
   color: #666666;
   font-size: small;
   margin: 0px;
 }
 
-.Message .QuickCompose .info .name {
+.rdwReplyForward .Message .QuickCompose .info .name {
   font-family: Arial Black, Gadget, sans-serif;
   font-weight: bold;
   letter-spacing: 0.15em;
 }
 
-.Message .QuickCompose .info .medium {
+.rdwReplyForward .Message .QuickCompose .info .medium {
   font-family: Arial, Verdana, sans-serif;
   font-size: small;
 }
 
-.Message .QuickCompose form {
+.rdwReplyForward .Message .QuickCompose form {
   display: block;
   margin: 0px;
   padding: 0px;
 }
 
-.Message:hover .QuickCompose textarea {
+.rdwReplyForward .Message:hover .QuickCompose textarea {
+  background-color: #FFF;
+  height: auto;
+}
+
+.rdwReplyForward .Story:hover .QuickCompose textarea {
   background-color: #FFF;
 }
 
-.Story:hover .QuickCompose textarea {
-  background-color: #FFF;
-}
-
-.QuickCompose .close{
+.rdwReplyForward .QuickCompose .close{
 -moz-border-radius-bottomleft:5px;
 -moz-border-radius-bottomright:5px;
 -moz-border-radius-topleft:5px;

@@ -1,5 +1,6 @@
 dojo.provide("rdw.ReplyForward");
 
+dojo.require("dijit.form.Textarea");
 dojo.require("rdw.QuickCompose");
 
 rd.addStyle("rdw.css.ReplyForward");
@@ -22,7 +23,9 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     //summary: dijit lifecycle method.
     this.inherited("postCreate", arguments);
 
-    //Add an extra class for specific styling
+    //Add an extra class for specific styling as well as a class name
+    //to identify the widget.
+    dojo.addClass(this.domNode, "rdwReplyForward");
     dojo.addClass(this.domNode, this.replyType);
 
     //Add in a close button
@@ -31,8 +34,12 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
       "class": "close",
       innerHTML: this.i18n.closeIcon
     }, this.actionsNode, "first");
-    
+
     dojo.connect(closeNode, "onclick", this, "onCloseClick");
+
+    //Make the textarea expand to fit its content.
+    this.textArea = this.addSupporting(new dijit.form.Textarea({}, this.textAreaNode));
+    this.textAreaNode = this.textArea.domNode;
   },
 
   updateFields: function(/*String*/sender) {
@@ -57,7 +64,9 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     //Set body.
     //TODO: this is really hacky. Need a nice, localized time with
     //the person's name, better quoting, etc... the \n\n is bad too.
-    this.textAreaNode.value = rd.escapeHtml(body.body).replace(/^/g, "> ") + "\n\n";
+    //this.textAreaNode.value = body.body.replace(/^/g, "> ").replace(/\n/g, "\n> ") + "\n\n";
+    //For now just set to empty for quick reply, but probably need quoting for full message view.
+    this.textAreaNode.value = "";
     setTimeout(dojo.hitch(this, function() {
       this.textAreaNode.focus();
     }));
