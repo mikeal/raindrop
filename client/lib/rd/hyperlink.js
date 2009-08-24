@@ -16,12 +16,12 @@ rd.hyperlink = {
   addTwitterUsers: function(/*String*/text) {
     //summary: adds hyperlinks to twitter user IDs. TODO: probably needs to be
     //more robust.
-    return text.replace(/\@(\w+)/g, "<a href='http://twitter.com/$1' target='_blank'>@$1</a>");
+    return text.replace(/\@(\w+)/g, "<a class='username' type='twitter' title='twitter.com/$1' href='http://twitter.com/$1' target='_blank'>@$1</a>");
   },
   addTwitterTags: function(/*String*/text) {
     //summary: adds hyperlinks to twitter tags
     // TODO: we evetually want to link to our own tag search/browse system that 
     // works to pull in the twitter search as well
-    return text.replace(/\#(\w+)/g, "<a href='http://search.twitter.com/search?q=%23$1' target='_blank'>#$1</a>");
+    return text.replace(/\#(\w+)/g, "<a class='tag' type='twitter' title='search twitter.com for tag #$1' href='http://search.twitter.com/search?q=%23$1' target='_blank'>#$1</a>");
   }
 }

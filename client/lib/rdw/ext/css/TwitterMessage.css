@@ -1,0 +1,7 @@
+.Message > .message > .content > .username[type='twitter'] {
+  font-weight: bold;
+}
+.Message > .message > .content > .tag[type='twitter'] {
+
+}
+

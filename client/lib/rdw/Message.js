@@ -38,10 +38,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
     //TODO: make message transforms extensionized.
     this.message = rd.hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
-    if(msgDoc.from[0] == "twitter") {
-      this.message = rd.hyperlink.addTwitterUsers(this.message);
-      this.message = rd.hyperlink.addTwitterTags(this.message);
-    }
 
     this.time = msgDoc.timestamp;
 
