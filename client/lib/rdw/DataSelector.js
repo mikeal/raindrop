@@ -129,7 +129,7 @@ dojo.declare("rdw.DataSelector", [rdw._Base], {
 
   identitySelected: function(/*String*/identityId) {
     //summary: dispatch function when an identity is selected.
-    rd.setFragId("rd:identity:" + list);
+    rd.setFragId("rd:identity:" + identityId);
   },
 
   locationTagSelected: function(/*String*/location) {

@@ -5,7 +5,7 @@ dojo.require("dojo.DeferredList");
 dojo.require("couch");
 dojo.require("rd.store");
 dojo.require("rd._api");
-dojo.require("rd.identity");
+dojo.require("rd.api");
 
 //Derives from rd._api
 rd.contact = dojo.delegate(rd._api);
@@ -389,27 +389,27 @@ dojo.mixin(rd.contact, {
     }
 
     //Get identities.
-    rd.identity.get(
-      identityIds,
-      dojo.hitch(this, function(foundIdtys) {
-        //Normalize input.
-        if (typeof foundItys == "string") {
-          foundIdtys = [foundIdtys];
-        }
+    rd.api().identity({
+      ids: identityIds
+    })
+    .ok(this, function(foundIdtys) {
+      //Normalize input.
+      if (typeof foundItys == "string") {
+        foundIdtys = [foundIdtys];
+      }
 
-        for (var i = 0, idty; idty = foundIdtys[i]; i++) {
-          this._attachIdentity(idty);
-        }
+      for (var i = 0, idty; idty = foundIdtys[i]; i++) {
+        this._attachIdentity(idty);
+      }
 
-        //Now collect the contacts originally requested and do the callback.
-        var ret = [];
-        for (var i = 0, cId; cId = contactId[i]; i++) {
-          ret.push(this._store[cId]);
-        }
-        callback(ret);
-      }),
-      errback
-    );
+      //Now collect the contacts originally requested and do the callback.
+      var ret = [];
+      for (var i = 0, cId; cId = contactId[i]; i++) {
+        ret.push(this._store[cId]);
+      }
+      callback(ret);
+    })
+    .error(errback);
   },
   
   _attachIdentity: function(/*Object*/idty) {

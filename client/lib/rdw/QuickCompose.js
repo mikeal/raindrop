@@ -4,7 +4,7 @@ dojo.require("dijit.form.FilteringSelect");
 
 dojo.require("rdw._Base");
 dojo.require("rd.contact");
-dojo.require("rd.account");
+dojo.require("rd.api");
 dojo.require("rd.store");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
@@ -26,7 +26,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //values on instantiation. Note that changing on instantion means assigning
   //a new object to the instance's allowedServices property. Otherwise, you
   //will modify the prototype property for all instances. The values correspond
-  //to the account types on the account object from rd.account.
+  //to the account types on the account objects from rd.account schema docs.
   allowedServices: {
     twitter: 1,
     imap: 1
@@ -67,116 +67,117 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     dojo.style(this.toNode, "display", "none");
 
     //See if a twitter icon can be pulled in for the user.
-    rd.account.all(dojo.hitch(this, function(accounts) {
-      //Build up a list of identity IDs, to find a contact to use for showing
-      //things like a profile picture.
-      var ids = [], empty = {};
-      this.senders = {}, accountsById = {};
-      for (var prop in accounts) {
-        if (!(prop in empty)) {
-          ids.push([prop, accounts[prop].id]);
-          if (prop in this.allowedServices) {
+    rd.api().me()
+      .ok(this, function(idtys) {
+        //Build up a list of identity IDs, to find a contact to use for showing
+        //things like a profile picture.
+        var ids = [], accountsById = {};
+        this.senders = {};
+
+        for (var i = 0, idty; idty = idtys[i]; i++) {
+          var idtyId = idty.rd_key[1];
+          ids.push(idtyId);
+          if (idtyId[0] in this.allowedServices) {
             //Add to list of senders this QuickCompose can handle.
-            this.senders[prop] = accounts[prop].id;
+            this.senders[idtyId[0]] = idtyId[1];
 
             //Allow each sender type to do specific init actions
             //for UI binding.
-            var init = this[prop + "Init"];
+            var init = this[idtyId[0] + "Init"];
             if (init) {
               init.call(this);
             }
           }
 
           //Store a quick account lookup by account ID
-          if (accounts[prop].id) {
-            accountsById[accounts[prop].id] = accounts[prop];
+          if (idtyId[1]) {
+            accountsById[idtyId[1]] = idty;
           }
         }
-      }
 
-      rd.contact.byIdentity(ids, dojo.hitch(this, function(contacts) {
-        //Use the first contact available.
-        this.contact = (contacts && contacts[0]);
-        if (this.contact) {
-          if (this.contact.image) {
-            this.pictureNode.src = this.contact.image;
-          }
-          if (this.contact.name) {
-            rd.escapeHtml(this.contact.name, this.nameNode, "only");
-          }
+        rd.contact.byIdentity(ids, dojo.hitch(this, function(contacts) {
+          //Use the first contact available.
+          this.contact = (contacts && contacts[0]);
+          if (this.contact) {
+            if (this.contact.image) {
+              this.pictureNode.src = this.contact.image;
+            }
+            if (this.contact.name) {
+              rd.escapeHtml(this.contact.name, this.nameNode, "only");
+            }
 
-          if (this.messageBag) {
-            //Sender is restricted, just show it.
-            //First get the account to use for sending.
-            //By seeing who the message was sent to.
-            var body = this.messageBag && this.messageBag["rd.msg.body"];
-            if (body && body.to) {
-              for (var i = 0, to; to = body.to[i]; i++) {
-                this.sender = accountsById[to[1]];
-                if (this.sender) {
-                  var fromSvc = to[0];
-                  if (fromSvc == "email") {
-                    fromSvc = "imap";
+            if (this.messageBag) {
+              //Sender is restricted, just show it.
+              //First get the account to use for sending.
+              //By seeing who the message was sent to.
+              var body = this.messageBag && this.messageBag["rd.msg.body"];
+              if (body && body.to) {
+                for (var i = 0, to; to = body.to[i]; i++) {
+                  this.sender = accountsById[to[1]];
+                  if (this.sender) {
+                    var fromSvc = to[0];
+                    if (fromSvc == "email") {
+                      fromSvc = "imap";
+                    }
+                    break;
                   }
-                  break;
                 }
               }
-            }
-
-            if (!this.sender) {
-              //Make a good guess based on the from address.
-              var fromSvc = this.messageBag["rd.msg.body"].from[0];
-              //Convert to account type.
-              if (fromSvc == "email") {
-                fromSvc = "imap";
+  
+              if (!this.sender) {
+                //Make a good guess based on the from address.
+                var fromSvc = this.messageBag["rd.msg.body"].from[0];
+                //Convert to account type.
+                if (fromSvc == "email") {
+                  fromSvc = "imap";
+                }
+                this.sender = accounts[fromSvc];
               }
-              this.sender = accounts[fromSvc];
-            }
-
-            var senderDisplay = fromSvc + ": " + this.sender.id;
-            rd.escapeHtml(senderDisplay, this.addressNode, "only");
-          } else {
-            //Allow user to select a sender.
-            //Build up a data store object, only using senders that
-            //are known by QuickCompose to support sending.
-            var sendList = [];
-            for (var prop in this.senders) {
-              sendList.push({
-                name: prop + ": " + this.senders[prop]
-              })
+  
+              var senderDisplay = fromSvc + ": " + this.sender.id;
+              rd.escapeHtml(senderDisplay, this.addressNode, "only");
+            } else {
+              //Allow user to select a sender.
+              //Build up a data store object, only using senders that
+              //are known by QuickCompose to support sending.
+              var sendList = [];
+              for (var prop in this.senders) {
+                sendList.push({
+                  name: prop + ": " + this.senders[prop]
+                })
+              }
+    
+              //Set up default value for the sender box.
+              senderDisplay = this.senders[this.preferredService] ?
+                  this.preferredService + ": " + this.senders[this.preferredService]
+                :
+                  sendList[0].name;
+  
+              this.sender = this.parseSender(senderDisplay);
+  
+              dojo["require"](this.fromSelector);
+              dojo.addOnLoad(dojo.hitch(this, function(){
+                //Put the list of sender identities in a combo box
+                var ctor = dojo.getObject(this.fromSelector);
+  
+                this.fromSelectorWidget = new ctor({
+                  store: rd.toIfrs(sendList, "name", "name"),
+                  searchAttr: "name",
+                  value: senderDisplay,
+                  "class": this.addressNode.className,
+                  onChange: dojo.hitch(this, "onSenderAddressChange")
+                }, this.addressNode);
+    
+                //Add to supporting widgets so widget destroys do the right thing.
+                this.addSupporting(this.fromSelectorWidget);
+              }));
             }
   
-            //Set up default value for the sender box.
-            senderDisplay = this.senders[this.preferredService] ?
-                this.preferredService + ": " + this.senders[this.preferredService]
-              :
-                sendList[0].name;
-
-            this.sender = this.parseSender(senderDisplay);
-
-            dojo["require"](this.fromSelector);
-            dojo.addOnLoad(dojo.hitch(this, function(){
-              //Put the list of sender identities in a combo box
-              var ctor = dojo.getObject(this.fromSelector);
-
-              this.fromSelectorWidget = new ctor({
-                store: rd.toIfrs(sendList, "name", "name"),
-                searchAttr: "name",
-                value: senderDisplay,
-                "class": this.addressNode.className,
-                onChange: dojo.hitch(this, "onSenderAddressChange")
-              }, this.addressNode);
-  
-              //Add to supporting widgets so widget destroys do the right thing.
-              this.addSupporting(this.fromSelectorWidget);
-            }));
+            //Update To field
+            this.updateFields(senderDisplay);
           }
-
-          //Update To field
-          this.updateFields(senderDisplay);
-        }
-      }));
-    }));
+        }));
+      });
   },
 
   onFocusTextArea: function(evt) {

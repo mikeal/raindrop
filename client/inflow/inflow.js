@@ -8,7 +8,6 @@ dojo.require("rdw.Summary");
 dojo.require("rdw.ContactList");
 dojo.require("rdw.Stories");
 dojo.require("rdw.Organizer");
-dojo.require("rdw.FaceWall");
 
 dojo.require("rd.engine");
 dojo.require("rd.conversation");

@@ -1,12 +1,12 @@
 dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
-dojo.require("rd.identity");
 dojo.require("rd.contact");
 dojo.require("rdw.gravatar");
 dojo.require("rdw.contactDropDown");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
+dojo.require("rd.api");
 
 dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
@@ -59,7 +59,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     }
 
     //Determine if the sender is known and switch templates if necessary.
-    this.known = msgBag["rd.msg.ui"].known;
+    this.known = !!msgBag["rd.msg.ui.known"];
     if (this.known) {
       this.templateString = this.normalTemplate;
     } else {
@@ -93,11 +93,15 @@ dojo.declare("rdw.Message", [rdw._Base], {
       }));
     }
 
-    //If twitter user, get their profile pic.
+    //Load the full identity to fill out the message.
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
     var from = msgDoc.from;
-    rd.identity.get(from, dojo.hitch(this, function(user) {
+    rd.api().identity({
+      ids: [from]
+    })
+    .ok(this, function(idtys) {
+      var user = idtys[0];
       if (this.userPicNode && user.image) {
         this.userPicNode.src = user.image;
       }
@@ -105,7 +109,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
         this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
       }
       //Don't worry about errors, just will not show pic.
-    }), function(err){console.error(err)});
+    })
+    .error(function(err){console.error(err)});
   },
 
   onActionClick: function(evt) {
@@ -125,26 +130,26 @@ dojo.declare("rdw.Message", [rdw._Base], {
     rdw.contactDropDown.close();
 
     //Create the email identity record, then attach it to the contact.
-    rd.identity.createEmail(
-      this.messageBag,
-      dojo.hitch(this, function(identity) {
-        //identity created, now attach it to the contact.
-        rd.contact.addIdentity(
-          contact,
-          identity,
-          dojo.hitch(this, function() {
-          }),
-          dojo.hitch(this, function(error) {
-            //error. TODO: make this better, inline.
-            alert(error);
-          })
-        );
-      }),
-      dojo.hitch(this, function(error) {
-        //error. TODO: make this better, inline.
-        alert(error);
-      })
-    );
+    rd.api().createEmailIdentity({
+      messageBag: this.messageBag
+    })
+    .ok(this, function(identity) {
+      //identity created, now attach it to the contact.
+      rd.contact.addIdentity(
+        contact,
+        identity,
+        dojo.hitch(this, function() {
+        }),
+        dojo.hitch(this, function(error) {
+          //error. TODO: make this better, inline.
+          alert(error);
+        })
+      );
+    })
+    .error(this, function(error) {
+      //error. TODO: make this better, inline.
+      alert(error);
+    });
   },
 
   onContactUpdated: function(/*Object*/contact) {
@@ -159,7 +164,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
           //update this Message object's UI to show the new state.
           //TODO: this may cause problems if some container holds
           //on to this widget, since we will be changing the instance.
-          this.messageBag["rd.msg.ui"].known = true;
+          this.messageBag["rd.msg.ui.known"] = {
+            rd_schema_id: "rd.msg.ui.known"
+          };
           rd._updateInstance(this, dojo.getObject(this.declaredClass));
         }
       }

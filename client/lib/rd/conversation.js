@@ -2,7 +2,7 @@ dojo.provide("rd.conversation");
 
 dojo.require("rd.store");
 dojo.require("rd.contact");
-dojo.require("rd.message");
+dojo.require("rd.api");
 
 rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
   //summary: retrieve the conversation for a given conversation ID or conversation IDs. Either one
@@ -49,7 +49,10 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
         rdKeys.push(row.value.rd_key);
       }
 
-      rd.message(rdKeys, function(messages){
+      rd.api().message({
+        ids: rdKeys
+      })
+      .ok(function(messages) {
         //Create final result. It will be an array that
         //also has properties for each conversation ID,
         //to allow for easy retrieval.
@@ -83,7 +86,8 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
           conversations = conversations[0];
         }
         callback(conversations);
-      }, errback)
+      })
+      .error(errback);
     })
   });
 }
@@ -175,7 +179,8 @@ dojo._mixin(rd.conversation, {
   sent: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary get all conversations sent by the user according to their account
     //identities and related contacts
-    rd.account.all(dojo.hitch(this, function(accounts) {
+    rd.api().me()
+    .ok(this, function(idtys) {
       //Remap the services that count, from uses "email", not "imap"
       var allowedServices = {
         twitter: "twitter",
@@ -183,14 +188,12 @@ dojo._mixin(rd.conversation, {
       };
 
       //Build up a list of identity IDs for yourself
-      var empty = {};
       var senders = [];
-      for (var prop in accounts) {
-        if (!(prop in empty)) {
-          if (prop in allowedServices) {
-            //Add to list of senders we are willing to handle
-            senders.push([allowedServices[prop], accounts[prop].id])
-          }
+      for (var i = 0, idty; idty = idtys[i]; i++) {
+        var id = idty.rd_key[1];
+        if (id[0] in allowedServices) {
+          //Add to list of senders we are willing to handle
+          senders.push([allowedServices[id[0]], id[1]]);
         }
       }
 
@@ -201,8 +204,7 @@ dojo._mixin(rd.conversation, {
         });
         this.contact(contact_ids, callback, errback);
       }));
-
-    }));
+    });
   },
 
   latest: function(/*Number*/limit, /*Number*/skip, /*Function*/callback, /*Function*/errback) {

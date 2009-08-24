@@ -1,12 +1,10 @@
 dojo.provide("rdw.ext.youTubeMessage");
 
-dojo.require("rd.message");
 dojo.require("rdw.Message");
 dojo.require("dojo.fx");
 
 /*
-Applies a ui extension to rd.message
-and a display extension to rdw.Message.
+Applies a display extension to rdw.Message.
 Allows showing youtube videos inline with
 a message.
 */
