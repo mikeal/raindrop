@@ -122,3 +122,77 @@ def handler(message):
                 logger.info('list status is not unsubscribe-confirmed; ignoring')
         else:
             logger.info("didn't find list; can't update it")
+
+    # Mailman Step 2 (List Requests Confirmation) Detector
+    # A request is a message with X-Mailman-Version and X-List-Administrivia
+    # headers (the latter set to "yes") with a Reply-To header that contains
+    # the string "-confirm+".
+    # TODO: find a way to identify a request with greater certainty.
+    elif 'x-mailman-version' in message['headers'] \
+            and 'x-list-administrivia' in message['headers'] \
+            and message['headers']['x-list-administrivia'][0] == "yes" \
+            and 'reply-to' in message['headers'] \
+            and re.search('-confirm\+', message['headers']['reply-to'][0]):
+
+        # The list ID is in the List-ID header.
+        if 'list-id' not in message['headers']:
+            logger.info("couldn't determine list ID; ignoring")
+            return
+
+        # Extract the ID from the List-ID header.
+        match = re.search('([\W\w]*)\s*<(.+)>.*',
+                          message['headers']['list-id'][0])
+        if (match):
+            logger.debug("complex list-id header with name '%s' and ID '%s'",
+                  match.group(1), match.group(2))
+            list_id = match.group(2)
+        else:
+            logger.debug("simple list-id header with ID '%s'",
+                         message['headers']['list-id'][0])
+            list_id = message['headers']['list-id'][0]
+
+        logger.info('received confirm unsubscribe request from %s', list_id)
+
+        keys = [['rd.core.content', 'key-schema_id',
+         [['mailing-list', list_id], 'rd.mailing-list']]]
+        result = open_view(keys=keys, reduce=False, include_docs=True)
+        # Build a map of the keys we actually got back.
+        rows = [r for r in result['rows'] if 'error' not in r]
+
+        if not rows:
+            logger.info("didn't find list; can't confirm request")
+            return
+
+        logger.info('found list in datastore')
+
+        list = rows[0]['doc']
+
+        if (list['status'] != 'unsubscribe-pending'):
+            logger.info('list status is not unsubscribe-pending; ignoring')
+            return
+
+        logger.info('list status is unsubscribe-pending; confirming')
+
+        # Confirmation entails responding to the address in the Reply-To
+        # header, which contains the confirmation token, f.e.:
+        #   test-confirm+018e404890076d94e6026d8333c887f8edd0c41f@lists.mozilla.org
+        # Also, the subject line must contain the subject of the message
+        # requesting confirmation, f.e.:
+        #   "Your confirmation is required to leave the test mailing list"
+        confirmation = {
+          'from': list['identity'],
+          # TODO: use the user's name in the from_display.
+          'from_display': list['identity'][1],
+          'to': [['email', message['headers']['reply-to'][0]]],
+          'to_display': [''],
+          'subject': message['headers']['subject'][0],
+          'body': '',
+          'outgoing_state': 'outgoing'
+        };
+
+        # TODO: make a better rd_key.
+        emit_schema('rd.msg.outgoing.simple', confirmation,
+                    rd_key=['manually_created_doc', time.time()])
+
+        list['status'] = 'unsubscribe-confirmed'
+        update_documents([list])
