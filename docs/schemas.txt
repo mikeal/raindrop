@@ -148,6 +148,11 @@ status: the status of the user's subscription to the list; can be one of
               of the unsubscription request, and we confirmed it
           unsubscribed: the mailing list has notified us that it has
               unsubscribed the user from the list
+changed_timestamp: the timestamp (i.e. "Date" header) of the most recent message
+                   that caused this list to be changed; used to determine
+                   whether or not to try to update a list when getting a message
+                   from it; but only updated when something actually changes,
+                   not every time Raindrop receives a new message from the list.
 post: the value of the list-post header
 archive: the value of the list-archive header
 help: the value of the list-help header

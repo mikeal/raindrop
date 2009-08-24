@@ -33,6 +33,7 @@
 # because the latter task performs no queries so can be batched.
 
 import re
+from email.utils import mktime_tz, parsedate_tz
 
 def _get_subscribed_identity(headers):
     # Get the user's email identities and determine which one is subscribed
@@ -78,6 +79,44 @@ def _get_subscribed_identity(headers):
     # they are subscribed to the list.
     return email_identities[0]
 
+def _update_list(list, name, message):
+    # Update the list based on the information contained in the headers
+    # of the provided message.
+
+    # For now we just reflect the literal values of the various headers
+    # into the doc; eventually we'll want to do some processing of them
+    # to make life easier on the front-end.
+
+    # Note that we don't remove properties not provided by the message,
+    # since it doesn't necessarily mean those properties are no longer
+    # valid.  This might be an admin message that doesn't include them
+    # (Mailman sends these sometimes).
+
+    # Whether or not we changed the list.  We return this so callers
+    # who are updating a list that is already stored in the datastore
+    # know whether or not they need to update the datastore.
+    changed = False
+
+    # Update the name (derived from the list-id header).
+    if name != "" and ('name' not in list or list['name'] != name):
+        list['name'] = name
+        changed = True
+
+    # Update the properties derived from list- headers.
+    # XXX reflect other list-related headers like (X-)Mailing-List,
+    # Archived-At, and X-Mailman-Version?
+    for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
+                'list-unsubscribe']:
+        if key in message['headers']:
+            val = message['headers'][key][0]
+            # We strip the 'list-' prefix when writing the key to the list.
+            if key[5:] not in list or list[key[5:]] != val:
+                logger.debug("setting %s to %s", key[5:], val)
+                list[key[5:]] = val
+                changed = True
+
+    return changed
+
 def handler(doc):
     if 'list-id' not in doc['headers']:
         return
@@ -88,10 +127,10 @@ def handler(doc):
     list_id = doc['headers']['list-id'][0]
     msg_id = doc['headers']['message-id'][0]
 
-    # Extract the ID and name of the mailing list from the message headers.
-    # Note: I haven't actually seen a list-id value that includes the name
-    # of the list, but this regexp was in the old JavaScript code for extracting
-    # mailing list meta-data, so we do it here too.
+    # Extract the ID and name of the mailing list from the list-id header.
+    # Some mailing lists give only the ID, but others (Google Groups, Mailman)
+    # provide both using the format 'NAME <ID>', so we extract them separately
+    # if we detect that format.
     match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
     if (match):
         logger.debug("complex list-id header with name '%s' and ID '%s'",
@@ -100,12 +139,19 @@ def handler(doc):
         name = match.group(1)
     else:
         logger.debug("simple list-id header with ID '%s'", list_id)
-        # In the absence of an explicit name, use the ID as the name.
-        # XXX Should we perhaps leave the name blank here and make the front-end
-        # do the deriving of it?  After all, it already does some additional
-        # deriving, since it strips the @host.tld portion from this value.
         id = list_id
         name = ""
+
+    # Extract the timestamp of the message we're processing.
+    if 'date' in doc['headers']:
+        date = doc['headers']['date'][0]
+        if date:
+            try:
+                timestamp = mktime_tz(parsedate_tz(date))
+            except (ValueError, TypeError), exc:
+                logger.debug('Failed to parse date %r in doc %r: %s',
+                             date, doc['_id'], exc)
+                timestamp = 0
 
 
     # Retrieve an existing document for the mailing list or create a new one.
@@ -119,12 +165,19 @@ def handler(doc):
         logger.debug("FOUND LIST %s for message %s", id, msg_id)
         assert 'doc' in rows[0], rows
 
-        # TODO update the list info if it has changed, including its status
-        # (i.e. subscribed), but only if the message we are currently processing
-        # is newer than the message from which we derived the list info
-        # we currently have in the datastore (newer messages are considered
-        # more authoritative, but we can't assume that we're processing messages
-        # in chronological order).
+        list = rows[0]['doc']
+
+        # If this message is newer than the last one from which we derived
+        # mailing list information, update the mailing list record with any
+        # updated information in this message.
+        if 'changed_timestamp' not in list \
+                or timestamp >= list['changed_timestamp']:
+            logger.debug("UPDATING LIST %s from message %s", id, msg_id)
+            changed = _update_list(list, name, doc)
+            if changed:
+                logger.debug("LIST CHANGED; saving updated list")
+                list['changed_timestamp'] = timestamp
+                update_documents([list])
 
     else:
         logger.debug("CREATING LIST %s for message %s", id, msg_id)
@@ -132,23 +185,11 @@ def handler(doc):
         list = {
             'id': id,
             'status': 'subscribed',
-            'identity': _get_subscribed_identity(doc['headers'])
+            'identity': _get_subscribed_identity(doc['headers']),
+            'changed_timestamp': timestamp
         }
 
-        if name != "":
-            list['name'] = name
-
-        # For now just reflect the literal values of the various headers
-        # into the doc; eventually we'll want to do some processing of them
-        # to make life easier on the front-end.
-        # XXX reflect other list-related headers like (X-)Mailing-List
-        # and Archived-At?
-        for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
-                    'list-unsubscribe']:
-            if key in doc['headers']:
-                val = doc['headers'][key][0]
-                logger.debug("setting %s to %s", key[5:], val)
-                list[key[5:]] = val
+        _update_list(list, name, doc)
 
         emit_schema('rd.mailing-list', list, rd_key=["mailing-list", id])
 
