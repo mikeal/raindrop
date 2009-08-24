@@ -196,3 +196,53 @@ def handler(message):
 
         list['status'] = 'unsubscribe-confirmed'
         update_documents([list])
+
+    # Mailman Step 3 (User is Unsubscribed) Detector
+    # A request is a message with X-Mailman-Version and X-List-Administrivia
+    # headers (the latter set to "yes").
+    # TODO: find a way to identify a request with greater certainty.
+    elif 'x-mailman-version' in message['headers'] \
+            and 'x-list-administrivia' in message['headers'] \
+            and message['headers']['x-list-administrivia'][0] == "yes":
+
+        # The list ID is in the List-ID header.
+        if 'list-id' not in message['headers']:
+            logger.info("couldn't determine list ID; ignoring")
+            return
+
+        # Extract the ID from the List-ID header.
+        match = re.search('([\W\w]*)\s*<(.+)>.*',
+                          message['headers']['list-id'][0])
+        if (match):
+            logger.debug("complex list-id header with name '%s' and ID '%s'",
+                  match.group(1), match.group(2))
+            list_id = match.group(2)
+        else:
+            logger.debug("simple list-id header with ID '%s'",
+                         message['headers']['list-id'][0])
+            list_id = message['headers']['list-id'][0]
+
+        logger.info('received unsubscription confirmation from %s', list_id)
+
+        keys = [['rd.core.content', 'key-schema_id',
+         [['mailing-list', list_id], 'rd.mailing-list']]]
+        result = open_view(keys=keys, reduce=False, include_docs=True)
+        # Build a map of the keys we actually got back.
+        rows = [r for r in result['rows'] if 'error' not in r]
+
+        if not rows:
+            logger.info("didn't find list; can't update it")
+            return
+
+        logger.info('found list in datastore')
+
+        list = rows[0]['doc']
+
+        if (list['status'] != 'unsubscribe-confirmed'):
+            logger.info('list status is not unsubscribe-confirmed; ignoring')
+            return
+
+        logger.info('list status is unsubscribe-confirmed; setting to unsubscribed')
+
+        list['status'] = 'unsubscribed'
+        update_documents([list])
