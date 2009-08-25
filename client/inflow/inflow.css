@@ -79,6 +79,7 @@ a img{
   padding: 12px;
   font-size: x-small;
   color: #FFF;
-  font-weight: bold;
-  opacity: 0.8;
+  opacity: 0.8; 
+  font-weight:bold;
 }
+

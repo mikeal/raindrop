@@ -1,7 +1,8 @@
 .rdwStoryTwitterTimeLine {
-  width: 50%;
+  width: 49%;
   font-size: small;
   font-weight: bold;
+  float: left;
 }
 
 .rdwStoryTwitterTimeLine .tweetList {

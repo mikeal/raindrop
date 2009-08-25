@@ -9,9 +9,7 @@ rd.addStyle("rdw.story.css.MailingList");
  */
 dojo.declare("rdw.story.MailingList", [rdw.Story], {
   templateString: '<li class="rdwStoryMailingList"> \
-                    <span dojoAttachPoint="countNode"></span> \
-                    <span dojoAttachPoint="nameNode"></span> \
-                    <div class="mailingList" dojoAttachPoint="containerNode"></div> \
+                    <div class="mailingList" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="MailingListTitle"></span></div> \
                   </li>',
 
   /**

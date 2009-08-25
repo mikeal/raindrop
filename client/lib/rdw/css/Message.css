@@ -137,8 +137,8 @@
 
 .Message .from {
   text-decoration: none;
-  font-weight: bold;
-  font-family: Arial, Verdana, sans-serif;
+  font-style: italic;
+  font-family: Georgia, times, serif;
   color: #1A1A1A;
 }
 

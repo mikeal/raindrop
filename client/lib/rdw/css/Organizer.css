@@ -45,6 +45,8 @@
   background-color: transparent;
   color: #1A1A1A;
   font-size: small;
+  font-style: italic;
+  font-family: georgia, times, serif;
 }
 
 .Organizer ol > li > a:hover {
@@ -54,6 +56,8 @@
 
 .Organizer ol > li > a[href*=home] {
   font-weight: bold;
+  font-family: arial,verdana,geneva,sans-serif;
+  font-style: normal;
 }
 
 .Organizer ol > li.locationTag > a {

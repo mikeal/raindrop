@@ -1,0 +1,34 @@
+.rdwStoryMailingList {
+  font-size: small;
+  background-color: #FFF;
+  width: 49%;
+  padding: 12px 8px 0px 8px;
+  -moz-border-radius: 5px;
+  -moz-box-sizing: border-box;
+  float:right;
+}  
+
+.rdwStoryMailingList:hover {
+  background-color: #FFB0B0;
+}
+
+.rdwStoryMailingList .MailingListTitle {
+  border-bottom:1px dotted #1A1A1A;
+  display:block;
+  font-weight:bold;
+  padding-bottom:2px;
+}
+
+.rdwStoryMailingList .Message .message {
+  margin: 0;
+  padding: 0;
+}
+
+.rdwStoryMailingList .Message .subject {
+  font-weight:normal;
+}
+
+.rdwStoryMailingList:hover .Message .subject {
+  background-color: #FFB0B0;
+}
+
