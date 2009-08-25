@@ -147,20 +147,14 @@ rd.api.identity = {
       //a lot of requests to the couch for non-existent identities.
       this._fetchIdentityContacts().addErrback(dfd, "errback").addCallback(this, function() {
         //Build a list of keys to use for megaview call.
-        var keys = [], unknowns = [];
+        var keys = [], unknowns = [], map = {};
         for (var i = 0, id; id = ids.missing[i]; i++) {
           if (!this._byIdty[id.join(",")]) {
             //The rd.identity record will not exist, create a fake one.
-            found.push(this._storeIdty({
-              // it is not clear if we should use a 'real' identity ID here?
-              // theoretically all the fields being empty should be enough...
-              rd_key: ['identity', id],
-              rd_schema: 'rd.identity',
-              //Mark this as a fake record
-              _isFake: true
-            }));
+            found.push(this._createFakeIdentity(id));
           } else {
             keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity"]]);
+            map[id.join(",")] = 0;
           }
         }
 
@@ -177,8 +171,19 @@ rd.api.identity = {
               //Store for future calls.
               doc = this._storeIdty(doc);
 
+              //Mark it found
+              map[doc.rd_key[1].join(",")] = 1;
+
               //Add to result set.
               found.push(doc);
+            }
+
+            //For all the ids not found, create fake identities.
+            var empty = {};
+            for (var prop in map) {
+              if (!(prop in empty) && !map[prop]) {
+                found.push(this._createFakeIdentity(prop.split(",")));
+              }
             }
 
             //All done
@@ -188,6 +193,24 @@ rd.api.identity = {
         }
       });
     }
+  },
+
+  /**
+   * creates a fake identity and puts it in the store.
+   *
+   * @param {Array} id the identity ID to use for the fake record.
+   *
+   * @returns {Object} a fake identity object, with an _isFake = true property.
+   */
+  _createFakeIdentity: function(id) {
+    return this._storeIdty({
+      // it is not clear if we should use a 'real' identity ID here?
+      // theoretically all the fields being empty should be enough...
+      rd_key: ['identity', id],
+      rd_schema: 'rd.identity',
+      //Mark this as a fake record
+      _isFake: true
+    });
   },
 
   /**

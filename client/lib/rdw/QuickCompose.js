@@ -29,7 +29,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //to the account types on the account objects from rd.account schema docs.
   allowedServices: {
     twitter: 1,
-    imap: 1
+    email: 1
   },
 
   //The preferred service to use as default when creating the QuickCompose.
@@ -38,13 +38,13 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //types of sender identities that require the To field to show up.
   //See notes for allowedServices for how to modify this object.
   showTo: {
-    imap: 1,
+    email: 1,
     twitter: 1
   },
 
   //The types of account services that should show a subject field.
   showSubject: {
-    imap: 1
+    email: 1
   },
 
   postMixInProperties: function() {
@@ -66,7 +66,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //By default hide the To until widget is focused.
     dojo.style(this.toNode, "display", "none");
 
-    var ids = [], accountsById = {};
+    var ids = [], accountsById = {}, accountsByType = {};
     this.senders = {};
 
     //See if a twitter icon can be pulled in for the user.
@@ -87,6 +87,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         //Store a quick account lookup by account ID
         if (idtyId[1]) {
           accountsById[idtyId[1]] = idty;
+          accountsByType[idtyId[0]] = idty;
         }
 
         return idty;
@@ -115,9 +116,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
               this.sender = accountsById[to[1]];
               if (this.sender) {
                 var fromSvc = to[0];
-                if (fromSvc == "email") {
-                  fromSvc = "imap";
-                }
                 break;
               }
             }
@@ -126,11 +124,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
           if (!this.sender) {
             //Make a good guess based on the from address.
             var fromSvc = this.messageBag["rd.msg.body"].from[0];
-            //Convert to account type.
-            if (fromSvc == "email") {
-              fromSvc = "imap";
-            }
-            this.sender = accounts[fromSvc];
+            this.sender = accountsByType[fromSvc];
           }
 
           var senderDisplay = fromSvc + ": " + this.sender.id;
@@ -203,11 +197,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       var svc = sender.service;
       var senderId = sender.id;
       var subject = dojo.trim(this.subjectInputNode.value);
-
-      //Fix imap to be "email" for the purposes of outgoing message doc.
-      if (svc == "imap") {
-        svc = "email";
-      }
 
       var message = {
         //TODO: make a better rd_key.
@@ -302,7 +291,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
 
     this.toSelectorWidget = new (dojo.getObject(this.toSelector))({
       type: "identityContact",
-      subType: (this.sender.service == "imap" ? "email" : this.sender.service)
+      subType: (this.sender.service)
     }, this.toInputNode);
 
     this.addSupporting(this.toSelectorWidget);
