@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-
 '''
 Setup the CouchDB server so that it is fully usable and what not.
 '''
+from __future__ import with_statement
+
 import sys
-import re, json
+import re
 import zipfile
 import twisted.web.error
 from twisted.internet import defer
@@ -14,6 +15,11 @@ import hashlib
 
 import shutil, zipfile
 from cStringIO import StringIO
+
+try:
+    import json # standard module in python 2.6+
+except ImportError:
+    import simplejson as json # external module in 2.5 and earlier
 
 from .config import get_config
 from .model import get_db

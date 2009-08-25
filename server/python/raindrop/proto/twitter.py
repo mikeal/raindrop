@@ -5,6 +5,7 @@ Fetch twitter raw* objects
 
 # prevent 'import twitter' finding this module!
 from __future__ import absolute_import
+from __future__ import with_statement
 
 import logging
 import sys
@@ -23,10 +24,12 @@ from ..proc import base
 # So for now we are going with the blocking twitter package used via
 # deferToThread for all blocking operations...
 # twitter raises deprecation warnings in 2.6 - suppress them for now.
-import warnings
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    import twitter
+if sys.version_info > (2,6):
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import twitter
+import twitter
 
 logger = logging.getLogger(__name__)
 

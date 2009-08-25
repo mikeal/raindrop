@@ -33,7 +33,6 @@ Restart couch, then:
 import sys
 import time
 import logging
-import json
 import threading
 import traceback
 import optparse
@@ -41,12 +40,17 @@ import pprint
 import time
 from cStringIO import StringIO
 
+try:
+    import json # standard module in python 2.6+
+except ImportError:
+    import simplejson as json # external module in 2.5 and earlier
+
 from twisted.internet import protocol, reactor, stdio, defer, threads
 from twisted.python.failure import Failure
 from zope.interface import implements
 from twisted.internet import interfaces
 
-from raindrop import pipeline, model, opts, config
+from raindrop import pipeline, model, opts, config, proto
 from raindrop.sync import get_conductor
 
 logger = logging.getLogger('raindrop')
@@ -295,6 +299,7 @@ def main():
 
     opts.setup_logging(options)
     config.init_config()
+    proto.init_protocols()
 
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.

@@ -27,6 +27,3 @@ def init_protocols():
             protocols[name] = fact
 
 __all__ = [protocols, init_protocols]
-
-# hrmph - initializing correctly is hard...
-init_protocols()

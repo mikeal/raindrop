@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 """The raindrop server
 """
+from __future__ import with_statement
+
 import sys
 import optparse
 import logging
-import json
 import datetime
+try:
+    import json # standard module in python 2.6+
+except ImportError:
+    import simplejson as json # external module in 2.5 and earlier
 
 from twisted.internet import reactor, defer, task
 from twisted.python.failure import Failure
@@ -14,6 +19,7 @@ from raindrop import model
 from raindrop import bootstrap
 from raindrop import pipeline
 from raindrop import opts
+from raindrop import proto
 from raindrop.sync import get_conductor
 from raindrop.config import get_config, init_config
 
@@ -244,6 +250,7 @@ def main():
     opts.setup_logging(options)
 
     init_config()
+    proto.init_protocols()
 
     # do this very early just to set the options
     get_conductor(options)

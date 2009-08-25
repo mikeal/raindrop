@@ -60,8 +60,11 @@ def handler(doc):
         try:
             user.SaveAvatarToFile(avfname)
             # apparently the avatar was saved...
-            with open(avfname, "rb") as f:
+            f = open(avfname, "rb")
+            try:
                 data = f.read()
+            finally:
+                f.close()
         finally:
             # apparently skype still creates a 0-byte file when there
             # are no avatars...

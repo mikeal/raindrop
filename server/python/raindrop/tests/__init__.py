@@ -1,4 +1,6 @@
 # The raindrop test suite...
+from __future__ import with_statement
+
 import os
 import glob
 import json
@@ -8,11 +10,13 @@ from twisted.internet import defer
 
 import raindrop.config
 from raindrop.model import get_db, fab_db, get_doc_model
-from raindrop.proto import test as test_proto
 from ..pipeline import Pipeline
 from raindrop import bootstrap
 from raindrop import sync
 
+import raindrop.proto
+raindrop.proto.init_protocols()
+test_proto = raindrop.proto.test
 
 # all this logging stuff is misplaced...
 import logging
