@@ -8,8 +8,6 @@ rd.api.message = {
   /**
    * @private
    * fetches a message based on a message ID.
-   * Tries to use couch info, but for certain services
-   * falls back to using the service API associated with the identity.
    *
    * @param {dojo.Deferred} dfd The deferred that should be called
    * with the results.
@@ -115,8 +113,7 @@ rd.api.extend({
   /**
    * @lends rd.api
    * Loads a set of messages. It will use the previous call's results,
-   * or, optionally pass an args.ids which can be a one string messsage ID
-   * or an array of message IDs.
+   * or, optionally pass an args.ids which is an array of message IDs.
    */
   message: function(args) {
     if (args && args.ids) {

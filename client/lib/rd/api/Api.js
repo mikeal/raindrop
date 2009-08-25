@@ -52,7 +52,15 @@ dojo._mixin(rd.api, {
    */
   _autoChain: function(name, func) {
     rd.api.Api.prototype[name] = function() {
+      //Create new Api object.
       var api = new rd.api.Api(this.args, this);
+
+      //Attach the name of this function to the api object, so
+      //that the next link in the chain can query it to know what
+      //kind of output it has.
+      api._name = name;
+
+      //Call the function.
       return func.apply(api, arguments);
     }
   }

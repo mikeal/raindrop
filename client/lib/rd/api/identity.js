@@ -10,6 +10,9 @@ rd.api.identity = {
    */
   _contactMap: {},
 
+  _byIdty: {},
+  _byContact: {},
+
   /**
    * @private
    * filters the found from the missing identities so only the
@@ -41,8 +44,7 @@ rd.api.identity = {
   /**
    * @private
    * fetches an identity based on an identity ID, but only if attached
-   * to a contact. Tries to use couch info, but for certain services
-   * falls back to using the service API associated with the identity.
+   * to a contact.
    *
    * @param {dojo.Deferred} dfd The deferred that should be called
    * with the results.
@@ -53,74 +55,67 @@ rd.api.identity = {
    * identity ID is itself an array of [identityType, identityName].
    */
   _contactIdentity: function(dfd, args, ids) {
-    //Figure out if we have all the identities we need. If it has not been
-    //looked up yet, generate a key for the megaview to fetch it.
-    var found = [],
-        keys = [],
-        map = {};
-    for (var i = 0, id; id = ids[i]; i++) {
-      var contactId = this._contactMap[id.join(",")];
-      var idty = this._idty(id);
-      //If contactId is null, it means we previously tried to look up this
-      //identity but it was not attached to a contact.
-      if ((contactId === null || contactId) && idty) {
-        found.push(idty);
-      } else {
-        keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity.contacts"]]);
-        map[id.join(",")] = 0;
+    //Make sure the rd.identity.contacts records have been fetched.
+    this._fetchIdentityContacts().addErrback(dfd, "errback").addCallback(this, function() {
+      var found = [];
+      for (var i = 0, id; id = ids[i]; i++) {
+        if (this._byIdty[id.join(",")]) {
+          found.push(id);
+        }
       }
+
+      //Fetch the identity docs for the found ones, if there are any.
+      if (!found.length) {
+        dfd.callback([]);
+      } else {
+        rd.api().identity({
+          ids: found
+        })
+        .ok(this, function(identities) {
+          dfd.callback(identities);
+        })
+        .error(dfd);
+      }
+    });
+  },
+
+  /**
+   * @private
+   * fetches all rd.identity.contacts records, since it is hard to do mapping
+   * from a contact back to identities without lots of queries. Also makes the
+   * _contactIdentity work simpler.
+   */
+  _fetchIdentityContacts: function() {
+    if (this._idtyContactsDfd) {
+      return this._idtyContactsDfd;
     }
 
-    if (!keys.length) {
-      dfd.callback(found);
-    } else {
-      rd.api().megaview({
-        keys: keys,
-        reduce: false,
-        include_docs: true
-      })
-      .ok(this, function(json) {
-        var idtyIds = [];
+    this._idtyContactsDfd = new dojo.Deferred();
 
-        //Loop through identity->contact mapping docs and store results for
-        //later.
-        for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-          //Mark in the map it was found.
-          var idtyId = doc.rd_key[1];
-          var idStr = idtyId.join(",");
-          map[idStr] = 1;
-
-          //Store the cache of contacts.
-          this._contactMap[idStr] = doc.contacts;
-          
-          //Hold on to the identities that should be fetched.
-          idtyIds.push(idtyId);
+    rd.api().megaview({
+      key: ["rd.core.content", "schema_id", "rd.identity.contacts"],
+      reduce: false,
+      include_docs: true
+    })
+    .ok(this, function(json) {
+      //Cycle through each document. The rd_key is the full identity ID, we just
+      //need the second part of it. It has an array of contacts but each item
+      //in the contacts array has other info about the contact, we just need
+      //the first part, the contactId.
+      for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+        var idty = doc.rd_key[1];
+        var idKey = idty.join(",");
+        var byIdty = this._byIdty[idKey] || (this._byIdty[idKey] = []);
+        for (var j = 0, contact; contact = doc.contacts[j]; j++) {
+          var contactId = contact[0];
+          byIdty.push(contactId);
+          var byContact = this._byContact[contactId] || (this._byContact[contactId] = []);
+          byContact.push(idty);
         }
-
-        //For the identities that were not found associated with a contact, store
-        //that info so they are not looked up again.
-        var empty = {};
-        for (var prop in map) {
-          if (!(prop in empty) && prop in map && !map[prop]) {
-            this._contactMap[prop] = null;
-          }
-        }
-
-        //Fetch the identity docs for the found ones, if there are any.
-        if (!idtyIds.length) {
-          dfd.callback(found);
-        } else {
-          rd.api().identity({
-            ids: idtyIds
-          })
-          .ok(this, function(identities) {
-            dfd.callback(found.concat(identities));
-          })
-          .error(dfd);
-        }
-      })
-      .error(dfd);
-    }
+      }
+      this._idtyContactsDfd.callback();
+    }).error(this._idtyContactsDfd);
+    return this._idtyContactsDfd;
   },
 
   /**
@@ -146,55 +141,52 @@ rd.api.identity = {
     } else {
       var found = ids.found || [];
 
-      //Build a list of keys to use for megaview call.
-      //Keep a map of the ids for easy determination of ids that
-      //are not found.
-      var keys = [],
-          map = {};
-      for (var i = 0, id; id = ids.missing[i]; i++) {
-        keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity"]]);
-        map[id.join(",")] = 0;
-      }
-
-      rd.api().megaview({
-        keys: keys,
-        reduce: false,
-        include_docs: true
-      })
-      .ok(this, function(json) {
-        for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-          //Mark in the map it was found.
-          map[doc.rd_key[1].join(",")] = 1;
-
-          //Store for future calls.
-          this._storeIdty(doc);
-
-          //Add to result set.
-          found.push(doc);
-        }
-
-        //For IDs that were missed, create fake identities for them
-        //to avoid looking them up later.
-        var empty = {};
-        var unknowns = [];
-        for (var prop in map) {
-          if (!(prop in empty) && !map[prop]) {
-            var id = prop.split(",");
-            found.push(dojo.getObject(id[0], true, this)[id[1]] = {
-              // it't not clear if we should use a 'real' identity ID here?
+      //Wait for rd.identity.contacts records to load, so that we can know
+      //what identities to not even to try to fetch since they will not be
+      //there. TODO: this may be a bad assumption, but the other option is
+      //a lot of requests to the couch for non-existent identities.
+      this._fetchIdentityContacts().addErrback(dfd, "errback").addCallback(this, function() {
+        //Build a list of keys to use for megaview call.
+        var keys = [], unknowns = [];
+        for (var i = 0, id; id = ids.missing[i]; i++) {
+          if (!this._byIdty[id.join(",")]) {
+            //The rd.identity record will not exist, create a fake one.
+            found.push(this._storeIdty({
+              // it is not clear if we should use a 'real' identity ID here?
               // theoretically all the fields being empty should be enough...
               rd_key: ['identity', id],
               rd_schema: 'rd.identity',
               //Mark this as a fake record
               _isFake: true
-            });
+            }));
+          } else {
+            keys.push(["rd.core.content", "key-schema_id", [["identity", id], "rd.identity"]]);
           }
         }
 
-        //All done
-        dfd.callback(found);
-      })
-      .error(dfd);
+        if(!keys.length) {
+          dfd.callback(found);
+        } else {
+          rd.api().megaview({
+            keys: keys,
+            reduce: false,
+            include_docs: true
+          })
+          .ok(this, function(json) {
+            for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+              //Store for future calls.
+              doc = this._storeIdty(doc);
+
+              //Add to result set.
+              found.push(doc);
+            }
+
+            //All done
+            dfd.callback(found);
+          })
+          .error(dfd);
+        }
+      });
     }
   },
 
@@ -234,7 +226,7 @@ rd.api.identity = {
     })
     .ok(this, function(idty) {
       //Update this data store.
-      this._storeIdty(idty);
+      idty = this._storeIdty(idty);
       dfd.callback(idty);
     })
     .error(dfd);
@@ -256,7 +248,11 @@ rd.api.identity = {
    * @private
    * stores the identity on this object to avoid hitting the
    * database repeatedly for the same info.
+   * 
    * @param {Object} idty the rd.identity schema doc for an identity.
+   *
+   * @returns the identity. It could have been modified from the one
+   * passed in to the function.
    */
   _storeIdty: function(idty) {
     var identity_id = idty.rd_key[1];
@@ -275,6 +271,8 @@ rd.api.identity = {
         idty.image = rd.dbPath + idty.image.substring(1, idty.image.length);
       }
     }
+
+    return idty;
   }
 }
 

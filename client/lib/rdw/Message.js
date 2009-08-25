@@ -77,40 +77,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
       //This identity is unknown. Try to make a suggestion for
       //who it might be.
       var from = this.messageBag['rd.msg.body'].from[1];
-      rd.contact.matches(from, dojo.hitch(this, function(contacts) {
-        this.matches = contacts;
-
-        //hold on to matches.
-        if (this.matches.length) {
-          //Matches, show first one in the list.
-          rd.escapeHtml(dojo.string.substitute(this.i18n.whoKnown, {
-            name: this.matches[0].name
-          }), this.whoNode);
-        } else {
-          //No matches, just show unknown message.
-          rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
-        }
-      }));
+      rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
     }
-
-    //Load the full identity to fill out the message.
-    var msgBag = this.messageBag;
-    var msgDoc = msgBag['rd.msg.body'];
-    var from = msgDoc.from;
-    rd.api().identity({
-      ids: [from]
-    })
-    .ok(this, function(idtys) {
-      var user = idtys[0];
-      if (this.userPicNode && user.image) {
-        this.userPicNode.src = user.image;
-      }
-      if (user.name && this.fromNameNode) {
-        this.fromNameNode.innerHTML = rd.escapeHtml(user.name);
-      }
-      //Don't worry about errors, just will not show pic.
-    })
-    .error(function(err){console.error(err)});
   },
 
   onActionClick: function(evt) {

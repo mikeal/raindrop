@@ -1,6 +1,7 @@
 dojo.provide("rdw.Summary");
 
 dojo.require("rdw._Base");
+dojo.require("rd.api");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
   widgetsInTemplate: true,
@@ -93,13 +94,16 @@ dojo.declare("rdw.Summary", [rdw._Base], {
 
   contact: function(/*String*/contactId) {
     //summary: responds to rd-protocol-contact topic.
-    rd.contact.get(contactId, dojo.hitch(this, function(contact) {
+    rd.api().contact({
+      ids: [contactId]
+    }).ok(this, function(contacts) {
       //Use megaview to select all messages based on the identity
       //IDs.
+      var contact = contacts[0];
       var keys = rd.map(contact.identities, dojo.hitch(this, function(identity) {
             rd.escapeHtml("Person: " + contact.name + identity.rd_key[1], this.domNode);
       }));
-    }), function() { });
+    });
   },
 
   direct: function() {

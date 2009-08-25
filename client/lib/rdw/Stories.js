@@ -2,6 +2,7 @@ dojo.provide("rdw.Stories");
 
 dojo.require("rdw._Base");
 dojo.require("rdw.Story");
+dojo.require("rd.api");
 
 dojo.require("dojox.fx.scroll");
 
@@ -114,8 +115,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //Hold on to conversations in case we need to refresh based on extension
     //action.
     if (viewType == "conversation") {
-      this.oneConversation = conversations;
-      
+      this.oneConversation = conversations[0];
+
       //Clean up old convoWidget
       if (this.convoWidget) {
         this.removeSupporting(this.convoWidget);
@@ -423,7 +424,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   conversation: function(/*String*/convoId) {
     //summary: responds to requests to view a conversation.
-    rd.conversation(convoId, dojo.hitch(this, "updateConversations", "conversation"));
+    rd.api().conversation({
+      ids: [convoId]
+    })
+    .ok(dojo.hitch(this, "updateConversations", "conversation"));
   }
   //**************************************************
   //end topic subscription endpoints

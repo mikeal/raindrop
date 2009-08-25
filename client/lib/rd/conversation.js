@@ -222,14 +222,18 @@ dojo._mixin(rd.conversation, {
     }, callback, errback);
   },
 
-  contact: function(/*String|Array*/contactId, /*Function*/callback, /*Function*/errback) {
+  contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
     //a given contact.
 
     //Get the list of identities for the user.
-    rd.contact.get(contactId, dojo.hitch(this, function(contact) {
+    rd.api().contact({
+      ids: [contactId]
+    })
+    .ok(this, function(contacts) {
       //Use megaview to select all messages based on the identity
       //IDs.
+      var contact = contacts[0];
       var identities = contact.identities;
       if (dojo.isArray(contact)) {
         identities = [];
@@ -275,7 +279,8 @@ dojo._mixin(rd.conversation, {
         }),
         error: errback     
       });
-    }), errback);
+    })
+    .error(errback);
   },
 
   _query: function(/*Object*/args, /*Function*/callback, /*Function*/errback) {

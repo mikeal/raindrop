@@ -27,7 +27,7 @@ dojo.mixin(rd.contact, {
       callback(this._matches[name]);
       return;
     }
-    
+
     this.list(dojo.hitch(this, function(contacts) {
       var matches = [];
       var matchIds = {};
@@ -55,7 +55,7 @@ dojo.mixin(rd.contact, {
           }
 
           //Check each identity for a match.
-          for (var j, identity; identity = contact.identities[j]; j++) {
+          for (var j = 0, identity; identity = contact.identities[j]; j++) {
             names = identity.name.split(/\s+/);
             names.unshift(identity.nickname);
             if (this._hasNameMatch(from, names)) {
