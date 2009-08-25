@@ -47,40 +47,54 @@ rd.api.contact = {
    * @param {Array} ids an array of contact IDs to fetch.
    */
   _fetch: function(dfd, args, ids) {
-    //Wait on the rd.identity.contacts records to load.
-    //Filter out stuff already in the cache vs. new things to fetch.
-    var missing = [], found = [], keys = [];
-    for (var i = 0, id; id = ids[i]; i++) {
-      var temp = this._store[id];
-      if (temp && temp.identities) {
-        found.push(temp);
-      } else {
-        missing.push(id);
-        keys.push(["rd.core.content", "key-schema_id", [["contact", id], "rd.contact"]]);
-      }
-    }
-
-    if (!missing.length) {
-      dfd.callback(found);
-    } else {
-      //First fetch the rd.contact record for each contact.
-      rd.api().megaview({
-        keys: keys,
-        reduce: false,
-        include_docs: true
-      })
-      .ok(this, function(json) {
-        //Store all the contacts in the store.
-        for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-          this._store.push(doc);
-          // for contacts, rd_key is a tuple of ['contact', contact_id]
-          this._store[doc.rd_key[1]] = doc;
+    //rd.api.identity handles loading of the identity/contact records, so wait for it.
+    rd.api.identity._fetchIdentityContacts().addErrback(dfd, "errback").addCallback(this, function() {
+      //Figure out what kind of IDs there are.
+      var sample = ids[0];
+      if (sample && sample.rd_key && sample.rd_key[0] == "identity") {
+        //They are identity docs. Find the contact IDs by using
+        //the lookups from rd.api.identity.
+        var temp = [], identity = rd.api.identity;
+        for (var i = 0, idty; idty = ids[i]; i++) {
+          var cIds = identity._byIdty[idty.rd_key[1].join(",")];
+          if (cIds) {
+            temp.push.apply(temp, cIds);
+          }
         }
+        ids = temp;
+      }
 
-        //Gather the identities we need to fetch, based
-        //on the contact-to-identity mapping. rd.api.identity handles loading
-        //those records, so wait for it.
-        rd.api.identity._fetchIdentityContacts().addErrback(dfd, "errback").addCallback(this, function() {
+      //Filter out stuff already in the cache vs. new things to fetch.
+      var missing = [], found = [], keys = [];
+      for (var i = 0, id; id = ids[i]; i++) {
+        var temp = this._store[id];
+        if (temp && temp.identities) {
+          found.push(temp);
+        } else {
+          missing.push(id);
+          keys.push(["rd.core.content", "key-schema_id", [["contact", id], "rd.contact"]]);
+        }
+      }
+  
+      if (!missing.length) {
+        dfd.callback(found);
+      } else {
+        //First fetch the rd.contact record for each contact.
+        rd.api().megaview({
+          keys: keys,
+          reduce: false,
+          include_docs: true
+        })
+        .ok(this, function(json) {
+          //Store all the contacts in the store.
+          for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+            this._store.push(doc);
+            // for contacts, rd_key is a tuple of ['contact', contact_id]
+            this._store[doc.rd_key[1]] = doc;
+          }
+
+          //Gather the identities we need to fetch, based
+          //on the contact-to-identity mapping.
           var identityIds = [];
           for(var i = 0, id; id = missing[i]; i++) {
             var idtyIds = rd.api.identity._byContact[id];
@@ -89,29 +103,33 @@ rd.api.contact = {
             }
           }
 
-          //Get identities.
-          rd.api().identity({
-            ids: identityIds
-          })
-          .ok(this, function(foundIdtys) {
-            //Attach the identities to the right contact.
-            for (var i = 0, idty; idty = foundIdtys[i]; i++) {
-              this._attachIdentity(idty);
-            }
-
-            //Now collect the contacts originally requested and do the callback.
-            var ret = [];
-            for (var i = 0, cId; cId = missing[i]; i++) {
-              ret.push(this._store[cId]);
-            }
-
-            //Concat the results with the already found contacts.
-            dfd.callback(found.concat(ret));
-          })
-          .error(dfd);
+          if(!identityIds.length) {
+            dfd.callback(found);
+          } else {
+            //Get identities.
+            rd.api().identity({
+              ids: identityIds
+            })
+            .ok(this, function(foundIdtys) {
+              //Attach the identities to the right contact.
+              for (var i = 0, idty; idty = foundIdtys[i]; i++) {
+                this._attachIdentity(idty);
+              }
+    
+              //Now collect the contacts originally requested and do the callback.
+              var ret = [];
+              for (var i = 0, cId; cId = missing[i]; i++) {
+                ret.push(this._store[cId]);
+              }
+    
+              //Concat the results with the already found contacts.
+              dfd.callback(found.concat(ret));
+            })
+            .error(dfd);
+          }
         });
-      });
-    }
+      }
+    });
   },
 
   _attachIdentity: function(/*Object*/idty) {

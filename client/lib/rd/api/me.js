@@ -6,6 +6,14 @@ dojo.require("rd.api.identity");
 
 rd.api.me = {
   /**
+   * The imap account actually should match to an "email" identity.
+   * This is a bit weird.
+   */
+  accountToIdentityTransform: {
+    "imap": "email"
+  },
+
+  /**
    * @private
    * loads the account info just one time.
    *
@@ -20,7 +28,7 @@ rd.api.me = {
         reduce: false,
         include_docs: true
       })
-      .ok(function(json) {
+      .ok(this, function(json) {
         //Transform the response to be identity IDs
         //so it can be consumed by identity()
         if(!json.rows.length) {
@@ -28,7 +36,9 @@ rd.api.me = {
         } else {
           var ids = [];
           for (var i = 0, row; row = json.rows[i]; i++) {
-            ids.push([row.doc.kind, row.doc.username]);
+            var kind = row.doc.kind;
+            kind = this.accountToIdentityTransform[kind] || kind;
+            ids.push([kind, row.doc.username]);
           }
           return ids;
         }

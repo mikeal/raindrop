@@ -244,6 +244,39 @@ rd.api.Api.prototype = {
 };
 
 rd.api.extend({
+  /**
+   * filters the results from the previous call. Basically
+   * binds via ok() then assumes the result is an array
+   * that can be filtered into another array by using the function
+   * argument.
+   *
+   * @param {Function} func function that does the filtering. The
+   * function should return the array member if it is desired in the
+   * output that is passed to the next chained function. The function
+   * will be called with three arguments (item, index, array)
+   */
+  filter: function(cb, cbfn) {
+    //Change the _name for this link in the chain to
+    //the parent value, so downstream links think it is
+    //the parent type.
+    this._name = this._parent._name;
+
+    //Allow for cbfn to be a string.
+    //Manually doing this work since the deferred calls do it,
+    //but a deferred is not used at this point.
+    if (typeof cbfn == "string") {
+      cbfn = cb[cbfn];
+    }
+
+    //Wait for parent to complete then filter.
+    this._parent.ok(this, function(ary) {
+      var ret = dojo.filter(ary, (cbfn ? cbfn : cb), cb);
+      this._deferred.callback(ret);
+    });
+
+    return this;
+  },
+
   megaview: function(args) {
     args = dojo.delegate(args);
     args.url = this.args.dbPath || rd.dbPath || "/raindrop/";

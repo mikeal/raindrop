@@ -179,6 +179,11 @@ dojo._mixin(rd.conversation, {
   sent: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary get all conversations sent by the user according to their account
     //identities and related contacts
+/*
+    rd.api().me().contact().identity().conversation({
+      identity: "from"
+    }).ok(callback).error(errback);
+*/
     rd.api().me()
     .ok(this, function(idtys) {
       //Remap the services that count, from uses "email", not "imap"
@@ -228,12 +233,11 @@ dojo._mixin(rd.conversation, {
 
     //Get the list of identities for the user.
     rd.api().contact({
-      ids: [contactId]
+      ids: typeof contactId == "string" ? [contactId] : contactId
     })
-    .ok(this, function(contacts) {
+    .ok(this, function(contact) {
       //Use megaview to select all messages based on the identity
       //IDs.
-      var contact = contacts[0];
       var identities = contact.identities;
       if (dojo.isArray(contact)) {
         identities = [];
