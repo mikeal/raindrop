@@ -92,7 +92,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       }
     } else if (evt.keyCode == this.summaryKeyCode && this.viewType == "conversation") {
       //Just go back in the browser history.
-      dojo.global.back();
+      dojo.global.history.back();
     }
   },
 
@@ -160,83 +160,130 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //viewType. Basically, allow switching from a summary
     //of conversations to one conversation and back.
 
-    //Do the transition in a timeout, to give the DOM a chance to render,
-    //so DOM rendering work is not happening while the transition is going.
-    setTimeout(dojo.hitch(this, function() {
-      //Skip the animation on the first display of this widget.
-      if (!this._postRender) {
-        this._postRender = true;
-        return;
-      }
-  
-      if (this.viewType != viewType) {
-        //Create a div used for scrolling.
-        if (!this._scrollNode) {
-          this._scrollNode = dojo.create("div", { "class": "scrollArea"});
-        }
-  
-        //Fix the widths of divs for the scroll effect to work.
-        var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth;
-        var oldDomNodeWidth = this.domNode.style.width;
-        this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
-        var oldListNodeWidth = this.listNode.style.width;
-        this.listNode.style.width = newDomNodeWidth + "px";
-        var oldConvoNodeWidth = this.convoNode.style.width;
-        this.convoNode.style.width = newDomNodeWidth + "px";
-  
-        //Use the scrollNode as the parent, to make things easy to scroll.
-        this._scrollNode.appendChild(this.listNode);
-        this._scrollNode.appendChild(this.convoNode);
-        this.domNode.appendChild(this._scrollNode);
+    //If showing another summary type, then clear out the saved summary
+    if (viewType == this.viewType && viewType == "summary") {
+      this.summaryScrollHeight = 0;
+    }
+
+    //Skip the animation on the first display of this widget.
+    if (!this._postRender) {
+      this._postRender = true;
+      return;
+    }
+
+    if (this.viewType != viewType) {
+      //Do the transition in a timeout, to give the DOM a chance to render,
+      //so DOM rendering work is not happening while the transition is going.
+      setTimeout(dojo.hitch(this, function() {
+          //For summary view going to conversation view, remember the vertical scroll
+          //to restore it when switching back.
+          if (this.viewType != "conversation") {
+            this.summaryScrollHeight = dojo.global.scrollY;
+          }
+
+          //Create a div used for scrolling.
+          if (!this._scrollNode) {
+            this._scrollNode = dojo.create("div", { "class": "scrollArea"});
+          }
+    
+          //Fix the widths of divs for the scroll effect to work.
+          var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth;
+          var oldDomNodeWidth = this.domNode.style.width;
+          this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
+          var oldListNodeWidth = this.listNode.style.width;
+          this.listNode.style.width = newDomNodeWidth + "px";
+          var oldConvoNodeWidth = this.convoNode.style.width;
+          this.convoNode.style.width = newDomNodeWidth + "px";
    
-        //Make sure both lists are visible.
-        this.listNode.style.display = "";
-        this.convoNode.style.display = "";
+          //Use the scrollNode as the parent, to make things easy to scroll.
+          this._scrollNode.appendChild(this.listNode);
+          this._scrollNode.appendChild(this.convoNode);
+          this.domNode.appendChild(this._scrollNode);
+     
+          //Make sure both lists are visible.
+          this.listNode.style.display = "";
+          this.convoNode.style.display = "";
+    
+          if (viewType == "conversation") {
+            this.domNode.scrollLeft = 0;
+            var x = newDomNodeWidth;
+          } else {
+            this.domNode.scrollLeft = newDomNodeWidth;
+            x = 0;
+          }
   
-        if (viewType == "conversation") {
-          this.domNode.scrollLeft = 0;
-          var x = newDomNodeWidth;
-        } else {
-          this.domNode.scrollLeft = newDomNodeWidth;
-          x = 0;
-        }
+          //Create the args for the scroll over effect.
+          var scrollOverArgs = {
+            win: this.domNode,
+            target: { x: x, y: 0},
+            duration: 300,
+            onEnd: dojo.hitch(this, function() {
+              //Use another timeout, just for good measure,
+              //let DOM settle down.
+              setTimeout(dojo.hitch(this, function() {
+                //Only show the correct node.
+                if (viewType == "conversation") {
+                  this.listNode.style.display = "none";
+                  this.convoNode.style.display = "";       
+                } else {
+                  this.listNode.style.display = "";
+                  this.convoNode.style.display = "none";       
+                }
+      
+                //Pull the nodes out scrollNode          
+                this.domNode.removeChild(this._scrollNode);
+                this.domNode.appendChild(this.listNode);
+                this.domNode.appendChild(this.convoNode);
+      
+                //Remove fixed widths on the nodes.
+                this.domNode.style.width = oldDomNodeWidth;
+                this.listNode.style.width = oldListNodeWidth;
+                this.convoNode.style.width = oldConvoNodeWidth;
+                
+                //Reset scroll.
+                this.domNode.scrollLeft = 0;
+                
+                //If going back to summary view, then scroll down
+                if (viewType == "summary") {
+                  dojox.fx.smoothScroll({
+                    win: dojo.global,
+                    target: { x: 0, y: this.summaryScrollHeight},
+                    duration: 300
+                  }).play();
+                }
+                
+              }), 100);
+            })
+          };
   
-        dojox.fx.smoothScroll({
-          win: this.domNode,
-          target: { x: x, y: 0},
-          duration: 300,
-          onEnd: dojo.hitch(this, function() {
-            //Use another timeout, just for good measure,
-            //let DOM settle down.
-            setTimeout(dojo.hitch(this, function() {
-              //Only show the correct node.
-              if (viewType == "conversation") {
-                this.listNode.style.display = "none";
-                this.convoNode.style.display = "";       
-              } else {
-                this.listNode.style.display = "";
-                this.convoNode.style.display = "none";       
+          if (viewType == "conversation") {
+            //Going to conversation. scroll vertical then horizontal.
+
+            //Pick a vertical position that is at the top of the Stories widget,
+            //if current scroll position is less.
+            var scrollHeight = dojo.global.scrollY;
+            var position = dojo.position(this.domNode, true).y;
+            if (position < scrollHeight) {
+              scrollHeight = position;
+            }
+
+            dojox.fx.smoothScroll({
+              win: dojo.global,
+              target: { x: 0, y: scrollHeight},
+              duration: 300,
+              onEnd: function (){
+                dojox.fx.smoothScroll(scrollOverArgs).play();
               }
-    
-              //Pull the nodes out scrollNode          
-              this.domNode.removeChild(this._scrollNode);
-              this.domNode.appendChild(this.listNode);
-              this.domNode.appendChild(this.convoNode);
-    
-              //Remove fixed widths on the nodes.
-              this.domNode.style.width = oldDomNodeWidth;
-              this.listNode.style.width = oldListNodeWidth;
-              this.convoNode.style.width = oldConvoNodeWidth;
-              
-              //Reset scroll.
-              this.domNode.scrollLeft = 0;
-            }), 100);
-          })
-        }).play();
-  
-        this.viewType = viewType;
-      }
-    }), 100);
+            }).play();
+
+          } else {
+            //Going back to summary view. Scroll horizontal, then vertical
+            dojox.fx.smoothScroll(scrollOverArgs).play();
+          }
+
+          this.viewType = viewType;
+      }), 100);
+    }
   },
 
   destroy: function() {
