@@ -35,18 +35,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //The preferred service to use as default when creating the QuickCompose.
   preferredService: "twitter",
 
-  //types of sender identities that require the To field to show up.
-  //See notes for allowedServices for how to modify this object.
-  showTo: {
-    email: 1,
-    twitter: 1
-  },
-
-  //The types of account services that should show a subject field.
-  showSubject: {
-    email: 1
-  },
-
   postMixInProperties: function() {
     //summary: dijit lifecycle method.
     this.inherited("postMixInProperties", arguments);
@@ -62,9 +50,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method.
     this.inherited("postCreate", arguments);
-
-    //By default hide the To until widget is focused.
-    dojo.style(this.toNode, "display", "none");
 
     var ids = [], accountsById = {}, accountsByType = {};
     this.senders = {};
@@ -174,12 +159,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
 
   onFocusTextArea: function(evt) {
     //summary: expand the text area from it's simple entry space
-    dojo.style(this.textAreaNode, "height", "12ex");
+    dojo.addClass(this.domNode, "expanded");
 
-    //Only show To once text area focused.
-    var svc = this._determineSender();
-    svc = svc && svc.service;
-    dojo.style(this.toNode, "display", this.showTo[svc] ? "" : "none");
   },
 
   onSubmit: function(evt) {
@@ -256,15 +237,16 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         func.call(this);
       }
 
+      //Switch the class on the element to allow showing/hiding/styling
+      //the widget differently based on type.
+      if (oldSvc) {
+        dojo.removeClass(this.domNode, oldSvc);
+      }
+      dojo.addClass(this.domNode, svc);
+
       //Update To input, first by making sure selector widget is available.
       dojo["require"](this.toSelector);
       dojo.addOnLoad(dojo.hitch(this, "initToSelector"));
-
-      //Show/hide subject.
-      dojo.style(this.subjectNode, "display", this.showSubject[svc] ? "" : "none");
-      if (!this.showSubject[svc]) {
-        this.subjectInputNode.value = "";
-      }
 
       //Call active method for current sender service.
       var func = this[svc + "Active"];

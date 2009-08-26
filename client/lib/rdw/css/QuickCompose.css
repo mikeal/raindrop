@@ -78,6 +78,16 @@
   letter-spacing: 0;
   color: #1a1a1a;
   height: 30px;
+  display: none;
+}
+
+.QuickCompose.expanded .compose > form div.to,
+.QuickCompose.expanded .compose > form div.subject {
+  display: inherit;
+}
+
+.QuickCompose.twitter.expanded .compose > form div.subject {
+  display: none;
 }
 
 .QuickCompose div.to label ,
@@ -127,6 +137,10 @@
   font-size: small;
   -moz-box-sizing:border-box;
   padding: 8px;
+}
+
+.QuickCompose.expanded textarea {
+  height: 12ex;
 }
 
 .QuickCompose .error {
