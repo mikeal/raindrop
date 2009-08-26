@@ -20,7 +20,7 @@ dojo.declare("rdw.story.FullStory", [rdw.Story], {
     //Inject the title
     this.title = this.msgs[0]["rd.msg.body"].subject;
     dojo.place(dojo.string.substitute(this.titleTemplate, {
-      title: this.title
+      title: this.title || ""
     }), this.domNode, "first");
 
     dojo.addClass(this.domNode, "rdwStoryFullStory");

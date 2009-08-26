@@ -34,6 +34,11 @@ a img{
   background-position: center center;
 }
 
+.QuickCompose {
+  max-width: 80ex;
+  margin: 0 0.75em 8px 0.75em;
+}
+
 #content {
   position: relative;
   display: table;
@@ -59,6 +64,11 @@ a img{
   display: table-cell;
   width: 40em;
   padding-bottom: 24px;
+}
+
+#mainList {
+  max-width: 80ex;
+  margin: 0 0.75em 8px 0.75em;
 }
 
 #column2 {

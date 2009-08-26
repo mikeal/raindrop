@@ -1,8 +1,6 @@
 .QuickCompose {
   background-color: #FFF;
   position: relative;
-  max-width: 80ex;
-  margin: 0 0.75em 8px 0.75em;
   padding: 0.5em 0;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
