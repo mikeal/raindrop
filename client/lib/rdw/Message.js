@@ -12,6 +12,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
   type: "topic",
 
+  //Targets of message are "direct", "broadcast", "group", "notifications"
+  target: "direct",
+
   //Holds the aggregated message object.
   //Warning: this is a prototype property: be sure to
   //set it per instance.
@@ -31,6 +34,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //properties.
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
+
+    this.target = msgBag['rd.msg.recip-target']['target'];
 
     this.fromId = msgDoc.from[1];
     this.fromName = msgDoc.from_display || this.fromId;
