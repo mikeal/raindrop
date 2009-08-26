@@ -18,7 +18,7 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     "rd-protocol-contacts": "contacts",
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
-    "rd-protocol-broadcast": "broadcast",
+    "rd-protocol-group": "group",
     "rd-protocol-locationTag": "locationTag",
     "rd-protocol-starred": "starred",
     "rd-protocol-sent": "sent"
@@ -110,8 +110,9 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     //summary: responds to rd-protocol-direct topic.
   },
 
-  broadcast: function() {
-    //summary: responds to rd-protocol-broadcast topic.
+  group: function() {
+    //summary: responds to rd-protocol-group topic.
+    rd.escapeHtml("Recent group conversations", this.domNode);
   },
 
   locationTag: function(/*String*/locationId) {

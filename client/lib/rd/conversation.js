@@ -141,13 +141,13 @@ dojo._mixin(rd.conversation, {
     }, callback, errback);   
   },
 
-  broadcast: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    //summary: gets the most recent broadcast messages up to limit, then pulls
+  group: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: gets the most recent group messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
     this._query({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
+      startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
+      endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
       limit: limit      
     }, callback, errback);
   },

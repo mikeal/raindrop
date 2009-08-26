@@ -36,7 +36,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-home": "home",
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
-    "rd-protocol-broadcast": "broadcast",
+    "rd-protocol-group": "group",
     "rd-protocol-locationTag": "locationTag",
     "rd-protocol-starred": "starred",
     "rd-protocol-sent": "sent",
@@ -401,9 +401,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     rd.conversation.direct(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
-  broadcast: function() {
-    //summary: responds to rd-protocol-broadcast topic.
-    rd.conversation.broadcast(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+  group: function() {
+    //summary: responds to rd-protocol-group topic.
+    rd.conversation.group(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   locationTag: function(/*String*/locationId) {
@@ -418,12 +418,12 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   },
 
   starred: function() {
-    //summary: responds to rd-protocol-broadcast topic.
+    //summary: responds to rd-protocol-starred topic.
     rd.conversation.starred(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   sent: function() {
-    //summary: responds to rd-protocol-broadcast topic.
+    //summary: responds to rd-protocol-sent topic.
     rd.conversation.sent(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
