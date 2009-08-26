@@ -5,6 +5,43 @@ dojo.require("rd.api");
 rd.api.conversation = {
  /**
    * @private
+   * fetches conversations. Does some magic to figure out how to get
+   * a set of conversations given the input ids. 
+   *
+   * @param {dojo.Deferred} dfd The deferred that should be called
+   * with the results.
+   *
+   * @param {Object} args arguments to pass to the couch calls.
+   * 
+   * @param {Array} ids could be identity records,
+   * contact records, messages that have a conversation_id,
+   * or just a plain conversation IDs.
+   */
+  _conversation: function(dfd, args, ids) {
+    //Convert the list to be conversations IDs if they were not before.
+    var sample = ids[0], convIds = [];
+    if(sample.conversation_id) {
+      for (var i = 0, doc; doc = ids[i]; i++) {
+        convIds.push(doc.conversation_id);
+      }
+    } else if (sample.rd_key) {
+      if (sample.rd_key[0] == "identity") {
+        rd.api().megaview("");
+      } else if (sampe.rd_key[0] == "contact") {
+        
+      } else {
+        dfd.errback("rd.api().conversation: unsupported input IDs" + ids);
+      }
+      
+    } else {
+      convIds = ids;
+    }
+
+    return this._fetch(dfd, args, convIds);
+  },
+
+ /**
+   * @private
    * fetches conversations based on conversation IDs.
    *
    * @param {dojo.Deferred} dfd The deferred that should be called
@@ -16,15 +53,6 @@ rd.api.conversation = {
    * can also be passed instead of conversation IDs.
    */
   _fetch: function(dfd, args, ids) {
-    //Convert the list to be conversations IDs if they were not before.
-    if(ids[0].conversation_id) {
-      convIds = [];
-      for (var i = 0, doc; doc = ids[i]; i++) {
-        convIds.push(doc.conversation_id);
-      }
-      ids = convIds;
-    }
-
     // find out all messages in all conversations - build a list of the
     // keys we can use to query a megaview.
     var queryKeys = [];
@@ -94,9 +122,9 @@ rd.api.extend({
    */
   conversation: function(args) {
     if (args && args.ids) {
-      rd.api.conversation._fetch(this._deferred, args, args.ids);
+      rd.api.conversation._conversation(this._deferred, args, args.ids);
     } else {
-      this.addParentCallback(dojo.hitch(rd.api.conversation, "_fetch", this._deferred, args));
+      this.addParentCallback(dojo.hitch(rd.api.conversation, "_conversation", this._deferred, args));
     }
     return this;
   }

@@ -1,6 +1,8 @@
 <div class="Message ${type}" tabindex="0">
-  <div class="process2"><a href="#"><img src="i/overlay_expand.png"/></a></div>
-  <div class="process"><a href="#"><img src="i/overlay_archive.png"/></a></div>
+  <div class="topActions">
+    <a href="#${expandLink}" class="expand" title="${i18n.expand}">${i18n.expand}</a>
+    <a href="#" class="archive" title="${i18n.archive}">${i18n.archive}</a>
+  </div>
   <div class="photo"><!--<img class="photo" dojoAttachPoint="userPicNode" src="${userPicUrl}" />--></div>
   <div class="message">
     <div class="header">

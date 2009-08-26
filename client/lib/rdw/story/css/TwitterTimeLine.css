@@ -48,6 +48,11 @@
   margin-top: 6px;
 }
 
+.rdwStoryTwitterTimeLine .Message .topActions a {
+  top: 0;
+  right: 0;
+}
+
 .rdwStoryTwitterTimeLine .tools {
   display: none;
 }
@@ -91,56 +96,6 @@
 
 .rdwStoryTwitterTimeLine .moreLess:hover {
   background-color: #333;
-}
-
-.rdwStoryTwitterTimeLine .Message .process {
-  position: absolute;
-  right: 0px;
-  top: 2px;
-  font-size: x-small;
-  visibility: hidden;
-  opacity: 0.5;
-}
-
-.rdwStoryTwitterTimeLine .Message:hover .process {
-  visibility: visible;
-}
-
-.rdwStoryTwitterTimeLine .Message .process:hover {
-  border-color: #44617E;
-  color: #44617E;
-  opacity: 1.0;
-}
-
-.rdwStoryTwitterTimeLine .Message .process a {
-  text-decoration: none;
-  font-weight: bold;
-  color: #5b5b5b;
-}
-
-.rdwStoryTwitterTimeLine .Message .process2 {
-  position: absolute;
-  right: 20px;
-  top: 2px;
-  font-size: x-small;
-  visibility: hidden;
-  opacity: 0.5;
-}
-
-.rdwStoryTwitterTimeLine .Message:hover .process2 {
-  visibility: visible;
-}
-
-.rdwStoryTwitterTimeLine .Message .process2:hover {
-  border-color: #44617E;
-  color: #44617E;
-  opacity: 1.0;
-}
-
-.rdwStoryTwitterTimeLine .Message .process2 a {
-  text-decoration: none;
-  font-weight: bold;
-  color: #5b5b5b;
 }
 
 .rdwStoryTwitterTimeLine .message > .timestamp > span {

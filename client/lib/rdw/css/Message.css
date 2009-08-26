@@ -27,90 +27,48 @@
   background-image: url("i/icon_direct_message.png");
 }
 
-.Message .process {
+.Message .topActions {
   position: absolute;
   right: 8px;
   top: 10px;
+}
+
+.Message .topActions a {
+  display: block;
+  float: left;
+  width: 16px;
+  height: 16px;
   font-size: x-small;
   visibility: hidden;
   opacity: 0.5;
+  text-decoration: none;
+  text-indent: -200em;
+  font-weight: bold;
 }
 
-.Message:hover .process {
+.Message:hover .topActions a {
   visibility: visible;
 }
 
-.Message .process:hover {
+.Message .topActions a:hover {
   border-color: #44617E;
   color: #44617E;
   opacity: 1.0;
 }
 
-.Message .process a {
-  text-decoration: none;
-  font-weight: bold;
-  color: #5b5b5b;
+.Message .topActions .archive {
+  background-image: url(i/overlay_archive.png);
 }
 
-.Message .process2 {
-  position: absolute;
-  right: 28px;
-  top: 10px;
-  font-size: x-small;
-  visibility: hidden;
-  opacity: 0.5;
-}
-
-.Message:hover .process2 {
-  visibility: visible;
-}
-
-.Message .process2:hover {
-  border-color: #44617E;
-  color: #44617E;
-  opacity: 1.0;
-}
-
-.Message .process2 a {
-  text-decoration: none;
-  font-weight: bold;
-  color: #5b5b5b;
+.Message .topActions .expand {
+  margin-right: 4px;
+  background-image: url(i/overlay_expand.png);
 }
 
 .Message .actions {
-  position: absolute;
-  right: 47px;
-  top: 10px;
-  font-size: x-small;
   visibility: hidden;
 }
 
-.Message .actions a {
-  background-color: transparent;
-  width: 16px;
-  height: 16px;
-  opacity: 0.5;
-  text-decoration: none;
-  overflow:hidden;
-  display: inline-block;
-  display: -moz-inline-box;
-  text-indent: -40em;
-  margin-right: 1px;
-}
-
-.Message .actions a.identity {
-  background-image: url("i/icon_identity.png");
-  width: 16px;
-  height: 16px;
-}
-
-.Message .actions a:hover {
-  opacity: 1;
-}
-
-.Message:hover .actions {
-  visibility: visible;
-}
 .Message .message {
   max-width: 70ex;
   margin-left: 40px;

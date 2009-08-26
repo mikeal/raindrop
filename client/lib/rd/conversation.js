@@ -180,8 +180,10 @@ dojo._mixin(rd.conversation, {
     //summary get all conversations sent by the user according to their account
     //identities and related contacts
 /*
-    rd.api().me().contact().identity().conversation({
+    rd.api().me().conversation({
       identity: "from"
+      limit: 
+      
     }).ok(callback).error(errback);
 */
     rd.api().me()

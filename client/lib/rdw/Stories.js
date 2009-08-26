@@ -2,6 +2,7 @@ dojo.provide("rdw.Stories");
 
 dojo.require("rdw._Base");
 dojo.require("rdw.Story");
+dojo.require("rdw.story.FullStory");
 dojo.require("rd.api");
 
 dojo.require("dojox.fx.scroll");
@@ -21,6 +22,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //The number of "pages" (skips) to do for the conversations calls
   //for the home view.
   homeSkipLimit: 5,
+
+  //The widget to use to show a full story.
+  fullStoryCtorName: "rdw.story.FullStory",
 
   //List of topics to listen to and modify contents based
   //on those topics being published. Note that this is an object
@@ -124,7 +128,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       }
 
       //Make new convoWidget.
-      this.convoWidget = new rdw.Story({
+      var ctor = dojo.getObject(this.fullStoryCtorName);
+      this.convoWidget = new ctor({
         msgs: this.oneConversation
       }, dojo.create("div", null, this.convoNode));
     } else {

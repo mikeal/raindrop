@@ -1,27 +1,13 @@
-dojo.provide("rdw.Message");
+dojo.provide("rdw.story.FullMessage");
 
-dojo.require("rdw._Base");
-dojo.require("rd.contact");
-dojo.require("rdw.gravatar");
-dojo.require("rdw.contactDropDown");
-dojo.require("rd.friendly");
-dojo.require("rd.hyperlink");
-dojo.require("rd.api");
+dojo.require("rdw.Message");
 
-dojo.declare("rdw.Message", [rdw._Base], {
+dojo.declare("rdw.story.FullMessage", [rdw.Message], {
   //Suggested values for type are "topic" and "reply"
   type: "topic",
 
-  //Holds the aggregated message object.
-  //Warning: this is a prototype property: be sure to
-  //set it per instance.
-  messageBag: {},
-
-  normalTemplate: dojo.cache("rdw.templates", "Message.html"),
-  unknownUserTemplate: dojo.cache("rdw.templates", "MessageUnknown.html"),
-
-  blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
-  unknownImgUrl: dojo.moduleUrl("rdw.resources", "unknown.png"),
+  normalTemplate: dojo.cache("rdw.story.templates", "FullMessage.html"),
+  unknownUserTemplate: dojo.cache("rdw.story.templates", "FullMessage.html"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method

@@ -1,4 +1,5 @@
 @import url("Story.css");
+@import url("../story/css/FullStory.css");
 
 .rdwStories {
   overflow: hidden;
