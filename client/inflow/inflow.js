@@ -82,6 +82,14 @@ inflow = {
       rd.pub("rd-protocol-home");
     }
 
+    //Listen for hash changes but only if the hash value is empty,
+    //which means do our default action (view home)
+    rd.sub("rd.onHashChange", function(val) {
+      if (!val) {
+        rd.pub("rd-protocol-home");
+      }
+    });
+
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;
     var args = location.href.split("#")[0].split("?")[1];

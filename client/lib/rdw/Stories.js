@@ -160,75 +160,83 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //viewType. Basically, allow switching from a summary
     //of conversations to one conversation and back.
 
-    //Skip the animation on the first display of this widget.
-    if (!this._postRender) {
-      this._postRender = true;
-      return;
-    }
-
-    if (this.viewType != viewType) {
-      //Create a div used for scrolling.
-      if (!this._scrollNode) {
-        this._scrollNode = dojo.create("div", { "class": "scrollArea"});
+    //Do the transition in a timeout, to give the DOM a chance to render,
+    //so DOM rendering work is not happening while the transition is going.
+    setTimeout(dojo.hitch(this, function() {
+      //Skip the animation on the first display of this widget.
+      if (!this._postRender) {
+        this._postRender = true;
+        return;
       }
-
-      //Fix the widths of divs for the scroll effect to work.
-      var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth;
-      var oldDomNodeWidth = this.domNode.style.width;
-      this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
-      var oldListNodeWidth = this.listNode.style.width;
-      this.listNode.style.width = newDomNodeWidth + "px";
-      var oldConvoNodeWidth = this.convoNode.style.width;
-      this.convoNode.style.width = newDomNodeWidth + "px";
-
-      //Use the scrollNode as the parent, to make things easy to scroll.
-      this._scrollNode.appendChild(this.listNode);
-      this._scrollNode.appendChild(this.convoNode);
-      this.domNode.appendChild(this._scrollNode);
- 
-      //Make sure both lists are visible.
-      this.listNode.style.display = "";
-      this.convoNode.style.display = "";
-
-      if (viewType == "conversation") {
-        this.domNode.scrollLeft = 0;
-        var x = newDomNodeWidth;
-      } else {
-        this.domNode.scrollLeft = newDomNodeWidth;
-        x = 0;
-      }
-
-      dojox.fx.smoothScroll({
-        win: this.domNode,
-        target: { x: x, y: 0},
-        duration: 500,
-        onEnd: dojo.hitch(this, function() {
-          //Only show the correct node.
-          if (viewType == "conversation") {
-            this.listNode.style.display = "none";
-            this.convoNode.style.display = "";       
-          } else {
-            this.listNode.style.display = "";
-            this.convoNode.style.display = "none";       
-          }
-
-          //Pull the nodes out scrollNode          
-          this.domNode.removeChild(this._scrollNode);
-          this.domNode.appendChild(this.listNode);
-          this.domNode.appendChild(this.convoNode);
-
-          //Remove fixed widths on the nodes.
-          this.domNode.style.width = oldDomNodeWidth;
-          this.listNode.style.width = oldListNodeWidth;
-          this.convoNode.style.width = oldConvoNodeWidth;
-          
-          //Reset scroll.
+  
+      if (this.viewType != viewType) {
+        //Create a div used for scrolling.
+        if (!this._scrollNode) {
+          this._scrollNode = dojo.create("div", { "class": "scrollArea"});
+        }
+  
+        //Fix the widths of divs for the scroll effect to work.
+        var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth;
+        var oldDomNodeWidth = this.domNode.style.width;
+        this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
+        var oldListNodeWidth = this.listNode.style.width;
+        this.listNode.style.width = newDomNodeWidth + "px";
+        var oldConvoNodeWidth = this.convoNode.style.width;
+        this.convoNode.style.width = newDomNodeWidth + "px";
+  
+        //Use the scrollNode as the parent, to make things easy to scroll.
+        this._scrollNode.appendChild(this.listNode);
+        this._scrollNode.appendChild(this.convoNode);
+        this.domNode.appendChild(this._scrollNode);
+   
+        //Make sure both lists are visible.
+        this.listNode.style.display = "";
+        this.convoNode.style.display = "";
+  
+        if (viewType == "conversation") {
           this.domNode.scrollLeft = 0;
-        })
-      }).play();
-
-      this.viewType = viewType;
-    }
+          var x = newDomNodeWidth;
+        } else {
+          this.domNode.scrollLeft = newDomNodeWidth;
+          x = 0;
+        }
+  
+        dojox.fx.smoothScroll({
+          win: this.domNode,
+          target: { x: x, y: 0},
+          duration: 300,
+          onEnd: dojo.hitch(this, function() {
+            //Use another timeout, just for good measure,
+            //let DOM settle down.
+            setTimeout(dojo.hitch(this, function() {
+              //Only show the correct node.
+              if (viewType == "conversation") {
+                this.listNode.style.display = "none";
+                this.convoNode.style.display = "";       
+              } else {
+                this.listNode.style.display = "";
+                this.convoNode.style.display = "none";       
+              }
+    
+              //Pull the nodes out scrollNode          
+              this.domNode.removeChild(this._scrollNode);
+              this.domNode.appendChild(this.listNode);
+              this.domNode.appendChild(this.convoNode);
+    
+              //Remove fixed widths on the nodes.
+              this.domNode.style.width = oldDomNodeWidth;
+              this.listNode.style.width = oldListNodeWidth;
+              this.convoNode.style.width = oldConvoNodeWidth;
+              
+              //Reset scroll.
+              this.domNode.scrollLeft = 0;
+            }), 100);
+          })
+        }).play();
+  
+        this.viewType = viewType;
+      }
+    }), 100);
   },
 
   destroy: function() {
@@ -341,6 +349,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   
         //Inject nodes all at once for best performance.
         this.listNode.appendChild(frag);
+        
+        this.transition("summary");
       }
     }));   
   },
@@ -353,7 +363,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     return new rdw.Story({
       msgs: msgs,
       messageLimit: 3,
-      displayOnCreate: false
+      displayOnCreate: false,
+      allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Story
   },
 

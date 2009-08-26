@@ -12,6 +12,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //Suggested values for type are "topic" and "reply"
   type: "topic",
 
+  //Allows the message to have focus.
+  tabIndex: 0,
+
   //Targets of message can be "direct", "broadcast", "group", "notifications"
   target: "",
 

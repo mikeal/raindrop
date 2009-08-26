@@ -24,6 +24,9 @@ dojo.declare("rdw.Story", [rdw._Base], {
   //A style to add to any messages that are replies.
   replyStyle: "reply",
 
+  //Indicates if reply messages should be allowed to have focus.
+  allowReplyMessageFocus: true,
+
   //The names of the helper widgets that
   //handle reply and forward. By extending
   //rdw.Message, you can modify the widgets used
@@ -134,7 +137,8 @@ dojo.declare("rdw.Story", [rdw._Base], {
         this.lastDisplayedMsg = msg;
         this.addSupporting(new ctor({
           messageBag: msg,
-          type: i == 0 ? "" : this.replyStyle
+          type: i == 0 ? "" : this.replyStyle,
+          tabIndex: i == 0 || this.allowReplyMessageFocus ? 0 : -1
         }, dojo.create("div", null, this.containerNode)));
       };
 
