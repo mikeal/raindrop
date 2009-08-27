@@ -102,6 +102,9 @@ dojo.declare("rdw.ContactList", [rdw._Base], {
     //Insert the HTML
     dojo.place(html, this.domNode, "only");
 
+    //Make sure we are at the top of the contact list.
+    dijit.scrollIntoView(this.domNode);
+
     //Wire up the DnD sources
     this.dndSources = [];
     this.dndSources.push(new dojo.dnd.Source(this.domNode, {accept: ["contact"]}));

@@ -27,21 +27,26 @@ inflow = {
     "rd-protocol-direct",
     "rd-protocol-contact",
     "rd-protocol-broadcast",
-    "rd-protocol-locationTag"
+    "rd-protocol-locationTag",
+    "rd-protocol-conversation"
   ],
 
   showStories: function() {
     //summary: shows the Stories widget and hides the ContactList widget.
-    dijit.byId("stories").domNode.style.display = "";
-    dijit.byId("contactList").domNode.style.display = "none";
-    window.scrollTo(0, 0);
+    if (this.showState != "stories") {
+      dijit.byId("stories").domNode.style.display = "";
+      dijit.byId("contactList").domNode.style.display = "none";
+      this.showState = "stories";
+    }
   },
 
   showContacts: function() {
     //summary: shows the ContactList widget and hides the Stories widget.
-    dijit.byId("stories").domNode.style.display = "none";
-    dijit.byId("contactList").domNode.style.display = "";
-    window.scrollTo(0, 0);
+    if (this.showState != "contacts") {
+      dijit.byId("stories").domNode.style.display = "none";
+      dijit.byId("contactList").domNode.style.display = "";
+      this.showState = "contacts";
+    }
   }
 };
 

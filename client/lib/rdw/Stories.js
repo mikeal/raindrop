@@ -161,8 +161,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //of conversations to one conversation and back.
 
     //If showing another summary type, then clear out the saved summary
-    if (viewType == this.viewType && viewType == "summary") {
+    if (!this.viewType || viewType == this.viewType && viewType == "summary") {
       this.summaryScrollHeight = 0;
+      dijit.scrollIntoView(this.domNode);
     }
 
     //Skip the animation on the first display of this widget.
@@ -245,11 +246,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                 
                 //If going back to summary view, then scroll down
                 if (viewType == "summary") {
-                  dojox.fx.smoothScroll({
-                    win: dojo.global,
-                    target: { x: 0, y: this.summaryScrollHeight},
-                    duration: 300
-                  }).play();
+                  setTimeout(dojo.hitch(this, function() {
+                    dojox.fx.smoothScroll({
+                      win: dojo.global,
+                      target: { x: 0, y: this.summaryScrollHeight},
+                      duration: 300
+                    }).play();
+                  }), 100);
                 }
                 
               }), 100);
