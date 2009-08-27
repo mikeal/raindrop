@@ -68,6 +68,7 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     //For now just set to empty for quick reply, but probably need quoting for full message view.
     this.textAreaNode.value = "";
     setTimeout(dojo.hitch(this, function() {
+      this.onFocusTextArea();
       this.textAreaNode.focus();
     }));
 

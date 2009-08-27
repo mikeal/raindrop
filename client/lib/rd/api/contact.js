@@ -182,7 +182,6 @@ rd.api.extend({
    * or, optionally pass an args.ids which is an array of contact IDs.
    */
   contact: function(args) {
-    console.log("calling contact with ", args);
     if (args && args.ids) {
       rd.api.contact._fetch(this._deferred, args, args.ids);
     } else {

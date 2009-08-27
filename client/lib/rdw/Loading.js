@@ -10,32 +10,39 @@ if (!("ioPublish" in dojo.config)) {
 //A widget that shows a loading indicator whenever there is an outstanding
 //IO request.
 dojo.declare("rdw.Loading", [rdw._Base], {
-  templateString: '<div class="rdwLoading"></div>',
+  templateString: '<div class="rdwLoading">${i18n.loading}</div>',
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
     this.domNode.style.display = "none";
-    this.startHandle = dojo.subscribe("/dojo/io/start", this, "ioStart");
-    this.stopHandle = dojo.subscribe("/dojo/io/stop", this, "ioStop");
+    this.subscribe("/dojo/io/start", "ioStart");
+    this.subscribe("/dojo/io/send", "ioSend");
+    this.subscribe("/dojo/io/stop", "ioStop");
   },
 
   destroy: function() {
     //summary: dijit lifecycle method.
-    dojo.unsubscribe(this.startHandle);
-    dojo.unsubscribe(this.stopHandle);
+    //if (this.ioSendHandle) {
+    //  dojo.unsubscribe(this.ioSendHandle);
+    //}
     this.inherited("destroy", arguments);
+  },
+
+  ioSend: function() {
+    //summary: only listen to iosend in case this widget is instantiated after
+    //io calls start.
+    dojo.unsubscribe(this.ioSendHandle);
+    this.ioSendHandle = null;
+    this.ioStart();
   },
 
   ioStart: function() {
     //summary: triggered when there is at least one oustanding IO request.
-    this.domNode.innerHTML = this.i18n.loading;
-    this.domNode.style.display = "block";
+    this.domNode.style.display = "";
   },
 
   ioStop: function() {
     //summary: triggered when all outstanding IO reqeusts stop.
-    this.domNode.innerHTML = "";
     this.domNode.style.display = "none";
   }
-
 });

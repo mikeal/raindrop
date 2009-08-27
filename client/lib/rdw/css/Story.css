@@ -48,7 +48,6 @@
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
   display: inline-block;
-  display: -moz-inline-box;
 }
 
 .Story .tools .reply:hover {
@@ -64,7 +63,6 @@
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
   display: inline-block;
-  display: -moz-inline-box;
 }
 
 .Story .tools .moreMessages:hover {

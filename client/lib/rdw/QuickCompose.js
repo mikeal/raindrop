@@ -161,6 +161,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //summary: expand the text area from it's simple entry space
     dojo.addClass(this.domNode, "expanded");
 
+    //Clear hint message.
+    if (!this._hintCleared) {
+      this._hintCleared = true;
+      this.textAreaNode.value = "";
+    }
   },
 
   onSubmit: function(evt) {

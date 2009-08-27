@@ -232,7 +232,6 @@
 
 .QuickCompose div.input {
   display: inline-block;
-  display: -moz-inline-box;
 }
 
 .QuickCompose div.inputSubject {
@@ -241,7 +240,6 @@
 
 .QuickCompose .characterCount {
   display: inline-block;
-  display: -moz-inline-box;
   float: right;
   line-height: 25px;
 }
