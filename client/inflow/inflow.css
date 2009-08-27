@@ -12,9 +12,10 @@
 }
 
 body {
-  background-color: #888;
+  background-color: #333;
   margin: 0px 0px 0px 0px;
   background-image: url("i/bg.png");
+  background-attachment: fixed;
 }
 
 a img{
@@ -47,14 +48,13 @@ a img{
   padding-left: 12px;
   background-image: url("i/bg.png");
   background-color: #e6e6e6;
-  border-right: 1px solid #777;
 }
 
 #newcompose {
   float: right;
   height: 100px;
   width: 100px;
-  background-image: url("i/logo2.png");
+  background-image: url("i/logo.png");
   z-index: 1;
   margin-bottom: 20px;
   margin-right: -50px;
@@ -83,13 +83,22 @@ a img{
 
 #footer {
   display: block;
-  height: 100px;
   background-color: #333;
-  border-top: 1px solid #1a1a1a;
   padding: 12px;
   font-size: x-small;
   color: #FFF;
-  opacity: 0.8; 
   font-weight:bold;
+}
+
+#swipe {
+  position: fixed;
+  bottom: 150px;
+  left: 50%;
+  margin-left: -135px;
+  width: 270px;
+  height: 150px;
+  background-image: url("i/swipe_right.png");
+  z-index: 1;
+  display: none;
 }
 

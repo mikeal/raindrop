@@ -92,6 +92,7 @@
 .QuickCompose.expanded .compose > form div.to,
 .QuickCompose.expanded .compose > form div.subject {
   display: inherit;
+  height: 100%;
 }
 
 .QuickCompose.twitter.expanded .compose > form div.subject {
@@ -272,4 +273,13 @@
   vertical-align:middle;
   text-decoration: none;
   padding: 1px 6px 1px 6px;
+}
+
+.QuickCompose .status {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  font-size: x-small;
+  font-style: italic;
+  font-family: Georgia,times,serif;
 }
