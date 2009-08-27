@@ -1,7 +1,12 @@
 #! /usr/bin/env python
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
+
 import couchdb
+from couchdb.client import ResourceNotFound
 import base64
 import time
 import random
@@ -9,11 +14,12 @@ import string
 from pprint import pprint
 
 server = couchdb.Server('http://127.0.0.1:5984')
-if 'test' in server:
+try:
     del server['test']
+except ResourceNotFound:
+    pass
 
-server.create('test')
-db = server['test']
+db = server.create('test')
 
 def timeit(desc, func, *args):
     start = time.clock()
@@ -37,11 +43,12 @@ def load_docs(nraw=7000):
         doc.update(common)
         bulk_docs.append(doc)
         if len(bulk_docs) >= 1000 or (i==nraw-1):
-            ret = db.update(bulk_docs)
-            bulk_docs = []
-            for row in ret:
+            db.update(bulk_docs)
+            # db.update modified each doc in place
+            for doc in bulk_docs:
                 data = '\0' * random.randint(100, 50000)
-                db.put_attachment(row, data, 'raw')
+                db.put_attachment(doc, data, 'raw')
+            bulk_docs = []
             print "created", i+1, "raw docs with attachments"
 
     bulk_docs = []
