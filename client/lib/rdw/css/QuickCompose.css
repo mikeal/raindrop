@@ -198,8 +198,9 @@
   float:right;
 }
 
-.QuickCompose .dijitArrowButton {
-  padding:5px;
+.QuickCompose .dijitArrowButton,
+.QuickCompose .rdwDataSelector .dijitArrowButton {
+  padding: 5px 5px 7px 5px;
 }
 
 .QuickCompose .dijitButtonNode, 
