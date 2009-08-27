@@ -25,6 +25,24 @@
   background-position: left center;
 }
 
+.Organizer ol > li[type="group"] {
+  background-image: url("i/menu/icon_groupmessage.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+.Organizer ol > li[type="broadcast"] {
+  background-image: url("i/menu/icon_broadcasts.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+.Organizer ol > li[type="sent"] {
+  background-image: url("i/menu/icon_sent.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
 .Organizer ol > li[type="contacts"] {
   background-image: url("i/menu/icon_contacts.png");
   background-repeat: no-repeat;
@@ -78,6 +96,7 @@
   background-image: url("i/menu/icon_mail.png");
   background-repeat: no-repeat;
   background-position: left center;
+  outline: none;
 }
 
 .Organizer > .dijitTitlePane > .dijitTitlePaneTitle.dijitOpen .dijitArrowNode {

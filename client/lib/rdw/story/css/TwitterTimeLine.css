@@ -5,6 +5,12 @@
   float: left;
 }
 
+.rdwStoryTwitterTimeLine .Message .topActions {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
 .rdwStoryTwitterTimeLine .tweetList {
   background-color: #FFF;
   -moz-border-radius: 5px;

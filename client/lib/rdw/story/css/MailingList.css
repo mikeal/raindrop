@@ -9,6 +9,12 @@
   float:right;
 }  
 
+.rdwStoryMailingList .Message .topActions {
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
 .rdwStoryMailingList:hover {
   background-color: #FFB0B0;
 }
@@ -18,6 +24,9 @@
   display:block;
   font-weight:bold;
   padding-bottom:2px;
+  background-image: url("i/icon_mail.png");
+  background-repeat: no-repeat;
+  background-position: right center;
 }
 
 .rdwStoryMailingList .Message .message {
@@ -27,9 +36,15 @@
 
 .rdwStoryMailingList .Message .subject {
   font-weight:normal;
+  font-family: Georgia, times, serif;
+  font-style: italic;
 }
 
 .rdwStoryMailingList:hover .Message .subject {
   background-color: #FFB0B0;
+}
+
+.rdwStoryMailingList .Message .process {
+  display: none;
 }
 

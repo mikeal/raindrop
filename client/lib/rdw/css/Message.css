@@ -8,6 +8,7 @@
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
   margin-bottom: 8px;
+  outline: none;
 }
 
 .Message div.photo {
@@ -18,15 +19,22 @@
   height: 24px;
   vertical-align: top;
   background-color: transparent;
-  -moz-border-radius: 5px;
 }
 
 .Message[target="broadcast"] div.photo {
   background-image: url("i/icon_twitter_bird.png");
 }
 
+.Message[target="from"] div.photo {
+  background-image: url("i/icon_direct_message.png");
+}
+
 .Message[target="direct"] div.photo {
   background-image: url("i/icon_direct_message.png");
+}
+
+.Message[target="group"] div.photo {
+  background-image: url("i/icon_group_message.png");
 }
 
 .Message .topActions {
@@ -68,7 +76,20 @@
 }
 
 .Message .actions {
-  visibility: hidden;
+  text-align: right;
+  font-size: x-small;
+}
+
+.Message .actions a {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-family: Georgia, times, serif;
+  font-style: italic;
+  padding: 0 0 0 4px;
+}
+
+.Message .actions a:hover {
+  text-decoration: underline;
 }
 
 .Message .message {

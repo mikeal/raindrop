@@ -1,5 +1,5 @@
 .MailingListSummary {
-  padding: 6px;
+  padding: 0;
 }
 .MailingListSummary > .tools {
   /* Use float to align tools to the right-hand side of the summary pane.
@@ -42,4 +42,5 @@
 .MailingListSummary > .other > a {
   display: list-item;
   list-style: none;
+  color: #1a1a1a;
 }

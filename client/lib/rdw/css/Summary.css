@@ -1,6 +1,7 @@
 .rdwSummary {
   font-size: x-small;
-  color: #939598;
-  background-color: #F6F6F6;
-  margin: 12px;
+  color: #1a1a1a;
+  margin: 12px 0 12px 0;
+  min-height: 13px;
+  display: block;
 }

@@ -3,7 +3,7 @@
 .ContactList,
 .ContactList ul {
   list-style: none;
-  padding: 0 12px;
+  padding: 0;
   margin: 0;
   display: block;
 }
@@ -21,8 +21,8 @@
   background-color: #FFF;
   padding: 8px;
   -moz-border-radius: 5px;
-  width: 46.5%;
-  -moz-box-sizing: margin-box;
+  width: 49.25%;
+  -moz-box-sizing: border-box;
 }
 
 .ContactList .contact:nth-child(odd) {

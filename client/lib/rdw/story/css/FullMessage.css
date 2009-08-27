@@ -1,3 +1,25 @@
+.fullMessageTitle {
+  font-size: large;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
 .rdwStoryFullMessage.Message .actions {
   visibility: inherit;
 }  
+
+.Story:hover .rdwStoryFullMessage.Message {
+  background-color:#FFF;
+}
+
+.rdwStoryFullMessage .utc {
+  visibility: visible;
+}
+
+.Story:hover .rdwStoryFullMessage .utc {
+  visibility: visible;
+}
+
+.rdwStoryFullMessage.Message .message {
+  margin-left: 8px;
+}

@@ -19,6 +19,10 @@
   width: 100%;
 }
 
+.Story .QuickCompose .compose {
+  padding-top: 18px;
+}
+
 .QuickCompose .info {
   color: #666666;
   font-size: small;
@@ -81,6 +85,10 @@
   display: none;
 }
 
+.QuickCompose .compose > form div.subject {
+  width: 100%;
+}
+
 .QuickCompose.expanded .compose > form div.to,
 .QuickCompose.expanded .compose > form div.subject {
   display: inherit;
@@ -102,9 +110,10 @@
   font-size:small;
   text-align:left;
   text-transform:none;
-  width: 55px;
   display: inline-block;
   font-weight:bold;
+  line-height: 24px;
+  margin-right: 12px;
 }
 
 .QuickCompose .to input,
@@ -116,11 +125,7 @@
   padding: 5px;
   -moz-border-radius: 5px;
   border: none;
-}
-
-.Message:hover .QuickCompose .to input,
-.Message:hover .QuickCompose .subject input {
-  background-color: #FFF;
+  -moz-box-sizing:border-box;
 }
 
 .Story:hover .QuickCompose .to input,
@@ -131,12 +136,17 @@
 .QuickCompose textarea {
   border: none;
   width: 100%;
-  height: 24px;
+  height: 31px;
   -moz-border-radius: 5px;
   background-color: #E6E6E6;
   font-size: small;
   -moz-box-sizing:border-box;
   padding: 8px;
+  color: #888;
+}
+
+.Story:hover .QuickCompose textarea {
+  background-color: #FFF;
 }
 
 .QuickCompose.expanded textarea {
@@ -225,6 +235,10 @@
   display: -moz-inline-box;
 }
 
+.QuickCompose div.inputSubject {
+  display: block;
+}
+
 .QuickCompose .characterCount {
   display: inline-block;
   display: -moz-inline-box;
@@ -243,4 +257,20 @@
 
 .Story:hover .QuickCompose {
   background-color: #FFB0B0;
+}
+
+.QuickCompose .close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  -moz-border-radius: 5px;
+  background-color:#1A1A1A;
+  border:medium none;
+  color:#FFFFFF;
+  font-family: Georgia,times,serif;
+  font-size:small;
+  font-style:italic;
+  vertical-align:middle;
+  text-decoration: none;
+  padding: 1px 6px 1px 6px;
 }

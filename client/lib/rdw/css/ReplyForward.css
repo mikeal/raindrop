@@ -50,6 +50,15 @@
   font-size: small;
 }
 
+.rdwReplyForward .QuickCompose.email .compose > form div.subject {
+  display: inherit;
+}
+
+.rdwReplyForward .QuickCompose.email .compose {
+  padding-top: 0;
+}
+
+
 .rdwReplyForward .Message .QuickCompose form {
   display: block;
   margin: 0px;
