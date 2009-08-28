@@ -5,19 +5,19 @@
       <!--From: <span dojoAttachPoint="addressNode" class="medium you"></span>-->
     </div>
     <form dojoAttachEvent="onsubmit: onSubmit">
-      <div style="display:-moz-compact;width:100%;">
-      <div class="to" dojoAttachPoint="toNode">
-        <label for="subject">From:</label>
-        <span dojoAttachPoint="addressNode" class="medium you"></span>
-        </label>
-        <label style="margin-left: 10px;" for="to">To:</label>
-        <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
-        <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
-      </div>
-      <div class="subject" dojoAttachPoint="subjectNode">
-        <label for="subject">Subject:</label>
-        <div class="inputSubject"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
-      </div>
+      <div>
+        <div class="to" dojoAttachPoint="toNode">
+          <label for="subject">From:</label>
+          <span dojoAttachPoint="addressNode" class="medium you"></span>
+          </label>
+          <label style="margin-left: 10px;" for="to">To:</label>
+          <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
+          <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
+        </div>
+        <div class="subject" dojoAttachPoint="subjectNode">
+          <label for="subject">Subject:</label>
+          <div class="inputSubject"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
+        </div>
       </div>
       <textarea dojoAttachEvent="onfocus: onFocusTextArea, onclick: onFocusTextArea" dojoAttachPoint="textAreaNode">Type something...</textarea>
       <div class="actions" dojoAttachPoint="actionsNode"><input class="send" type="submit" value="${sendButtonText}"/></div>

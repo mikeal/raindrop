@@ -173,6 +173,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
 
     if (this.viewType != viewType) {
+      if (!this.switchNode) {
+        this.switchNode = dojo.create("div", {
+          "class": "rdwStoriesSwipe"
+        }, dojo.body());
+      }
+      this.switchNode.className = "rdwStoriesSwipe " + viewType;
+
       //Do the transition in a timeout, to give the DOM a chance to render,
       //so DOM rendering work is not happening while the transition is going.
       setTimeout(dojo.hitch(this, function() {
@@ -250,9 +257,16 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                     dojox.fx.smoothScroll({
                       win: dojo.global,
                       target: { x: 0, y: this.summaryScrollHeight},
-                      duration: 300
+                      duration: 300,
+                      onEnd: dojo.hitch(this, function() {
+                        //Hide the swipe indicator.
+                        this.switchNode.className = "rdwStoriesSwipe";
+                      })
                     }).play();
                   }), 100);
+                } else {
+                  //Hide the swipe indicator
+                  this.switchNode.className = "rdwStoriesSwipe";
                 }
                 
               }), 100);

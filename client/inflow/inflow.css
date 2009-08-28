@@ -89,16 +89,3 @@ a img{
   color: #FFF;
   font-weight:bold;
 }
-
-#swipe {
-  position: fixed;
-  bottom: 150px;
-  left: 50%;
-  margin-left: -135px;
-  width: 270px;
-  height: 150px;
-  background-image: url("i/swipe_right.png");
-  z-index: 1;
-  display: none;
-}
-
