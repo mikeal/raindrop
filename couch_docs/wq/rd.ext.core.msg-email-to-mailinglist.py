@@ -65,7 +65,7 @@ def _get_subscribed_identity(headers):
     if 'delivered_to' in headers:
         logger.debug("Delivered-To: %s", headers['delivered-to']);
         dt_identities = [i for i in email_identities
-                           if i[1] == headers['delivered_to'][0]]
+                           if i[1] == headers['delivered-to'][0]]
         if len(dt_identities) == 1:
             logger.debug("one Delivered-To identity: %s", dt_identities[0])
             return dt_identities[0]
