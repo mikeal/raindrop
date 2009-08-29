@@ -207,14 +207,14 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         dojo.store.put(
           message,
           dojo.hitch(this, function(message) {
-            this.updateStatus("Message sent.");
+            this.updateStatus("&#x2714; Message sent.");
           }),
           dojo.hitch(this, function(error) {
-            this.updateStatus("An error occurred");
+            this.updateStatus("&#10007; An error occurred");
           })
         );
       } else {
-        this.updateStatus("Unsupported message service");
+        this.updateStatus("&#10007; Unsupported message service");
       }
     }
     dojo.stopEvent(evt);
