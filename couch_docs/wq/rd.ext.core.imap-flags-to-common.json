@@ -1,0 +1,11 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.imap.mailbox-cache"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates 'rd.msg.unseen schemas",
+        "smart_updater": true
+    }
+  }
+}
