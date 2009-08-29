@@ -106,12 +106,14 @@ def _get_subscribed_identity(headers):
                     logger.debug("identity from Received header: %s", identity)
                     return identity
 
-    # We have multiple identities, and we haven't narrowed down the one
-    # subscribed to the list.  Pick the first one and hope for the best.
-    # XXX Is this what we should be doing?  Maybe we should pick none of them
-    # and make the front-end prompt the user for the address with which
-    # they are subscribed to the list.
-    return email_identities[0]
+    # We have multiple identities, and we haven't narrowed down the one that
+    # is subscribed to the list.  So we don't return anything, and we'll make
+    # the front-end figure out what to do in this situation. For example,
+    # it could prompt the user for the address with which they are subscribed
+    # to the list.  Alternately, it could send unsubscribe requests from all
+    # the user's identities.
+    logger.debug("couldn't determine subscribed identity")
+    return None
 
 def _update_list(list, name, message):
     # Update the list based on the information contained in the headers
@@ -219,9 +221,12 @@ def handler(doc):
         list = {
             'id': id,
             'status': 'subscribed',
-            'identity': _get_subscribed_identity(doc['headers']),
             'changed_timestamp': timestamp
         }
+
+        identity = _get_subscribed_identity(doc['headers'])
+        if identity:
+            list.identity = identity
 
         _update_list(list, name, doc)
 
