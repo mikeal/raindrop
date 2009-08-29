@@ -33,6 +33,8 @@ class Extension(object):
             self.source_schemas = [doc['source_schema']]
         self.handler = handler
         self.globs = globs
+        # Is this extension smart enough to update what it did in the past?
+        self.smart_updater = doc.get('smart_updater', False)
 
 @defer.inlineCallbacks
 def load_extensions(doc_model):
@@ -160,7 +162,7 @@ class Pipeline(object):
                                 reduce=False)
 
         to_del = [{'_id': row['id'], '_rev': row['value']['_rev']} for row in result['rows']]
-        logger.info('deleting %d messages', to_del)
+        logger.info('deleting %d messages', len(to_del))
         _ = yield self.doc_model.delete_documents(to_del)
 
         # and rebuild our views
@@ -300,6 +302,8 @@ class NewItemProcessor(object):
         todo_by_schema = {}
         for item in items:
             src = item['_id'], item['_rev']
+            if '_deleted' in item:
+                continue
             src_schema = item['schema_id']
             todo_by_schema.setdefault(src_schema, []).append(src)
         num = yield self.process_schema_items(todo_by_schema)
@@ -495,31 +499,35 @@ class MessageTransformerWQ(object):
         ext_id = self.ext.id
         force = self.options.get('force')
         for src_id, src_rev in sources:
-            # We need to find *all* items previously written by this extension
-            # so a 'reprocess' doesn't cause conflicts.
-            key = ['rd.core.content', 'ext_id-source', [ext_id, src_id]]
-            result = yield dm.open_view(key=key, reduce=False)
-            rows = result['rows']
-            if rows:
-                dirty = False
+            # some extensions declare themselves as 'smart updaters' - they
+            # are more efficiently able to deal with updating the records it
+            # write last time than our brute-force approach.
+            if not self.ext.smart_updater:
+                # We need to find *all* items previously written by this extension
+                # so a 'reprocess' doesn't cause conflicts.
+                key = ['rd.core.content', 'ext_id-source', [ext_id, src_id]]
+                result = yield dm.open_view(key=key, reduce=False)
+                rows = result['rows']
+                if rows:
+                    dirty = False
+                    for row in rows:
+                        if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
+                            dirty = True
+                            break
+                else:
+                    dirty = True
+                if not dirty and not force:
+                    logger.debug("document %r is up-to-date", src_id)
+                    continue # try the next one...
+                to_del = []
                 for row in rows:
-                    if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
-                        dirty = True
-                        break
-            else:
-                dirty = True
-            if not dirty and not force:
-                logger.debug("document %r is up-to-date", src_id)
-                continue # try the next one...
-            to_del = []
-            for row in rows:
-                if 'error' not in row:
-                    to_del.append({'_id' : row['id'],
-                                   '_rev' : row['value']['_rev']})
-            logger.debug("deleting %d docs previously created by %r",
-                         len(to_del), src_id)
-            if to_del:
-                _ = yield dm.delete_documents(to_del)
+                    if 'error' not in row:
+                        to_del.append({'_id' : row['id'],
+                                       '_rev' : row['value']['_rev']})
+                logger.debug("deleting %d docs previously created by %r",
+                             len(to_del), src_id)
+                if to_del:
+                    _ = yield dm.delete_documents(to_del)
 
             # Get the source-doc and process it.
             src_doc = (yield dm.open_documents_by_id([src_id]))[0]
