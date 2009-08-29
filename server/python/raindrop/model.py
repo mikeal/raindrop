@@ -312,7 +312,7 @@ class DocumentModel(object):
 
     @defer.inlineCallbacks
     def update_documents(self, docs):
-        logger.info("attempting to update documents - %r", docs)
+        logger.debug("attempting to update documents - %r", docs)
         results = yield self.db.updateDocuments(docs)
         errors = []
         for doc, dinfo in zip(docs, results):
@@ -332,7 +332,9 @@ class DocumentModel(object):
         ret = []
         for row in rows:
             if 'error' in row:
-                if row['error']=='missing':
+                # hrm - not clear is 'missing' is pre-0.10, or sometimes
+                # 'missing' and sometimes 'not_found'?
+                if row['error'] in ['missing', 'not_found']:
                     logger.debug("document %r does not exist", row['key'])
                     ret.append(None)
                 else:
@@ -397,7 +399,7 @@ class DocumentModel(object):
                 continue
 
             schema_id = si.get('schema_id')
-            assert schema_id  # schema-id not optional.
+            assert schema_id, si  # schema-id not optional.
             items = si['items'] # items not optional - but may be None
             if items is None:
                 # None presumably means an 'exists' schema ID - assert for
