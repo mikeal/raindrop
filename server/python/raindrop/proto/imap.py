@@ -31,6 +31,32 @@ def get_rdkey_for_email(msg_id):
     msg_id = msg_id[1:-1]
   return ("email", msg_id)
 
+# Finding an imap ENVELOPE structure with non-character data isn't good -
+# couch can't store it (except in attachments) and we can't do anything with
+# it anyway.  It *appears* from the IMAP spec that only 7bit data is valid,
+# so that is what we check
+def check_envelope_ok(env):
+  # either strings, or (nested) lists of strings.
+  def flatten(what):
+    ret = []
+    for item in what:
+      if item is None:
+        pass
+      elif isinstance(what, str):
+        ret.append(what)
+      elif isinstance(what, list):
+        ret.extend(flatten(item))
+      else:
+        raise TypeError, what
+    return ret
+
+  for item in flatten(env):
+    try:
+      item.encode('ascii')
+    except UnicodeError:
+      return False
+  return True
+
 class ImapClient(imap4.IMAP4Client):
   def _defaultHandler(self, tag, rest):
     # XXX - worm around a bug related to MismatchedQuoting exceptions.
@@ -234,8 +260,12 @@ class ImapProvider(object):
     caches = {}
     for row in results['rows']:
       doc = row['doc']
-      assert doc['rd_schema_id'] == 'rd.imap.mailbox-cache' ## fix me above
       folder_name = doc['rd_key'][1][1]
+      if doc['rd_schema_id'] == 'rd.core.error':
+        # ack - failed last time for some reason - skip it.
+        continue
+      assert doc['rd_schema_id'] in ['rd.imap.mailbox-cache',
+                                     'rd.core.error'], doc ## fix me above
       caches[folder_name] = doc
     logger.debug('opened cache documents for %d folders', len(caches))
 
@@ -257,25 +287,26 @@ class ImapProvider(object):
         logger.debug("info for %r is %r", name, info)
   
         cache_doc = caches.get(name, {})
-        update_doc = yield self._syncFolderInfo(conn, name, info, cache_doc)
+        dirty = yield self._syncFolderCache(conn, name, info, cache_doc)
       except imap4.IMAP4Exception, exc:
         logger.error("Failed to synch folder %r: %s", name, exc)
         continue
 
-      if update_doc is not None:
-        items = {'uidvalidity': update_doc['uidvalidity'],
-                 'infos': update_doc['infos']
+      if dirty:
+        logger.debug("need to update folder cache for %r", name)
+        items = {'uidvalidity': cache_doc['uidvalidity'],
+                 'infos': cache_doc['infos']
                  }
         new_item = {'rd_key' : ['imap-mailbox', [acct_id, name]],
                     'schema_id': 'rd.imap.mailbox-cache',
                     'ext_id': self.rd_extension_id,
                     'items': items,
         }
-        if '_id' in update_doc:
-          new_item['_id'] = update_doc['_id']
-          new_item['_rev'] = update_doc['_rev']
+        if '_id' in cache_doc:
+          new_item['_id'] = cache_doc['_id']
+          new_item['_rev'] = cache_doc['_rev']
         _ = yield self.doc_model.create_schema_items([new_item])
-        sync_items = update_doc['infos']
+        sync_items = cache_doc['infos']
       else:
         sync_items = cache_doc.get('infos')
       sync_by_name[(delim, name)] = sync_items[:]
@@ -313,16 +344,21 @@ class ImapProvider(object):
       _ = yield self._updateLocations(location, items)
 
   @defer.inlineCallbacks
-  def _syncFolderInfo(self, conn, folder_path, server_info, cache_doc):
+  def _syncFolderCache(self, conn, folder_path, server_info, cache_doc):
+    # Queries the server for the current state of a folder.  Returns True if
+    # the cache document was updated so needs to be written back to couch.
     suidv = int(server_info['UIDVALIDITY'])
+    dirty = False
     if suidv != cache_doc.get('uidvalidity'):
-      infos = []
+      infos = cache_doc['infos'] = []
       cache_doc['uidvalidity'] = suidv
-      force_return = True
+      dirty = True
     else:
-      force_return = False
-      infos = cache_doc.get('infos', [])
-    cache_doc['infos'] = infos
+      try:
+        infos = cache_doc['infos']
+      except KeyError:
+        infos = cache_doc['infos'] = []
+        dirty = True
 
     if infos:
       cached_uid_next = int(infos[-1]['UID']) + 1
@@ -330,37 +366,82 @@ class ImapProvider(object):
       cached_uid_next = 1
 
     suidn = int(server_info.get('UIDNEXT', -1))
-    if suidn == -1:
-      logger.warn("This server doesn't provide UIDNEXT - it will take longer to synch...")
-    elif suidn <= cached_uid_next:
-      logger.info('folder %r is up-to-date', folder_path)
-      if force_return:
-        defer.returnValue(cache_doc)
-      defer.returnValue(None)
 
-    # Get new messages.
-    logger.debug('requesting info for items in %r', folder_path)
     try:
-      results = yield conn.fetchAll("%d:*" % (cached_uid_next,), True)
+      if suidn == -1 or suidn > cached_uid_next:
+        if suidn == -1:
+          logger.warn("This server doesn't provide UIDNEXT - it will take longer to synch...")
+        logger.debug('requesting info for items in %r from uid %r', folder_path,
+                     cached_uid_next)
+        new_infos = yield conn.fetchAll("%d:*" % (cached_uid_next,), True)
+      else:
+        logger.info('folder %r has no new messages', folder_path)
+        new_infos = {}
+      # Get flags for all 'old' messages.
+      if cached_uid_next > 1:
+        updated_flags = yield conn.fetchFlags("1:%d" % (cached_uid_next-1,), True)
+      else:
+        updated_flags = {}
     except imap4.MismatchedQuoting, exc:
-      log_exception("failed to fetchAll folder %r", folder_path)
-      results = []
-    logger.info("folder %r has %d new items", folder_path, len(results))
-    if not results:
-      defer.returnValue(None)
+      log_exception("failed to fetchAll/fetchFlags folder %r", folder_path)
+      new_infos = {}
+      updated_flags = {}
+    logger.info("folder %r has %d new items, %d flags for old items",
+                folder_path, len(new_infos), len(updated_flags))
 
-    # Turn the dict back into the list it started as...
-    for seq in sorted(int(k) for k in results):
-      info = results[seq]
-      # See above - asking for '900:*' in gmail may return a single item
+    # Turn the dicts back into the sorted-by-UID list it started as, nuking
+    # old messages
+    infos_ndx = 0
+    for seq in sorted(int(k) for k in updated_flags):
+      info = updated_flags[seq]
+      this_uid = int(info['UID'])
+      # remove items which no longer exist.
+      while int(infos[infos_ndx]['UID']) < this_uid:
+        old = infos.pop(infos_ndx)
+        logger.debug('detected a removed imap item %r', old)
+        dirty = True
+      if int(infos[infos_ndx]['UID']) == this_uid:
+        old_flags = infos[infos_ndx].get('FLAGS')
+        new_flags = info["FLAGS"]
+        if old_flags != new_flags:
+          dirty = True
+          infos[infos_ndx]['FLAGS'] = new_flags
+          logger.debug('new flags for UID %r - were %r, now %r',
+                       this_uid, old_flags, new_flags)
+        infos_ndx += 1
+        # we might get more than we asked for - that's OK - we should get
+        # them in 'new_infos' too.
+        if infos_ndx >= len(infos):
+          break
+      else:
+        # It would be possible to reinsert here (although we don't have
+        # the envelope etc!  How does this happen?
+        logger.info("message %r never seen before - maybe resurrected?", this_uid)
+        continue
+    # Records we had in the past now have accurate flags; next up is to append
+    # new message info we just received...
+    for seq in sorted(int(k) for k in new_infos):
+      info = new_infos[seq]
+      # Sadly, asking for '900:*' in gmail may return a single item
       # with UID of 899 - and that is already in our list.  So only append
       # new items when they are > then what we know about.
       this_uid = int(info['UID'])
       if this_uid < cached_uid_next:
         continue
+      # Some items from some IMAP servers don't have an ENVELOPE record, and
+      # lots of later things get upset at that.  It isn't clear what such
+      # items are yet...
+      if 'ENVELOPE' not in info:
+        logger.debug('imap item has no envelope - skipping: %r', info)
+        continue
+      if not check_envelope_ok(info['ENVELOPE']):
+        logger.debug('imap info has invalid envelope - skipping: %r', info)
+        continue
+      # it is good - keep it.
       cached_uid_next = this_uid + 1
       infos.append(info)
-    defer.returnValue(cache_doc)
+      dirty = True
+    defer.returnValue(dirty)
 
   @defer.inlineCallbacks
   def _updateLocations(self, folder_path, results):
@@ -406,7 +487,7 @@ class ImapProvider(object):
       id, rev = couch[rdkey]
       to_up.append({'_id': id,
                     '_rev': rev,
-                    'deleted': True,
+                    '_deleted': True,
                   })
       seen.add(rdkey)
     for rdkey in to_add:
@@ -475,7 +556,7 @@ class ImapProvider(object):
     result = yield self.doc_model.open_view(keys=keys, reduce=False)
     seen = set([tuple(r['value']['rd_key']) for r in result['rows']])
     # convert each key elt to a list like we get from the views.
-    remaining = set(msg_infos.iterkeys())-set(seen)
+    remaining = set(msg_infos)-set(seen)
 
     logger.debug("batch for folder %s has %d messages, %d new", folder_path,
                 len(msg_infos), len(remaining))
@@ -531,7 +612,6 @@ class ImapProvider(object):
                       'items': items})
       num += len(infos)
       self.write_queue.put(infos)
-      #_ = yield self.doc_model.create_schema_items(infos)
     defer.returnValue(num)
 
   @defer.inlineCallbacks
@@ -571,7 +651,7 @@ class ImapProvider(object):
         # So - conflicts are a fact of life in this 'queue' model: we check
         # if a record exists and it doesn't, so we queue the write.  By the
         # time the write gets processed, it may have been written by a
-        # different exception...
+        # different extension...
         nc = 0
         for info in exc.infos:
           if info['error']=='conflict':
