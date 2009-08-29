@@ -40,7 +40,7 @@ def _get_subscribed_identity(headers):
     # to the mailing list that sent a message with the given headers.
 
     identities = get_my_identities()
-    logger.debug("identities: %s", identities);
+    logger.debug("getting subscribed identity from options: %s", identities);
 
     email_identities = [i for i in identities if i[0] == 'email'];
 
@@ -58,19 +58,53 @@ def _get_subscribed_identity(headers):
 
     logger.debug("multiple email identities: %s", email_identities);
 
+    # Index identities by email address to make it easier to find the right one
+    # based on information in the message headers.
+    email_identities_by_address = {}
+    for i in email_identities:
+        email_identities_by_address[i[1]] = i
+
     # If the user has multiple email identities, try to narrow down the one
     # subscribed to the list using the Delivered-To header, which lists will
     # sometimes set to the subscribed email address.
     # TODO: figure out what to do if there are multiple Delivered-To headers.
     if 'delivered_to' in headers:
-        logger.debug("Delivered-To: %s", headers['delivered-to']);
-        dt_identities = [i for i in email_identities
-                           if i[1] == headers['delivered-to'][0]]
-        if len(dt_identities) == 1:
-            logger.debug("one Delivered-To identity: %s", dt_identities[0])
-            return dt_identities[0]
+        logger.debug("Delivered-To headers: %s", headers['delivered-to']);
+        if headers['delivered-to'][0] in email_identities_by_address:
+            identity = email_identities_by_address[headers['delivered-to'][0]]
+            logger.debug("identity from Delivered-To header: %s", identity)
+            return identity
 
-    # TODO: try to use the Received headers to narrow down the identity.
+    # Try to use the Received headers to narrow down the identity.
+    #
+    # We only care about Received headers that contain "for <email address>"
+    # in them.  Of those, it seems like the one(s) at the end of the headers
+    # contain the address of the list itself (f.e. example@googlegroups.com),
+    # while those at the beginning of the headers contain the address to which
+    # the message was ultimately delivered (f.e. jonathan.smith@example.com),
+    # which might not be the same as the one by which the user is subscribed,
+    # if the user is subscribed via an alias (f.e. john@example.com).
+    #
+    # But the alias, if any, tends to be found somewhere in the middle of
+    # the headers, between the list address and the ultimate delivery address,
+    # so to maximize our chances of getting the right identity, we start from
+    # the end of the headers and work our way forward until we find an address
+    # in the user's identities.
+    if 'received' in headers:
+        logger.debug("Received headers: %s", headers['received']);
+        # Copy the list so we don't mess up the original when we reverse it.
+        received = headers['received'][:]
+        received.reverse()
+        for r in received:
+            # Regex adapted from http://www.regular-expressions.info/email.html.
+            match = re.search(r"for <([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4})>",
+                              r, re.I)
+            if match:
+                logger.debug("address from Received header: %s", match.group(1))
+                if match.group(1) in email_identities_by_address:
+                    identity = email_identities_by_address[match.group(1)]
+                    logger.debug("identity from Received header: %s", identity)
+                    return identity
 
     # We have multiple identities, and we haven't narrowed down the one
     # subscribed to the list.  Pick the first one and hope for the best.
