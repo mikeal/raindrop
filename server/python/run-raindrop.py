@@ -204,7 +204,7 @@ def delete_docs(result, parser, options):
         docs = []
         for id, rev in to_del:
             docs.append({'_id': id, '_rev': rev})
-        return model.delete_documents(docs)
+        return model.get_doc_model().delete_documents(docs)
 
     def _got_docs(result, dt):
         to_del = [(row['id'], row['value']['_rev']) for row in result['rows']]
