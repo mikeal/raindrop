@@ -50,6 +50,15 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rdw.story.TwitterTimeLine"
   ],
 
+  //The key for navigation.
+  navKeys: {
+    conversation: dojo.keys.RIGHT_ARROW,
+    summary: dojo.keys.LEFT_ARROW,
+    up: dojo.keys.UP_ARROW,
+    down: dojo.keys.DOWN_ARROW,
+    tab: dojo.keys.TAB
+  },
+
   //The keycode to use for actions that should expand to a full conversation
   //view for a message.
   convoKeyCode: dojo.keys.RIGHT_ARROW,
@@ -58,10 +67,23 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //view for a message.
   summaryKeyCode: dojo.keys.LEFT_ARROW,
 
-  templateString: '<div class="rdwStories" dojoAttachEvent="onkeypress: onKeyPress">'
+  templateString: '<div class="rdwStories" dojoAttachEvent="onclick: onClick, onkeypress: onKeyPress">'
                 + '  <ol dojoAttachPoint="listNode"></ol>'
                 + '  <ol dojoAttachPoint="convoNode"></ol>'
                 + '</div>',
+
+  postMixInProperties: function() {
+    //summary: dijit lifecycle method before template is generated.
+    this.inherited("postMixInProperties", arguments);
+
+    //Create a reverse up lookup for the nav keys.
+    this.navCodes = {};
+    for (var prop in this.navKeys) {
+      if (!(prop in this.navCodes)) {
+        this.navCodes[this.navKeys[prop] + ""] = prop;
+      }
+    }
+  },
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
@@ -75,25 +97,133 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  onClick: function(/*Event*/evt) {
+    //summary: handles click events, tries to select the first selectable item
+    //relative to the click.
+    var target = evt.target;
+    do {
+      if (target == this.domNode) {
+        break;
+      }
+      if (target.tabIndex > -1) {
+        this._setActiveNode(target);
+        break;
+      }
+    } while ((target = target.parentNode));
+  },
+
   onKeyPress: function(/*Event*/evt) {
     //summary: handles key presses for navigation. If the key press is
     //for something that should show a full conversation view then trigger
     //it.
-    if (evt.keyCode == this.convoKeyCode) {
-      //Get the active, focused element and see if it is widget with a message
-      var id = dojo.doc.activeElement.id;
-      var widget = id && dijit.byId(id);
-      var messageBag = widget && widget.messageBag;
-      var convoId = messageBag
-                    && messageBag["rd.msg.conversation"]
-                    && messageBag["rd.msg.conversation"].conversation_id;
-      if (convoId) {
-        rd.setFragId("rd:conversation:" + convoId);
+    var key = this.navCodes[evt.keyCode + ""];
+    if (key) {
+      if (key == "summary" && this.viewType != "summary") {
+        //Store that the state is going back, so do do not
+        //fetch new data for the old state.
+        this._isBack = true;
+
+        //Just go back in the browser history.
+        dojo.global.history.back();
+      } else {
+        //Get the active, focused element and see if it is widget with a message
+        var id = dojo.doc.activeElement.id;
+        var widget = id && dijit.byId(id);
+        var messageBag = widget && widget.messageBag;
+
+        if (key == "conversation" && this.viewType != "conversation") {
+          var convoId = messageBag
+                        && messageBag["rd.msg.conversation"]
+                        && messageBag["rd.msg.conversation"].conversation_id;
+          if (convoId) {
+            rd.setFragId("rd:conversation:" + convoId);
+          }
+        } else {
+          var found = widget.domNode;
+          //It is an up/down action. Show selection of the right element.
+          if (key == "up" || key == "down") {
+            //Need to select the next message widget. If it was a tab, it is
+            //already selected.
+            found = null;
+            var method = key == "up" ? "previousSibling" : "nextSibling";
+            var found = this._nextFocusNode(widget.domNode, method);
+
+            //If did not find a match then break out.
+            if (!found) {
+              return;
+            }
+          }
+
+          this._setActiveNode(found);
+        }
       }
-    } else if (evt.keyCode == this.summaryKeyCode && this.viewType == "conversation") {
-      //Just go back in the browser history.
-      dojo.global.history.back();
     }
+  },
+
+  _setActiveNode: function(/*DOMNode*/domNode, /*Boolean*/simulateEvent) {
+    //summary: sets the active node in the stories area.
+    if (this.activeNode) {
+      dojo.removeClass(this.activeNode, "active");
+    }
+    if (this.activeParentNode) {
+      dojo.removeClass(this.activeParentNode, "active");
+    }
+
+    domNode.focus();
+    this.activeNode = domNode;
+
+    //TODO: this did not work. The problem is after the animation to a
+    //conversation, the Stories widget is not receiving keyboard events.
+    //So maybe a simulated event would not be needed if we could get
+    //keyboard events to happen inside the Stories widget.
+    /*
+    //Set the node as the focused element by simulating a click event.
+    if (simulateEvent) {
+      //use a slight delay to allow animations and the DOM to settle down.
+      setTimeout(function() {
+        var evt = document.createEvent("UIEvents");
+        evt.initUIEvent("click", true, true, dojo.global, 1);
+        domNode.dispatchEvent(evt);
+      }, 100);
+    }
+    */
+
+    if (this.viewType == "summary") {
+      this.activeParentNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
+      dojo.addClass(this.activeParentNode, "active");
+    } else {
+      dojo.addClass(this.activeNode, "active");
+    }
+    dijit.scrollIntoView(this.activeNode);
+  },
+
+  _nextFocusNode: function(/*DOMNode*/domNode, /*String*/method) {
+    //Finds the next focusable widget in the stories hierarchy of nodes.
+
+    //Try node's siblings first.
+    var test = domNode;
+    while (test && (test = test[method])) {
+      if (test && test.tabIndex > -1) {
+        return test;
+      }
+    }
+
+    //No luck with siblings, try up a level at the next Story widget.
+    if (domNode) {
+      //Go up to hopefully find the story object.
+      var storyWidget = dijit.getEnclosingWidget(domNode.parentNode);
+      if (storyWidget) {
+        domNode = storyWidget.domNode[method];
+        var tabbys = domNode && dojo.query('[tabindex="0"]', domNode);
+        if (tabbys && tabbys.length) {
+          domNode = tabbys[method == "nextSibling" ? 0 : tabbys.length - 1];
+          if (domNode && domNode.tabIndex > -1 ) {
+            return domNode;
+          }
+        }
+      }
+    }
+    return null;
   },
 
   _sub: function(/*String*/topicName, /*String*/funcName) {
@@ -106,7 +236,19 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           args: arguments
         };
       }
-      this[funcName].apply(this, arguments);
+
+      //If this is a back request and there are conversations to show,
+      //just do the transition back.
+      if (this._isBack && this.conversations && this.conversations.length) {
+        //Just transition back to summary view, do not fetch new data.
+        this.transition("summary");
+      } else {
+        //Clear out info we were saving for back.
+        this.summaryActiveNode = null;
+        this.summaryScrollHeight = 0;
+        this[funcName].apply(this, arguments);
+      }
+      this._isBack = false;
     }));
   },
 
@@ -166,8 +308,15 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       dijit.scrollIntoView(this.domNode);
     }
 
+    //If transitioning away from summary, hold on to old activeNode
+    if (viewType != "summary") {
+      this.summaryActiveNode = this.activeNode;
+    }
+
     //Skip the animation on the first display of this widget.
     if (!this._postRender) {
+      //Set the view type so next calls know the type.
+      this.viewType = viewType;
       this._postRender = true;
       return;
     }
@@ -261,6 +410,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                       onEnd: dojo.hitch(this, function() {
                         //Hide the swipe indicator.
                         this.switchNode.className = "rdwStoriesSwipe";
+                        this.onTransitionEnd();
                       })
                     }).play();
                   }), 100);
@@ -288,9 +438,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
               win: dojo.global,
               target: { x: 0, y: scrollHeight},
               duration: 300,
-              onEnd: function (){
+              onEnd: dojo.hitch(this, function (){
                 dojox.fx.smoothScroll(scrollOverArgs).play();
-              }
+                this.onTransitionEnd();
+              })
             }).play();
 
           } else {
@@ -303,11 +454,38 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  onTransitionEnd: function() {
+    //summary: called at the end of a summary transition.
+    if (this.viewType == "summary") {
+      if (this.summaryActiveNode) {
+        this._setActiveNode(this.summaryActiveNode, true);
+      }
+    } else {
+      //Select the first focusable node in the conversation.
+      var tabbys = dojo.query('[tabindex="0"]', this.convoWidget.domNode);
+      if (tabbys.length) {
+        this._setActiveNode(tabbys[0], true);
+      }
+    }
+  },
+
   destroy: function() {
-    //summary: dijit lifecycle method.
+    //summary: dijit lifecycle method. Be sure to get rid
+    //of anything we do not want if this widget is re-instantiated,
+    //like for on-the-fly extension purposes.
     if (this.convoWidget) {
       this.convoWidget.destroy();
     }
+    if (this.activeNode) {
+      delete this.activeNode;
+    }
+    if (this.activeParentNode) {
+      delete this.activeParentNode;
+    }
+    if (this.summaryActiveNode) {
+      delete this.summaryActiveNode;
+    }
+
     this.inherited("destroy", arguments);
   },
 

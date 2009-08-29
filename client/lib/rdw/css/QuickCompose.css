@@ -255,7 +255,8 @@
   -moz-border-radius: 5px;
 }
 
-.Story:hover .QuickCompose {
+.Story.active .QuickCompose,
+.Story .active .QuickCompose {
   background-color: #FFB0B0;
 }
 
