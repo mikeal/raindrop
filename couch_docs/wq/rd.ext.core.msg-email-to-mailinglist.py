@@ -226,7 +226,7 @@ def handler(doc):
 
         identity = _get_subscribed_identity(doc['headers'])
         if identity:
-            list.identity = identity
+            list['identity'] = identity
 
         _update_list(list, name, doc)
 
