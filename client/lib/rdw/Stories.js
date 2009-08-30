@@ -5,6 +5,7 @@ dojo.require("rdw.Story");
 dojo.require("rdw.story.FullStory");
 dojo.require("rd.api");
 
+dojo.require("dojo.fx");
 dojo.require("dojox.fx.scroll");
 
 dojo.declare("rdw.Stories", [rdw._Base], {
@@ -160,7 +161,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
-  _setActiveNode: function(/*DOMNode*/domNode, /*Boolean*/simulateEvent) {
+  _setActiveNode: function(/*DOMNode*/domNode) {
     //summary: sets the active node in the stories area.
     if (this.activeNode) {
       dojo.removeClass(this.activeNode, "active");
@@ -172,28 +173,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     domNode.focus();
     this.activeNode = domNode;
 
-    //TODO: this did not work. The problem is after the animation to a
-    //conversation, the Stories widget is not receiving keyboard events.
-    //So maybe a simulated event would not be needed if we could get
-    //keyboard events to happen inside the Stories widget.
-    /*
-    //Set the node as the focused element by simulating a click event.
-    if (simulateEvent) {
-      //use a slight delay to allow animations and the DOM to settle down.
-      setTimeout(function() {
-        var evt = document.createEvent("UIEvents");
-        evt.initUIEvent("click", true, true, dojo.global, 1);
-        domNode.dispatchEvent(evt);
-      }, 100);
-    }
-    */
-
     if (this.viewType == "summary") {
       this.activeParentNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
       dojo.addClass(this.activeParentNode, "active");
     } else {
       dojo.addClass(this.activeNode, "active");
     }
+
     dijit.scrollIntoView(this.activeNode);
   },
 
@@ -305,7 +291,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //If showing another summary type, then clear out the saved summary
     if (!this.viewType || viewType == this.viewType && viewType == "summary") {
       this.summaryScrollHeight = 0;
-      dijit.scrollIntoView(this.domNode);
+      window.scrollTo(0, 0);
     }
 
     //If transitioning away from summary, hold on to old activeNode
@@ -370,62 +356,14 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           }
   
           //Create the args for the scroll over effect.
-          var scrollOverArgs = {
+          var scrollHorizAnim = dojox.fx.smoothScroll({
             win: this.domNode,
             target: { x: x, y: 0},
-            duration: 300,
-            onEnd: dojo.hitch(this, function() {
-              //Use another timeout, just for good measure,
-              //let DOM settle down.
-              setTimeout(dojo.hitch(this, function() {
-                //Only show the correct node.
-                if (viewType == "conversation") {
-                  this.listNode.style.display = "none";
-                  this.convoNode.style.display = "";       
-                } else {
-                  this.listNode.style.display = "";
-                  this.convoNode.style.display = "none";       
-                }
-      
-                //Pull the nodes out scrollNode          
-                this.domNode.removeChild(this._scrollNode);
-                this.domNode.appendChild(this.listNode);
-                this.domNode.appendChild(this.convoNode);
-      
-                //Remove fixed widths on the nodes.
-                this.domNode.style.width = oldDomNodeWidth;
-                this.listNode.style.width = oldListNodeWidth;
-                this.convoNode.style.width = oldConvoNodeWidth;
-                
-                //Reset scroll.
-                this.domNode.scrollLeft = 0;
-                
-                //If going back to summary view, then scroll down
-                if (viewType == "summary") {
-                  setTimeout(dojo.hitch(this, function() {
-                    dojox.fx.smoothScroll({
-                      win: dojo.global,
-                      target: { x: 0, y: this.summaryScrollHeight},
-                      duration: 300,
-                      onEnd: dojo.hitch(this, function() {
-                        //Hide the swipe indicator.
-                        this.switchNode.className = "rdwStoriesSwipe";
-                        this.onTransitionEnd();
-                      })
-                    }).play();
-                  }), 100);
-                } else {
-                  //Hide the swipe indicator
-                  this.switchNode.className = "rdwStoriesSwipe";
-                }
-                
-              }), 100);
-            })
-          };
+            easing: this.animEasing,
+            duration: 600
+          });
   
           if (viewType == "conversation") {
-            //Going to conversation. scroll vertical then horizontal.
-
             //Pick a vertical position that is at the top of the Stories widget,
             //if current scroll position is less.
             var scrollHeight = dojo.global.scrollY;
@@ -434,37 +372,92 @@ dojo.declare("rdw.Stories", [rdw._Base], {
               scrollHeight = position;
             }
 
-            dojox.fx.smoothScroll({
+            //Set up vertical animation.
+            var scrollVertAnim = dojox.fx.smoothScroll({
               win: dojo.global,
               target: { x: 0, y: scrollHeight},
-              duration: 300,
-              onEnd: dojo.hitch(this, function (){
-                dojox.fx.smoothScroll(scrollOverArgs).play();
-                this.onTransitionEnd();
-              })
-            }).play();
+              easing: this.animEasing,
+              duration: 600
+            });
 
+            //Going to conversation. scroll vertical then horizontal.
+            var chain = dojo.fx.chain([
+              scrollVertAnim,
+              scrollHorizAnim
+            ]);
           } else {
+            //Set up vertical animation.
+            var scrollVertAnim = dojox.fx.smoothScroll({
+              win: dojo.global,
+              target: { x: 0, y: this.summaryScrollHeight},
+              easing: this.animEasing,
+              duration: 600
+            });
             //Going back to summary view. Scroll horizontal, then vertical
-            dojox.fx.smoothScroll(scrollOverArgs).play();
+            var chain = dojo.fx.chain([
+              scrollHorizAnim,
+              scrollVertAnim
+            ]);
           }
 
+          //Bind to the end of the fx chain, then play the chain.
+          dojo.connect(chain, "onEnd", dojo.hitch(this, function() {
+            //Reset the DOM nodes after the animation is done.
+            //Only show the correct node.
+            if (viewType == "conversation") {
+              this.listNode.style.display = "none";
+              this.convoNode.style.display = "";       
+            } else {
+              this.listNode.style.display = "";
+              this.convoNode.style.display = "none";       
+            }
+  
+            //Pull the nodes out scrollNode          
+            this.domNode.removeChild(this._scrollNode);
+            this.domNode.appendChild(this.listNode);
+            this.domNode.appendChild(this.convoNode);
+  
+            //Remove fixed widths on the nodes.
+            this.domNode.style.width = oldDomNodeWidth;
+            this.listNode.style.width = oldListNodeWidth;
+            this.convoNode.style.width = oldConvoNodeWidth;
+            
+            //Reset scroll.
+            this.domNode.scrollLeft = 0;
+
+            this.onTransitionEnd();
+          }));
+          chain.play();
+
+          //Set current state of the viewType. Do it here and not in
+          //onTransitionEnd in case user causes an action before the
+          //animation is done.
           this.viewType = viewType;
       }), 100);
     }
   },
 
+  animEasing: function(/* Decimal? */n){
+    //summary: easing function for animations. This is a copy of
+    //dojo.fx.easing.expoOut
+    return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+  },
+        
   onTransitionEnd: function() {
     //summary: called at the end of a summary transition.
+
+    //Hide the swipe indicator
+    this.switchNode.className = "rdwStoriesSwipe";
+
     if (this.viewType == "summary") {
       if (this.summaryActiveNode) {
-        this._setActiveNode(this.summaryActiveNode, true);
+        this._setActiveNode(this.summaryActiveNode);
       }
     } else {
       //Select the first focusable node in the conversation.
       var tabbys = dojo.query('[tabindex="0"]', this.convoWidget.domNode);
       if (tabbys.length) {
-        this._setActiveNode(tabbys[0], true);
+        this._setActiveNode(tabbys[0]);
       }
     }
   },
