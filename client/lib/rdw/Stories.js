@@ -20,10 +20,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //for the messages that match the criteria.
   messageLimit: 30,
 
-  //The number of "pages" (skips) to do for the conversations calls
-  //for the home view.
-  homeSkipLimit: 5,
-
   //The widget to use to show a full story.
   fullStoryCtorName: "rdw.story.FullStory",
 
@@ -499,8 +495,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //reset stored state.
     this.conversations = [];
     this._groups = [];
-    this._skip = 0;
-    this._displayCount = 0;
 
     //Be sure homeGroups are loaded.
     if (!this.homeGroupModules) {
@@ -525,8 +519,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   _renderHome: function() {
     //summary: does the actual display of the home view.
-    rd.conversation.latest(this.messageLimit, (this._skip * this.messageLimit), dojo.hitch(this, function(conversations) {
-      //The home view groups messages by type. So, for each message in each conversation,
+    rd.conversation.home(this.messageLimit, dojo.hitch(this, function(conversations) {
+       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
       if (conversations && conversations.length) {
         this.conversations = this.conversations.concat(conversations);
@@ -547,10 +541,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                 widget._isGroup = true;
                 this._groups.push(widget);
                 this.addSupporting(widget);
-                this._displayCount += 1;
               } else {
                 leftOver.push(msgBag);
-                this._displayCount += 1;
               }
             }
           }
@@ -565,29 +557,20 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         }
       }
 
-      if (conversations && conversations.length && this._displayCount <= this.messageLimit && this._skip < this.homeSkipLimit) {
-        //Keep fetching more messages until we get a good list of things to
-        //show since grouping can eat up a lot of messages. Limit it by number
-        //of "pages" (skips) we do in the result so we don't get infinite recursion.
-        //Also stop if the last call did not get any more conversations.
-        this._skip += 1;
-        this._renderHome();
-      } else {
-        this._sortGroups();
+      this._sortGroups();
 
-        //Add all the widgets to the DOM and ask them to display.
-        var frag = dojo.doc.createDocumentFragment();
-        for (var i = 0, group; group = this._groups[i]; i++) {
-          group.placeAt(frag);
-          group.display();
-        }
-  
-        //Inject nodes all at once for best performance.
-        this.listNode.appendChild(frag);
-        
-        this.transition("summary");
+      //Add all the widgets to the DOM and ask them to display.
+      var frag = dojo.doc.createDocumentFragment();
+      for (var i = 0, group; group = this._groups[i]; i++) {
+        group.placeAt(frag);
+        group.display();
       }
-    }));   
+
+      //Inject nodes all at once for best performance.
+      this.listNode.appendChild(frag);
+
+      this.transition("summary");
+    }));
   },
 
   createHomeStory: function(/*Array*/msgs) {
