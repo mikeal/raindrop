@@ -1,0 +1,64 @@
+#wrap {
+  padding: 1em;
+}
+
+#settings {
+  margin: 0;
+  padding: 0;
+}
+
+/*** ACCOUNT ***/
+
+.account {
+  margin: 12px 0;
+  padding: 6px;
+  display: list-item;
+  list-style: none;
+  max-width: 400px;
+  border: 2px solid #fff;
+  -moz-border-radius: 6px;
+  outline: 2px solid #e8eefa;
+  -moz-outline-radius: 6px;
+  background-color: #e8eefa;
+}
+
+.account .name {
+  font-weight: bold;
+}
+
+.account .url {
+  font-size: small;
+  font-weight: normal;
+  color: #999;
+}
+
+.account a.delete {
+  float: right;
+  margin: 3px 3px 0 0;
+  font-size: xx-small;
+  text-decoration: underline;
+  color: #0066dd;
+  cursor: pointer;
+}
+.account a.delete:hover {
+  color: rgb(200,20,20);
+}
+
+/*** TWITTER ***/
+
+.twitter\.com:before {
+  content: "/";
+}
+
+/*** LOGIN ***/
+
+table.login {
+  margin: 0;
+  padding: 0;
+  font-size: small;
+}
+
+table.login input {
+  font-size: x-small;
+}
+

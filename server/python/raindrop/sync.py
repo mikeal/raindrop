@@ -65,21 +65,24 @@ class SyncConductor(object):
         account_details['password'] = config_accts[acct_id]['password']
       except KeyError:
         pass
-      kind = account_details['kind']
-      self.log.debug("Found account using protocol %s", kind)
-      if not self.options.protocols or kind in self.options.protocols:
-        if kind in proto.protocols:
-          account = proto.protocols[kind](self.doc_model, account_details)
+      try:
+          proto = account_details['proto']
+          self.log.debug("Found account using protocol %s", proto)
+      except KeyError:
+          self.log.error("No protocol set for this account")
+      if not self.options.protocols or proto in self.options.protocols:
+        if proto in proto.protocols:
+          account = proto.protocols[proto](self.doc_model, account_details)
           self.log.info('Starting sync of %s account: %s',
-                        kind, account_details.get('name', '(un-named)'))
+                        proto, account_details.get('name', '(un-named)'))
           self.active_accounts.append(account)
           def_done = account.startSync(self)
           if def_done is not None:
             yield def_done.addBoth(self._cb_sync_finished, account)
         else:
-          self.log.error("Don't know what to do with account kind: %s", kind)
+          self.log.error("Don't know what to do with account protocol: %s", proto)
       else:
-          self.log.info("Skipping account - protocol '%s' is disabled", kind)
+          self.log.info("Skipping account - protocol '%s' is disabled", proto)
 
   @defer.inlineCallbacks
   def _process_outgoing_row(self, row, outgoing_handlers, pipeline):

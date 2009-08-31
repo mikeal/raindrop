@@ -1,0 +1,9 @@
+{
+  "schemas" : {
+    "rd.ext.ui" : {
+      "name" : "Settings",
+      "info" : "Account Settings",
+      "location" : "/raindrop/settings/index.html"
+    }
+  }
+}

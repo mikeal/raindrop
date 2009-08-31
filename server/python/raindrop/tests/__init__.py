@@ -140,7 +140,7 @@ class TestCaseWithTestDB(TestCaseWithDB):
         # setup a simple test one.
         config.accounts.clear()
         acct = config.accounts['test'] = {}
-        acct['kind'] = 'test'
+        acct['proto'] = 'test'
         acct['username'] = 'test'
         acct['num_test_docs'] = 0 # ignored!
         test_proto.test_num_test_docs = 0 # incremented later..
