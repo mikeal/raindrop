@@ -246,7 +246,8 @@ class ImapProvider(object):
     results = yield conn.fetchAll(batch, uid=True)
     logger.info('folder %r has %d quick items', folder_path, len(results))
     # Make a simple list.
-    infos = [results[seq] for seq in sorted(int(k) for k in results)]
+    infos = [results[seq] for seq in sorted(int(k) for k in results)
+             if self.shouldFetchMessage(results[seq])]
     if infos:
       self.fetch_queue.put((folder_path, infos))
 
@@ -331,7 +332,7 @@ class ImapProvider(object):
         else:
           delim, name = info
           # do later ones first...
-          batch = todo[-50:]
+          batch = [mi for mi in todo[-50:] if self.shouldFetchMessage(mi)]
           rest = todo[:-50]
           logger.log(1, 'queueing check of %d items in %r', len(batch), name)
           self.fetch_queue.put((name, batch))
@@ -345,7 +346,7 @@ class ImapProvider(object):
     logger.info('starting message location updates...')
     for (delim, name), items in todo_locations.iteritems():
       location = name.split(delim)
-      _ = yield self._updateLocations(location, items)
+      _ = yield self._updateLocations(location, delim, items)
 
   @defer.inlineCallbacks
   def _syncFolderCache(self, conn, folder_path, server_info, cache_doc):
@@ -435,10 +436,15 @@ class ImapProvider(object):
       # Some items from some IMAP servers don't have an ENVELOPE record, and
       # lots of later things get upset at that.  It isn't clear what such
       # items are yet...
-      if 'ENVELOPE' not in info:
+      try:
+        envelope = info['ENVELOPE']
+      except KeyError:
         logger.debug('imap item has no envelope - skipping: %r', info)
         continue
-      if not check_envelope_ok(info['ENVELOPE']):
+      if envelope[-1] is None:
+        logger.debug('imap item has no message-id - skipping: %r', info)
+        continue
+      if not check_envelope_ok(envelope):
         logger.debug('imap info has invalid envelope - skipping: %r', info)
         continue
       # it is good - keep it.
@@ -448,7 +454,7 @@ class ImapProvider(object):
     defer.returnValue(dirty)
 
   @defer.inlineCallbacks
-  def _updateLocations(self, folder_path, results):
+  def _updateLocations(self, folder_path, delim, results):
     """Writes 'message location' schemas for messages, using the folder name
        as the default location.
     """
@@ -459,16 +465,12 @@ class ImapProvider(object):
     current = {}
     for result in results:
       msg_id = result['ENVELOPE'][-1]
-      if msg_id is None:
-        logger.debug('skipping item with %(ENVELOPE)s - no msg-id', result)
-        continue
       rdkey = get_rdkey_for_email(msg_id)
       current[tuple(rdkey)] = result['UID']
 
     # fetch all things in couch which (a) are currently tagged with this
-    # location and (b) was tagged by this mapi account.
-    startloc = ['imap', [acct_id, folder_path]]
-    endloc = ['imap', [acct_id, folder_path, {}]]
+    # location and (b) was tagged by this mapi account.  We do (a) via the
+    # key param, and filter (b) here...
     key = ['rd.msg.location', 'location', folder_path]
     existing = yield self.doc_model.open_view(key=key, reduce=False,
                                               include_docs=True)
@@ -510,6 +512,7 @@ class ImapProvider(object):
                     'ext_id': ext_id,
                     'schema_id': 'rd.msg.location',
                     'items': {'location': folder_path,
+                              'location_sep': delim,
                               'uid': current[rdkey],
                               'source': ['imap', acct_id]},
                   })
@@ -520,26 +523,10 @@ class ImapProvider(object):
 
   def results_by_rdkey(self, infos):
     # Transform a list of IMAP infos into a map with the results keyed by the
-    # 'rd_key' (ie, message-id), but skipping messages which don't meet
-    # our 'filter' criteria
+    # 'rd_key' (ie, message-id)
     msg_infos = {}
     for msg_info in infos:
-      if self.options.max_age:
-        # XXX - we probably want the 'internal date'...
-        date_str = msg_info['ENVELOPE'][0]
-        try:
-          date = mktime_tz(parsedate_tz(date_str))
-        except (ValueError, TypeError):
-          continue # invalid date - skip it.
-        if date < time.time() - self.options.max_age:
-          logger.log(1, 'skipping message - too old')
-          continue
-
       msg_id = msg_info['ENVELOPE'][-1]
-      if msg_id is None:
-        logger.debug('skipping item with %(ENVELOPE)s - no msg-id', msg_info)
-        continue
-
       if msg_id in msg_infos:
         # This isn't a very useful check - we are only looking in a single
         # folder...
@@ -670,6 +657,19 @@ class ImapProvider(object):
         if not self.reactor.running:
           break
         raise
+
+  def shouldFetchMessage(self, msg_info):
+    if self.options.max_age:
+      # XXX - we probably want the 'internal date'...
+      date_str = msg_info['ENVELOPE'][0]
+      try:
+        date = mktime_tz(parsedate_tz(date_str))
+      except (ValueError, TypeError):
+        return False # invalid date - skip it.
+      if date < time.time() - self.options.max_age:
+        logger.log(1, 'skipping message - too old')
+        return False
+    return True
 
 
 class ImapUpdater:
