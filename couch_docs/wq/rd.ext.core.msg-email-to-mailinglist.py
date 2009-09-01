@@ -27,10 +27,10 @@
 #   List-Help: <http://www.w3.org/Mail/>
 #   List-Unsubscribe: <mailto:public-webapps-request@w3.org?subject=unsubscribe>
 
-# XXX Split this into two extensions, one that extracts mailing list info
-# and makes sure the mailing list doc exists and one that simple associates
-# the message with its mailing list.  That will improve performance,
-# because the latter task performs no queries so can be batched.
+# TODO: split this extension into two extensions, one that creates/updates
+# mailing list documents and one that simply associates messages with their
+# lists.  That will improve performance, because the latter task performs
+# no queries that can be batched.
 
 import re
 from email.utils import mktime_tz, parsedate_tz
@@ -153,30 +153,75 @@ def _update_list(list, name, message):
 
     return changed
 
+def _create_or_update_list(doc, list_id, list_name, timestamp):
+    msg_id = doc['headers']['message-id'][0]
+
+    keys = [['rd.core.content', 'key-schema_id',
+             [['mailing-list', list_id], 'rd.mailing-list']]]
+    result = open_view(keys=keys, reduce=False, include_docs=True)
+    # Build a map of the keys we actually got back.
+    rows = [r for r in result['rows'] if 'error' not in r]
+
+    if rows:
+        logger.debug("FOUND LIST %s for message %s", list_id, msg_id)
+        assert 'doc' in rows[0], rows
+
+        list = rows[0]['doc']
+
+        # If this message is newer than the last one from which we derived
+        # mailing list information, update the mailing list record with any
+        # updated information in this message.
+        if 'changed_timestamp' not in list \
+                or timestamp >= list['changed_timestamp']:
+            logger.debug("UPDATING LIST %s from message %s", list_id, msg_id)
+            changed = _update_list(list, list_name, doc)
+            if changed:
+                logger.debug("LIST CHANGED; saving updated list")
+                list['changed_timestamp'] = timestamp
+                update_documents([list])
+
+    else:
+        logger.debug("CREATING LIST %s for message %s", list_id, msg_id)
+
+        list = {
+            'id': list_id,
+            'status': 'subscribed',
+            'changed_timestamp': timestamp
+        }
+
+        identity = _get_subscribed_identity(doc['headers'])
+        if identity:
+            list['identity'] = identity
+
+        _update_list(list, list_name, doc)
+
+        emit_schema('rd.mailing-list', list, rd_key=["mailing-list", list_id])
+
 def handler(doc):
     if 'list-id' not in doc['headers']:
-        return
+        return;
 
     logger.debug("list-* headers: %s",
                  [h for h in doc['headers'].keys() if h.startswith('list-')])
-
-    list_id = doc['headers']['list-id'][0]
-    msg_id = doc['headers']['message-id'][0]
 
     # Extract the ID and name of the mailing list from the list-id header.
     # Some mailing lists give only the ID, but others (Google Groups, Mailman)
     # provide both using the format 'NAME <ID>', so we extract them separately
     # if we detect that format.
+    # TODO: after integrating the unsubscribe functionality into this extension,
+    # stop assuming we'll always have a list ID header.
+    list_id = doc['headers']['list-id'][0]
     match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
     if (match):
-        logger.debug("complex list-id header with name '%s' and ID '%s'",
-              match.group(1), match.group(2))
-        id = match.group(2)
-        name = match.group(1)
+        logger.debug("complex list-id header with ID '%s' and name '%s'",
+                     match.group(2), match.group(1))
+        list_id = match.group(2)
+        list_name = match.group(1)
     else:
         logger.debug("simple list-id header with ID '%s'", list_id)
-        id = list_id
-        name = ""
+        list_name = ""
+
+    msg_id = doc['headers']['message-id'][0]
 
     # Extract the timestamp of the message we're processing.
     if 'date' in doc['headers']:
@@ -189,50 +234,8 @@ def handler(doc):
                              date, doc['_id'], exc)
                 timestamp = 0
 
+    _create_or_update_list(doc, list_id, list_name, timestamp)
 
-    # Retrieve an existing document for the mailing list or create a new one.
-    keys = [['rd.core.content', 'key-schema_id',
-             [['mailing-list', id], 'rd.mailing-list']]]
-    result = open_view(keys=keys, reduce=False, include_docs=True)
-    # Build a map of the keys we actually got back.
-    rows = [r for r in result['rows'] if 'error' not in r]
-
-    if rows:
-        logger.debug("FOUND LIST %s for message %s", id, msg_id)
-        assert 'doc' in rows[0], rows
-
-        list = rows[0]['doc']
-
-        # If this message is newer than the last one from which we derived
-        # mailing list information, update the mailing list record with any
-        # updated information in this message.
-        if 'changed_timestamp' not in list \
-                or timestamp >= list['changed_timestamp']:
-            logger.debug("UPDATING LIST %s from message %s", id, msg_id)
-            changed = _update_list(list, name, doc)
-            if changed:
-                logger.debug("LIST CHANGED; saving updated list")
-                list['changed_timestamp'] = timestamp
-                update_documents([list])
-
-    else:
-        logger.debug("CREATING LIST %s for message %s", id, msg_id)
-
-        list = {
-            'id': id,
-            'status': 'subscribed',
-            'changed_timestamp': timestamp
-        }
-
-        identity = _get_subscribed_identity(doc['headers'])
-        if identity:
-            list['identity'] = identity
-
-        _update_list(list, name, doc)
-
-        emit_schema('rd.mailing-list', list, rd_key=["mailing-list", id])
-
-
-    # Link to the message to its mailing list.
-    logger.debug("linking message %s to its mailing list %s", msg_id, id)
-    emit_schema('rd.msg.email.mailing-list', { 'list_id': id })
+    # Link the message to its mailing list.
+    logger.debug("linking message %s to its mailing list %s", msg_id, list_id)
+    emit_schema('rd.msg.email.mailing-list', { 'list_id': list_id })
