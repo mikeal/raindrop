@@ -186,8 +186,8 @@ def _update_list(list, name, message):
 
     return changed
 
-def _create_or_update_list(doc, list_id, list_name, timestamp):
-    msg_id = doc['headers']['message-id'][0]
+def _create_or_update_list(message, list_id, list_name, timestamp):
+    msg_id = message['headers']['message-id'][0]
 
     keys = [['rd.core.content', 'key-schema_id',
              [['mailing-list', list_id], 'rd.mailing-list']]]
@@ -207,7 +207,7 @@ def _create_or_update_list(doc, list_id, list_name, timestamp):
         if 'changed_timestamp' not in list \
                 or timestamp >= list['changed_timestamp']:
             logger.debug("UPDATING LIST %s from message %s", list_id, msg_id)
-            changed = _update_list(list, list_name, doc)
+            changed = _update_list(list, list_name, message)
             if changed:
                 logger.debug("LIST CHANGED; saving updated list")
                 list['changed_timestamp'] = timestamp
@@ -222,35 +222,35 @@ def _create_or_update_list(doc, list_id, list_name, timestamp):
             'changed_timestamp': timestamp
         }
 
-        identity = _get_subscribed_identity(doc['headers'])
+        identity = _get_subscribed_identity(message['headers'])
         if identity:
             list['identity'] = identity
 
-        _update_list(list, list_name, doc)
+        _update_list(list, list_name, message)
 
         emit_schema('rd.mailing-list', list, rd_key=["mailing-list", list_id])
 
-def handler(doc):
+def handler(message):
     # Extract the timestamp of the message we're processing.
-    if 'date' in doc['headers']:
-        date = doc['headers']['date'][0]
+    if 'date' in message['headers']:
+        date = message['headers']['date'][0]
         if date:
             try:
                 timestamp = mktime_tz(parsedate_tz(date))
             except (ValueError, TypeError), exc:
-                logger.debug('Failed to parse date %r in doc %r: %s',
-                             date, doc['_id'], exc)
+                logger.debug('Failed to parse date %r in message %r: %s',
+                             date, message['_id'], exc)
                 timestamp = 0
 
-    if 'list-id' in doc['headers']:
-        logger.debug("list-* headers: %s",
-                     [h for h in doc['headers'].keys() if h.startswith('list-')])
+    if 'list-id' in message['headers']:
+        logger.debug("list-* headers: %s", [h for h in message['headers'].keys()
+                                            if h.startswith('list-')])
 
         # Extract the ID and name of the mailing list from the list-id header.
         # Some mailing lists give only the ID, but others (Google Groups, Mailman)
         # provide both using the format 'NAME <ID>', so we extract them separately
         # if we detect that format.
-        list_id = doc['headers']['list-id'][0]
+        list_id = message['headers']['list-id'][0]
         match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
         if (match):
             logger.debug("complex list-id header with ID '%s' and name '%s'",
@@ -261,13 +261,10 @@ def handler(doc):
             logger.debug("simple list-id header with ID '%s'", list_id)
             list_name = ""
 
-        _create_or_update_list(doc, list_id, list_name, timestamp)
+        _create_or_update_list(message, list_id, list_name, timestamp)
         logger.debug("linking message %s to its mailing list %s",
-                     doc['headers']['message-id'][0], list_id)
+                     message['headers']['message-id'][0], list_id)
         emit_schema('rd.msg.email.mailing-list', { 'list_id': list_id })
-
-    # TODO: make the entire handler function use message instead of doc.
-    message = doc
 
     # Google Groups Step 2 (List Requests Confirmation) Detector
     # A request is a message from the address "noreply@googlegroups.com"
