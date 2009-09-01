@@ -38,7 +38,9 @@ class SyncConductor(object):
     reactor.addSystemEventTrigger("before", "shutdown", self._kill_coop)
     self.doc_model = get_doc_model()
 
-    self.active_accounts = []
+    self.accounts_syncing = []
+    self.outgoing_handlers = None
+    self.all_accounts = None
 
   def _kill_coop(self):
     logger.debug('stopping the coordinator')
@@ -48,17 +50,22 @@ class SyncConductor(object):
   def _ohNoes(self, failure, *args, **kwargs):
     self.log.error('OH NOES! failure! %s', failure)
 
-  def _genAccountSynchs(self, rows):
-    self.log.info("Have %d accounts to synch", len(rows))
-
+  @defer.inlineCallbacks
+  def _load_accounts(self):
+    # get all accounts from the couch.
+    key = ['rd.core.content', 'schema_id', 'rd.account']
+    result = yield self.doc_model.open_view(key=key, reduce=False,
+                                            include_docs=True)    
     # Now see what account-info we have locally so we can merge missing
     # data - particularly the password...
+    assert self.all_accounts is None, "only call me once."
+    self.all_accounts = []
     config_accts = {}
+    self.outgoing_handlers = {}
     for acct_name, acct_info in get_config().accounts.iteritems():
       config_accts[acct_info['id']] = acct_info
 
-    to_synch = []
-    for row in rows:
+    for row in result['rows']:
       account_details = row['doc']
       acct_id = account_details['id']
       try:
@@ -70,19 +77,22 @@ class SyncConductor(object):
       if not self.options.protocols or kind in self.options.protocols:
         if kind in proto.protocols:
           account = proto.protocols[kind](self.doc_model, account_details)
-          self.log.info('Starting sync of %s account: %s',
-                        kind, account_details.get('name', '(un-named)'))
-          self.active_accounts.append(account)
-          def_done = account.startSync(self)
-          if def_done is not None:
-            yield def_done.addBoth(self._cb_sync_finished, account)
+          self.log.info('loaded account %s (type=%s)',
+                        account_details.get('name', '(un-named)'), kind)
+          self.all_accounts.append(account)
+          # Can it handle any 'outgoing' schemas?
+          out_schemas = account.rd_outgoing_schemas
+          if out_schemas:
+            for sid in out_schemas:
+              existing = self.outgoing_handlers.setdefault(sid, [])
+              existing.append(account)
         else:
           self.log.error("Don't know what to do with account kind: %s", kind)
       else:
           self.log.info("Skipping account - protocol '%s' is disabled", kind)
 
   @defer.inlineCallbacks
-  def _process_outgoing_row(self, row, outgoing_handlers, pipeline):
+  def _process_outgoing_row(self, row, pipeline):
     val = row['value']
     # push it through the pipeline.
     todo = {val['rd_schema_id']: [(row['id'], val['_rev'])]}
@@ -90,7 +100,7 @@ class SyncConductor(object):
 
     # Now attempt to find the 'outgoing' message.
     keys = []
-    for ot in outgoing_handlers:
+    for ot in self.outgoing_handlers:
       keys.append(['rd.core.content', 'key-schema_id', [val['rd_key'], ot]])
     out_schema = None
     out_result = yield self.doc_model.open_view(keys=keys, reduce=False)
@@ -111,48 +121,68 @@ class SyncConductor(object):
     src_doc, out_doc = yield self.doc_model.open_documents_by_id(dids)
     if src_doc['_rev'] != val['_rev']:
       raise RuntimeError('the document changed since it was processed.')
-    sender = outgoing_handlers[out_schema]
-    _ = yield sender.startSend(self, src_doc, out_doc)
+    senders = self.outgoing_handlers[out_schema]
+    # There may be multiple senders, but first one to process it wins
+    # (eg, outgoing imap items have one per account, but each account may be
+    # passed one for a different account - it just ignores it, so we continue
+    # the rest of the accounts until one says "yes, it is mine!")
+    for sender in senders:
+      d = sender.startSend(self, src_doc, out_doc)
+      if d is not None:
+        # This sender accepted the item...
+        _ = yield d
+        break
 
   @defer.inlineCallbacks
-  def sync_outgoing(self, outgoing_handlers, pipeline):
+  def _do_sync_outgoing(self, pipeline):
     # XXX - we need a registry of 'outgoing source docs'.
-    source_schemas = ['rd.msg.outgoing.simple']
-
+    source_schemas = ['rd.msg.outgoing.simple',
+                      'rd.msg.seen',
+                      ]
     keys = []
     for ss in source_schemas:
       keys.append([ss, 'outgoing_state', 'outgoing'])
 
+    dl = []
     result = yield self.doc_model.open_view(keys=keys, reduce=False)
     for row in result['rows']:
       logger.info("found outgoing document %(id)r", row)
       try:
-        _ = yield self._process_outgoing_row(row, outgoing_handlers, pipeline)
+        def_done = self._process_outgoing_row(row, pipeline)
+        dl.append(def_done)
       except Exception:
         logger.error("Failed to process doc %r\n%s", row['id'],
                      Failure().getTraceback())
-    logger.info("outgoing sync done")
+    defer.returnValue(dl)
 
   @defer.inlineCallbacks
-  def sync(self, pipeline):
+  def sync(self, pipeline, incoming=True, outgoing=True):
+    if self.all_accounts is None:
+      _ = yield self._load_accounts()
+
     if not self.options.no_process:
       pipeline.prepare_sync_processor()
     try:
-      # get all accounts from the couch.
-      key = ['rd.core.content', 'schema_id', 'rd.account']
-      result = yield self.doc_model.open_view(key=key, reduce=False,
-                                              include_docs=True)
+      dl = []
+      if outgoing:
+        # start looking for outgoing schemas to sync...
+        dl.extend((yield self._do_sync_outgoing(pipeline)))
 
-      dl = [d for d in self._genAccountSynchs(result['rows'])]
-      out_handlers = {}
-      for aa in self.active_accounts:
-        out_schemas = aa.rd_outgoing_schemas
-        if out_schemas:
-          for sid in out_schemas:
-            out_handlers[sid] = aa
-      if out_handlers:
-        dl.append(self.sync_outgoing(out_handlers, pipeline))
-      # we don't use the cooperator here as we want them all to run in parallel.
+      if incoming:
+        # start synching all 'incoming' accounts.
+        for account in self.all_accounts:
+          if account in self.accounts_syncing:
+            logger.info("skipping acct %(id) - already synching...",
+                        account.details)
+            continue
+          # start synching
+          def_done = account.startSync(self)
+          if def_done is not None:
+            self.accounts_syncing.append(account)
+            def_done.addBoth(self._cb_sync_finished, account)
+            dl.append(def_done)
+
+      # wait for each of the deferreds to finish.
       _ = yield defer.DeferredList(dl)
     finally:
       if not self.options.no_process:
@@ -167,10 +197,10 @@ class SyncConductor(object):
         result.raiseException()
     else:
       self.log.debug("Account %s finished successfully", account)
-    assert account in self.active_accounts, (account, self.active_accounts)
-    self.active_accounts.remove(account)
-    if not self.active_accounts:
-      self.log.info("all accounts have finished synchronizing")
+    assert account in self.accounts_syncing, (account, self.accounts_syncing)
+    self.accounts_syncing.remove(account)
+    if not self.accounts_syncing:
+      self.log.info("all incoming accounts have finished synchronizing")
 
 
 if __name__ == '__main__':

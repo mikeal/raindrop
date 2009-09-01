@@ -87,12 +87,23 @@ def show_info(result, parser, options):
     for name in logging.Logger.manager.loggerDict:
         print " ", name
 
-    
 @defer.inlineCallbacks
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
     conductor = get_conductor()
     _ = yield conductor.sync(g_pipeline)
+
+@defer.inlineCallbacks
+def sync_incoming(result, parser, options):
+    """Synchronize all incoming messages from all accounts"""
+    conductor = get_conductor()
+    _ = yield conductor.sync(g_pipeline, incoming=True, outgoing=False)
+
+@defer.inlineCallbacks
+def sync_outgoing(result, parser, options):
+    """Synchronize all outgoing messages from all accounts"""
+    conductor = get_conductor()
+    _ = yield conductor.sync(g_pipeline, incoming=False, outgoing=True)
 
 def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
