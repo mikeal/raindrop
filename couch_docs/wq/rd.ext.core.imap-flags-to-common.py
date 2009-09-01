@@ -42,6 +42,7 @@ def handler(doc):
             # process of trying to update the server).
             if doc.get('outgoing_state') != 'incoming':
                 logger.info("found outgoing 'seen' state request in doc %(_id)r", doc)
+                continue
             seen_couch = doc['seen']
             if seen_now != seen_couch:
                 doc['seen'] = seen_now
