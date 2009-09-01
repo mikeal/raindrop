@@ -452,14 +452,14 @@ class ImapProvider(object):
     acct_id = self.account.details.get('id')
     # Build a map keyed by the rd_key of all items we know are currently in
     # the folder
-    current = set()
+    current = {}
     for result in results:
       msg_id = result['ENVELOPE'][-1]
       if msg_id is None:
         logger.debug('skipping item with %(ENVELOPE)s - no msg-id', result)
         continue
       rdkey = get_rdkey_for_email(msg_id)
-      current.add(tuple(rdkey))
+      current[tuple(rdkey)] = result['UID']
 
     # fetch all things in couch which (a) are currently tagged with this
     # location and (b) was tagged by this mapi account.
@@ -478,9 +478,10 @@ class ImapProvider(object):
       couch[tuple(doc['rd_key'])] = (doc['_id'], doc['_rev'])
 
     # Finally merge the differences between what imap has and couch has
-    scouch = set(couch.keys())
-    to_add = current - scouch
-    to_nuke = scouch - current
+    scouch = set(couch)
+    scurrent = set(current)
+    to_add = scurrent - scouch
+    to_nuke = scouch - scurrent
     to_up = []
     seen = set()
     for rdkey in to_nuke:
@@ -505,6 +506,7 @@ class ImapProvider(object):
                     'ext_id': ext_id,
                     'schema_id': 'rd.msg.location',
                     'items': {'location': folder_path,
+                              'uid': current[rdkey],
                               'source': ['imap', acct_id]},
                   })
     if to_up:
@@ -665,6 +667,51 @@ class ImapProvider(object):
           break
         raise
 
+
+class ImapUpdater:
+  def __init__(self, account, conductor):
+    self.account = account
+    self.conductor = conductor
+    self.doc_model = account.doc_model
+
+  # Outgoing items related to IMAP - eg, \\Seen flags, deleted, etc...
+  @defer.inlineCallbacks
+  def handle_outgoing(self, conductor, src_doc, dest_doc):
+    account = self.account
+    # Establish a connection to the server
+    logger.debug("setting flags for %(rd_key)r: folder %(folder)r, uuid %(uid)s",
+                 dest_doc)
+    factory = ImapClientFactory(account, self.conductor)
+    client = yield factory.connect()
+    _ = yield client.select(dest_doc['folder'])
+    # Write the fact we are about to try and (un-)set the flag.
+    _ = yield account._update_sent_state(src_doc, 'sending')
+    try:
+      try:
+        flags_add = dest_doc['flags_add']
+      except KeyError:
+        pass
+      else:
+        client.addFlags(dest_doc['uid'], flags_add, uid=1)
+      try:
+        flags_rem = dest_doc['flags_remove']
+      except KeyError:
+        pass
+      else:
+        client.removeFlags(dest_doc['uid'], flags_rem, uid=1)
+    except IMAP4Exception, exc:
+      logger.error("Failed to update flags: %s", fun, exc)
+      # XXX - we need to differentiate between a 'fatal' error, such as
+      # when the message has been deleted, or a transient error which can be
+      # retried.  For now, assume retryable...
+      _ = yield account._update_sent_state(src_doc, 'error', exc,
+                                           outgoing_state='outgoing')
+    else:
+      _ = yield account._update_sent_state(src_doc, 'sent')
+      logger.debug("successfully adjusted flags for %(rd_key)r", src_doc)
+    client.logout()
+  
+
 class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
 
@@ -710,6 +757,21 @@ class ImapClientFactory(protocol.ClientFactory):
 
 
 class IMAPAccount(base.AccountBase):
+  rd_outgoing_schemas = ['rd.proto.outgoing.imap-flags']
+  def startSend(self, conductor, src_doc, dest_doc):
+    # Check it really is for our IMAP account.
+    if dest_doc['account'] != self.details.get('id'):
+      logger.info('outgoing item not for imap acct %r (target is %r)',
+                  self.details.get('id'), dest_doc['account'])
+      return
+    # caller should check items are ready to send.
+    assert src_doc['outgoing_state'] == 'outgoing', src_doc
+    # We know IMAP currently only has exactly 1 outgoing schema type.
+    assert dest_doc['rd_schema_id'] == 'rd.proto.outgoing.imap-flags', src_doc
+
+    updater = ImapUpdater(self, conductor)
+    return updater.handle_outgoing(conductor, src_doc, dest_doc)
+
   @defer.inlineCallbacks
   def startSync(self, conductor):
     prov = ImapProvider(self, conductor.options, conductor.reactor)
