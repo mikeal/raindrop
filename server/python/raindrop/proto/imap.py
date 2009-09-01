@@ -418,9 +418,9 @@ class ImapProvider(object):
         if infos_ndx >= len(infos):
           break
       else:
-        # It would be possible to reinsert here (although we don't have
-        # the envelope etc!  How does this happen?
-        logger.info("message %r never seen before - maybe resurrected?", this_uid)
+        # We see this happen when we previously rejected an item due to
+        # invalid or missing ENVELOPE etc.
+        logger.debug("message %r never seen before - probably invalid", this_uid)
         continue
     # Records we had in the past now have accurate flags; next up is to append
     # new message info we just received...
