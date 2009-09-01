@@ -6,10 +6,6 @@
 
 .rdwStoryFullMessage.Message .actions {
   visibility: inherit;
-}  
-
-.Story:hover .rdwStoryFullMessage.Message {
-  background-color:#FFF;
 }
 
 .rdwStoryFullMessage .utc {

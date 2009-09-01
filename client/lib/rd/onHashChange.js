@@ -8,7 +8,6 @@ dojo.provide("rd.onHashChange");
     var newValue = location.href.split("#")[1] || "";
     if (newValue != value) {
       value = newValue;
-      console.log("publising: " + value);
       dojo.publish("rd.onHashChange", [value]);
     }
   }, 300);

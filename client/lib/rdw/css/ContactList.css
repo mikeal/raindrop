@@ -34,7 +34,7 @@
   float: right;
 }
 
-.contact:hover {
+.contact.active {
   background-color: #FFB0B0;
 }
 

@@ -163,6 +163,10 @@ class ImapProvider(object):
     caps = yield conn.getCapabilities()
     if 'XLIST' in caps:
       result = yield conn.xlist('', '*')
+      kind = self.account.details.get('kind','')
+      if kind is '':
+        logger.warning("set kind=gmail for account %s in your .raindrop for correct settings",
+                        self.account.details.get('id',''))
     else:
       logger.warning("This IMAP server doesn't support XLIST, so performance may suffer")
       result = yield conn.list('', '*')

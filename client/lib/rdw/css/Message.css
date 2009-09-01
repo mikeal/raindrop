@@ -11,6 +11,11 @@
   outline: none;
 }
 
+.active .Message,
+.Message.active {
+  background-color: #FFB0B0;
+}
+
 .Message div.photo {
   position: absolute;
   left: 8px;

@@ -72,24 +72,31 @@ class SyncConductor(object):
         account_details['password'] = config_accts[acct_id]['password']
       except KeyError:
         pass
-      kind = account_details['kind']
-      self.log.debug("Found account using protocol %s", kind)
-      if not self.options.protocols or kind in self.options.protocols:
-        if kind in proto.protocols:
-          account = proto.protocols[kind](self.doc_model, account_details)
-          self.log.info('loaded account %s (type=%s)',
-                        account_details.get('name', '(un-named)'), kind)
+      try:
+          account_proto = account_details['proto']
+          self.log.debug("Found account using protocol %s", account_proto)
+      except KeyError:
+          self.log.error("account %(id)r has no protocol specified - ignoring",
+                         account_details)
+          continue
+      if not self.options.protocols or account_proto in self.options.protocols:
+        if account_proto in proto.protocols:
+          account = proto.protocols[account_proto](self.doc_model,
+                                                   account_details)
+          self.log.debug('loaded %s account: %s', account_proto,
+                         account_details.get('name', '(un-named)'))
           self.all_accounts.append(account)
           # Can it handle any 'outgoing' schemas?
           out_schemas = account.rd_outgoing_schemas
-          if out_schemas:
-            for sid in out_schemas:
-              existing = self.outgoing_handlers.setdefault(sid, [])
-              existing.append(account)
+          for sid in (out_schemas or []):
+            existing = self.outgoing_handlers.setdefault(sid, [])
+            existing.append(account)
         else:
-          self.log.error("Don't know what to do with account kind: %s", kind)
+          self.log.error("Don't know what to do with account protocol: %s",
+                         account_proto)
       else:
-          self.log.info("Skipping account - protocol '%s' is disabled", kind)
+          self.log.info("Skipping account - protocol '%s' is disabled",
+                        account_proto)
 
   @defer.inlineCallbacks
   def _process_outgoing_row(self, row, pipeline):
@@ -176,6 +183,9 @@ class SyncConductor(object):
                         account.details)
             continue
           # start synching
+          self.log.info('Starting sync of %s account: %s',
+                        account.details['proto'],
+                        account.details.get('name', '(un-named)'))
           def_done = account.startSync(self)
           if def_done is not None:
             self.accounts_syncing.append(account)

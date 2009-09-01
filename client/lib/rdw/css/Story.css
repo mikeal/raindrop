@@ -5,10 +5,6 @@
   padding: 0 0 26px 0;
 }
 
-.Story:hover .Message {
-  background-color: #FFB0B0;
-}
-
 .Story:last-child {
   margin-bottom: 0px;
 }
@@ -78,7 +74,8 @@
   background-image: url("i/tri_white.png");
 }
 
-.Story:hover .Message .triangle {
+.Story.active .Message .triangle,
+.Story .Message.active .triangle {
   background-image: url("i/tri_pink.png");
 }
 

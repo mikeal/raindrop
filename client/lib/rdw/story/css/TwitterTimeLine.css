@@ -29,7 +29,7 @@
   background-position: right;
 }
 
-.rdwStoryTwitterTimeLine:hover .tweetList {
+.rdwStoryTwitterTimeLine.active .tweetList {
   background-color: #FFB0B0;
 }
 

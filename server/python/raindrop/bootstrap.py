@@ -494,7 +494,7 @@ def check_accounts(whateva, config=None):
         # Our account objects know how to turn this config info into the
         # 'identity' list stored with the accounts - so get that.
         try:
-            acct = proto.protocols[acct_info['kind']](dm, acct_info)
+            acct = proto.protocols[acct_info['proto']](dm, acct_info)
             ids = acct.get_identities()
             # turn tuples back into the lists the couch will return
             acct_info['identities'] = [list(iid) for iid in ids]

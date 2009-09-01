@@ -196,6 +196,8 @@ dojo.mixin(rd.contact, {
     var dfds = [];
     for (var i = 0, idty; idty = source.identities[i]; i++) {
       var idtyMapDocId = this._idtyMapIds[idty.rd_key[1].join("|")];
+      //TODO: is this broken? does the dfd only ever point to the last
+      //dfd created?
       var dfd = new dojo.Deferred();
       couch.db("raindrop").openDoc(idtyMapDocId, {
         success: dojo.hitch(this, function(dfd, json) {

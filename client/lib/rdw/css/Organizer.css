@@ -49,9 +49,6 @@
   background-position: left center;
 }
 
-.Organizer ol > li:hover {
-}
-
 .Organizer ol > li > a {
   text-decoration: none;
   background-color: transparent;

@@ -93,6 +93,125 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
 }
 
 dojo._mixin(rd.conversation, {
+  home: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: returns the number of conversations based on the limit. Favors
+    //direct and group messages vs broadcast messages.
+    
+    var directDfd = new dojo.Deferred();
+    var groupDfd = new dojo.Deferred();
+    var broadcastDfd = new dojo.Deferred();
+    var dfdList = new dojo.DeferredList([directDfd, groupDfd, broadcastDfd]);
+    var allRecips = [], broadcastConvos = [];
+
+    //Direct messages
+    rd.api().megaview({
+      startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
+      endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
+      descending: true,
+      reduce: false,
+      include_docs: true,
+      limit: limit
+    })
+    .ok(function(results) {
+      if (results && results.rows && results.rows.length) {
+        allRecips = allRecips.concat(results.rows);
+      }
+      directDfd.callback(results);
+    })
+    .error(function(err) {
+       directDfd.errback(err);
+    });
+
+    //Group messages
+    rd.api().megaview({
+      startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
+      endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
+      descending: true,
+      reduce: false,
+      include_docs: true,
+      limit: limit
+    })
+    .ok(function(results) {
+      if (results && results.rows && results.rows.length) {
+        allRecips = allRecips.concat(results.rows);
+      }
+      groupDfd.callback(results);
+    })
+    .error(function(err) {
+       groupDfd.errback(err);
+    });
+
+    //Broadcast messages
+    this.broadcast(
+      limit,
+      function(convos) {
+        broadcastConvos = convos;
+        broadcastDfd.callback(convos);
+      },
+      function(err) {
+        broadcastDfd.errback(err);
+      }
+    );
+
+    //Action to do once all deferreds complete.
+    dfdList.addCallback(this, function() {
+      //sort the allRecips by timestamp
+      allRecips.sort(function(a, b) {
+        return a.doc.timestamp > b.doc.timestamp ? -1 : 1;
+      });
+
+      // The json has the rd_key for messages in timestamp order;
+      // now we need to fetch the 'rd.msg.conversation' schema to fetch the
+      // convo ID.
+      var keys = [];
+      for (var i = 0, row; row = allRecips[i]; i++) {
+        keys.push(['rd.core.content', 'key-schema_id', [row.value.rd_key, 'rd.msg.conversation']]);
+      }
+      rd.store.megaview({
+        keys: keys,
+        reduce: false,
+        include_docs: true,
+        success: dojo.hitch(this, function(json) {
+          // XXX - how to do sets better in js?????
+          // And can't we just avoid 'reduce=false' and let the the reduce
+          // function make them unique?
+          var convSet = {}
+          for (var i = 0, row; row = json.rows[i]; i++) {
+            convSet[row.doc.conversation_id] = row.doc.conversation_id;
+          }
+          var convIds = [];
+          for (var cid in convSet) {
+            convIds.push(convSet[cid]);
+          }
+          this(convIds, function(convos) {
+            //Now combine the broadcast and me messages into one list,
+            //sorted by time.
+            convos = convos || [];
+            convos = convos.concat(broadcastConvos);
+            
+            convos.sort(function(a, b) {
+              //Look at last message in each convo.
+              var aBody = a[a.length - 1]["rd.msg.body"] || {};
+              var bBody = b[b.length - 1]["rd.msg.body"] || {};
+
+              return aBody.timestamp > bBody.timestamp ? -1 : 1;
+            });
+            
+            callback(convos);
+          },
+          errback);
+        })
+      });
+    });
+    
+    //Error dispatching.
+    dfdList.addErrback(function(err){
+      if (errback) {
+        errback(err);
+      }
+    });
+  },
+
   messageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
     //summary: gets conversations based on message IDs passed in. ids can be one string
     //message document ID or an array of string message document IDs.
@@ -148,6 +267,17 @@ dojo._mixin(rd.conversation, {
     this._query({
       startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
       endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
+      limit: limit      
+    }, callback, errback);
+  },
+
+  broadcast: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    //summary: gets the most recent broadcast messages up to limit, then pulls
+    //the conversations associated with those messages. Conversation with
+    //the most recent message will be first.
+    this._query({
+      startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
+      endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
       limit: limit      
     }, callback, errback);
   },

@@ -5,6 +5,7 @@ dojo.require("rdw.Story");
 dojo.require("rdw.story.FullStory");
 dojo.require("rd.api");
 
+dojo.require("dojo.fx");
 dojo.require("dojox.fx.scroll");
 
 dojo.declare("rdw.Stories", [rdw._Base], {
@@ -18,10 +19,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //more messages might show up if they are part of the conversations
   //for the messages that match the criteria.
   messageLimit: 30,
-
-  //The number of "pages" (skips) to do for the conversations calls
-  //for the home view.
-  homeSkipLimit: 5,
 
   //The widget to use to show a full story.
   fullStoryCtorName: "rdw.story.FullStory",
@@ -50,6 +47,15 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rdw.story.TwitterTimeLine"
   ],
 
+  //The key for navigation.
+  navKeys: {
+    conversation: dojo.keys.RIGHT_ARROW,
+    summary: dojo.keys.LEFT_ARROW,
+    up: dojo.keys.UP_ARROW,
+    down: dojo.keys.DOWN_ARROW,
+    tab: dojo.keys.TAB
+  },
+
   //The keycode to use for actions that should expand to a full conversation
   //view for a message.
   convoKeyCode: dojo.keys.RIGHT_ARROW,
@@ -58,10 +64,23 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //view for a message.
   summaryKeyCode: dojo.keys.LEFT_ARROW,
 
-  templateString: '<div class="rdwStories" dojoAttachEvent="onkeypress: onKeyPress">'
+  templateString: '<div class="rdwStories" dojoAttachEvent="onclick: onClick, onkeypress: onKeyPress">'
                 + '  <ol dojoAttachPoint="listNode"></ol>'
                 + '  <ol dojoAttachPoint="convoNode"></ol>'
                 + '</div>',
+
+  postMixInProperties: function() {
+    //summary: dijit lifecycle method before template is generated.
+    this.inherited("postMixInProperties", arguments);
+
+    //Create a reverse up lookup for the nav keys.
+    this.navCodes = {};
+    for (var prop in this.navKeys) {
+      if (!(prop in this.navCodes)) {
+        this.navCodes[this.navKeys[prop] + ""] = prop;
+      }
+    }
+  },
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
@@ -75,25 +94,118 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  onClick: function(/*Event*/evt) {
+    //summary: handles click events, tries to select the first selectable item
+    //relative to the click.
+    var target = evt.target;
+    do {
+      if (target == this.domNode) {
+        break;
+      }
+      if (target.tabIndex > -1) {
+        this._setActiveNode(target);
+        break;
+      }
+    } while ((target = target.parentNode));
+  },
+
   onKeyPress: function(/*Event*/evt) {
     //summary: handles key presses for navigation. If the key press is
     //for something that should show a full conversation view then trigger
     //it.
-    if (evt.keyCode == this.convoKeyCode) {
-      //Get the active, focused element and see if it is widget with a message
-      var id = dojo.doc.activeElement.id;
-      var widget = id && dijit.byId(id);
-      var messageBag = widget && widget.messageBag;
-      var convoId = messageBag
-                    && messageBag["rd.msg.conversation"]
-                    && messageBag["rd.msg.conversation"].conversation_id;
-      if (convoId) {
-        rd.setFragId("rd:conversation:" + convoId);
+    var key = this.navCodes[evt.keyCode + ""];
+    if (key) {
+      if (key == "summary" && this.viewType != "summary") {
+        //Store that the state is going back, so do do not
+        //fetch new data for the old state.
+        this._isBack = true;
+
+        //Just go back in the browser history.
+        dojo.global.history.back();
+      } else {
+        //Get the active, focused element and see if it is widget with a message
+        var id = dojo.doc.activeElement.id;
+        var widget = id && dijit.byId(id);
+        var messageBag = widget && widget.messageBag;
+
+        if (key == "conversation" && this.viewType != "conversation") {
+          var convoId = messageBag
+                        && messageBag["rd.msg.conversation"]
+                        && messageBag["rd.msg.conversation"].conversation_id;
+          if (convoId) {
+            rd.setFragId("rd:conversation:" + convoId);
+          }
+        } else {
+          var found = widget.domNode;
+          //It is an up/down action. Show selection of the right element.
+          if (key == "up" || key == "down") {
+            //Need to select the next message widget. If it was a tab, it is
+            //already selected.
+            found = null;
+            var method = key == "up" ? "previousSibling" : "nextSibling";
+            var found = this._nextFocusNode(widget.domNode, method);
+
+            //If did not find a match then break out.
+            if (!found) {
+              return;
+            }
+          }
+
+          this._setActiveNode(found);
+        }
       }
-    } else if (evt.keyCode == this.summaryKeyCode && this.viewType == "conversation") {
-      //Just go back in the browser history.
-      dojo.global.history.back();
     }
+  },
+
+  _setActiveNode: function(/*DOMNode*/domNode) {
+    //summary: sets the active node in the stories area.
+    if (this.activeNode) {
+      dojo.removeClass(this.activeNode, "active");
+    }
+    if (this.activeParentNode) {
+      dojo.removeClass(this.activeParentNode, "active");
+    }
+
+    domNode.focus();
+    this.activeNode = domNode;
+
+    if (this.viewType == "summary") {
+      this.activeParentNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
+      dojo.addClass(this.activeParentNode, "active");
+    } else {
+      dojo.addClass(this.activeNode, "active");
+    }
+
+    dijit.scrollIntoView(this.activeNode);
+  },
+
+  _nextFocusNode: function(/*DOMNode*/domNode, /*String*/method) {
+    //Finds the next focusable widget in the stories hierarchy of nodes.
+
+    //Try node's siblings first.
+    var test = domNode;
+    while (test && (test = test[method])) {
+      if (test && test.tabIndex > -1) {
+        return test;
+      }
+    }
+
+    //No luck with siblings, try up a level at the next Story widget.
+    if (domNode) {
+      //Go up to hopefully find the story object.
+      var storyWidget = dijit.getEnclosingWidget(domNode.parentNode);
+      if (storyWidget) {
+        domNode = storyWidget.domNode[method];
+        var tabbys = domNode && dojo.query('[tabindex="0"]', domNode);
+        if (tabbys && tabbys.length) {
+          domNode = tabbys[method == "nextSibling" ? 0 : tabbys.length - 1];
+          if (domNode && domNode.tabIndex > -1 ) {
+            return domNode;
+          }
+        }
+      }
+    }
+    return null;
   },
 
   _sub: function(/*String*/topicName, /*String*/funcName) {
@@ -106,7 +218,19 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           args: arguments
         };
       }
-      this[funcName].apply(this, arguments);
+
+      //If this is a back request and there are conversations to show,
+      //just do the transition back.
+      if (this._isBack && this.conversations && this.conversations.length) {
+        //Just transition back to summary view, do not fetch new data.
+        this.transition("summary");
+      } else {
+        //Clear out info we were saving for back.
+        this.summaryActiveNode = null;
+        this.summaryScrollHeight = 0;
+        this[funcName].apply(this, arguments);
+      }
+      this._isBack = false;
     }));
   },
 
@@ -163,11 +287,18 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //If showing another summary type, then clear out the saved summary
     if (!this.viewType || viewType == this.viewType && viewType == "summary") {
       this.summaryScrollHeight = 0;
-      dijit.scrollIntoView(this.domNode);
+      window.scrollTo(0, 0);
+    }
+
+    //If transitioning away from summary, hold on to old activeNode
+    if (viewType != "summary") {
+      this.summaryActiveNode = this.activeNode;
     }
 
     //Skip the animation on the first display of this widget.
     if (!this._postRender) {
+      //Set the view type so next calls know the type.
+      this.viewType = viewType;
       this._postRender = true;
       return;
     }
@@ -221,61 +352,14 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           }
   
           //Create the args for the scroll over effect.
-          var scrollOverArgs = {
+          var scrollHorizAnim = dojox.fx.smoothScroll({
             win: this.domNode,
             target: { x: x, y: 0},
-            duration: 300,
-            onEnd: dojo.hitch(this, function() {
-              //Use another timeout, just for good measure,
-              //let DOM settle down.
-              setTimeout(dojo.hitch(this, function() {
-                //Only show the correct node.
-                if (viewType == "conversation") {
-                  this.listNode.style.display = "none";
-                  this.convoNode.style.display = "";       
-                } else {
-                  this.listNode.style.display = "";
-                  this.convoNode.style.display = "none";       
-                }
-      
-                //Pull the nodes out scrollNode          
-                this.domNode.removeChild(this._scrollNode);
-                this.domNode.appendChild(this.listNode);
-                this.domNode.appendChild(this.convoNode);
-      
-                //Remove fixed widths on the nodes.
-                this.domNode.style.width = oldDomNodeWidth;
-                this.listNode.style.width = oldListNodeWidth;
-                this.convoNode.style.width = oldConvoNodeWidth;
-                
-                //Reset scroll.
-                this.domNode.scrollLeft = 0;
-                
-                //If going back to summary view, then scroll down
-                if (viewType == "summary") {
-                  setTimeout(dojo.hitch(this, function() {
-                    dojox.fx.smoothScroll({
-                      win: dojo.global,
-                      target: { x: 0, y: this.summaryScrollHeight},
-                      duration: 300,
-                      onEnd: dojo.hitch(this, function() {
-                        //Hide the swipe indicator.
-                        this.switchNode.className = "rdwStoriesSwipe";
-                      })
-                    }).play();
-                  }), 100);
-                } else {
-                  //Hide the swipe indicator
-                  this.switchNode.className = "rdwStoriesSwipe";
-                }
-                
-              }), 100);
-            })
-          };
+            easing: this.animEasing,
+            duration: 600
+          });
   
           if (viewType == "conversation") {
-            //Going to conversation. scroll vertical then horizontal.
-
             //Pick a vertical position that is at the top of the Stories widget,
             //if current scroll position is less.
             var scrollHeight = dojo.global.scrollY;
@@ -284,30 +368,113 @@ dojo.declare("rdw.Stories", [rdw._Base], {
               scrollHeight = position;
             }
 
-            dojox.fx.smoothScroll({
+            //Set up vertical animation.
+            var scrollVertAnim = dojox.fx.smoothScroll({
               win: dojo.global,
               target: { x: 0, y: scrollHeight},
-              duration: 300,
-              onEnd: function (){
-                dojox.fx.smoothScroll(scrollOverArgs).play();
-              }
-            }).play();
+              easing: this.animEasing,
+              duration: 600
+            });
 
+            //Going to conversation. scroll vertical then horizontal.
+            var chain = dojo.fx.chain([
+              scrollVertAnim,
+              scrollHorizAnim
+            ]);
           } else {
+            //Set up vertical animation.
+            var scrollVertAnim = dojox.fx.smoothScroll({
+              win: dojo.global,
+              target: { x: 0, y: this.summaryScrollHeight},
+              easing: this.animEasing,
+              duration: 600
+            });
             //Going back to summary view. Scroll horizontal, then vertical
-            dojox.fx.smoothScroll(scrollOverArgs).play();
+            var chain = dojo.fx.chain([
+              scrollHorizAnim,
+              scrollVertAnim
+            ]);
           }
 
+          //Bind to the end of the fx chain, then play the chain.
+          dojo.connect(chain, "onEnd", dojo.hitch(this, function() {
+            //Reset the DOM nodes after the animation is done.
+            //Only show the correct node.
+            if (viewType == "conversation") {
+              this.listNode.style.display = "none";
+              this.convoNode.style.display = "";       
+            } else {
+              this.listNode.style.display = "";
+              this.convoNode.style.display = "none";       
+            }
+  
+            //Pull the nodes out scrollNode          
+            this.domNode.removeChild(this._scrollNode);
+            this.domNode.appendChild(this.listNode);
+            this.domNode.appendChild(this.convoNode);
+  
+            //Remove fixed widths on the nodes.
+            this.domNode.style.width = oldDomNodeWidth;
+            this.listNode.style.width = oldListNodeWidth;
+            this.convoNode.style.width = oldConvoNodeWidth;
+            
+            //Reset scroll.
+            this.domNode.scrollLeft = 0;
+
+            this.onTransitionEnd();
+          }));
+          chain.play();
+
+          //Set current state of the viewType. Do it here and not in
+          //onTransitionEnd in case user causes an action before the
+          //animation is done.
           this.viewType = viewType;
       }), 100);
     }
   },
 
+  animEasing: function(/* Decimal? */n){
+    //summary: easing function for animations. This is a copy of
+    //dojo.fx.easing.expoOut
+    return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+  },
+        
+  onTransitionEnd: function() {
+    //summary: called at the end of a summary transition.
+
+    //Hide the swipe indicator
+    this.switchNode.className = "rdwStoriesSwipe";
+
+    if (this.viewType == "summary") {
+      if (this.summaryActiveNode) {
+        this._setActiveNode(this.summaryActiveNode);
+      }
+    } else {
+      //Select the first focusable node in the conversation.
+      var tabbys = dojo.query('[tabindex="0"]', this.convoWidget.domNode);
+      if (tabbys.length) {
+        this._setActiveNode(tabbys[0]);
+      }
+    }
+  },
+
   destroy: function() {
-    //summary: dijit lifecycle method.
+    //summary: dijit lifecycle method. Be sure to get rid
+    //of anything we do not want if this widget is re-instantiated,
+    //like for on-the-fly extension purposes.
     if (this.convoWidget) {
       this.convoWidget.destroy();
     }
+    if (this.activeNode) {
+      delete this.activeNode;
+    }
+    if (this.activeParentNode) {
+      delete this.activeParentNode;
+    }
+    if (this.summaryActiveNode) {
+      delete this.summaryActiveNode;
+    }
+
     this.inherited("destroy", arguments);
   },
 
@@ -328,8 +495,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //reset stored state.
     this.conversations = [];
     this._groups = [];
-    this._skip = 0;
-    this._displayCount = 0;
 
     //Be sure homeGroups are loaded.
     if (!this.homeGroupModules) {
@@ -354,8 +519,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   _renderHome: function() {
     //summary: does the actual display of the home view.
-    rd.conversation.latest(this.messageLimit, (this._skip * this.messageLimit), dojo.hitch(this, function(conversations) {
-      //The home view groups messages by type. So, for each message in each conversation,
+    rd.conversation.home(this.messageLimit, dojo.hitch(this, function(conversations) {
+       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
       if (conversations && conversations.length) {
         this.conversations = this.conversations.concat(conversations);
@@ -376,10 +541,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
                 widget._isGroup = true;
                 this._groups.push(widget);
                 this.addSupporting(widget);
-                this._displayCount += 1;
               } else {
                 leftOver.push(msgBag);
-                this._displayCount += 1;
               }
             }
           }
@@ -394,29 +557,20 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         }
       }
 
-      if (conversations && conversations.length && this._displayCount <= this.messageLimit && this._skip < this.homeSkipLimit) {
-        //Keep fetching more messages until we get a good list of things to
-        //show since grouping can eat up a lot of messages. Limit it by number
-        //of "pages" (skips) we do in the result so we don't get infinite recursion.
-        //Also stop if the last call did not get any more conversations.
-        this._skip += 1;
-        this._renderHome();
-      } else {
-        this._sortGroups();
+      this._sortGroups();
 
-        //Add all the widgets to the DOM and ask them to display.
-        var frag = dojo.doc.createDocumentFragment();
-        for (var i = 0, group; group = this._groups[i]; i++) {
-          group.placeAt(frag);
-          group.display();
-        }
-  
-        //Inject nodes all at once for best performance.
-        this.listNode.appendChild(frag);
-        
-        this.transition("summary");
+      //Add all the widgets to the DOM and ask them to display.
+      var frag = dojo.doc.createDocumentFragment();
+      for (var i = 0, group; group = this._groups[i]; i++) {
+        group.placeAt(frag);
+        group.display();
       }
-    }));   
+
+      //Inject nodes all at once for best performance.
+      this.listNode.appendChild(frag);
+
+      this.transition("summary");
+    }));
   },
 
   createHomeStory: function(/*Array*/msgs) {

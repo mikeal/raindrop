@@ -32,8 +32,20 @@
 
 import re
 import time
+from email.utils import mktime_tz, parsedate_tz
 
 def handler(message):
+    # Extract the timestamp of the message we're processing.
+    if 'date' in message['headers']:
+        date = message['headers']['date'][0]
+        if date:
+            try:
+                timestamp = mktime_tz(parsedate_tz(date))
+            except (ValueError, TypeError), exc:
+                logger.debug('Failed to parse date %r in doc %r: %s',
+                             date, message['_id'], exc)
+                timestamp = 0
+
     # Google Groups Step 2 (List Requests Confirmation) Detector
     # A request is a message from the address "noreply@googlegroups.com"
     # with an "X-Google-Loop: unsub_requested" header.
@@ -114,6 +126,10 @@ def handler(message):
         if rows:
             list = rows[0]['doc']
             logger.info('found list in datastore')
+            # TODO: set the status to "unsubscribed" no matter what the current
+            # status is as long as this message is newer than the newest message
+            # from which we've updated the list; see the Mailman step 3 code
+            # for the details of how this should work.
             if (list['status'] == 'unsubscribe-confirmed'):
                 logger.info('list status is unsubscribe-confirmed; setting to unsubscribed')
                 list['status'] = 'unsubscribed'
@@ -238,11 +254,34 @@ def handler(message):
 
         list = rows[0]['doc']
 
-        if (list['status'] != 'unsubscribe-confirmed'):
-            logger.info('list status is not unsubscribe-confirmed; ignoring')
+        if (list['status'] == 'unsubscribed'):
+            logger.info('list status is already unsubscribed; ignoring')
             return
 
-        logger.info('list status is unsubscribe-confirmed; setting to unsubscribed')
+        # If the user is using Raindrop to unsubscribe from the list,
+        # then the list status should be "unsubscribe-confirmed" at this point.
+        # However, when a user starts using Raindrop and imports a bunch
+        # of messages, the list status might be "subscribed" here, depending on
+        # the order in which the messages are imported.
+        #
+        # Nevertheless, we should still set the status to "unsubscribed" now
+        # to reflect that the user is no longer subscribed to the list.  If we
+        # subsequently process a message that indicates the user later
+        # resubscribed to the list, we'll set the status back to "subscribed"
+        # at that point.
+
+        # If the list has been changed by a newer message, that means the user
+        # has received a message from the list since this unsubscription
+        # confirmation, which means that either the unsubscription didn't work
+        # or (more likely) the user resubscribed to the list.  In either case,
+        # we shouldn't set the list to unsubscribed here, since it isn't.
+        if 'changed_timestamp' in list \
+                and timestamp < list['changed_timestamp']:
+            logger.info('list has been changed by a newer message; ignoring')
+            return
+
+        logger.info('list status is %s; setting it to unsubscribed',
+                    list['status'])
 
         list['status'] = 'unsubscribed'
         update_documents([list])

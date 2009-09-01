@@ -98,18 +98,45 @@ configure raindrop:
         host=hostname
         port=port
 
-  * Add imap accounts along the lines of
-        [account-some-account-name] # the 'account-' prefix is important!
-        kind=imap
+  The "account-" prefix is important in the first [account-XXX] field
+
+  * Add gmail accounts along the lines of
+        [account-gmail-username]
+        proto=imap
+        kind=gmail
         host=imap.gmail.com
         port=993
         username=username@gmail.com
         password=topsecret
         ssl=True
 
+  * Add twitter accounts along the lines of
+        [account-twitter-username]
+        proto=twitter
+        kind=twitter
+        username=username@gmail.com
+        password=topsecret
+
+  * Add imap accounts along the lines of
+        [account-imap-username]
+        proto=imap
+        kind=imap
+        host=imap.example.com
+        port=993
+        username=username
+        password=topsecret
+        ssl=True
+
+  * Add skype accounts along the lines of
+        [account-skype-clarkbw]
+        proto=skype
+        kind=skype
+        username=username
+        password=topsecret
+
   * Add a 'test' account - for the 'test suite' - along the lines of:
         [account-test]
-        kind=test
+        proto=test
         username=test # not used, but we die without it!
         num_test_docs=1 # this defaults to 5 - but 1 is useful sometimes!
 
