@@ -36,9 +36,9 @@ rd.api.me = {
         } else {
           var ids = [];
           for (var i = 0, row; row = json.rows[i]; i++) {
-            var kind = row.doc.kind;
-            kind = this.accountToIdentityTransform[kind] || kind;
-            ids.push([kind, row.doc.username]);
+            var proto = row.doc.proto;
+            proto = this.accountToIdentityTransform[proto] || proto;
+            ids.push([proto, row.doc.username]);
           }
           return ids;
         }
