@@ -156,6 +156,7 @@ class ImapProvider(object):
     self.reactor = reactor
     self.fetch_queue = defer.DeferredQueue()
     self.write_queue = defer.DeferredQueue()
+    self.updated_folder_infos = None
 
   @defer.inlineCallbacks
   def _reqList(self, conn, *args, **kwargs):
@@ -284,8 +285,15 @@ class ImapProvider(object):
         except imap4.IMAP4Exception, exc:
           logger.error("Failed to check %r for quick items: %s", name, exc)
 
+    # We only update the cache of the folder once all items from that folder
+    # have been written, so extensions which runwritten once all items from folder fetched.
+    assert self.updated_folder_infos is None
+    self.updated_folder_infos = []
+
     # Now update the cache for all folders...
     sync_by_name = {}
+    all_loc_to_nuke = [] # simple list of schema items to nuke.
+    all_loc_to_add = {} # map of maps [folder_path][uid] = item_to_add
     for delim, name in all_names:
       try:
         info = yield conn.select(name)
@@ -310,15 +318,21 @@ class ImapProvider(object):
         if '_id' in cache_doc:
           new_item['_id'] = cache_doc['_id']
           new_item['_rev'] = cache_doc['_rev']
-        _ = yield self.doc_model.create_schema_items([new_item])
+        self.updated_folder_infos.append(new_item)
         sync_items = cache_doc['infos']
       else:
         sync_items = cache_doc.get('infos')
       sync_by_name[(delim, name)] = sync_items[:]
+      # fetch folder info, and delete information about 'stale' locations
+      # before fetching.
+      loc_to_nuke, loc_needed = yield self._makeLocationInfos(name, delim,
+                                                              sync_items)
+      all_loc_to_nuke.extend(loc_to_nuke)
+      all_loc_to_add[name] = loc_needed
     # XXX - todo - should nuke old folders which no longer exist.
 
-    # Take a copy of the infos before consuming them priming the queues...
-    todo_locations = sync_by_name.copy()
+    if all_loc_to_nuke:
+      self.write_queue.put(all_loc_to_nuke)
 
     # now use the cached info to sync the IMAP nessages for each and every
     # mailbox.
@@ -336,17 +350,20 @@ class ImapProvider(object):
           rest = todo[:-50]
           logger.log(1, 'queueing check of %d items in %r', len(batch), name)
           self.fetch_queue.put((name, batch))
+          # see if these items also need location records...
+          new_locs = []
+          for mi in batch:
+            try:
+              new_locs.append(all_loc_to_add[name][mi['UID']])
+            except KeyError:
+              pass
+          if new_locs:
+            logger.debug('queueing %d new location records', len(new_locs))
+            self.write_queue.put(new_locs)
           if rest:
             sync_by_name[info] = rest
           else:
             del sync_by_name[info]
-
-    # and while the items are being fetched we can update the location info
-    # for each folder.
-    logger.info('starting message location updates...')
-    for (delim, name), items in todo_locations.iteritems():
-      location = name.split(delim)
-      _ = yield self._updateLocations(location, delim, items)
 
   @defer.inlineCallbacks
   def _syncFolderCache(self, conn, folder_path, server_info, cache_doc):
@@ -454,10 +471,22 @@ class ImapProvider(object):
     defer.returnValue(dirty)
 
   @defer.inlineCallbacks
-  def _updateLocations(self, folder_path, delim, results):
-    """Writes 'message location' schemas for messages, using the folder name
-       as the default location.
-    """
+  def _makeLocationInfos(self, folder_name, delim, results):
+    # We used to write all location records - even those we were never going
+    # to fetch - in one hit - after fetchng the messages.  For large IMAP
+    # accounts, this was unacceptable as too many records hit the couch at
+    # once.
+    # Note a key requirement here is to fetch new messages quickly, and to
+    # perform OK with a new DB.  So, the general process is:
+    # * Query all couch items which say they are in this location.
+    # * Find the set of messages no longer in this location and delete them
+    #   all in one go.
+    # * Find the set of messages which we don't have location records for.
+    #   As we process and filter each individual message, check this map to
+    #   see if a new record needs to be written and write it with the message
+    #   itself.
+    # This function returns the 2 maps - the caller does the delete/update...
+    folder_path = folder_name.split(delim)
     logger.debug("checking what we know about items in folder %r", folder_path)
     acct_id = self.account.details.get('id')
     # Build a map keyed by the rd_key of all items we know are currently in
@@ -474,52 +503,44 @@ class ImapProvider(object):
     key = ['rd.msg.location', 'location', folder_path]
     existing = yield self.doc_model.open_view(key=key, reduce=False,
                                               include_docs=True)
-    couch = {} # key is rdkey, val is _id /_rev incase we need to nuke it.
+    scouch = set()
+    to_nuke = []
     for row in existing['rows']:
       doc = row['doc']
       if doc.get('source') != ['imap', acct_id]:
         # Something in this location, but it was put there by other than
         # this IMAP account - ignore it.
         continue
-      couch[tuple(doc['rd_key'])] = (doc['_id'], doc['_rev'])
+      rdkey = tuple(doc['rd_key'])
+      if rdkey not in current:
+        to_nuke.append({'_id': id,
+                        '_rev': rev,
+                        '_deleted': True,
+                        })
+      scouch.add(rdkey)
 
-    # Finally merge the differences between what imap has and couch has
-    scouch = set(couch)
-    scurrent = set(current)
-    to_add = scurrent - scouch
-    to_nuke = scouch - scurrent
-    to_up = []
-    seen = set()
-    for rdkey in to_nuke:
-      id, rev = couch[rdkey]
-      to_up.append({'_id': id,
-                    '_rev': rev,
-                    '_deleted': True,
-                  })
-      seen.add(rdkey)
-    for rdkey in to_add:
+    # Finally find the new ones we need to add
+    to_add = {}
+    for rdkey in set(current) - scouch:
       # Item in the folder but couch doesn't know it is there.
-      if rdkey in seen:
-        logger.debug("skipping duplicate message in folder")
-        continue
-      seen.add(rdkey)
       # We hack the 'extension_id' in a special way to allow multiple of the
       # same schema; multiple IMAP accounts, for example, may mean the same
       # rdkey ends up with multiple of these location records.
       # XXX - this is a limitation in the doc model we should fix!
       ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, ".".join(folder_path))
-      to_up.append({'rd_key': list(rdkey),
-                    'ext_id': ext_id,
-                    'schema_id': 'rd.msg.location',
-                    'items': {'location': folder_path,
-                              'location_sep': delim,
-                              'uid': current[rdkey],
-                              'source': ['imap', acct_id]},
-                  })
-    if to_up:
-      logger.info("folder %r info needs to update %d location records",
-                  folder_path, len(to_up))
-      self.write_queue.put(to_up)
+      uid = current[rdkey]
+      new_item = {'rd_key': list(rdkey),
+                  'ext_id': ext_id,
+                  'schema_id': 'rd.msg.location',
+                  'items': {'location': folder_path,
+                            'location_sep': delim,
+                            'uid': uid,
+                            'source': ['imap', acct_id]},
+                  }
+      to_add[uid] = new_item
+    logger.info("folder %r info needs to update %d and delete %d location records",
+                folder_name, len(to_add), len(to_nuke))
+    defer.returnValue((to_nuke, to_add))
 
   def results_by_rdkey(self, infos):
     # Transform a list of IMAP infos into a map with the results keyed by the
@@ -637,7 +658,7 @@ class ImapProvider(object):
         logger.info('write queue processor stopping')
         break
       # else a real set of schemas to write and process.
-      logger.debug('write queue has %d schema items', len(items))
+      logger.debug('write queue popped %d schema items', len(items))
       try:
         _ = yield self.doc_model.create_schema_items(items)
       except DocumentSaveError, exc:
@@ -790,7 +811,10 @@ class IMAPAccount(base.AccountBase):
         conns.append(fetch_connection)
         ds.append(prov._consumeFetchRequests(fetch_connection))
       _ = yield defer.DeferredList(ds)
-      # fetchers done - post a stop request to the writer...
+      # fetchers done - write the cache docs last.
+      if prov.updated_folder_infos:
+        prov.write_queue.put(prov.updated_folder_infos)
+      # and finally post a stop request to the writer...
       prov.write_queue.put(None)
       for c in conns:
         _ = yield c.logout()
