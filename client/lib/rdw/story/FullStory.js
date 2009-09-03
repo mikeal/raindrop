@@ -11,7 +11,7 @@ dojo.declare("rdw.story.FullStory", [rdw.Story], {
   //A style to add to any messages that are replies.
   replyStyle: "",
 
-  titleTemplate: '<div class="fullMessageTitle">${title}</div>',
+  titleTemplate: '<div class="fullMessageTitle">${title}</div><div class="toolBox"><a class="archive" href="#archive">Archive</a><a class="spam" href="#spam">Spam</a><a class="delete" href="#delete">Delete</a></div>',
 
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.

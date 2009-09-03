@@ -132,8 +132,8 @@
   -moz-box-sizing:border-box;
 }
 
-.Story:hover .QuickCompose .to input,
-.Story:hover .QuickCompose .subject input {
+.Message.active .QuickCompose .to input,
+.Story.active .QuickCompose .subject input {
   background-color: #FFF;
 }
 
@@ -184,10 +184,14 @@
   -moz-border-radius-topright:0px;
 }
 
-.Story:hover .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Story:hover .rdwDataSelector .dijitComboBox input.dijitReset,
-.Story:hover .dijitComboBox input.dijitReset, 
-.Story:hover .rdwDataSelector .dijitSpinner input.dijitReset {
+.Message.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.Message.active .rdwDataSelector .dijitComboBox input.dijitReset,
+.Message.active .dijitComboBox input.dijitReset, 
+.Message.active .rdwDataSelector .dijitSpinner input.dijitReset,
+.Story.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.Story.active .rdwDataSelector .dijitComboBox input.dijitReset,
+.Story.active .dijitComboBox input.dijitReset, 
+.Story.active .rdwDataSelector .dijitSpinner input.dijitReset, {
   background-color: #FFF !important;
 }
 
@@ -226,8 +230,10 @@
   -moz-border-radius-topright:5px;
 }
 
-.Story:hover .rdwDataSelector .dijitButtonNode,
-.Story:hover .dijitButtonNode {
+.Message.active .rdwDataSelector .dijitButtonNode,
+.Message.active .dijitButtonNode,
+.Story.active .rdwDataSelector .dijitButtonNode,
+.Story.active .dijitButtonNode {
   background-color:#FFF;
 }
 

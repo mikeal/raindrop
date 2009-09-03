@@ -122,3 +122,7 @@
 .tweetList .Message .message {
   padding-bottom: 0;
 }
+
+.rdwStoryTwitterTimeLine .tweetList .Message .actions {
+  display: none;
+}

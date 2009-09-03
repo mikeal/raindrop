@@ -72,19 +72,23 @@
   opacity: 1.0;
 }
 
-.Message .topActions .archive {
-  background-image: url(i/overlay_archive.png);
-}
-
 .Message .topActions .expand {
   margin-right: 4px;
-  background-image: url(i/overlay_expand.png);
+  background-image: url("i/overlay_expand.png");
+}
+
+.Message .topActions .archive {
+  margin-right: 4px;
+  background-image: url("i/overlay_archive.png");
+}
+
+.Message .topActions .delete {
+  background-image: url("i/overlay_delete.png");
 }
 
 .Message .actions {
-  text-align: right;
+  text-align: left;
   font-size: x-small;
-  padding-top: 8px;
 }
 
 .Message .actions a {
@@ -92,11 +96,37 @@
   text-decoration: none;
   font-family: Droid-serif, Georgia, times, serif;
   font-style: italic;
-  padding: 0 0 0 4px;
+  height: 16px;
+  margin: 8px 0 0 0;
+  line-height: 16px;
+  display: inline-block;
 }
 
 .Message .actions a:hover {
   text-decoration: underline;
+  color: #1a1a1a;
+}
+
+.Message .actions .reply {
+  display: none;
+}
+
+.Message:last-child .actions .reply {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.Message .actions .moreMessages {
+  display: none;
+}
+
+.Message:last-child .actions .moreMessages {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.Message .actions .identity {
+  display: inline-block;
 }
 
 .Message .message {
