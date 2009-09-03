@@ -16,7 +16,7 @@
   margin-bottom: 8px;
   text-decoration: none;
   font-weight: bold;
-  font-family: arial,verdana,geneva,sans-serif;
+  font-family: Droid-sans, arial,verdana,geneva,sans-serif;
   color: #1A1A1A;
   background-color: #FFF;
   padding: 8px;
@@ -57,7 +57,7 @@
   display: inline-block;
   padding-left: 0.5em;
   text-transform: capitalize;
-  font-family: georgia, times, serif;
+  font-family: Droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: small;
 }

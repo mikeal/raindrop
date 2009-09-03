@@ -1,7 +1,9 @@
 .fullMessageTitle {
-  font-size: large;
+  font-size: normal;
   font-weight: bold;
-  margin-bottom: 6px;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  line-height: 30px;
 }
 
 .rdwStoryFullMessage.Message .actions {

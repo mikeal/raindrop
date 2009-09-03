@@ -12,7 +12,8 @@
 }
 
 .active .Message,
-.Message.active {
+.Message.active,
+.Message.reply.active {
   background-color: #FFB0B0;
 }
 
@@ -83,12 +84,13 @@
 .Message .actions {
   text-align: right;
   font-size: x-small;
+  padding-top: 8px;
 }
 
 .Message .actions a {
   color: #1a1a1a;
   text-decoration: none;
-  font-family: Georgia, times, serif;
+  font-family: Droid-serif, Georgia, times, serif;
   font-style: italic;
   padding: 0 0 0 4px;
 }
@@ -123,13 +125,13 @@
 .Message .from {
   text-decoration: none;
   font-style: italic;
-  font-family: Georgia, times, serif;
+  font-family: Droid-serif, Georgia, times, serif;
   color: #1A1A1A;
 }
 
 .Message .medium {
   font-size: small;
-  font-family: Arial, Verdana, sans-serif;
+  font-family: Droid-sans, Arial, Verdana, sans-serif;
   color: #888;
   display: none;
 }
@@ -137,7 +139,9 @@
 .Message .subject {
   padding-right: 0;
   font-weight: bold;
-  font-family: Arial, Verdana, sans-serif;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  font-family: Droid-sans, Arial, Verdana, sans-serif;
   display: block;
 }
 
@@ -148,7 +152,7 @@
 .Message > .message > .content {
   overflow: hidden;
   font-size: small;
-  font-family: Arial, Verdana, sans-serif;
+  font-family: Droid-sans, Arial, Verdana, sans-serif;
   line-height: 1.3em;
   color: #1A1A1A;
   margin: 6px 0 0;
@@ -177,7 +181,7 @@
 
 .Message > .message > .timestamp > span {
   text-transform: lowercase;
-  font-family: Georgia, times, serif;
+  font-family: Droid-serif, Georgia, times, serif;
   font-style: italic;
   color: #1a1a1a;
   position:absolute;

@@ -378,8 +378,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
             //Going to conversation. scroll vertical then horizontal.
             var chain = dojo.fx.chain([
-              scrollVertAnim,
-              scrollHorizAnim
+              scrollHorizAnim,
+           	  scrollVertAnim
             ]);
           } else {
             //Set up vertical animation.
@@ -391,8 +391,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
             });
             //Going back to summary view. Scroll horizontal, then vertical
             var chain = dojo.fx.chain([
+              scrollVertAnim,
               scrollHorizAnim,
-              scrollVertAnim
             ]);
           }
 
