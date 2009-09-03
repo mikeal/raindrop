@@ -94,12 +94,20 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  //elements to ignore for click selection.
+  clickIgnore: {
+    "input": 1,
+    "textarea": 1,
+    "select": 1,
+    "option": 1
+  },
+
   onClick: function(/*Event*/evt) {
     //summary: handles click events, tries to select the first selectable item
     //relative to the click.
     var target = evt.target;
     do {
-      if (target == this.domNode) {
+      if (target == this.domNode || this.clickIgnore[target.nodeName.toLowerCase()]) {
         break;
       }
       if (target.tabIndex > -1) {
