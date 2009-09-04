@@ -602,12 +602,24 @@ class ImapProvider(object):
       this = left[:10]
       left = left[10:]
       to_fetch = ",".join(str(v) for v in this)
-      results = yield conn.fetchMessage(to_fetch, uid=True)
+      # We need to use fetchSpecific so we can 'peek' (ie, not reset the
+      # \\Seen flag) - note that gmail does *not* reset the \\Seen flag on
+      # a fetchMessages, but rfc-compliant servers do...
+      results = yield conn.fetchSpecific(to_fetch, uid=True, peek=True)
+      #results = yield conn.fetchMessage(to_fetch, uid=True)
       # Run over the results stashing in our by_uid dict.
       infos = []
       for info in results.values():
-        uid = int(info['UID'])
-        content = info['RFC822']
+        # hrmph - fetchSpecific's return value is undocumented and strange!
+        assert len(info)==1
+        uidlit, uid, bodylit, req_data, content = info[0]
+        assert uidlit=='UID'
+        assert bodylit=='BODY'
+        assert not req_data, req_data # we didn't request headers etc.
+        uid = int(uid)
+        # but if we used fetchMessage:
+        #   uid = int(info['UID'])
+        #   content = info['RFC822']
         flags = by_uid[uid]['FLAGS']
         rdkey = by_uid[uid]['RAINDROP_KEY']
         mid = rdkey[-1]
