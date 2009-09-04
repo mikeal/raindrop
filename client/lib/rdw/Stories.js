@@ -387,7 +387,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
             //Going to conversation. scroll vertical then horizontal.
             var chain = dojo.fx.chain([
               scrollHorizAnim,
-           	  scrollVertAnim
+              scrollVertAnim
             ]);
           } else {
             //Set up vertical animation.
@@ -399,8 +399,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
             });
             //Going back to summary view. Scroll horizontal, then vertical
             var chain = dojo.fx.chain([
-              scrollVertAnim,
               scrollHorizAnim,
+              scrollVertAnim
             ]);
           }
 
@@ -463,6 +463,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       if (tabbys.length) {
         this._setActiveNode(tabbys[0]);
       }
+
+      //Set the read state
+      rd.api().seen({
+        ids: this.oneConversation
+      });
     }
   },
 
@@ -588,7 +593,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //to the document's DOM yet. Override for more custom behavior/subclasses.
     return new rdw.Story({
       msgs: msgs,
-      messageLimit: 3,
+      unreadReplyLimit: 2,
       displayOnCreate: false,
       allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Story

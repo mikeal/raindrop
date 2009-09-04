@@ -111,7 +111,7 @@ rd.api.message = {
   /**
    * @private
    * filters out messages that are not "fresh" -- messages that have not been
-   * read, deleted or archived.
+   * deleted or archived.
    *
    * @param {dojo.Deferred} dfd The deferred that should be called
    * with the results.
@@ -124,7 +124,6 @@ rd.api.message = {
     //Get the key for each item and build up a quick lookup that has all
     var fresh = {}, keys = [];
     for (var i = 0, id; id = ids[i]; i++) {
-      keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.seen"]]);
       keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.archive"]]);
       keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.delete"]]);
       fresh[id.rd_key.join(",")] = true;
@@ -139,7 +138,7 @@ rd.api.message = {
       //For anything seen/deleted/archived, mark it as not fresh.
       for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
         var key = doc.rd_key.join(",");
-        if (doc.seen || doc.deleted || doc.archived) {
+        if (doc.deleted || doc.archived) {
           fresh[key] = false;
         }
       }
@@ -175,7 +174,7 @@ rd.api.extend({
 
   /**
    * @lends rd.api
-   * Only return messages that have not been read, deleted or archived.
+   * Only return messages that have not been deleted or archived.
    * It will use the previous call's results, or, optionally pass an args.ids
    * which is an array of items with an rd_key field.
    */
@@ -186,5 +185,15 @@ rd.api.extend({
       this.addParentCallback(dojo.hitch(rd.api.message, "_fresh", this._deferred, args));
     }
     return this;
+  },
+
+  /**
+   * @lends rd.api
+   * Only return messages that have not been deleted or archived.
+   * It will use the previous call's results, or, optionally pass an args.ids
+   * which is an array of items with an rd_key field.
+   */
+  seen: function(args) {
+    
   }
 });
