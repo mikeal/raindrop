@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.account" : {
+        "name" : "rss",
+        "id" : "rss",
+        "proto" : "rss"
+    }
+  },
+  "rd_key": ["raindrop-account", "account!rss"]
+}

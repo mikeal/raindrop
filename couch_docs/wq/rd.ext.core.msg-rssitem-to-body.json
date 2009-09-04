@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.raw.rss-entry"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates 'rd.msg.body' schemas for rss feed entries"
+    }
+  }
+}

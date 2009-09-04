@@ -89,6 +89,9 @@ twitter: python-twitter (link?)
   - Mac Ports -
     easy_install-2.6 python-twitter
 
+rss: feedparser - http://feedparser.org
+  easy_install feedparser
+
 configure raindrop:
   * edit ~/.raindrop
 

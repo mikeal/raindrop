@@ -1,0 +1,8 @@
+{
+  "schemas" : {
+    "rd.raw.rss" : {
+        "uri" : "http://getsatisfaction.com/mozilla_messaging/products/mozilla_thunderbird.rss"
+    }
+  },
+  "rd_key": ["rss-feed", "http://getsatisfaction.com/mozilla_messaging/products/mozilla_thunderbird.rss"]
+}

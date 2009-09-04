@@ -1,0 +1,11 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.raw.rss"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Extracts a raw RSS/Atom feed into individual messages",
+        "smart_updater": true
+    }
+  }
+}
