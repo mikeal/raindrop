@@ -264,9 +264,11 @@ def insert_default_docs(whateva, options):
         assert '_id' not in src, src # "we build all that!"
         # a generic json document with a set of schemas etc...
         assert 'schemas' in src, 'no schemas - dunno what to do!'
-        # Need to allow docs to override this - later...
-        ext_id = os.path.splitext(os.path.basename(filename))[0]
-        rd_key = ['ext', ext_id]
+        try:
+            rd_key = src['rd_key']
+        except KeyError:
+            ext_id = os.path.splitext(os.path.basename(filename))[0]
+            rd_key = ['ext', ext_id]
         ret = []
 
         finger = fingerprinter.get_finger("!".join(rd_key))
