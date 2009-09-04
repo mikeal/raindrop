@@ -1,0 +1,14 @@
+Date: Wed, 26 Aug 2009 20:45:32 -0700
+From: John Doe <jdoe@example.com>
+To: test@lists.example.com
+Subject: test
+Message-ID: <009b8ab39d924dd0b7e3a19d4534ca31@example.com>
+List-Id: test list <test.lists.example.com>
+List-Unsubscribe: <https://lists.example.com/options/test>,
+	<mailto:test-request@lists.example.com?subject=unsubscribe>
+List-Post: <mailto:test@lists.example.com>
+List-Help: <mailto:test-request@lists.example.com?subject=help>
+List-Subscribe: <https://lists.example.com/listinfo/test>,
+	<mailto:test-request@lists.example.com?subject=subscribe>
+
+test
