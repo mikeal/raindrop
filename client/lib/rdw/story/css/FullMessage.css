@@ -1,21 +1,98 @@
 .fullMessageTitle {
-  font-size: large;
+  font-size: normal;
   font-weight: bold;
-  margin-bottom: 6px;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  line-height: 30px;
+  height: 30px;
+  padding-left: 30px;
+  margin-right: 175px;
 }
 
 .rdwStoryFullMessage.Message .actions {
   visibility: inherit;
 }
 
-.rdwStoryFullMessage .utc {
+.rdwStoryFullMessage .additionalTime {
   visibility: visible;
 }
 
-.Story:hover .rdwStoryFullMessage .utc {
+.Story:hover .rdwStoryFullMessage .additionalTime {
   visibility: visible;
 }
 
 .rdwStoryFullMessage.Message .message {
   margin-left: 8px;
+}
+
+.rdwStoryFullMessage.Message .actions {
+  text-align: left;
+}
+
+.rdwStoryFullMessage.Message .actions a {
+  color: #1a1a1a;
+  height: 16px;
+  padding: 0 0 0 20px;
+  margin: 8px 10px 0 0;
+  line-height: 16px;
+}
+
+.rdwStoryFullMessage.Message .actions .reply {
+  background-image: url("i/reply.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  display: inline-block;
+}
+
+.rdwStoryFullMessage.Message .actions .fwd {
+  background-image: url("i/forward.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+.toolBox {
+  font-size: x-small;
+  text-align: right;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.toolBox a {
+  color: #1a1a1a;
+  height: 16px;
+  padding: 0 0 0 20px;
+  margin: 8px 0 0 10px;
+  line-height: 16px;
+  font-family: Droid-serif, Georgia, times, serif;
+  font-style: italic;
+  text-decoration: none;
+}
+
+.toolBox a:hover {
+  text-decoration: underline;
+}
+
+.toolBox .archive {
+  background-image: url("i/archive.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
+}
+
+.toolBox .spam {
+  background-image: url("i/spam.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
+}
+
+.toolBox .delete {
+  background-image: url("i/delete.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
 }

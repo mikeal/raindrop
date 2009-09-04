@@ -13,19 +13,9 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
                    </li>',
 
   /**
-   * Indicates what state the widget is in, more or less.
+   * The limit of tweets to use.
    */
-  moreLessState: "less",
-
-  /**
-   * The limit to use for the "less" state
-   */
-  lessLimit: 3,
-
-  /**
-   * The limit to use for the "more" state
-   */
-  moreLimit: 50,
+  unreadReplyLimit: 2,
 
   /**
    * Do not format messages greater than the first one as replies
@@ -56,29 +46,11 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
    * Extends base class implementation of display to do subclass-specific rendering.
    */
   display: function() {
-    //Set the message limit before calling display.
-    this.messageLimit = this.moreLessState == "less" ? this.lessLimit : this.moreLimit;
-
     this.inherited("display", arguments);
 
     //Update total count.
     rd.escapeHtml(dojo.string.substitute(this.i18n.poundCount, {
       count: this.msgs.length
     }), this.countNode, "only");
-
-    //Update more/less link
-    var text = this.moreLessState == "less" ? this.i18n.more : this.i18n.less;
-    rd.escapeHtml(text, this.moreLessNode, "only");
-  },
-
-  /**
-   * Handles clicks to show either more or less of the tweets.
-   *
-   * @param evt {Event} click event.
-   */
-  onMoreLessClick: function(evt) {
-    this.moreLessState = this.moreLessState == "less" ? "more" : "less";
-    this.display();
-    dojo.stopEvent(evt);
   }
 });

@@ -18,9 +18,11 @@ dojo.declare("rdw.story.MailingList", [rdw.Story], {
   messageCtorName: "rdw.story.MailingListMessage",
 
   /**
-   * Limit to number of messages. If value is -1, then it means show all.
+   * Limit to number of unread messages. If value is -1, then it means show all.
+   * In this context, it is treated as number of threads to show that have unread
+   * messages.
    */
-  messageLimit: 3,
+  unreadReplyLimit: 2,
 
   /**
    * A style to add to any messages that are replies, but this grouping

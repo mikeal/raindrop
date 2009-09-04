@@ -5,6 +5,7 @@
   archive: "archive",
   closeIcon: "close",
   contacts: "Contacts",
+  deleted: "delete",
   directName: "Direct Messages",
   directTitle: "You and one other person are talking",
   expand: "expand",
@@ -31,5 +32,5 @@
   starred: "Starred",
   whoKnown: "Is this ${name}?",
   whoTitle: "Associate this identity with a contact.",
-  whoUnknown: "This person is..." 
+  whoUnknown: "&#9654; who is this?" 
 })

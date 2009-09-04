@@ -513,8 +513,8 @@ class ImapProvider(object):
         continue
       rdkey = tuple(doc['rd_key'])
       if rdkey not in current:
-        to_nuke.append({'_id': id,
-                        '_rev': rev,
+        to_nuke.append({'_id': doc['_id'],
+                        '_rev': doc['_rev'],
                         '_deleted': True,
                         })
       scouch.add(rdkey)

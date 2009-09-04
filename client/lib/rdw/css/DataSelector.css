@@ -60,6 +60,13 @@
 
 .dijitMenu {
   border: none !important;
+  background-color: #1a1a1a;
+  color: white;
+  opacity: .75;
+  padding: 0 8px;
+  -moz-box-sizing: border-box;
+  overflow-y: hidden;
+  margin: 0;
 }
 
 .dijitMenuItem {

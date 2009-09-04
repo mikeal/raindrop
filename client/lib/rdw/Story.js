@@ -17,9 +17,9 @@ dojo.declare("rdw.Story", [rdw._Base], {
   //to show individual messages.
   messageCtorName: "rdw.Message",
 
-  //Limit to number of messages. If value is -1, then it means
-  //show all.
-  messageLimit: -1,
+  //Limit to number of unread replies to show. If value is -1, then it means
+  //show all replies, read and unread.
+  unreadReplyLimit: -1,
 
   //A style to add to any messages that are replies.
   replyStyle: "reply",
@@ -127,29 +127,63 @@ dojo.declare("rdw.Story", [rdw._Base], {
     // Sort by date
     this.msgs.sort(this.msgSort);
 
-    //Create the messages.
-    var limit = this.messageLimit > -1 ? this.messageLimit : this.msgs.length;
+    //Create the messages, first by loading the module responsible for showing
+    //them.
     dojo["require"](this.messageCtorName);
     dojo.addOnLoad(dojo.hitch(this, function() {
+      //Set the limit to fetch. Always show the first message, that is why there is
+      //a -1 for the this.msgs.length branch.
+      var limit = this.msgs.length;
+      var showUnreadReplies = this.unreadReplyLimit > -1;
+      var msgLimit = showUnreadReplies ? this.unreadReplyLimit + 1 : limit;
+
+      //Get constructor for widget that will hold the message.
       var ctor = dojo.getObject(this.messageCtorName);
-      for (var i = 0, msg; (i < limit) && (msg = this.msgs[i]); i++) {
-        //Hold on to last viewed message to feed to reply/forward actions.
+
+      //Now figure out how many replies to show. Always show the first message.
+      var toShow = [0];
+      for (var i = 1, msg; (i < limit) && (msg = this.msgs[i]); i++) {
+        var seen = msg["rd.msg.seen"];
+        if (!showUnreadReplies || (showUnreadReplies && toShow.length < msgLimit && (!seen || !seen.seen))) {
+          toShow.push(i);
+        }
+      };
+
+      //If the unread messages are not enough, choose some read messages.
+      if (showUnreadReplies && toShow.length < msgLimit) {
+        if (toShow.length == 1) {
+          //All replies are read. Choose the last set of replies.
+          for (i = this.msgs.length - 1; i > 0 && i > this.msgs.length - msgLimit + 1; i--) {
+            toShow.splice(1, 0, i);
+          }
+        } else {
+          //Got at least one Reply. Grab the rest by finding the first unread
+          //reply, then working back from there.
+          var refIndex = toShow[1];
+          for (i = refIndex - 1; i > 0; i--) {
+            toShow.splice(1, 0, i);
+          }
+        }
+      }
+
+      //Now render widgets for all the messages that want to be shown.
+      for (var i = 0, index, msg; ((index = toShow[i]) > -1) && (msg = this.msgs[index]); i++) {
         this.lastDisplayedMsg = msg;
         this.addSupporting(new ctor({
           messageBag: msg,
-          type: i == 0 ? "" : this.replyStyle,
-          tabIndex: i == 0 || this.allowReplyMessageFocus ? 0 : -1
+          type: index == 0 ? "" : this.replyStyle,
+          tabIndex: index == 0 || this.allowReplyMessageFocus ? 0 : -1
         }, dojo.create("div", null, this.containerNode)));
-      };
+      }
 
       //If any left over messages, then show that info.
       if (this.toolsNode) {
-        if (this.msgs[limit - 1] && limit < this.msgs.length) {
-          var count = this.msgs.length - limit;
+        var notShownCount = this.msgs.length - toShow.length;
+        if (notShownCount) {
           var html = dojo.string.substitute(this.moreMessagesTemplate, {
             message: dojo.string.substitute(this.i18n.moreMessages, {
-              count: count,
-              messagePlural: (count == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
+              count: notShownCount,
+              messagePlural: (notShownCount == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
             })
           })
           dojo.place(html, this.toolsNode, "first");

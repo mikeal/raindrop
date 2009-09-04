@@ -2,7 +2,7 @@
 
 .Story {
   margin: 0;
-  padding: 0 0 26px 0;
+  padding: 0 0 16px 0;
 }
 
 .Story:last-child {
@@ -17,18 +17,20 @@
   font-size: small;
   color: #FFF;
   line-height: 17px;
-  opacity: 0.75;
+  opacity: 1;
   visibility: hidden;
 }
 
 .Story:hover .tools {
-  visibility: visible;
+  visibility: hidden;
 }
 
 .Story .tools a {
-  font-style: italic;
+  font-variant: small-caps;
+  letter-spacing: 1px;
+  text-transform: lowercase;
   font-size: small;
-  font-family: Georgia, times, serif;
+  font-family: Droid-sans, Arial, Verdana, sans-serif;
   text-align: center;
   color: #FFF;
   line-height: 17px;
@@ -39,7 +41,7 @@
   padding: 0 6px 0 6px;
   background-image: url("i/bg_reply.png");
   background-repeat: repeat-x;
-  background-color: #888;
+  background-color: #333;
   height: 18px;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
@@ -47,14 +49,14 @@
 }
 
 .Story .tools .reply:hover {
-  background-color: #333;
+  background-color: #1a1a1a;
 }
 
 .Story .tools .moreMessages {
   padding: 0 6px 0 6px;
   background-image: url("i/bg_reply.png");
   background-repeat: repeat-x;
-  background-color: #888;
+  background-color: #333;
   height: 18px;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
@@ -62,7 +64,7 @@
 }
 
 .Story .tools .moreMessages:hover {
-  background-color: #333;
+  background-color: #1a1a1a;
 }
 
 .triangle {

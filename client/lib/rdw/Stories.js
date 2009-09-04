@@ -94,12 +94,20 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
+  //elements to ignore for click selection.
+  clickIgnore: {
+    "input": 1,
+    "textarea": 1,
+    "select": 1,
+    "option": 1
+  },
+
   onClick: function(/*Event*/evt) {
     //summary: handles click events, tries to select the first selectable item
     //relative to the click.
     var target = evt.target;
     do {
-      if (target == this.domNode) {
+      if (target == this.domNode || this.clickIgnore[target.nodeName.toLowerCase()]) {
         break;
       }
       if (target.tabIndex > -1) {
@@ -378,8 +386,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
             //Going to conversation. scroll vertical then horizontal.
             var chain = dojo.fx.chain([
-              scrollVertAnim,
-              scrollHorizAnim
+              scrollHorizAnim,
+              scrollVertAnim
             ]);
           } else {
             //Set up vertical animation.
@@ -455,6 +463,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       if (tabbys.length) {
         this._setActiveNode(tabbys[0]);
       }
+
+      //Set the read state
+      rd.api().seen({
+        ids: this.oneConversation
+      });
     }
   },
 
@@ -580,7 +593,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //to the document's DOM yet. Override for more custom behavior/subclasses.
     return new rdw.Story({
       msgs: msgs,
-      messageLimit: 3,
+      unreadReplyLimit: 2,
       displayOnCreate: false,
       allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Story

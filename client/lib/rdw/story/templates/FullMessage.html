@@ -1,4 +1,4 @@
-<div class="Message rdwStoryFullMessage ${type}" tabindex="0">
+<div class="Message rdwStoryFullMessage ${type}" target="${target}" tabindex="0">
   <div class="message">
     <div class="header">
       <span class="from">
@@ -12,13 +12,10 @@
     <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
       <a class="reply" href="#reply">Reply</a>
       <a class="fwd" href="#forward">Forward</a>
-      <a class="fwd" href="#archive">Archive</a>
-      <a class="fwd" href="#spam">Spam</a>
-      <a class="fwd" href="#delete">Delete</a>
     </div>
     <div class="timestamp" title="${utcTime}">
       <!--<<span class="friendly">${friendlyTime}</span>-->
-      <span class="utc">${utcTime}</span>
+      <span class="additionalTime">${additionalTime}</span>
     </div>
   </div>
 </div>

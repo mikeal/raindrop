@@ -2,6 +2,7 @@
   <div class="topActions">
     <a href="#${expandLink}" class="expand" title="${i18n.expand}">${i18n.expand}</a>
     <a href="#" class="archive" title="${i18n.archive}">${i18n.archive}</a>
+    <a href="#" class="delete" title="${i18n.deleted}">${i18n.deleted}</a>
   </div>
   <div class="photo"><!--<img class="photo" dojoAttachPoint="userPicNode" src="${userPicUrl}" />--></div>
   <div class="message">
@@ -15,10 +16,8 @@
       <span class="subject">${subject}</span> ${message}
     </div>
     <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
-      <!-- reply, forward
-      <a class="reply" href="#reply">${i18n.reply}</a>
-      <a class="fwd" href="#forward">${i18n.forward}</a>
-      -->
+      <a class="reply" href="#reply" dojoattachpoint="replyNode">&#9654; ${i18n.reply}</a>
+      <a class="moreMessages" href="#more">&#9654; more</a>
     </div>
     <div class="timestamp" title="${utcTime}">
       <span class="friendly">${friendlyTime}</span>
