@@ -132,8 +132,13 @@
   -moz-box-sizing:border-box;
 }
 
-.Message.active .QuickCompose .to input,
-.Story.active .QuickCompose .subject input {
+.QuickCompose .subject input {
+  font-weight: bold;
+  color: inherit;
+}
+
+.Story:hover .QuickCompose .to input,
+.Story:hover .QuickCompose .subject input {
   background-color: #FFF;
 }
 
@@ -156,6 +161,7 @@
 
 .QuickCompose.expanded textarea {
   height: 12ex;
+  color: inherit;
 }
 
 .QuickCompose .error {

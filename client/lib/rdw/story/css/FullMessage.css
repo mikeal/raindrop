@@ -13,11 +13,11 @@
   visibility: inherit;
 }
 
-.rdwStoryFullMessage .utc {
+.rdwStoryFullMessage .additionalTime {
   visibility: visible;
 }
 
-.Story:hover .rdwStoryFullMessage .utc {
+.Story:hover .rdwStoryFullMessage .additionalTime {
   visibility: visible;
 }
 
