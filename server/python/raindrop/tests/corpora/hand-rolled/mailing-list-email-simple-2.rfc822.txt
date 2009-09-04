@@ -1,0 +1,14 @@
+Date: Thu, 27 Aug 2009 12:34:56 -0700
+From: Jane Doe <jxdoe@example.com>
+To: test@lists.example.com
+Subject: What is the answer to this question?
+Message-ID: <40c05b9d93ba4695a30e72174c5c8126@example.com>
+List-Id: the test list <test.lists.example.com>
+List-Unsubscribe: <https://lists.example.com/options/thetest>,
+	<mailto:thetest-request@lists.example.com?subject=unsubscribe>
+List-Post: <mailto:test@lists.example.com>
+List-Subscribe: <https://lists.example.com/listinfo/thetest>,
+	<mailto:thetest-request@lists.example.com?subject=subscribe>
+List-Archive: <https://lists.example.com/archive/thetest>
+
+The answer to that question is what.
