@@ -88,3 +88,11 @@
 .Story .Message:last-child .triangle {
   visibility: hidden;
 }
+
+.Story.archived .archive {
+  display: none;
+}
+
+.Story.deleted .delete {
+  display: none;
+}

@@ -34,11 +34,11 @@ dojo.declare("rdw.Story", [rdw._Base], {
   replyWidget: "rdw.ReplyForward",
   forwardWidget: "rdw.ReplyForward",
   
-  templateString: '<li class="Story"> \
+  templateString: '<li class="Story" dojoAttachEvent="onclick: onClick"> \
                     <div class="messages" dojoAttachPoint="containerNode"></div> \
                     <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
                     </div> \
-                    <div class="tools" dojoAttachPoint="toolsNode" dojoAttachEvent="onclick: onToolClick"> \
+                    <div class="tools" dojoAttachPoint="toolsNode"> \
                       <a class="reply" dojoAttachPoint="replyNode" href="#reply">${i18n.reply}</a> \
                     </div> \
                   </li>',
@@ -61,42 +61,48 @@ dojo.declare("rdw.Story", [rdw._Base], {
     }
   },
 
-  onToolClick: function(evt) {
+  onClick: function(evt) {
     //summary: handles clicks for tool actions. Uses event
     //delegation to publish the right action.
     var href = evt.target.href;
     if (href && (href = href.split("#")[1])) {
       if (href == "reply" || href == "forward") {
-          //Dynamically load the module that will handle
-          //the Reply/Forward action.
-          var module = this[href + "Widget"];
-          dojo["require"](module);
-          dojo.addOnLoad(dojo.hitch(this, function() {
-            module = dojo.getObject(module);
+        //Dynamically load the module that will handle
+        //the Reply/Forward action.
+        var module = this[href + "Widget"];
+        dojo["require"](module);
+        dojo.addOnLoad(dojo.hitch(this, function() {
+          module = dojo.getObject(module);
 
-            //If we have an existing response widget, despose of it properly.
-            if (this.responseWidget) {
-              this.removeSupporting(this.responseWidget)
-              this.responseWidget.destroy();
-            }
+          //If we have an existing response widget, despose of it properly.
+          if (this.responseWidget) {
+            this.removeSupporting(this.responseWidget)
+            this.responseWidget.destroy();
+          }
 
-            //Create the new response widget.
-            this.responseWidget = new module({
-              owner: this,
-              replyType: href,
-              messageBag: this.lastDisplayedMsg
-            });
+          //Create the new response widget.
+          this.responseWidget = new module({
+            owner: this,
+            replyType: href,
+            messageBag: this.lastDisplayedMsg
+          });
 
-            this.addSupporting(this.responseWidget);
+          this.addSupporting(this.responseWidget);
 
-            //Put the response widget in the toolDisplay
-            this.responseWidget.placeAt(this.toolDisplayNode);
-            
-            //Hide the reply node since the reply tool is showing
-            this.replyNode.style.display = "none";
-          }));
+          //Put the response widget in the toolDisplay
+          this.responseWidget.placeAt(this.toolDisplayNode);
+          
+          //Hide the reply node since the reply tool is showing
+          this.replyNode.style.display = "none";
+        }));
+        evt.preventDefault();
+      } else if (href == "archive") {
+        rd.pub("rdw.Story.archive", this, this.msgs);
+        evt.preventDefault();
+      } else if (href == "delete") {
+        rd.pub("rdw.Story.delete", this, this.msgs);
+        evt.preventDefault();
       }
-      evt.preventDefault();
     }
   },
 
@@ -127,6 +133,19 @@ dojo.declare("rdw.Story", [rdw._Base], {
     // Sort by date
     this.msgs.sort(this.msgSort);
 
+    //Set classes based on first message state.
+    var msg = this.msgs[0];
+    if (msg["rd.msg.archived"] && msg["rd.msg.archived"].archived) {
+      dojo.addClass(this.domNode, "archived");
+    } else {
+      dojo.removeClass(this.domNode, "archived");
+    }
+    if (msg["rd.msg.deleted"] && msg["rd.msg.deleted"].deleted) {
+      dojo.addClass(this.domNode, "deleted");
+    } else {
+      dojo.removeClass(this.domNode, "deleted");
+    }
+
     //Create the messages, first by loading the module responsible for showing
     //them.
     dojo["require"](this.messageCtorName);
@@ -153,14 +172,14 @@ dojo.declare("rdw.Story", [rdw._Base], {
       if (showUnreadReplies && toShow.length < msgLimit) {
         if (toShow.length == 1) {
           //All replies are read. Choose the last set of replies.
-          for (i = this.msgs.length - 1; i > 0 && i > this.msgs.length - msgLimit + 1; i--) {
+          for (i = this.msgs.length - 1; i > 0 && i > this.msgs.length - msgLimit; i--) {
             toShow.splice(1, 0, i);
           }
         } else {
           //Got at least one Reply. Grab the rest by finding the first unread
           //reply, then working back from there.
           var refIndex = toShow[1];
-          for (i = refIndex - 1; i > 0; i--) {
+          for (i = refIndex - 1; i > 0 && toShow.length < msgLimit; i--) {
             toShow.splice(1, 0, i);
           }
         }

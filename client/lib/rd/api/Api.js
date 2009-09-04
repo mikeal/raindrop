@@ -105,7 +105,8 @@ rd.api.Api.prototype = {
     "group": 1,
     "group_level": 1,
     "reduce": 1,
-    "include_docs": 1
+    "include_docs": 1,
+    "docs": 1
   },
 
   /**
@@ -149,6 +150,11 @@ rd.api.Api.prototype = {
                     + (xhrArgs.url.indexOf("?") == -1 ? "?" : "&")
                     + dojo.objectToQuery(content);
         xhrArgs.content = null;
+      } else if (content.docs) {
+        //Probably a bulk doc operation.
+        method = "POST";
+        xhrArgs.postData = '{ "docs": ' + content.docs + '}';
+        delete content.docs;
       }
     }
 
@@ -285,6 +291,22 @@ rd.api.extend({
   },
 
   /**
+   * Does a bulk update of all the documents in docs.
+   *
+   * @param {Object} args options for the couchdb calls.
+   * @param {Array} args.docs and array of documents to update.
+   */
+  bulkUpdate: function(args) {
+    args = dojo.delegate(args);
+    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
+    args.url += "_bulk_docs";
+    args.content = {
+      docs: args.docs
+    };
+    return this.xhr(args);
+  },
+
+  /**
    * puts a document in the raindrop data store.
    * If successful, callback is called with the doc as the only argument.
    * It will generate the _id and rd_ext_id on the document if it does
@@ -294,24 +316,7 @@ rd.api.extend({
    * @param {Object} args.doc the document to insert into the couch.
    */
   put: function(args) {
-    var doc = args.doc;
-
-    //Add generic UI extension ID if needed.
-    if (!doc.rd_ext_id) {
-      doc.rd_ext_id = rd.uiExtId;
-    }
-
-    //Generate the ID for the document, if needed.
-    if (!doc._id) {
-      doc._id = "rc!"
-              + doc.rd_key[0]
-              + "."
-              + rd.toBase64(doc.rd_key[1])
-              + "!"
-              + doc.rd_ext_id
-              + "!"
-              + doc.rd_schema_id;
-    }
+    var doc = this.newDoc(args.doc);
 
     var docUrl = rd.dbPath + doc._id;
     if (doc._rev) {
@@ -334,5 +339,34 @@ rd.api.extend({
     });
 
     return this;
+  },
+
+  /**
+   * Sets up a new document for insertion.
+   * It will generate the _id and rd_ext_id on the document if it does
+   * not exist. Warning: it modifies the args.doc object.
+   *
+   * @param {Object} doc the document to insert into the couch. The doc
+   * object is modified by this function.
+   */
+  newDoc: function(doc) {
+    //Add generic UI extension ID if needed.
+    if (!doc.rd_ext_id) {
+      doc.rd_ext_id = rd.uiExtId;
+    }
+
+    //Generate the ID for the document, if needed.
+    if (!doc._id) {
+      doc._id = "rc!"
+              + doc.rd_key[0]
+              + "."
+              + rd.toBase64(doc.rd_key[1])
+              + "!"
+              + doc.rd_ext_id
+              + "!"
+              + doc.rd_schema_id;
+    }
+
+    return doc;
   }
 });

@@ -2,3 +2,11 @@
 
 .rdwStoryFullStory {
 }  
+
+.rdwStoryFullStory.archived .archive {
+  display: none;
+}
+
+.rdwStoryFullStory.deleted .delete {
+  display: none;
+}

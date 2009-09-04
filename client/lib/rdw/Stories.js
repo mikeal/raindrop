@@ -37,7 +37,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     "rd-protocol-locationTag": "locationTag",
     "rd-protocol-starred": "starred",
     "rd-protocol-sent": "sent",
-    "rd-protocol-conversation": "conversation"
+    "rd-protocol-conversation": "conversation",
+    "rdw.Story.archive": "archive",
+    "rdw.Story.delete": "del"
   },
 
   //List of modules that may want to group messages in the home view.
@@ -446,7 +448,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //dojo.fx.easing.expoOut
     return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
   },
-        
+
   onTransitionEnd: function() {
     //summary: called at the end of a summary transition.
 
@@ -489,6 +491,19 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
 
     this.inherited("destroy", arguments);
+  },
+
+  removeStory: function(/*Object*/storyWidget) {
+    //summary: removes a story from this widget.
+
+    //First, animate it out.
+    var node = storyWidget.domNode;
+    node.style.overflow = "hidden";
+    dojo.anim(node, { height: 0}, 1000, this.animEasing, dojo.hitch(this, function() {
+      //Then destroy it.
+      this.removeSupporting(storyWidget);
+      storyWidget.destroy();
+    }));
   },
 
   //**************************************************
@@ -675,6 +690,39 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       ids: [convoId]
     })
     .ok(dojo.hitch(this, "updateConversations", "conversation"));
+  },
+
+  archive: function(/*Object*/storyWidget, /*Array*/messageBags) {
+    //summary: handles archiving a story and cleaning up visual state as
+    //a result of the change.
+    rd.api().archive({
+      ids: messageBags
+    })
+    .ok(this, function() {
+      if (this.viewType == "summary") {
+        this.removeStory(storyWidget);
+      } else {
+        //Update the Story to indicate its state.
+        rd._updateInstance(storyWidget, dojo.getObject(storyWidget.declaredClass));
+      }
+    });
+  },
+
+  del: function(/*Object*/storyWidget, /*Array*/messageBags) {
+    //summary: handles deleting a story and cleaning up visual state as
+    //a result of the change.
+    rd.api().del({
+      ids: messageBags
+    })
+    .ok(this, function() {
+      if (this.viewType == "summary") {
+        this.removeStory(storyWidget);
+      } else {
+        //Update the Story to indicate its state.
+        rd._updateInstance(storyWidget, dojo.getObject(storyWidget.declaredClass));
+      }
+    });
+
   }
   //**************************************************
   //end topic subscription endpoints

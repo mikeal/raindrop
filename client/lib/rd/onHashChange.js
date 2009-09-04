@@ -8,7 +8,11 @@ dojo.provide("rd.onHashChange");
     var newValue = location.href.split("#")[1] || "";
     if (newValue != value) {
       value = newValue;
-      dojo.publish("rd.onHashChange", [value]);
+      //Use a set timeout so an error on a subscriber does
+      //not stop the polling.
+      setTimeout(function() {
+        dojo.publish("rd.onHashChange", [value]);
+      }, 10);
     }
   }, 300);
 })();

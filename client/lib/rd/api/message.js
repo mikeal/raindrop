@@ -124,8 +124,8 @@ rd.api.message = {
     //Get the key for each item and build up a quick lookup that has all
     var fresh = {}, keys = [];
     for (var i = 0, id; id = ids[i]; i++) {
-      keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.archive"]]);
-      keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.delete"]]);
+      keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.archived"]]);
+      keys.push(["rd.core.content", "key-schema_id", [id.rd_key, "rd.msg.deleted"]]);
       fresh[id.rd_key.join(",")] = true;
     }
 
@@ -154,8 +154,151 @@ rd.api.message = {
       dfd.callback(ret);
     })
     .error(dfd);
+  },
+
+  /**
+   * @private
+   * Marks the rd.msg.seen as seen: true if it is not already true.
+   *
+   * @param {dojo.Deferred} dfd The deferred that should be called
+   * with the results.
+   *
+   * @param {Object} args arguments to pass to the couch calls.
+   * 
+   * @param {Array} ids an array of message bags that have an "rd.msg.seen" property.
+   */
+  _seen: function(dfd, args, ids) {
+    //Build up a list of docs to update.
+    var updates = [];
+    var api = rd.api();
+    for (var i = 0, msgBag; msgBag = ids[i]; i++) {
+      var seen = msgBag["rd.msg.seen"];
+      if (!seen) {
+        var body = msgBag["rd.msg.body"];
+        seen = api.newDoc({
+          rd_key: body.rd_key,
+          rd_schema_id: "rd.msg.seen",
+          rd_source: body.rd_source,
+          outgoing_state: "outgoing",
+          seen: false
+        });
+
+        //Update message bag with new schema.
+        msgBag["rd.msg.seen"] = seen;
+      }
+      if (!seen.seen) {
+        seen.seen = true;
+        seen.outgoing_state = "outgoing";
+        updates.push(seen);
+      }
+    }
+
+    //Now update the docs.
+    if (updates.length) {
+      return rd.api().bulkUpdate({
+        docs: updates
+      })
+      .ok(function(rows) {
+        //Update the _rev for the updated values, so that the
+        //client state is consistent with the server state.
+        for (var i = 0, row, update; (row = rows[i]) && (update = updates[i]); i++) {
+          if (update._id == row._id && row.rev) {
+            update._rev = row.rev;
+          }
+        }
+        dfd.callback(ids);
+      })
+      .error(dfd);
+    } else {
+      return this;
+    }
+  },
+
+  /**
+   * @private
+   * Marks a schema with propName: true if it is not already true.
+   *
+   * @param {String} schemaId the schema ID, like "rd.msg.seen"
+   *
+   * @param {String} propName The property to set to true, like "seen".
+   *
+   * @param {Function} onEnd function to run when finished. Function will be passed
+   * dfd, args, ids. onEnd function must call the deferred callbacks to finish the
+   * operation.
+   *
+   * @param {dojo.Deferred} dfd The deferred that should be called
+   * with the results.
+   *
+   * @param {Object} args arguments to pass to the couch calls.
+   * 
+   * @param {Array} ids an array of message bags that have an "rd.msg.seen" property.
+   */
+
+  _schemaTrue: function(schemaId, propName, onEnd, dfd, args, ids) {
+    //Build up a list of docs to update.
+    var updates = [];
+    var api = rd.api();
+    for (var i = 0, msgBag; msgBag = ids[i]; i++) {
+      var schema = msgBag[schemaId];
+      if (!schema) {
+        var body = msgBag["rd.msg.body"];
+        schema = api.newDoc({
+          rd_key: body.rd_key,
+          rd_schema_id: schemaId,
+          rd_source: body.rd_source,
+          outgoing_state: "outgoing"
+        });
+
+        schema[propName] = false;
+
+        //Update message bag with new schema.
+        msgBag[schemaId] = schema;
+      }
+      if (!schema[propName]) {
+        schema[propName] = true;
+        schema.outgoing_state = "outgoing";
+        updates.push(schema);
+      }
+    }
+
+    //Now update the docs.
+    if (updates.length) {
+      return rd.api().bulkUpdate({
+        docs: updates
+      })
+      .ok(function(rows) {
+        //Update the _rev for the updated values, so that the
+        //client state is consistent with the server state.
+        for (var i = 0, row, update; (row = rows[i]) && (update = updates[i]); i++) {
+          if (update._id == row._id && row.rev) {
+            update._rev = row.rev;
+          }
+        }
+        if (onEnd) {
+          onEnd(dfd, args, ids);
+        } else {
+          dfd.callback(ids);
+        }
+      })
+      .error(dfd);
+    } else {
+      dfd.callback(ids);
+      return this;
+    }
   }
 };
+
+dojo._mixin(rd.api.message, {
+  _seen: dojo.hitch(rd.api.message, "_schemaTrue", "rd.msg.seen", "seen", null),
+  _archive: dojo.hitch(rd.api.message, "_schemaTrue", "rd.msg.archived", "archived", function(dfd, args, ids) {
+    rd.api().seen({
+      ids: ids
+    })
+    .ok(dfd)
+    .error(dfd);
+  }),
+  _del: dojo.hitch(rd.api.message, "_schemaTrue", "rd.msg.deleted", "deleted", null)
+});
 
 rd.api.extend({
   /**
@@ -189,11 +332,48 @@ rd.api.extend({
 
   /**
    * @lends rd.api
-   * Only return messages that have not been deleted or archived.
+   * Marks the rd.msg.seen as seen: true if it is not already true.
    * It will use the previous call's results, or, optionally pass an args.ids
-   * which is an array of items with an rd_key field.
+   * which is an array of message bags
+   * that have an "rd.msg.seen" property.
    */
   seen: function(args) {
-    
+    if (args && args.ids) {
+      rd.api.message._seen(this._deferred, args, args.ids);
+    } else {
+      this.addParentCallback(dojo.hitch(rd.api.message, "_seen", this._deferred, args));
+    }
+    return this;
+  },
+
+  /**
+   * @lends rd.api
+   * Marks the messages as archived if by setting an rd.msg.archive schema on it.
+   * Allow will call seen() for all messages archived.
+   * It will use the previous call's results, or, optionally pass an args.ids
+   * which is an array of message bags.
+   */
+  archive: function(args) {
+    if (args && args.ids) {
+      rd.api.message._archive(this._deferred, args, args.ids);
+    } else {
+      this.addParentCallback(dojo.hitch(rd.api.message, "_archive", this._deferred, args));
+    }
+    return this;
+  },
+
+  /**
+   * @lends rd.api
+   * Marks the messages as deleted by setting a rd.msg.deleted schema on it.
+   * It will use the previous call's results, or, optionally pass an args.ids
+   * which is an array of message bags.
+   */
+  del: function(args) {
+    if (args && args.ids) {
+      rd.api.message._del(this._deferred, args, args.ids);
+    } else {
+      this.addParentCallback(dojo.hitch(rd.api.message, "_del", this._deferred, args));
+    }
+    return this;
   }
 });
