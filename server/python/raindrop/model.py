@@ -121,7 +121,11 @@ class CouchDB(paisley.CouchDB):
         if 'keys' in opts:
             requester = self.post
             body_ob = {'keys': opts.pop('keys')}
+            # json.dumps() will return unicode if unicode passed in, which
+            # twisted gets upset with.
             body = json.dumps(body_ob, allow_nan=False, ensure_ascii=False)
+            if isinstance(body, unicode):
+                body = body.encode('utf-8')
             xtra = (body,)
         else:
             requester = self.get
@@ -287,6 +291,7 @@ class DocumentModel(object):
        creating the unique ID for each document (other than the raw document),
        for fetching documents based on an ID, etc
     """
+    MAX_INLINE_ATTACH_SIZE = 100000 # pulled from a hat!
     def __init__(self, db):
         self.db = db
         self._new_item_listeners = []
@@ -310,17 +315,20 @@ class DocumentModel(object):
                      docId, viewId, args, kwargs)
         return self.db.openView(docId, viewId, *args, **kwargs)
 
-    @defer.inlineCallbacks
-    def update_documents(self, docs):
-        logger.debug("attempting to update documents - %r", docs)
-        results = yield self.db.updateDocuments(docs)
-        errors = []
-        for doc, dinfo in zip(docs, results):
-            if 'error' in dinfo:
-                # presumably an unexpected error :(
-                errors.append(dinfo)
-        if errors:
-            raise DocumentSaveError(errors)
+    def doc_to_schema_item(self, doc):
+        attr_map = {'rd_source': 'rd_source',
+                    'rd_ext_id': 'ext_id',
+                    'rd_schema_id': 'schema_id',
+                    'rd_schema_confidence': 'confidence',
+        }
+        ret = {'items': {}}
+        for k, v in doc.iteritems():
+            if k.startswith('rd_') or k.startswith('_'):
+                k = attr_map.get(k, k)
+                ret[k] = v
+            else:
+                ret['items'][k] = v
+        return ret
 
     @defer.inlineCallbacks
     def open_documents_by_id(self, doc_ids):
@@ -374,6 +382,48 @@ class DocumentModel(object):
                 errors.append(dinfo)
         if errors:
             raise DocumentSaveError(errors)
+
+    @defer.inlineCallbacks
+    def update_documents(self, docs):
+        logger.debug("attempting to update documents - %r", docs)
+
+        attachments = self._prepare_attachments(docs)
+        results = yield self.db.updateDocuments(docs)
+        # yuck - this is largely duplicated below :(
+        errors = []
+        update_items = []
+        real_ret = []
+        for doc, dattach, dinfo in zip(docs, attachments, results):
+            if 'error' in dinfo:
+                # presumably an unexpected error :(
+                errors.append(dinfo)
+            else:
+                # attachments...
+                while dattach:
+                    name, info = dattach.popitem()
+                    docid = dinfo['id']
+                    revision = dinfo['rev']
+                    logger.debug('saving attachment %r to doc %r', name, docid)
+                    dinfo = yield self.db.saveAttachment(self.quote_id(docid),
+                                   self.quote_id(name), info['data'],
+                                   content_type=info['content_type'],
+                                   revision=revision)
+
+                # yuck - if this is a 'schema item', need to turn it back
+                # into one.
+                if 'rd_key' in doc:
+                    update_item = self.doc_to_schema_item(doc)
+                    update_item['_id'] = dinfo['id']
+                    update_item['_rev'] = dinfo['rev']
+                    update_items.append(update_item)
+                real_ret.append(dinfo)
+        # If anyone is listening for new items, call them now.
+        if update_items:
+            for listener in self._new_item_listeners:
+                _ = yield defer.maybeDeferred(listener, update_items)
+        if errors:
+            raise DocumentSaveError(errors)
+        defer.returnValue(real_ret)
 
     def create_schema_items(self, item_defs):
         docs = []
@@ -476,7 +526,7 @@ class DocumentModel(object):
                 total_bytes = 0
                 for a in this_attach.values():
                     total_bytes += len(a['data'])
-                if total_bytes > 100000: # pulled from a hat!
+                if total_bytes > self.MAX_INLINE_ATTACH_SIZE:
                     # nuke attachments specified
                     del doc['_attachments']
                     all_attachments.append(this_attach)
@@ -492,12 +542,19 @@ class DocumentModel(object):
         assert len(all_attachments)==len(docs)
         return all_attachments
 
+    @defer.inlineCallbacks
     def _cb_saved_docs(self, result, item_defs, attachments):
+        # Detects document errors and updates any attachments which were too
+        # large to send in the 'body'.  Updating attachments is complicated
+        # by needing to track the *final* _rev of the document after all
+        # attachments have been updated.
+
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
         logger.debug("saved %d documents", len(result))
         ds = []
         assert len(result)==len(attachments) and len(result)==len(item_defs)
         new_items = []
+        real_result = []
         errors = []
         for dinfo, dattach, item_def in zip(result, attachments, item_defs):
             if 'error' in dinfo:
@@ -510,66 +567,31 @@ class DocumentModel(object):
                     # presumably an unexpected error :(
                     errors.append(dinfo)
             else:
+                while dattach:
+                    name, info = dattach.popitem()
+                    docid = dinfo['id']
+                    revision = dinfo['rev']
+                    logger.debug('saving attachment %r to doc %r', name, docid)
+                    dinfo = yield self.db.saveAttachment(self.quote_id(docid),
+                                   self.quote_id(name), info['data'],
+                                   content_type=info['content_type'],
+                                   revision=revision)
+
                 # Give the ID and revision info back incase they need to
                 # know...
                 item_def['_id'] = dinfo['id']
-                # XXX - is this correct when there are attachments?
                 item_def['_rev'] = dinfo['rev']
                 new_items.append(item_def)
-
-                if dattach:
-                    ds.append(self._cb_save_attachments(dinfo, dattach))
-        if errors:
-            raise DocumentSaveError(errors)
+                real_result.append(dinfo)
 
         # If anyone is listening for new items, call them now.
         for listener in self._new_item_listeners:
-            ds.append(defer.maybeDeferred(listener, new_items))
+            _ = yield defer.maybeDeferred(listener, new_items)
 
-        def return_orig(dl_results):
-            for ok, real_ret in dl_results:
-                if not ok:
-                    real_ret.raiseException()
-            return result
-        # XXX - the result set will *not* have the correct _rev if there are
-        # attachments :(
-        return defer.DeferredList(ds
-                    ).addBoth(return_orig)
+        if errors:
+            raise DocumentSaveError(errors)
 
-    def _cb_save_attachments(self, saved_doc, attachments):
-        if not attachments:
-            return saved_doc
-        # Each time we save an attachment the doc gets a new revision number.
-        # So we need to do them in a chain, passing the result from each to
-        # the next.
-        remaining = attachments.copy()
-        # This is recursive, but that should be OK.
-        return self._cb_save_next_attachment(saved_doc, remaining)
-
-    def _cb_save_next_attachment(self, result, remaining):
-        if not remaining:
-            return result
-        revision = result['rev']
-        docid = result['id']
-        name, info = remaining.popitem()
-        logger.debug('saving attachment %r to doc %r', name, docid)
-        return self.db.saveAttachment(self.quote_id(docid),
-                                   self.quote_id(name), info['data'],
-                                   content_type=info['content_type'],
-                                   revision=revision,
-                ).addCallback(self._cb_saved_attachment, (docid, name)
-                ).addErrback(self._cb_save_failed, (docid, name)
-                ).addCallback(self._cb_save_next_attachment, remaining
-                )
-
-    def _cb_saved_attachment(self, result, ids):
-        logger.debug("Saved attachment %s", result)
-        # XXX - now what?
-        return result
-
-    def _cb_save_failed(self, failure, ids):
-        logger.error("Failed to save attachment (%r): %s", ids, failure)
-        failure.raiseException()
+        defer.returnValue(real_result)
 
     def _update_important_views(self):
         # Something else periodically updates our important views.
