@@ -110,12 +110,6 @@ class TestCaseWithDB(TestCase):
     def deferFailUnlessView(self, result, *args, **kw):
         return self.failUnlessView(*args, **kw)
 
-    def get_conductor(self, options=None):
-        if options is None:
-            options = FakeOptions()
-        sync._conductor = None # hack away the singleton...
-        return sync.get_conductor(options)
-
 
 class TestCaseWithTestDB(TestCaseWithDB):
     """A test case that is setup to work with a temp database pre-populated
@@ -146,6 +140,12 @@ class TestCaseWithTestDB(TestCaseWithDB):
         test_proto.test_num_test_docs = 0 # incremented later..
         acct['id'] = 'test'
         return config
+
+    def get_conductor(self, options=None):
+        if options is None:
+            options = self.pipeline.options
+        sync._conductor = None # hack away the singleton...
+        return sync.get_conductor(options)
 
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol

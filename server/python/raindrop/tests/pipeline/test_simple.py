@@ -22,6 +22,7 @@ class TestPipelineBase(TestCaseWithTestDB):
     def process_doc(self, exts = None):
         self.pipeline.options.exts = exts or self.extensions
         self.pipeline.options.no_process = self.use_chasing_pipeline
+        self.pipeline.options.protocols = ['test']
         # populate our test DB with the raw message(s).
         _ = yield self.deferMakeAnotherTestMessage(None)
         if self.use_chasing_pipeline:
@@ -34,6 +35,11 @@ class TestPipelineBase(TestCaseWithTestDB):
             ret = []
             for row in rows:
                 if 'doc' in row:
+                    # If we are using a 'chasing' pipeline, then we can
+                    # expect some 'state' docs to get in the way...
+                    if self.use_chasing_pipeline and \
+                       row['doc']['rd_schema_id']=='rd.core.workqueue-state':
+                        continue
                     ret.append(row)
                     if len(ret)>=n:
                         break
