@@ -31,3 +31,11 @@ def handler(doc):
     ret['body'] = body_text
 
     emit_schema('rd.msg.body', ret)
+    # and also emit a recipient-target - it probably should be its own
+    # extension, but really it is too trivial to bother with...
+    rt = {
+        'target' : 'broadcast',
+        'timestamp': doc['updated_parsed'],
+        'target-timestamp': ['broadcast', doc['updated_parsed']],
+    }
+    emit_schema('rd.msg.recip-target', rt)
