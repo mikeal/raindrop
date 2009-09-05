@@ -65,13 +65,14 @@ class TestSimpleCorpus(TestCaseWithCorpus):
 
 
     @defer.inlineCallbacks
-    def test_simple_mailing_list(self):
+    def test_mailing_list(self):
+        # Process one message from a mailing list.
         ndocs = yield self.load_corpus('hand-rolled',
                                        'mailing-list-email-simple')
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
         _ = yield self.pipeline.start()
 
-        # There should be exactly one rd.msg.email.mailing-list document.
+        # There should be one rd.msg.email.mailing-list document.
         key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
@@ -86,7 +87,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         }
         self.ensure_doc(doc, expected_doc)
 
-        # There should be exactly one rd.mailing-list document.
+        # There should be one rd.mailing-list document.
         key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
@@ -103,11 +104,12 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'name': 'test list ',
             'post': 'mailto:test@lists.example.com',
             'status': 'subscribed',
-            'subscribe': 'https://lists.example.com/listinfo/test>,\n\t<mailto:test-request@lists.example.com?subject=subscribe',
-            'unsubscribe': 'https://lists.example.com/options/test>,\n\t<mailto:test-request@lists.example.com?subject=unsubscribe',
+            'subscribe': 'https://lists.example.com/listinfo/test>,\n\t' +
+                '<mailto:test-request@lists.example.com?subject=subscribe',
+            'unsubscribe': 'https://lists.example.com/options/test>,\n\t' +
+                '<mailto:test-request@lists.example.com?subject=unsubscribe',
         }
         self.ensure_doc(doc, expected_doc)
-
 
         # Process a second, later message from the same mailing list.
         docs = [d for d in self.gen_corpus_docs('hand-rolled',
@@ -125,8 +127,8 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(len(rows), 2,
                              'number of rd.msg.email.mailing-list docs')
 
-        # There should be one rd.msg.email.mailing-list document with the key
-        # of the message we just processed.
+        # There should only be one rd.msg.email.mailing-list document
+        # with the key of the message we just processed.
         key = ['rd.core.content', 'key-schema_id',
                [['email', '40c05b9d93ba4695a30e72174c5c8126@example.com'],
                 'rd.msg.email.mailing-list']]
@@ -134,7 +136,8 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                                                 include_docs=True)
         rows = result['rows']
         self.failUnlessEqual(len(rows), 1,
-                             'number of rd.msg.email.mailing-list docs with key ["email", "40c05b9d93ba4695a30e72174c5c8126@example.com"]')
+                    'number of rd.msg.email.mailing-list docs with key ' +
+                    '["email", "40c05b9d93ba4695a30e72174c5c8126@example.com"]')
 
         # The document should have the expected properties/values.
         doc = rows[0]['doc']
@@ -174,7 +177,9 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'name': 'the test list ',
             'post': 'mailto:test@lists.example.com',
             'status': 'subscribed',
-            'subscribe': 'https://lists.example.com/listinfo/thetest>,\n\t<mailto:thetest-request@lists.example.com?subject=subscribe',
-            'unsubscribe': 'https://lists.example.com/options/thetest>,\n\t<mailto:thetest-request@lists.example.com?subject=unsubscribe',
+            'subscribe': 'https://lists.example.com/listinfo/thetest>,\n\t' +
+                '<mailto:thetest-request@lists.example.com?subject=subscribe',
+            'unsubscribe': 'https://lists.example.com/options/thetest>,\n\t' +
+                '<mailto:thetest-request@lists.example.com?subject=unsubscribe',
         }
         self.ensure_doc(doc, expected_doc)
