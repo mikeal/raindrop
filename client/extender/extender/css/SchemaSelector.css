@@ -1,7 +1,16 @@
 .extenderSchemaSelector {
-  padding: 1em;
+  padding: 0;
 }
 
 .extenderSchemaSelector ul {
-  font-size: smaller;
+  font-size: small;
+}
+
+.extenderSchemaSelector a {
+  color: blue;
+  text-decoration: none;
+}
+
+.extenderSchemaSelector li {
+  list-style-type: decimal-leading-zero;
 }

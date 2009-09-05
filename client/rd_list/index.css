@@ -9,23 +9,36 @@ body {
 
 h1.topheader {
   margin: 0px;
-  padding: 0.5ex;
+  height: 45px;
+  line-height: 45px;
   font-size: large;
-  border-bottom: 1px solid #547491;
-  background-color: #bfdbf5;
+  background-color: #1a1a1a;
+  padding: 0 6px;
 }
 
 h1.topheader a {
   font-size: large;
-  letter-spacing: 0.3ex;
-  color: #466078;
+  color: #FFF;
   text-decoration: none;
 }
 
 h1.topheader > strong {
   padding-left: 0.25em;
+  color: #FFF;
+  position: absolute;
+  top: 10px;
 }
 
 h1.topheader > strong:before {
   content: "\00BB  ";
+}
+
+.logo {
+  height: 45px;
+  width: 124px;
+  display: inline-block;
+}
+
+.logo img {
+  border: none;
 }

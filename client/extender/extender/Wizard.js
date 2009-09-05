@@ -22,6 +22,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
   //Image used in template. Specified here so the path is not
   //hard-coded to a specific path.
   nobodyImgUrl: dojo.moduleUrl("extender.css", "nobody.png"),
+  logoImgUrl: dojo.moduleUrl("extender.css", "logo.png"),
 
   postCreate: function() {
     //summary: dijit lifecycle method.

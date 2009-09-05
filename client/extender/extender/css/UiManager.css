@@ -1,3 +1,12 @@
 .extenderUiManager {
-  padding: 10px;
+  padding: 0 6px 0 0;
+}
+
+.extenderUiManager a {
+  color: blue;
+  text-decoration: none;
+}
+
+.extenderUiManager li {
+  list-style-type: decimal-leading-zero;
 }
