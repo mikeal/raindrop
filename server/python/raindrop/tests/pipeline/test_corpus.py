@@ -54,3 +54,31 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnless(ndocs, "failed to load any corpus docs")
         _ = yield self.pipeline.start()
         _ = yield self.check_all_worked(ndocs)
+
+# Test that given our collection of malformed messages, none of the extensions
+# fail.  They might log warnings and otherwise skip the processing of a
+# message, but nothing should fail.
+class TestMalformedCorpus(TestCaseWithCorpus):
+    @defer.inlineCallbacks
+    def get_num_with_key(self, key):
+        result = yield self.doc_model.open_view(key=key)
+        rows = result['rows']
+        if len(rows)==0:
+            defer.returnValue(0)
+        self.failUnlessEqual(len(rows), 1)
+        defer.returnValue(rows[0]['value'])
+
+    @defer.inlineCallbacks
+    def check_all_worked(self, ndocs):
+        # now some sanity checks on the processing.
+        # should be zero error records.
+        num = yield self.get_num_with_key(
+                ["rd.core.content", "schema_id", "rd.core.error"])
+        self.failUnlessEqual(num, 0)
+
+    @defer.inlineCallbacks
+    def test_async(self):
+        ndocs = yield self.load_corpus("malformed")
+        self.failUnless(ndocs, "failed to load any corpus docs")
+        _ = yield self.pipeline.start()
+        _ = yield self.check_all_worked(ndocs)

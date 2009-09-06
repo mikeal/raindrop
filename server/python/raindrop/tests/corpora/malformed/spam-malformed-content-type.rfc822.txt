@@ -1,0 +1,60 @@
+X-Raindrop-Comment: Note the malformed (missing ;) content-type, and further
+X-Raindrop-Comment: note that this file has \r\n line endings as most IMAP
+X-Raindrop-Comment: server should send; at least one extension failure depended
+X-Raindrop-Comment: on \r\n line endings, so here they are!
+Received: from ash25e.mozillamessaging.com (unverified [203.16.214.182]) 
+	by mail.mozillamessaging.com (SurgeMail 3.8f2) with ESMTP id 70831319-1927428 
+	for <raindrop_test_user@mozillamessaging.com>; Wed, 02 Sep 2009 06:07:49 +0930 (CST)
+Return-Path: <mchuerta_mj@rz.tu-cottbus.de>
+Received: from ipmail01.adl6.mozillamessaging.com (ipmail01.adl6.mozillamessaging.com [203.16.214.146])
+	by ash25e.mozillamessaging.com (8.14.2/8.14.2) with ESMTP id n81KbmcR025434
+	for <raindrop_test_user@mozillamessaging.com>; Wed, 2 Sep 2009 06:07:49 +0930 (CST)
+	(envelope-from mchuerta_mj@rz.tu-cottbus.de)
+Received: from 201-167-57-46-cable.cybercable.net.mx (HELO gw1b3p1) ([201.167.57.46])
+  by ipmailmx01.adl6.mozillamessaging.com with SMTP; 02 Sep 2009 06:07:45 +0930
+Message-ID: <000701ca2b09$417977a0$627e15ea@rz.tu-cottbus.de>
+Reply-To: "Magdalena C. Huerta" <mchuerta_mj@rz.tu-cottbus.de>
+From: "Magdalena C. Huerta" <mchuerta_mj@rz.tu-cottbus.de>
+To: <raindrop_test_user@mozillamessaging.com>
+Subject: customer alert notification
+Date: Tue, 01 Sep 2009 06:36:48 -0700
+MIME-Version: 1.0
+Content-Type: text/plain;
+	format=flowed;
+	charset="windows-1250"
+	reply-type=original
+Content-Transfer-Encoding: 7bit
+X-Priority: 3
+X-MSMail-Priority: Normal
+X-Mailer: Microsoft Office Outlook, Build 11.0.5510
+X-MimeOLE: Produced By Microsoft MimeOLE V6.00.2800.1807
+X-Rcpt-To: <raindrop_test_user@mozillamessaging.com>
+X-Vpipe: Scanner said clean (/local/app/clamav/bin/vscand-clamav)
+X-SpamDetect: ********: 8.700000 From3consonants=0.3,S_ab=1.1,S_sc=1.1,S_ws=1.1,S_jp=1.1,SURBL=4.0
+X-Surbl: jp thetrustedrx.com multi.surbl.org
+X-Surbl: ab.surbl.org thetrustedrx.com multi.surbl.org
+X-Surbl: ws.surbl.org thetrustedrx.com multi.surbl.org
+X-Surbl: sc.surbl.org thetrustedrx.com multi.surbl.org
+X-IP-stats: No info recorded yet ip=201.167.57.46
+X-Originating-IP: 201.167.57.46
+
+
+
+Dear Customer,
+
+You are now approved to re-order.
+
+Many new products in stock and a lot better prices to choose from!!!
+
+Please Visit: http://spammer.com
+
+
+
+To unsubscribe visit : http://spammer.com/unsubscribe.html
+
+
+
+
+Customer Service Dept.
+
+
