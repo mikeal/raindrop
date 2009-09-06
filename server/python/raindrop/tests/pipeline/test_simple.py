@@ -34,7 +34,7 @@ class TestPipelineBase(TestCaseWithTestDB):
             rows = result['rows']
             ret = []
             for row in rows:
-                if 'doc' in row:
+                if 'doc' in row and 'rd_schema_id' in row['doc']:
                     # If we are using a 'chasing' pipeline, then we can
                     # expect some 'state' docs to get in the way...
                     if self.use_chasing_pipeline and \
