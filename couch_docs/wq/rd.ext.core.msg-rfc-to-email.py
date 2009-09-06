@@ -4,6 +4,7 @@
 from email import message_from_string
 from email.utils import unquote
 from email.header import decode_header
+import codecs
 
 def decode_header_part(value, fallback_charset='latin-1'):
     assert isinstance(value, tuple)
@@ -82,11 +83,19 @@ def sanitize_attach_name(name):
     # hrmph - what are good rules?  I see a space :)
     return name.split()[0]
 
-def attach_from_msg(msg):
+def attach_from_msg(attach_id, msg):
     ct = msg.get_content_type()
     cs = msg.get_content_charset()
     if cs:
-        ct += "; charset=" + cs
+        # make sure the charset is valid.  This is more to check 'malformed'
+        # charset indicators than 'unknown' ones.
+        try:
+            codecs.lookup(cs)
+        except LookupError:
+            logger.info('Attachment %r has invalid charset %r - ignoring charset',
+                        attach_id, cs)
+        else:
+            ct += "; charset=" + cs
     return {'content_type': ct,
             'data': msg.get_payload(decode=True),
             }
@@ -140,7 +149,7 @@ def doc_from_bytes(docid, rdkey, b):
                 if not name:
                     name = "subpart-%d" % i
                     i += 1
-                attachments[name] = attach_from_msg(attach)
+                attachments[name] = attach_from_msg((docid, name), attach)
                 # Put together info about the attachment.
                 ah = {}
                 for hn, hv in attach.items():
@@ -150,7 +159,7 @@ def doc_from_bytes(docid, rdkey, b):
                 info = {'name': name, 'headers': ah, 'content_type': ct}
                 mi.append(info)
     else:
-        attachments['body'] = attach_from_msg(msg)
+        attachments['body'] = attach_from_msg((docid, 'body'), msg)
     return doc
 
 
