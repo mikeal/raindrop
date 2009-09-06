@@ -114,6 +114,8 @@ def doc_from_bytes(docid, rdkey, b):
                 headers[hn.lower()] = [extract_message_ids(vals[0])]
             else:
                 headers[hn.lower()] = [unquote(v) for v in vals]
+            # a sanity check and to help debug an obscure bug which seemed to
+            # cause the wrong 'source' doc being passed!
             if __debug__ and rdkey[0]=='email' and hn.lower()=='message-id':
                 from raindrop.proto.imap import get_rdkey_for_email
                 assert tuple(rdkey)==get_rdkey_for_email(vals[0]), (rdkey, docid, vals)
