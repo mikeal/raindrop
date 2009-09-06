@@ -1,3 +1,7 @@
+if __debug__:
+    # used only by assertions for sanity checking...
+    from raindrop.proto.imap import get_rdkey_for_email
+
 # Creates 'rd.msg.conversation' schemas for emails...
 def handler(doc):
     # a 'rfc822' stores 'headers' as a dict, with each entry being a list.
@@ -5,9 +9,8 @@ def handler(doc):
     # flatten the header values here...
     headers = dict((k, v[0]) for (k, v) in doc['headers'].iteritems())
     self_header_message_id = headers.get('message-id')
-    if not self_header_message_id:
-        logger.warn("doc %r has no message id!", doc['_id'])
-        return
+    # check something hasn't got confused...
+    assert get_rdkey_for_email(self_header_message_id) == tuple(doc['rd_key']), doc
 
     if 'references' in headers:
         header_message_ids = headers['references']
@@ -20,7 +23,7 @@ def handler(doc):
     # see if the self-message already exists...
     header_message_ids.append(self_header_message_id)
     uniq_header_message_ids = set(header_message_ids)
-    logger.debug("header_message_id: %s ", header_message_ids)
+    logger.debug("header_message_ids: %s ", header_message_ids)
     logger.debug("references: %s", '\n\t'.join(references))
     # Open a view trying to locate an existing conversation for any of these
     # headers.
@@ -47,9 +50,11 @@ def handler(doc):
     for hid in uniq_header_message_ids:
         if seen_ids is None or hid not in seen_ids:
             rdkey = ['email', hid]
+            logger.debug('emitting convo schema referenced message %r', rdkey)
             emit_schema('rd.msg.conversation', items, rd_key=rdkey)
 
     # make sure current doc gets emitted in case it was
     # not part of the uniq_header_message_ids
     if doc['rd_key'][1] not in uniq_header_message_ids:
+        logger.debug('emitting convo schema for my document %(rd_key)r', doc)
         emit_schema('rd.msg.conversation', items, rd_key=doc['rd_key'])

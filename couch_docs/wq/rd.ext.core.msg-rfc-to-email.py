@@ -94,7 +94,7 @@ def attach_from_msg(msg):
 # Given a raw rfc822 message stream, return a list of useful schema instances
 # describing that message.
 # Returns a list of (schema_id, schema_fields) tuples.
-def doc_from_bytes(docid, b):
+def doc_from_bytes(docid, rdkey, b):
     msg = message_from_string(b)
     doc = {}
     mp = doc['multipart'] = msg.is_multipart()
@@ -114,6 +114,9 @@ def doc_from_bytes(docid, b):
                 headers[hn.lower()] = [extract_message_ids(vals[0])]
             else:
                 headers[hn.lower()] = [unquote(v) for v in vals]
+            if __debug__ and rdkey[0]=='email' and hn.lower()=='message-id':
+                from raindrop.proto.imap import get_rdkey_for_email
+                assert tuple(rdkey)==get_rdkey_for_email(vals[0]), (rdkey, docid, vals)
 
     # XXX - technically msg objects are recursive; handling that requires
     # more thought.  For now, assume they are flat.
@@ -152,4 +155,4 @@ def doc_from_bytes(docid, b):
 def handler(doc):
     # I need the binary attachment.
     content = open_schema_attachment(doc, "rfc822")
-    emit_schema('rd.msg.email', doc_from_bytes(doc['_id'], content))
+    emit_schema('rd.msg.email', doc_from_bytes(doc['_id'], doc['rd_key'], content))
