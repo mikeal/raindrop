@@ -543,8 +543,8 @@ def install_views(whateva, options):
     if 'erlang' in config:
         extra_langs = [('.erl', 'erlang')]
     else:
-        # js is slower, so warn about that..
-        logger.warn("This couch server is not configured for erlang view servers")
+        # js is slower, so note that...
+        logger.info("This couch server is not configured for erlang view servers")
 
     docs = [d for d in generate_view_docs_from_filesystem(schema_src, extra_langs)]
     logger.debug("Found %d documents in '%s'", len(docs), schema_src)

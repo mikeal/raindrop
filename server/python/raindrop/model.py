@@ -550,7 +550,6 @@ class DocumentModel(object):
         # attachments have been updated.
 
         # result: [{'rev': 'xxx', 'id': '...'}, ...]
-        logger.debug("saved %d documents", len(result))
         ds = []
         assert len(result)==len(attachments) and len(result)==len(item_defs)
         new_items = []
@@ -584,6 +583,8 @@ class DocumentModel(object):
                 new_items.append(item_def)
                 real_result.append(dinfo)
 
+        logger.debug("saved %d documents with %d errors", len(new_items),
+                     len(errors))
         # If anyone is listening for new items, call them now.
         for listener in self._new_item_listeners:
             _ = yield defer.maybeDeferred(listener, new_items)

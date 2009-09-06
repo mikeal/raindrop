@@ -854,7 +854,8 @@ class IMAPAccount(base.AccountBase):
       nf = sum(len(i) for i in prov.fetch_queue.pending if i is not None)
       nw = sum(len(i) for i in prov.write_queue.pending if i is not None)
       if nf or nw:
-        logger.info('fetch queue has %d items, write queue has %d', nf, nw)
+        logger.info('%r fetch queue has %d items, write queue has %d',
+                    self.details.get('id',''), nf, nw)
 
     lc = task.LoopingCall(log_status)
     lc.start(10)
