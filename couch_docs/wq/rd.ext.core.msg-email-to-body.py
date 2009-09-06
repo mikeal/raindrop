@@ -8,7 +8,9 @@ def decode_body_part(docid, body_bytes, charset=None):
     # TODO: This sucks; we need to mimick what firefox does in such cases...
     try:
         body = body_bytes.decode(charset or 'ascii')
-    except UnicodeError, exc:
+    except (UnicodeError, LookupError), exc:
+        # UnicodeError == known encoding, bad data.
+        # LookupError == unknown encoding
         # No need to make lots of log noise for something beyond our
         # control...
         logger.debug("Failed to decode body in document %r from %r: %s",
