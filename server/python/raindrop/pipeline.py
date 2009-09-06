@@ -560,7 +560,7 @@ class MessageTransformerWQ(object):
             # expect to see what it wrote last time
             must_save = 'did_query' in context
             for i in new_items:
-                logger.debug('new schema item %(rd_key)r', i)
+                logger.debug('new schema item %(schema_id)r for key %(rd_key)r', i)
                 if not must_save and i['rd_key'] != src_doc['rd_key']:
                     must_save = True
                 ret.append(i)
