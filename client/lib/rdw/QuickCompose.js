@@ -109,7 +109,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
           if (!this.sender) {
             //Make a good guess based on the from address.
             var fromSvc = this.messageBag["rd.msg.body"].from[0];
-            this.sender = accountsByType[fromSvc];
+            this.sender = dojo.delegate(accountsByType[fromSvc]);
+            if (!this.sender.id && this.sender.rd_key) {
+              this.sender.id = this.sender.rd_key[1][1];
+              this.sender.service = this.sender.rd_key[1][0];
+            }
           }
 
           var senderDisplay = fromSvc + ": " + this.sender.id;
