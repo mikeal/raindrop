@@ -487,9 +487,14 @@ class DocumentModel(object):
 
         attachments = self._prepare_attachments(docs)
         logger.debug('create_schema_items saving %d docs', len(docs))
-        return self.db.updateDocuments(docs
-                    ).addCallback(self._cb_saved_docs, item_defs, attachments
-                    )
+        try:
+            return self.db.updateDocuments(docs
+                        ).addCallback(self._cb_saved_docs, item_defs, attachments
+                        )
+        except:
+            # note which documents failed.
+            logger.warn("failed writing docs %s", [d['_id'] for d in docs])
+            raise
 
     @defer.inlineCallbacks
     def open_schemas(self, rd_key, schema_id):
