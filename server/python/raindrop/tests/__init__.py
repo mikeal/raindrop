@@ -5,6 +5,7 @@ import os
 import glob
 import json
 import base64
+from email import message_from_string
 from twisted.trial import unittest
 from twisted.internet import defer
 
@@ -13,6 +14,7 @@ from raindrop.model import get_db, fab_db, get_doc_model
 from ..pipeline import Pipeline
 from raindrop import bootstrap
 from raindrop import sync
+from raindrop.proto.imap import get_rdkey_for_email
 
 import raindrop.proto
 raindrop.proto.init_protocols(True)
@@ -177,26 +179,64 @@ class TestCaseWithCorpus(TestCaseWithDB):
         cwd = os.getcwd()
         corpus_dir = self.get_corpus_dir(corpus_name)
         num = 0
-        pattern = "%s/%s.json" % (corpus_dir, item_spec)
+        # We try and make life simple for people by auto-determining the
+        # 'schema' for some well-known file types (eg, .rfc822.txt)
+        pattern = "%s/%s.*" % (corpus_dir, item_spec)
+        base_names = set()
         for filename in glob.iglob(pattern):
-            with open(filename) as f:
-                try:
-                    ob = json.load(f)
-                except ValueError, why:
-                    self.fail("%r has invalid json: %r" % (filename, why))
-                if '_id' not in ob:
-                    si = {'schema_id': ob['rd_schema_id'],
-                          'rd_key': ob['rd_key'],
-                          'ext_id': ob['rd_ext_id'],
-                          'items': []}
-                    ob['_id'] = self.doc_model.get_doc_id_for_schema_item(si)
-                for name, data in ob.get('_attachments', {}).iteritems():
-                    fname = os.path.join(corpus_dir, data['filename'])
-                    with open(fname, 'rb') as attach_f:
-                        enc_data = base64.encodestring(attach_f.read()).replace('\n', '')
-                        data['data'] = enc_data
-                yield ob
-                num += 1
+            try:
+                path, name = os.path.split(filename)
+                # don't use splitext - we want the *first* dot.
+                first, _ = filename.split(".", 1)
+                base = os.path.join(path, first)
+            except ValueError:
+                base = filename
+            base_names.add(base)
+        for basename in base_names:
+            if basename.endswith('README') or basename.endswith('raindrop'):
+                continue
+            # .json files get first go - they may 'override' what we would
+            # otherwise deduce.
+            elif os.path.exists(basename + ".json"):
+                filename = basename + ".json"
+                with open(filename) as f:
+                    try:
+                        ob = json.load(f)
+                    except ValueError, why:
+                        self.fail("%r has invalid json: %r" % (filename, why))
+                    for name, data in ob.get('_attachments', {}).iteritems():
+                        fname = os.path.join(corpus_dir, data['filename'])
+                        with open(fname, 'rb') as attach_f:
+                            enc_data = base64.encodestring(attach_f.read()).replace('\n', '')
+                            data['data'] = enc_data
+            elif os.path.exists(basename + ".rfc822.txt"):
+                # plain rfc822.txt file.
+                with open(basename + ".rfc822.txt", 'rb') as f:
+                    data = f.read()
+                msg_id = message_from_string(data)['message-id']
+                ob = {
+                      'rd_schema_id': 'rd.msg.rfc822',
+                      'rd_key': get_rdkey_for_email(msg_id),
+                      'rd_ext_id': 'proto.imap',
+                      'rd_source': None,
+                      '_attachments' : {
+                        'rfc822': {
+                            'content_type': 'message',
+                            'data': base64.encodestring(data).replace('\n', ''),
+                        }
+                      }
+                    }
+            else:
+                print "Don't know how to load '%s.*' into the corpus" % basename
+                continue
+            if '_id' not in ob:
+                si = {'schema_id': ob['rd_schema_id'],
+                      'rd_key': ob['rd_key'],
+                      'ext_id': ob['rd_ext_id'],
+                      'items': []}
+                ob['_id'] = self.doc_model.get_doc_id_for_schema_item(si)
+            yield ob
+            num += 1
         self.failUnless(num, "failed to load any docs from %r matching %r" %
                         (corpus_name, item_spec))
 
