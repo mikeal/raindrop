@@ -7,14 +7,19 @@ _protocol_infos = [
     ('smtp', 'raindrop.proto.smtp', 'SMTPAccount'),
     ('rss', 'raindrop.proto.rss', 'RSSAccount'),
 ]
-if __debug__:
-    _protocol_infos.append(('test', 'raindrop.proto.test', 'TestAccount'))
+
+_test_protocol_infos = [
+    ('test', 'raindrop.proto.test', 'TestAccount'),
+]
 
 protocols = {}
-def init_protocols():
+def init_protocols(include_test_protocols=False):
     import sys, logging
     logger = logging.getLogger('raindrop.proto')
-    for name, mod, factname in _protocol_infos:
+    to_init = _protocol_infos[:]
+    if include_test_protocols:
+        to_init.extend(_test_protocol_infos)
+    for name, mod, factname in to_init:
         try:
             logger.debug("attempting import of '%s' for '%s'", mod, factname)
             __import__(mod)

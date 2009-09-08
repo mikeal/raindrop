@@ -15,7 +15,7 @@ from raindrop import bootstrap
 from raindrop import sync
 
 import raindrop.proto
-raindrop.proto.init_protocols()
+raindrop.proto.init_protocols(True)
 test_proto = raindrop.proto.test
 
 # all this logging stuff is misplaced...
