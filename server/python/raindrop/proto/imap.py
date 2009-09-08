@@ -672,19 +672,29 @@ class ImapProvider(object):
       # else a real set of schemas to write and process.
       logger.debug('write queue popped %d schema items', len(items))
       try:
-        _ = yield self.doc_model.create_schema_items(items)
+        _ = yield self.doc_model.provide_schema_items(items)
       except DocumentSaveError, exc:
         # So - conflicts are a fact of life in this 'queue' model: we check
         # if a record exists and it doesn't, so we queue the write.  By the
         # time the write gets processed, it may have been written by a
         # different extension...
-        nc = 0
+        conflicts = []
         for info in exc.infos:
           if info['error']=='conflict':
-            nc += 1
+            # The only conflicts we are expecting are creating the rd.msg.rfc822
+            # schema, which arise due to duplicate message IDs (eg, an item
+            # in 'sent items' and also the received copy).  Do a 'poor-mans'
+            # check that this is indeed the only schema with a problem...
+            if not info.get('id', '').endswith('!rd.msg.rfc822'):
+              raise
+            conflicts.append(info)
           else:
             raise
-        logger.info('ignored %d conflict errors writing this batch', nc)
+        if not conflicts:
+          raise # what error could this be??
+        # so, after all the checking above, a debug log is all we need for this
+        logger.debug('ignored %d conflict errors writing this batch (first 3=%r)',
+                     len(conflicts), conflicts[:3])
       except:
         # premature shutdown...
         if not self.reactor.running:

@@ -33,6 +33,7 @@ class Extension(object):
             self.source_schemas = [doc['source_schema']]
         self.handler = handler
         self.globs = globs
+        self.running = False # for reentrancy testing...
         # Is this extension smart enough to update what it did in the past?
         self.smart_updater = doc.get('smart_updater', False)
 
@@ -117,10 +118,10 @@ class Pipeline(object):
         assert self.sync_processor is None, "already doing a sync process"
         qs = self.get_work_queues()
         self.sync_processor = NewItemProcessor(self.doc_model, qs)
-        self.doc_model.listen_new_items(self.sync_processor.on_new_items)
+        self.doc_model.add_provider_processor(self.sync_processor)
 
     def finish_sync_processor(self):
-        self.doc_model.unlisten_new_items(self.sync_processor.on_new_items)
+        self.doc_model.remove_provider_processor(self.sync_processor)
         ret = self.sync_processor.total
         self.sync_processor = None
         return ret
@@ -128,20 +129,25 @@ class Pipeline(object):
     @defer.inlineCallbacks
     def start(self):
         state = {'total': 0}
-        def on_new_items(new_items):
-            state['total'] += len(new_items)
+        class Processor:
+            def on_new_items(self, new_items):
+                state['total'] += len(new_items)
+            @defer.inlineCallbacks
+            def process_all(self):
+                return
 
         assert self.runner is None, "already doing an async process"
         assert self.sync_processor is None, "already doing a sync process"
         runner = QueueRunner(self.doc_model, self.get_work_queues(),
                              self.options)
         self.runner = runner
-        self.doc_model.listen_new_items(on_new_items)
+        proc = Processor()
+        self.doc_model.add_provider_processor(proc)
         try:
             _ = yield runner.run()
         finally:
             self.runner = None
-            self.doc_model.unlisten_new_items(on_new_items)
+            self.doc_model.remove_provider_processor(proc)
         defer.returnValue(state['total'])
 
     @defer.inlineCallbacks
@@ -182,7 +188,9 @@ class Pipeline(object):
             except ValueError, why:
                 logger.info('reprocess skipping document %r: %s', src_id, why)
                 continue
-            num += yield chugger.process_schema_items({schema: [(src_id, rev)]})
+            new_items = [{'_id': src_id, '_rev': rev, 'schema_id': schema}]
+            chugger.on_new_items(new_items)
+            num += yield chugger.process_all()
         logger.info("reprocess made %d new docs", num)
 
     @defer.inlineCallbacks
@@ -293,29 +301,48 @@ class NewItemProcessor(object):
         for q in work_queues:
             for sch_id in q.ext.source_schemas:
                 self.qs_by_schema.setdefault(sch_id, []).append(q)
+        self.pending_by_schema = {}
+        self.def_process_done = None
         self.total = 0
 
-    @defer.inlineCallbacks
     def on_new_items(self, items):
         logger.debug("on_new_items with %d new items", len(items))
-
-        todo_by_schema = {}
         for item in items:
             src = item['_id'], item['_rev']
             if '_deleted' in item:
                 continue
             src_schema = item['schema_id']
-            todo_by_schema.setdefault(src_schema, []).append(src)
-        num = yield self.process_schema_items(todo_by_schema)
-        logger.debug("processing %d new items created %d documents",
-                     len(items), num)
+            self.pending_by_schema.setdefault(src_schema, []).append(src)
+
+    @defer.inlineCallbacks
+    def process_all(self):
+        if self.def_process_done is not None:
+            # already processing!
+            yield self.def_process_done
+            return
+
+        self.def_process_done = defer.Deferred()
+        num = 0
+        while True:
+            if not self.pending_by_schema:
+                break
+            todo = self.pending_by_schema
+            self.pending_by_schema = {}
+            num += yield self.process_schema_items(todo)
+        self.def_process_done.callback(0)
+        self.def_process_done = None
+        defer.returnValue(num)
 
     @defer.inlineCallbacks
     def process_schema_items(self, todo_by_schema):
         # Pick all schemas in any order, then ask the extension to process
         # them in a batch, each time
         num = 0
+        logger.debug('process_schema_items starting with %d todo',
+                     len(todo_by_schema))
         while todo_by_schema:
+            logger.debug('process_schema_items looping - now %d todo',
+                         len(todo_by_schema))
             sch_id, sch_items = todo_by_schema.popitem()
             qs = self.qs_by_schema.get(sch_id)
             if qs is None:
@@ -328,13 +355,15 @@ class NewItemProcessor(object):
                 gen = list_popping_gen(ext_items)
                 while ext_items:
                     new_items = yield q.process(gen)
-                    # XXX - this is recursive!  It would be possible to avoid this
-                    # recursion, but the cost would be letting things still get behind...
-                    # the doc_model will again notify us of the new items...
                     if new_items:
+                        # create_schema_items will wind up calling our
+                        # on_new_items again, which we notice once we are
+                        # finsished here...
                         _ = yield self.doc_model.create_schema_items(new_items)
                         num += len(new_items)
+            logger.debug('schema %r items done', sch_id)
 
+        logger.debug('process_schema_items complete with %d new items', num)
         self.total += num
         defer.returnValue(num)
 
@@ -387,7 +416,8 @@ class QueueRunner(object):
             logger.error("queue %r failed: %s", q.get_queue_name(), result)
             q.failure = result
         else:
-            logger.debug('queue reports it is complete: %s', state_doc)
+            logger.debug('queue %r reports it is complete: %s',
+                         q.get_queue_name(), state_doc)
             assert result in (True, False), repr(result)
         # First check for any other queues which are no longer running
         # but have a sequence less than ours.
@@ -487,10 +517,20 @@ class MessageTransformerWQ(object):
         return self.ext.id
 
     def _get_ext_env(self, context, src_doc):
+        # Each ext has a single 'globals' which is updated before it is run;
+        # therefore it is critical we don't accidently run 2 extensions at
+        # once.
+        if self.ext.running:
+            raise RuntimeError, "%r is already running" % self.ext.id
+        self.ext.running = True
         new_globs = extenv.get_ext_env(self.doc_model, context, src_doc,
                                        self.ext)
         self.ext.globs.update(new_globs)
         return self.ext.handler
+
+    def _release_ext_env(self):
+        assert self.ext.running
+        self.ext.running = False
 
     @defer.inlineCallbacks
     def process(self, sources):
@@ -524,8 +564,8 @@ class MessageTransformerWQ(object):
                     if 'error' not in row:
                         to_del.append({'_id' : row['id'],
                                        '_rev' : row['value']['_rev']})
-                logger.debug("deleting %d docs previously created by %r",
-                             len(to_del), src_id)
+                logger.debug("deleting %d docs previously created from %r by %r",
+                             len(to_del), src_id, ext_id)
                 if to_del:
                     _ = yield dm.delete_documents(to_del)
 
@@ -545,13 +585,24 @@ class MessageTransformerWQ(object):
             # Now process it
             new_items = []
             context = {'new_items': new_items}
-            func = self._get_ext_env(context, src_doc)
             logger.debug("calling %r with doc %r, rev %s", ext_id,
                          src_doc['_id'], src_doc['_rev'])
 
             # Our extensions are 'blocking', so use a thread...
-            _ = yield threads.deferToThread(func, src_doc
-                        ).addBoth(self._cb_converted_or_not, src_doc, new_items)
+            try:
+                func = self._get_ext_env(context, src_doc)
+                try:
+                    result = yield threads.deferToThread(func, src_doc)
+                finally:
+                    self._release_ext_env()
+                if result is not None:
+                    # an extension returning a value implies they may be
+                    # confused?
+                    logger.warn("extension %r returned value %r which is ignored",
+                                self.ext, result)
+            except:
+                self._handle_ext_failure(Failure(), src_doc, new_items)
+
             logger.debug("extension %r generated %d new schemas", ext_id, len(new_items))
             # We try hard to batch writes; we earlier just checked to see if
             # only the same key was written, but that still failed.  Last
@@ -569,47 +620,41 @@ class MessageTransformerWQ(object):
                 break
         defer.returnValue(ret)
 
-    def _cb_converted_or_not(self, result, src_doc, new_items):
-        # This is both a callBack and an errBack.  If a converter fails to
+    def _handle_ext_failure(self, result, src_doc, new_items):
+        # If a converter fails to
         # create a schema item, we can't just fail, or no later messages in the
         # DB will ever get processed!
         # So we write an 'error' schema and discard any it did manage to create
-        if isinstance(result, Failure):
-            #if isinstance(result.value, twisted.web.error.Error):
-            #    # eeek - a socket error connecting to couch; we want to abort
-            #    # here rather than try to write an error record with the
-            #    # connection failure details (but worse, that record might
-            #    # actually be written - we might just be out of sockets...)
-            #    result.raiseException()
-            # XXX - later we should use the extension's log, but for now
-            # use out log but include the extension name.
-            logger.warn("Extension %r failed to process document %r: %s",
-                        self.ext.id, src_doc['_id'], result)
-            if self.options.get('stop_on_error', False):
-                logger.info("--stop-on-error specified - stopping queue")
-                self.failure = result
-                self.stopping = True
-                # Throw away any records emitted by *this* failure.
-                new_items[:] = []
-                return
+        assert isinstance(result, Failure)
+        #if isinstance(result.value, twisted.web.error.Error):
+        #    # eeek - a socket error connecting to couch; we want to abort
+        #    # here rather than try to write an error record with the
+        #    # connection failure details (but worse, that record might
+        #    # actually be written - we might just be out of sockets...)
+        #    result.raiseException()
+        # XXX - later we should use the extension's log, but for now
+        # use out log but include the extension name.
+        logger.warn("Extension %r failed to process document %r: %s",
+                    self.ext.id, src_doc['_id'], result.getTraceback())
+        if self.options.get('stop_on_error', False):
+            logger.info("--stop-on-error specified - stopping queue")
+            self.failure = result
+            self.stopping = True
+            # Throw away any records emitted by *this* failure.
+            new_items[:] = []
+            return
 
-            # and make the error record
-            edoc = {'error_details': unicode(result)}
-            if new_items:
-                logger.info("discarding %d items created before the failure",
-                            len(new_items))
-            new_items[:] = [{'rd_key' : src_doc['rd_key'],
-                             'rd_source': [src_doc['_id'], src_doc['_rev']],
-                             'schema_id': 'rd.core.error',
-                             'ext_id' : self.ext.id,
-                             'items' : edoc,
-                             }]
-        else:
-            if result is not None:
-                # an extension returning a value implies they may be
-                # confused?
-                logger.warn("extension %r returned value %r which is ignored",
-                            self.ext, result)
+        # and make the error record
+        edoc = {'error_details': unicode(result)}
+        if new_items:
+            logger.info("discarding %d items created before the failure",
+                        len(new_items))
+        new_items[:] = [{'rd_key' : src_doc['rd_key'],
+                         'rd_source': [src_doc['_id'], src_doc['_rev']],
+                         'schema_id': 'rd.core.error',
+                         'ext_id' : self.ext.id,
+                         'items' : edoc,
+                         }]
 
     @defer.inlineCallbacks
     def process_queue(self, state_info, num_to_process=5000):
@@ -617,8 +662,9 @@ class MessageTransformerWQ(object):
         """
         doc_model = self.doc_model
         state_doc = state_info['items']
+        qname = self.get_queue_name()
         logger.debug("Work queue %r starting with sequence ID %d",
-                     self.get_queue_name(), state_doc['seq'])
+                     qname, state_doc['seq'])
 
         logger.debug('opening by_seq view for work queue...')
 
@@ -626,7 +672,7 @@ class MessageTransformerWQ(object):
         result = yield doc_model.db.listDocsBySeq(limit=num_to_process,
                                                startkey=state_doc['seq'])
         rows = result['rows']
-        logger.debug('work queue has %d items to check.', len(rows))
+        logger.debug('work queue %r has %d items to check.', qname, len(rows))
         # no rows == we are at the end.
         if not rows:
             defer.returnValue(True)

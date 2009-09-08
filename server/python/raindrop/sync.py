@@ -102,8 +102,10 @@ class SyncConductor(object):
   def _process_outgoing_row(self, row, pipeline):
     val = row['value']
     # push it through the pipeline.
-    todo = {val['rd_schema_id']: [(row['id'], val['_rev'])]}
-    _ = yield pipeline.sync_processor.process_schema_items(todo)
+    proc = pipeline.sync_processor
+    new_items = [{'_id': row['id'], '_rev': val['_rev'], 'schema_id': val['rd_schema_id']}]
+    proc.on_new_items(new_items)
+    _ = yield proc.process_all()
 
     # Now attempt to find the 'outgoing' message.
     keys = []

@@ -163,7 +163,7 @@ class TwitterProcessor(object):
                           'schema_id': 'rd.identity.twitter',
                           'items': items})
 
-        _ = yield self.doc_model.create_schema_items(infos)
+        _ = yield self.doc_model.provide_schema_items(infos)
 
 
 class TwitterAccount(base.AccountBase):
