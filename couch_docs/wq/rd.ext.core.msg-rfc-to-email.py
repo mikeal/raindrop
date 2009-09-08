@@ -87,7 +87,7 @@ def sanitize_attach_name(name):
         logger.info('ingoring invalid attachment name %r', name)
         return None
     # hrmph - what are good rules?  Don't allow path portions.
-    base = re.split("[\\\\/]", name)
+    base = re.split("[\\\\/]", name)[-1]
     # and nuke spaces...
     return base.replace(" ", "")
 
