@@ -138,8 +138,9 @@ class Pipeline(object):
 
         assert self.runner is None, "already doing an async process"
         assert self.sync_processor is None, "already doing a sync process"
-        runner = QueueRunner(self.doc_model, self.get_work_queues(),
-                             self.options)
+        self.num_queue_failures = 0 # only for the test suite!
+        queues = self.get_work_queues()
+        runner = QueueRunner(self.doc_model, queues, self.options)
         self.runner = runner
         proc = Processor()
         self.doc_model.add_provider_processor(proc)
@@ -148,6 +149,7 @@ class Pipeline(object):
         finally:
             self.runner = None
             self.doc_model.remove_provider_processor(proc)
+        self.num_queue_failures = len([q for q in queues if q.failure])
         defer.returnValue(state['total'])
 
     @defer.inlineCallbacks
