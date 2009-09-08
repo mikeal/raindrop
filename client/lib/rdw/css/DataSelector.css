@@ -62,13 +62,22 @@
   border: none !important;
   background-color: #1a1a1a;
   color: white;
-  opacity: .75;
-  padding: 0 8px;
+  opacity: .9;
+  padding: 8px 8px 8px 8px;
   -moz-box-sizing: border-box;
-  overflow-y: hidden;
   margin: 0;
+  -moz-border-radius: 5px;
 }
 
 .dijitMenuItem {
   font-size: small !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  width: 15em;
+  margin-right: 1.25em;  
+}
+
+.dijitMenuItem:hover {
+  background-color: #FFFFFF;
+  color: #1a1a1a;
 }

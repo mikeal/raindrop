@@ -119,6 +119,10 @@
   visibility: hidden;
 }
 
+.rdwStoryTwitterTimeLine .Message .shadow {
+  visibility: hidden;
+}
+
 .tweetList .Message .message {
   padding-bottom: 0;
 }

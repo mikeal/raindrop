@@ -76,9 +76,9 @@ a img{
 /* end @font-face typography */
 
 .rdwLoading {
-  position: fixed;
-  right: 80px;
-  top: 20px;
+  position: absolute;
+  right: 10px;
+  top: 10px;
   overflow:hidden;
   display: inline-block;
   text-indent: -40em;
@@ -106,12 +106,12 @@ a img{
 
 #newcompose {
   position: fixed;
-  height: 100px;
-  width: 100px;
+  height: 50px;
+  width: 50px;
   background-image: url("i/logo.png");
   z-index: 1;
-  top: 0;
-  right: 0;
+  top: 25px;
+  right: 25px;
 }
 
 #column1 {

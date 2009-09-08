@@ -2,14 +2,30 @@
   position: absolute;
 }
 
-.rdwContactSelector {
+.rdwContactSelectorArrow {
   width: 10em;
-  height: 20ex;
-  border: 1px solid gray;
+  height: 8px;
+  background-image: url("i/tri_black.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+}
+
+.rdwContactSelector {
+  overflow: hidden;
+  position: absolute;
+  left: -3em;
+}
+
+.rdwContactSelectorContainer {
+  width: 10em;
+  height: 50ex;
   padding: 1ex 0.5em;
   overflow-x: hidden;
   overflow-y: auto;
-  background-color: white;
+  background-color: #1a1a1a;
+  opacity: 0.9;
+  -moz-border-radius: 5px;
 }
 
 .rdwContactSelector ul {
@@ -19,14 +35,19 @@
   font-size: smaller;
 }
 
-.rdwContactSelector ul .add {
+.rdwContactSelector .add {
   margin-bottom: 1ex;
   padding-bottom: 1ex;
-  border-bottom: 1px solid gray;
+  border-bottom: 1px solid #FFF;
 }
 
-.rdwContactSelector ul .add .name {
+.rdwContactSelector .add .name {
   font-weight: bold;
+}
+
+.rdwContactSelector .add a {
+  color: #FFF;
+  text-decoration: none;
 }
 
 .rdwContactSelector ul .preferred {
@@ -37,9 +58,41 @@
   width: 24px;
   height: 24px;
   border: 0;
+  display: none;
 }
 
-.rdwContactSelector ul a {
+.rdwContactSelector li a {
   text-decoration: none;
-  color: #44617E;
+  color: #FFF;
 }
+
+.rdwContactSelector li:hover a {
+  text-decoration: none;
+  color: #1a1a1a;
+  background-color: #FFFFFF;
+}
+
+.rdwContactSelector li {
+  text-decoration: none;
+  color: #FFF;
+}
+
+.rdwContactSelector li:hover {
+  text-decoration: none;
+  color: #1a1a1a;
+  background-color: #FFFFFF;
+}
+
+.rdwContactSelector li:hover .add a {
+  text-decoration: none;
+  color: #fff;
+  background-color: transparent;
+}
+
+.rdwContactSelector li:hover .add {
+  text-decoration: none;
+  color: #fff;
+  background-color: transparent;
+}
+
+

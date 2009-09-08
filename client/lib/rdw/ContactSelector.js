@@ -5,9 +5,12 @@ dojo.require("dojo.string");
 dojo.require("rd.contact");
 
 dojo.declare("rdw.ContactSelector", [rdw._Base], {
-  templateString: '<div class="rdwContactSelector" dojoAttachEvent="onclick: onClick"><ul dojoAttachPoint="listNode"></ul></div>',
+  templateString: '<div class="rdwContactSelector" dojoAttachEvent="onclick: onClick"> \
+                   <div class="rdwContactSelectorArrow"></div> \
+                   <div class="rdwContactSelectorContainer"><ul dojoAttachPoint="listNode"></ul></div> \
+                   </div>',
 
-  addTemplate: '<li class="add"><a href=#rdw.ContactSelector:add><span class="name">${i18n.add}</span></a></li>',
+  addTemplate: '<div class="add"><a href=#rdw.ContactSelector:add><span class="name">${i18n.add}</span></a></div>',
 
   contactTemplate: '<li class="${extraClass}"><a href=#rdw.ContactSelector:${contactId}><img src=${imgUrl}> <span class="name">${name}</span></a></li>',
 
