@@ -130,8 +130,16 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         //fetch new data for the old state.
         this._isBack = true;
 
+        //Save the current scroll position, so we can set it once
+        //we go back before we do the transition. Otherwise, the browser
+        //remembers your last scroll position for last place in history.
+        var conversationScrollTop = dojo.global.dojo.global.scrollY;
+
         //Just go back in the browser history.
         dojo.global.history.back();
+
+        //Set the scroll back to the right place so the animation looks smooth.
+        window.scrollTo(0, conversationScrollTop);
       } else {
         //Get the active, focused element and see if it is widget with a message
         var id = dojo.doc.activeElement.id;

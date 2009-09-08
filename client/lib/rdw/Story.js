@@ -38,13 +38,9 @@ dojo.declare("rdw.Story", [rdw._Base], {
                     <div class="messages" dojoAttachPoint="containerNode"></div> \
                     <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
                     </div> \
-                    <div class="tools" dojoAttachPoint="toolsNode"> \
-                      <a class="reply" dojoAttachPoint="replyNode" href="#reply">${i18n.reply}</a> \
-                    </div> \
                   </li>',
 
-  moreMessagesTemplate: '<a class="moreMessages" href="#more">${message}</a>',
-
+  moreMessagesTemplate: '<a class="moreMessages" href="#${url}">&#9654; ${message}</a>',
 
   msgSort: function (a,b) {
     //summary: default message sorting is by timestamp, most
@@ -91,9 +87,6 @@ dojo.declare("rdw.Story", [rdw._Base], {
 
           //Put the response widget in the toolDisplay
           this.responseWidget.placeAt(this.toolDisplayNode);
-          
-          //Hide the reply node since the reply tool is showing
-          this.replyNode.style.display = "none";
         }));
         evt.preventDefault();
       } else if (href == "archive") {
@@ -196,18 +189,26 @@ dojo.declare("rdw.Story", [rdw._Base], {
       }
 
       //If any left over messages, then show that info.
-      if (this.toolsNode) {
         var notShownCount = this.msgs.length - toShow.length;
         if (notShownCount) {
-          var html = dojo.string.substitute(this.moreMessagesTemplate, {
-            message: dojo.string.substitute(this.i18n.moreMessages, {
-              count: notShownCount,
-              messagePlural: (notShownCount == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
+          //Find last widget.
+          var lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
+          //Set up the link for the more action. Need the conversation ID.
+          var convoId = lastWidget.messageBag
+                && lastWidget.messageBag["rd.msg.conversation"]
+                && lastWidget.messageBag["rd.msg.conversation"].conversation_id;
+
+          if (lastWidget && lastWidget.actionsNode) {
+            var html = dojo.string.substitute(this.moreMessagesTemplate, {
+              url: convoId ? "rd:conversation:" + convoId : "",
+              message: dojo.string.substitute(this.i18n.moreMessages, {
+                count: notShownCount,
+                messagePlural: (notShownCount == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
+              })
             })
-          })
-          dojo.place(html, this.toolsNode, "first");
+            dojo.place(html, lastWidget.actionsNode, 2);
+          }
         }
-      }
     }));
   },
 
@@ -215,8 +216,5 @@ dojo.declare("rdw.Story", [rdw._Base], {
     //summary: Called by this.responseWidget's instance, if it knows
     //that it has been destroyed.
     this.removeSupporting(this.responseWidget);
-
-    //Show the reply node since the reply tool is gone.
-    this.replyNode.style.display = "";
   }
 });

@@ -116,10 +116,6 @@
   margin-right: 8px;
 }
 
-.Message .actions .moreMessages {
-  display: none;
-}
-
 .Message:last-child .actions .moreMessages {
   display: inline-block;
   margin-right: 8px;

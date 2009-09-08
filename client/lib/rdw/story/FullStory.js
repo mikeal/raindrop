@@ -24,6 +24,5 @@ dojo.declare("rdw.story.FullStory", [rdw.Story], {
     }), this.domNode, "first");
 
     dojo.addClass(this.domNode, "rdwStoryFullStory");
-    this.toolsNode.style.display = "none";
   }
 });

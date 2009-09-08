@@ -100,8 +100,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (href && (href = href.split("#")[1])) {
       if (href == "know") {
         rdw.contactDropDown.open(evt.target, this, this.fromName, this.matches);
+        evt.preventDefault();
       }
-      evt.preventDefault();
     }
   },
 
