@@ -302,6 +302,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //viewType. Basically, allow switching from a summary
     //of conversations to one conversation and back.
 
+    console.log("transition: start");
+
     //If showing another summary type, then clear out the saved summary
     if (!this.viewType || viewType == this.viewType && viewType == "summary") {
       this.summaryScrollHeight = 0;
@@ -318,6 +320,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       //Set the view type so next calls know the type.
       this.viewType = viewType;
       this._postRender = true;
+      console.log("transition: end, no animation.");
       return;
     }
 
@@ -460,6 +463,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   onTransitionEnd: function() {
     //summary: called at the end of a summary transition.
 
+    console.log("onTransitionEnd");
+
     //Hide the swipe indicator
     this.switchNode.className = "rdwStoriesSwipe";
 
@@ -528,17 +533,22 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   home: function() {
     //summary: responds to rd-protocol-home topic.
 
+    console.log("starting home request");
+
     //reset stored state.
     this.conversations = [];
     this._groups = [];
 
     //Be sure homeGroups are loaded.
+    console.log("loading group modules.");
+
     if (!this.homeGroupModules) {
       for (var i = 0, module; module = this.homeGroups[i]; i++) {
         dojo["require"](module);
       }
 
       dojo.addOnLoad(dojo.hitch(this, function(){
+        console.log("finished loading group modules.");
         this.homeGroupModules = [];
         for (var i = 0, module; module = this.homeGroups[i]; i++) {
           var mod = dojo.getObject(module);
@@ -555,7 +565,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
   _renderHome: function() {
     //summary: does the actual display of the home view.
+    console.log("_renderHome start");
     rd.conversation.home(this.messageLimit, dojo.hitch(this, function(conversations) {
+      console.log("_renderHome conversations received");
        //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
       if (conversations && conversations.length) {
@@ -596,15 +608,19 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       this._sortGroups();
 
       //Add all the widgets to the DOM and ask them to display.
+      console.log("_renderHome starting to display widgets");
       var frag = dojo.doc.createDocumentFragment();
       for (var i = 0, group; group = this._groups[i]; i++) {
         group.placeAt(frag);
         group.display();
       }
 
+      console.log("_renderHome ending display widgets");
+
       //Inject nodes all at once for best performance.
       this.listNode.appendChild(frag);
 
+      console.log("_renderHome widgets injected into the dom");
       this.transition("summary");
     }));
   },
