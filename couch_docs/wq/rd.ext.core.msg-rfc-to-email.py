@@ -5,6 +5,7 @@ from email import message_from_string
 from email.utils import unquote
 from email.header import decode_header
 import codecs
+import re
 
 def decode_header_part(value, fallback_charset='latin-1'):
     assert isinstance(value, tuple)
@@ -80,8 +81,15 @@ def extract_message_ids(message_id_string):
 def sanitize_attach_name(name):
     if not name:
         return name
-    # hrmph - what are good rules?  I see a space :)
-    return name.split()[0]
+    try:
+        name.encode('ascii')
+    except UnicodeError:
+        logger.info('ingoring invalid attachment name %r', name)
+        return None
+    # hrmph - what are good rules?  Don't allow path portions.
+    base = re.split("[\\\\/]", name)
+    # and nuke spaces...
+    return base.replace(" ", "")
 
 def attach_from_msg(attach_id, msg):
     ct = msg.get_content_type()

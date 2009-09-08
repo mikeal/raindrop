@@ -1,0 +1,49 @@
+Received: from smtp1.adl2.mozillamessaging.com (unverified [203.16.214.181]) 
+	by mail.mozillamessaging.com (SurgeMail 3.8f2) with ESMTP id 69906695-1849793 
+	for <raindrop_test_user@mozillamessaging.com>; Sun, 23 Aug 2009 13:09:05 +0930 (CST)
+Return-Path: <fwne@sosmatic.net>
+Received: from ipmail01.adl6.mozillamessaging.com (ipmail01.adl6.mozillamessaging.com [203.16.214.146])
+	by smtp1.adl2.mozillamessaging.com (8.14.2/8.14.2) with ESMTP id n7N3d46c000556
+	for <raindrop_test_user@mozillamessaging.com>; Sun, 23 Aug 2009 13:09:05 +0930 (CST)
+	(envelope-from fwne@sosmatic.net)
+Message-Id: <200908230339.n7N3d46c000556@smtp1.adl2.mozillamessaging.com>
+Received: from secundari.sosmatic.net (HELO gwmon.sosmatic.net) ([212.36.65.60])
+  by ipmailmx01.adl6.mozillamessaging.com with ESMTP; 23 Aug 2009 13:09:01 +0930
+Received: from [121.33.124.166] (helo=Wybsdbg)
+	by gwmon.sosmatic.net with esmtp (Exim 4.63)
+	(envelope-from <fwne@sosmatic.net>)
+	id 1Mf3tx-0000D4-8t; Sun, 23 Aug 2009 05:38:05 +0200
+From: =?GB2312?B?yNrDwN6l?= <fwne@sosmatic.net>
+Subject: =?GB2312?B?NDQ1MjTQwrL6xre1xMnPytC53MDtbWNhbGQ=?=
+To: mgr@dlmmm.com
+Content-Type: multipart/mixed; charset="GB2312"; boundary="JHTmWe=_NlptUPMJVQj2TjjFEMqJxmA7mV"
+MIME-Version: 1.0
+Date: Sun, 23 Aug 2009 11:37:54 +0800
+X-Rcpt-To: <raindrop_test_user@mozillamessaging.com>
+X-Vpipe: Scanner said clean (/local/app/clamav/bin/vscand-clamav)
+X-SpamDetect: **: 2.500000 From3consonants=0.3,NakedCR=0.2,Message text disguised using base-64 encoding=2.0
+X-NakedCr: Body contained naked cr characters
+X-NotAscii: charset=gb2312
+X-IP-stats: No info recorded yet ip=212.36.65.60
+X-Originating-IP: 212.36.65.60
+
+This is a multi-part message in MIME format
+
+--JHTmWe=_NlptUPMJVQj2TjjFEMqJxmA7mV
+Content-Type: text/plain
+Content-Transfer-Encoding: base64
+X-MIME-Autoconverted: from 8bit to base64 by smtp1.adl2.mozillamessaging.com id n7N3d46c000556
+
+MTY0NTQxMjI4NzSy+sa3vq3A7cjnus62qM67yse2qM671NrK0LOhu7nKx9HQt6Kh+A0K
+--JHTmWe=_NlptUPMJVQj2TjjFEMqJxmA7mV
+Content-Type: application/octet-stream;
+        name="市场需 求管理流 程的简介.txt"
+Content-Disposition: attachment;
+        filename="市场需 求管理流 程的简介.txt"
+Content-Transfer-Encoding: base64
+
+aGVsbG8gLSB0aGlzIHVzZWQgdG8gYmUgYSAueGxzIGJpbmFyeSBhdHRhY2htZW50LCBwcmVzdW1h
+Ymx5IHdpdGggYSB2aXJ1cw==
+
+--JHTmWe=_NlptUPMJVQj2TjjFEMqJxmA7mV--
+
