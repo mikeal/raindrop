@@ -43,7 +43,8 @@ LIB_DOC = 'lib' #'_design/files'
 RAINDROP_CONTENT_TYPES = {
     '.json' : 'application/json',
     '.java' : 'application/java',
-    '.psd' : 'application/octet-stream', # what are these?
+    '.psd'  : 'application/octet-stream', # photoshop, srsly?
+    '.ttf'  : 'application/x-font',
 }
 
 RAINDROP_IGNORE = set(('.patch', '.diff', '.orig', '.zip'))
