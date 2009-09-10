@@ -85,10 +85,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     @defer.inlineCallbacks
     def test_mailing_list(self):
         # Initialize the corpus & database.
-        yield self.init_corpus('hand-rolled')
+        yield self.init_corpus('mailing-list')
 
         # Process one message from a mailing list.
-        yield self.put_docs('hand-rolled', 'mailing-list-email-simple', 1)
+        yield self.put_docs('mailing-list', 'simple-message', 1)
 
         mail_key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
         list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
@@ -122,7 +122,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.ensure_doc(doc, expected_doc)
 
         # Process a second, later message from the same mailing list.
-        yield self.put_docs('hand-rolled', 'mailing-list-email-simple-2', 1)
+        yield self.put_docs('mailing-list', 'simple-message-2', 1)
 
         # There should now be two rd.msg.email.mailing-list documents.
         yield self.get_docs(mail_key, expected=2)
@@ -176,11 +176,11 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     @defer.inlineCallbacks
     def test_mailman_unsubscribe(self):
         # Initialize the corpus & database.
-        yield self.init_corpus('hand-rolled')
+        yield self.init_corpus('mailing-list')
 
         # Process a Mailman mailing list message then unsubscribe confirmation.
-        yield self.put_docs('hand-rolled', 'mailing-list-mailman-message', 1)
-        yield self.put_docs('hand-rolled', 'mailing-list-mailman-unsub-conf', 1)
+        yield self.put_docs('mailing-list', 'mailman-message', 1)
+        yield self.put_docs('mailing-list', 'mailman-unsub-conf', 1)
 
         # The rd.mailing-list doc should have the expected properties/values.
         list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
