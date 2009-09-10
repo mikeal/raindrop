@@ -1,0 +1,133 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.231.10.131 with SMTP id p3cs48855ibp;
+        Tue, 28 Jul 2009 19:18:41 -0700 (PDT)
+Received-SPF: pass (example3.com: domain of grbounce-LrH--wUAAABbKiiVgF-BaMnR9nqlIGOA=mykmelez=example2.com@googlegroups.com designates 10.143.40.3 as permitted sender) client-ip=10.143.40.3;
+Authentication-Results: mr.example3.com; spf=pass (example3.com: domain of grbounce-LrH--wUAAABbKiiVgF-BaMnR9nqlIGOA=mykmelez=example2.com@googlegroups.com designates 10.143.40.3 as permitted sender) smtp.mail=grbounce-LrH--wUAAABbKiiVgF-BaMnR9nqlIGOA=mykmelez=example2.com@googlegroups.com; dkim=pass header.i=grbounce-LrH--wUAAABbKiiVgF-BaMnR9nqlIGOA=mykmelez=example2.com@googlegroups.com
+Received: from mr.example3.com ([10.143.40.3])
+        by 10.143.40.3 with SMTP id s3mr4062398wfj.5.1248833920704 (num_hops = 1);
+        Tue, 28 Jul 2009 19:18:40 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=beta;
+        h=domainkey-signature:received:received:x-sender:x-apparently-to
+         :received:received:received-spf:authentication-results:received
+         :message-id:date:from:organization:user-agent:mime-version
+         :content-type:to:subject:reply-to:sender:precedence:x-google-loop
+         :mailing-list:list-id:list-post:list-help:list-unsubscribe
+         :x-beenthere-env:x-beenthere;
+        bh=8pC6AfcFabPCRfd3LxvCErsnPLc2siyO0nnvVznZSUE=;
+        b=qO3TUoa5nHUwpfY+FKMlTYYbjDte1RQiCuBFlvGFomjs5uxcBCs8iFPo9uRStqylg7
+         8JxsrzgCJx2bNFgwh2DoA+IqeL19sGMG407JzBT5AH8jfC9xfQHuyGIccW4bZ4TDuFEY
+         KOYGlOMIep73K9IA7fBDdC9Wi8x4IMs/yEdk4=
+DomainKey-Signature: a=rsa-sha1; c=nofws;
+        d=googlegroups.com; s=beta;
+        h=x-sender:x-apparently-to:received-spf:authentication-results
+         :message-id:date:from:organization:user-agent:mime-version
+         :content-type:to:subject:reply-to:sender:precedence:x-google-loop
+         :mailing-list:list-id:list-post:list-help:list-unsubscribe
+         :x-beenthere-env:x-beenthere;
+        b=XBco8GHHWRMopEttW+vqjX6nRHEwqnr1SNYTRFNmQ7Fg9Z+bd3H39dfkh8OeAck4By
+         SERIOIGEOnyHPJnVXhSapea7Z7FQh/6Pvq5pAVg2AqQDLDFFXnO3buLuWAD6Ol9hadtD
+         oWUpTFtI2/9XFSQurxE9MaFCTc/TpqMtmIFfU=
+Received: by 10.143.40.3 with SMTP id s3mr725420wfj.5.1248833918574;
+        Tue, 28 Jul 2009 19:18:38 -0700 (PDT)
+Received: by 10.107.171.33 with SMTP id y33gr719pro.0;
+	Tue, 28 Jul 2009 19:18:38 -0700 (PDT)
+X-Sender: myk@example.org
+X-Apparently-To: mozilla-labs-personas@googlegroups.com
+Received: by 10.143.160.6 with SMTP id m6mr1924486wfo.24.1248833917761; Tue, 28 Jul 2009 19:18:37 -0700 (PDT)
+Return-Path: <myk@example.org>
+Received: from dm-mail01.example.org (dm-mail01.example.org [63.245.208.150]) by gmr-mx.example3.com with ESMTP id 23si37800pzk.7.2009.07.28.19.18.37; Tue, 28 Jul 2009 19:18:37 -0700 (PDT)
+Received-SPF: pass (example3.com: best guess record for domain of myk@example.org designates 63.245.208.150 as permitted sender) client-ip=63.245.208.150;
+Authentication-Results: gmr-mx.example3.com; spf=pass (example3.com: best guess record for domain of myk@example.org designates 63.245.208.150 as permitted sender) smtp.mail=myk@example.org
+Received: from [172.16.75.128] (corp-240.mv.example.com [63.245.220.240]) (Authenticated sender: myk@example.com) by dm-mail01.example.org (Postfix) with ESMTP id 64FDBB806B for <mozilla-labs-personas@googlegroups.com>; Tue, 28 Jul 2009 19:18:37 -0700 (PDT)
+Message-ID: <4A6FB17A.7060704@example.org>
+Date: Wed, 12 Aug 2009 18:28:46 +0000
+From: Myk Melez <myk@example.org>
+Organization: Mozilla
+User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.1.2pre) Gecko/20090723 Shredder/3.0b4pre
+Mime-Version: 1.0
+Content-Type: multipart/alternative; boundary="------------060701080003090405070403"
+To: mozilla-labs-personas@googlegroups.com
+Subject: Personas 1.2.2rc1 build
+Reply-To: mozilla-labs-personas@googlegroups.com
+Sender: mozilla-labs-personas@googlegroups.com
+Precedence: bulk
+X-Google-Loop: groups
+Mailing-List: list mozilla-labs-personas@googlegroups.com;
+	contact mozilla-labs-personas+owner@googlegroups.com
+List-Id: <mozilla-labs-personas.googlegroups.com>
+List-Post: <mailto:mozilla-labs-personas@googlegroups.com>
+List-Help: <mailto:mozilla-labs-personas+help@googlegroups.com>
+List-Unsubscribe: <http://googlegroups.com/group/mozilla-labs-personas/subscribe>,
+	<mailto:mozilla-labs-personas+unsubscribe@googlegroups.com>
+X-BeenThere-Env: mozilla-labs-personas@googlegroups.com
+X-BeenThere: mozilla-labs-personas@googlegroups.com
+
+
+--------------060701080003090405070403
+Content-Type: text/plain; charset=ISO-8859-1
+
+Hey all,
+
+I've built a release candidate for Personas 1.2.2, a minor update to 
+Personas 1.2 that fixes a bug in the extension when a user installs the 
+Firefox+Personas bundle from IE (bug 492392, comment 21 
+<https://bugzilla.example.org/show_bug.cgi?id=492392#c21> and later). 
+Try it out, and let me know if you notice any new problems with it:
+
+https://people.example.com/~cbeard/personas/dist/personas-v1.2.2rc1.xpi
+
+-myk
+
+
+--~--~---------~--~----~------------~-------~--~----~
+You received this message because you are subscribed to the Google Groups "mozilla-labs-personas" group.
+To post to this group, send email to mozilla-labs-personas@googlegroups.com
+To unsubscribe from this group, send email to mozilla-labs-personas+unsubscribe@googlegroups.com
+For more options, visit this group at http://groups.example3.com/group/mozilla-labs-personas?hl=en
+-~----------~----~----~----~------~----~------~--~---
+
+
+--------------060701080003090405070403
+Content-Type: text/html; charset=ISO-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+
+<meta http-equiv=3D"content-type" content=3D"text/html; charset=3DISO-8859-=
+1">
+</head>
+<body text=3D"#000000" bgcolor=3D"#ffffff">
+Hey all,<br>
+<br>
+I've built a release candidate for Personas 1.2.2, a minor update to
+Personas 1.2 that
+fixes a bug in the extension when a user installs the Firefox+Personas
+bundle from IE (<a
+ href=3D"https://bugzilla.example.org/show_bug.cgi?id=3D492392#c21">bug
+492392, comment 21</a> and later). Try it out, and let me know if you
+notice any new problems with it:<br>
+<br>
+<a class=3D"moz-txt-link-freetext" href=3D"https://people.example.com/~cbea=
+rd/personas/dist/personas-v1.2.2rc1.xpi">https://people.example.com/~cbeard=
+/personas/dist/personas-v1.2.2rc1.xpi</a><br>
+<br>
+-myk<br>
+<br>
+<br>
+--~--~---------~--~----~------------~-------~--~----~<br>
+You received this message because you are subscribed to the Google Groups &=
+quot;mozilla-labs-personas&quot; group. <br> To post to this group, send em=
+ail to mozilla-labs-personas@googlegroups.com <br> To unsubscribe from this=
+ group, send email to mozilla-labs-personas+unsubscribe@googlegroups.com <b=
+r> For more options, visit this group at http://groups.example3.com/group/moz=
+illa-labs-personas?hl=3Den<br>
+-~----------~----~----~----~------~----~------~--~---<br>
+</body>
+</html>
+<br>
+
+--------------060701080003090405070403--
+
