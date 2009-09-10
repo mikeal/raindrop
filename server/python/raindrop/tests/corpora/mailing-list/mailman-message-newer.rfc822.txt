@@ -1,0 +1,62 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.143.45.16 with SMTP id x16cs141206wfj;
+        Sun, 23 Aug 2009 20:35:10 -0700 (PDT)
+Received: by 10.114.2.12 with SMTP id 12mr5146997wab.52.1251084910285;
+        Sun, 23 Aug 2009 20:35:10 -0700 (PDT)
+Return-Path: <test-bounces+mykmelez=example2.com@lists.example.com>
+Received: from lists.example.com (notorious.example.com [63.245.208.166])
+        by mx.example3.com with ESMTP id 11si17570472pxi.52.2009.08.23.20.35.10;
+        Sun, 23 Aug 2009 20:35:10 -0700 (PDT)
+Received-SPF: pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) client-ip=63.245.208.166;
+Authentication-Results: mx.example3.com; spf=pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) smtp.mail=test-bounces+mykmelez=example2.com@lists.example.com
+X-Virus-Scanned: amavisd-new at example.com
+Received: from notorious.example.com (localhost.localdomain [127.0.0.1])
+	by lists.example.com (Postfix) with ESMTP id 6AC5C11F22
+	for <mykmelez@example2.com>; Sun, 23 Aug 2009 20:35:09 -0700 (PDT)
+Path: border1.nntp.dca.example4.com!border2.nntp.dca.example4.com!nntp.example4.com!backlog2.nntp.dca.example4.com!nntp.example.com!news.example.com.POSTED!not-for-mail
+NNTP-Posting-Date: Sun, 23 Aug 2009 22:33:50 -0500
+Date: Sun, 23 Aug 2009 23:44:17 -0700
+From: Myk Melez <myk@example.com>
+Organization: example.com
+User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US;
+	rv:1.9.1.3pre) Gecko/20090821 Shredder/3.0b4pre
+MIME-Version: 1.0
+Newsgroups: mozilla.test
+Subject: this is a test
+Message-ID: <UfednYCgit-Dlw_XnZ2dnUVZ_r5i4p2d@example.com>
+Lines: 1
+X-Usenet-Provider: http://www.example4.com
+NNTP-Posting-Host: 99.66.211.155
+X-AuthenticatedUsername: NoAuthUser
+X-Trace: sv3-A8V2CjzstD3iVMLb2/HExTs6kRbV2Mo197r24aRVi/aW3VbsKg0tTRF5TirgSbol0g6lP/meNQD0Ew1!iIZNUZir9KwUScV+Lajo50m4+c6p9iysPZrEUeTy/8B8VE+lbYFKiIZPybiTDC2O3xFH2fM9aYIs!EJWjANHyORPj
+X-Complaints-To: abuse@example.com
+X-DMCA-Complaints-To: abuse@example.com
+X-Abuse-and-DMCA-Info: Please be sure to forward a copy of ALL headers
+X-Abuse-and-DMCA-Info: Otherwise we will be unable to process your complaint
+	properly
+X-Postfilter: 1.3.39
+Bytes: 1245
+X-Original-Bytes: 1202
+Xref: number.nntp.dca.example4.com mozilla.test:4053
+To: test@lists.example.com
+X-BeenThere: test@lists.example.com
+X-Mailman-Version: 2.1.12
+Precedence: list
+List-Id: test messages go here <test.lists.example.com>
+List-Unsubscribe: <https://lists.example.com/options/test>,
+	<mailto:test-request@lists.example.com?subject=unsubscribe>
+List-Post: <mailto:test@lists.example.com>
+List-Help: <mailto:test-request@lists.example.com?subject=help>
+List-Subscribe: <https://lists.example.com/listinfo/test>,
+	<mailto:test-request@lists.example.com?subject=subscribe>
+Content-Transfer-Encoding: 7bit
+Content-Type: text/plain; charset="us-ascii"; Format="flowed"
+Sender: test-bounces+mykmelez=example2.com@lists.example.com
+Errors-To: test-bounces+mykmelez=example2.com@lists.example.com
+
+This is a test.
+_______________________________________________
+test mailing list
+test@lists.example.com
+https://lists.example.com/listinfo/test
+To unsubscribe, send an email to test-request@lists.example.com?subject=unsubscribe
