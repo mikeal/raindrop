@@ -172,3 +172,18 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                 '<mailto:thetest-request@lists.example.com?subject=unsubscribe',
         }
         self.ensure_doc(doc, expected_doc)
+
+    @defer.inlineCallbacks
+    def test_mailman_unsubscribe(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('hand-rolled')
+
+        # Process a Mailman mailing list message then unsubscribe confirmation.
+        yield self.put_docs('hand-rolled', 'mailing-list-mailman-message', 1)
+        yield self.put_docs('hand-rolled', 'mailing-list-mailman-unsub-conf', 1)
+
+        # The rd.mailing-list doc should have the expected properties/values.
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+        doc = (yield self.get_docs(list_key))[0]
+        self.failUnlessEqual(doc['status'], 'unsubscribed',
+                             repr('Mailman list status is unsubscribed'))

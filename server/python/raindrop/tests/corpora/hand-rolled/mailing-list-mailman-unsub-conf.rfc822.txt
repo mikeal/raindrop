@@ -1,0 +1,31 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.143.45.16 with SMTP id x16cs146823wfj;
+        Sun, 23 Aug 2009 23:44:19 -0700 (PDT)
+Received: by 10.115.39.11 with SMTP id r11mr5587891waj.152.1251096259382;
+        Sun, 23 Aug 2009 23:44:19 -0700 (PDT)
+Return-Path: <test-bounces+mykmelez=example2.com@lists.example.com>
+Received: from lists.example.com (notorious.example.com [63.245.208.166])
+        by mx.example3.com with ESMTP id 31si2057311pxi.3.2009.08.23.23.44.19;
+        Sun, 23 Aug 2009 23:44:19 -0700 (PDT)
+Received-SPF: pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) client-ip=63.245.208.166;
+Authentication-Results: mx.example3.com; spf=pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) smtp.mail=test-bounces+mykmelez=example2.com@lists.example.com
+X-Virus-Scanned: amavisd-new at example.com
+Received: from notorious.example.com (localhost.localdomain [127.0.0.1])
+	by lists.example.com (Postfix) with ESMTP id C37F910222
+	for <mykmelez@example2.com>; Sun, 23 Aug 2009 23:44:18 -0700 (PDT)
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Subject: You have been unsubscribed from the test mailing list
+From: test-bounces@lists.example.com
+To: mykmelez@example2.com
+Message-ID: <mailman.202.1251096257.4291.test@lists.example.com>
+Date: Sun, 23 Aug 2009 23:44:17 -0700
+Precedence: bulk
+X-BeenThere: test@lists.example.com
+X-Mailman-Version: 2.1.12
+List-Id: test messages go here <test.lists.example.com>
+X-List-Administrivia: yes
+Sender: test-bounces+mykmelez=example2.com@lists.example.com
+Errors-To: test-bounces+mykmelez=example2.com@lists.example.com
+
