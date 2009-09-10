@@ -63,6 +63,16 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             self.failUnlessEqual(doc[property], expected_doc[property],
                                  repr(doc['rd_key']) + '::' + property)
 
+    @defer.inlineCallbacks
+    def get_docs(self, key, expected=None):
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+        rows = result['rows']
+        if expected is not None:
+            self.failUnlessEqual(len(rows), expected,
+                                 'num rows for key ' + repr(key))
+        docs = [row['doc'] for row in rows]
+        defer.returnValue(docs)
 
     @defer.inlineCallbacks
     def test_mailing_list(self):
@@ -72,30 +82,22 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
         _ = yield self.pipeline.start()
 
+        mail_key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+
         # There should be one rd.msg.email.mailing-list document.
-        key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
-        result = yield self.doc_model.open_view(key=key, reduce=False,
-                                                include_docs=True)
-        rows = result['rows']
-        self.failUnlessEqual(len(rows), 1,
-                             'number of rd.msg.email.mailing-list docs')
+        doc = (yield self.get_docs(mail_key, expected=1))[0]
 
         # The document should have the expected properties/values.
-        doc = rows[0]['doc']
         expected_doc = {
             'list_id': 'test.lists.example.com'
         }
         self.ensure_doc(doc, expected_doc)
 
         # There should be one rd.mailing-list document.
-        key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
-        result = yield self.doc_model.open_view(key=key, reduce=False,
-                                                include_docs=True)
-        rows = result['rows']
-        self.failUnlessEqual(len(rows), 1, 'number of rd.mailing-list docs')
+        doc = (yield self.get_docs(list_key, expected=1))[0]
 
         # The document should have the expected properties/values.
-        doc = rows[0]['doc']
         expected_doc = {
             'changed_timestamp': 1251344732,
             'help': 'mailto:test-request@lists.example.com?subject=help',
@@ -119,39 +121,24 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         _ = yield self.doc_model.db.updateDocuments(docs)
         _ = yield self.pipeline.start()
 
-        # There should be two rd.msg.email.mailing-list documents.
-        key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
-        result = yield self.doc_model.open_view(key=key, reduce=False,
-                                                include_docs=True)
-        rows = result['rows']
-        self.failUnlessEqual(len(rows), 2,
-                             'number of rd.msg.email.mailing-list docs')
+        # There should now be two rd.msg.email.mailing-list documents.
+        yield self.get_docs(mail_key, expected=2)
 
         # There should only be one rd.msg.email.mailing-list document
         # with the key of the message we just processed.
-        key = ['rd.core.content', 'key-schema_id',
-               [['email', '40c05b9d93ba4695a30e72174c5c8126@example.com'],
+        message_key = ['rd.core.content', 'key-schema_id',
+                [['email', '40c05b9d93ba4695a30e72174c5c8126@example.com'],
                 'rd.msg.email.mailing-list']]
-        result = yield self.doc_model.open_view(key=key, reduce=False,
-                                                include_docs=True)
-        rows = result['rows']
-        self.failUnlessEqual(len(rows), 1,
-                    'number of rd.msg.email.mailing-list docs with key ' +
-                    '["email", "40c05b9d93ba4695a30e72174c5c8126@example.com"]')
+        doc = (yield self.get_docs(message_key, expected=1))[0]
 
         # The document should have the expected properties/values.
-        doc = rows[0]['doc']
         expected_doc = {
             'list_id': 'test.lists.example.com'
         }
         self.ensure_doc(doc, expected_doc)
 
         # There should still be just one rd.mailing-list document.
-        key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
-        result = yield self.doc_model.open_view(key=key, reduce=False,
-                                                include_docs=True)
-        rows = result['rows']
-        self.failUnlessEqual(len(rows), 1, 'number of rd.mailing-list docs')
+        doc = (yield self.get_docs(list_key, expected=1))[0]
 
         # The document should have the expected properties/values.
         #
@@ -167,7 +154,6 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         # Finally, since the list doc has been changed, its changed timestamp
         # should have been updated to the date of the second message.
         #
-        doc = rows[0]['doc']
         expected_doc = {
             'archive': 'https://lists.example.com/archive/thetest',
             'changed_timestamp': 1251401696,
