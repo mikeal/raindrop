@@ -8,6 +8,7 @@ import base64
 from email import message_from_string
 from twisted.trial import unittest
 from twisted.internet import defer
+from twisted.web.error import Error
 
 import raindrop.config
 from raindrop.model import get_db, fab_db, get_doc_model
@@ -68,6 +69,7 @@ class TestCaseWithDB(TestCase):
             # worm around a bug on windows in couch 0.9:
             # https://issues.apache.org/jira/browse/COUCHDB-326
             # We just need to wait a little and try again...
+            failure.trap(Error)
             if failure.value.status == '500' and retries_left:
                 import time;time.sleep(0.1)
                 return db.deleteDB(dbinfo['name']
