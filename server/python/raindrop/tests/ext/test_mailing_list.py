@@ -233,7 +233,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(doc['status'], 'subscribed',
                              repr('Mailman list status is subscribed'))
 
-    # An unsubscribe confirmation from a Mailman list.  The list should be
+    # Just an unsubscribe confirmation from a Mailman list.  The list should be
     # created, and its status should be "unsubscribed".
     @defer.inlineCallbacks
     def test_mailman_unsub_conf(self):
@@ -307,3 +307,17 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         doc = (yield self.get_docs(list_key))[0]
         self.failUnlessEqual(doc['status'], 'subscribed',
                              repr('Google Groups list status is subscribed'))
+
+    # Just an unsubscribe confirmation from a Google Groups list.  The list
+    # shouldn't be created (Google Groups unsubscribe confirmations don't
+    # include a List-ID header identifying the list).
+    @defer.inlineCallbacks
+    def test_google_groups_unsub_conf(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('mailing-list')
+
+        # Process an unsubscribe confirmation.
+        yield self.put_docs('mailing-list', 'google-groups-unsub-conf-newer', 1)
+
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+        yield self.get_docs(list_key, expected=0)
