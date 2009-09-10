@@ -35,17 +35,6 @@ class DocumentSaveError(Exception):
 class DocumentOpenError(Exception):
     pass
 
-# XXXX - this relies on couch giving us some kind of 'sequence id'.  For
-# now we use a timestamp, but that obviously sucks in many scenarios.
-if sys.platform == 'win32':
-    # woeful resolution on windows and equal timestamps are bad.
-    clock_start = time.time()
-    time.clock() # time.clock starts counting from zero the first time its called.
-    def get_seq():
-        return clock_start + time.clock()
-else:
-    get_seq = time.time
-
 # A list of 'schemas' that want their values expanded by the megaview.
 # Intent is that this will come from metadata about the schema - ie, from
 # the couch doc that holds the schema definition.
