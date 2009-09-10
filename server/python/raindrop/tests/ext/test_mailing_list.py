@@ -75,12 +75,20 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         defer.returnValue(docs)
 
     @defer.inlineCallbacks
-    def test_mailing_list(self):
-        # Process one message from a mailing list.
-        ndocs = yield self.load_corpus('hand-rolled',
-                                       'mailing-list-email-simple')
-        self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
+    def put_docs(self, corpus_name, corpus_spec="*", expected=None):
+        docs = [d for d in self.gen_corpus_docs(corpus_name, corpus_spec)]
+        if expected is not None:
+            self.failUnlessEqual(len(docs), expected)
+        _ = yield self.doc_model.db.updateDocuments(docs)
         _ = yield self.pipeline.start()
+
+    @defer.inlineCallbacks
+    def test_mailing_list(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('hand-rolled')
+
+        # Process one message from a mailing list.
+        yield self.put_docs('hand-rolled', 'mailing-list-email-simple', 1)
 
         mail_key = ['rd.core.content', 'schema_id', 'rd.msg.email.mailing-list']
         list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
@@ -114,12 +122,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.ensure_doc(doc, expected_doc)
 
         # Process a second, later message from the same mailing list.
-        docs = [d for d in self.gen_corpus_docs('hand-rolled',
-                                                'mailing-list-email-simple-2')]
-        self.failUnlessEqual(len(docs), 1) # failed to load any corpus docs???
-        # this will do until we get lots...
-        _ = yield self.doc_model.db.updateDocuments(docs)
-        _ = yield self.pipeline.start()
+        yield self.put_docs('hand-rolled', 'mailing-list-email-simple-2', 1)
 
         # There should now be two rd.msg.email.mailing-list documents.
         yield self.get_docs(mail_key, expected=2)
