@@ -241,10 +241,14 @@ class TestCaseWithCorpus(TestCaseWithDB):
                         (corpus_name, item_spec))
 
     @defer.inlineCallbacks
-    def load_corpus(self, corpus_name, corpus_spec="*"):
+    def init_corpus(self, corpus_name):
         _ = yield self.prepare_corpus_environment(corpus_name)
         _ = yield self.prepare_test_db(self.config)
         _ = yield self.pipeline.initialize()
+
+    @defer.inlineCallbacks
+    def load_corpus(self, corpus_name, corpus_spec="*"):
+        _ = yield self.init_corpus(corpus_name)
         docs = [d for d in self.gen_corpus_docs(corpus_name, corpus_spec)]
         # this will do until we get lots...
         _ = yield self.doc_model.db.updateDocuments(docs)
