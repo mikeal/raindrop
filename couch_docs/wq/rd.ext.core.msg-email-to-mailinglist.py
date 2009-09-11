@@ -274,12 +274,17 @@ def _handle_unsubscribe_confirm_request_google_groups(message):
     else:
         logger.info("didn't find list; can't confirm request")
 
-def _handle_unsubscribe_confirmation_google_groups(message):
-    # The list ID is the part of the Subject header after the text
-    # "Google Groups: You have unsubscribed from " followed by
-    # ".googlegroups.com".  For example, based on the following header
-    # the ID is mozilla-labs-personas.googlegroups.com:
-    #     Subject: Google Groups: You have unsubscribed from mozilla-labs-personas
+def _handle_unsubscribe_confirmation_google_groups(message, list_id, timestamp):
+    # Although the caller tries to extract the list ID from the list-ID header,
+    # Google Groups unsubscribe confirmations don't contain that header,
+    # so the list_id parameter has no value here.  Instead, we have to extract
+    # it ourselves from the Subject header.
+    #
+    # The list ID is the part of the Subject header after the text "Google
+    # Groups: You have unsubscribed from " followed by ".googlegroups.com".
+    # For example, based on the following header, the list ID would be
+    # mozilla-labs-personas.googlegroups.com:
+    #   Subject: Google Groups: You have unsubscribed from mozilla-labs-personas
     # TODO: figure out how to extract the list ID from a localized subject.
     list_id = message['headers']['subject'][0]. \
               split('Google Groups: You have unsubscribed from ', 1)[1] + \
@@ -292,21 +297,45 @@ def _handle_unsubscribe_confirmation_google_groups(message):
     # Build a map of the keys we actually got back.
     rows = [r for r in result['rows'] if 'error' not in r]
 
-    if rows:
-        list = rows[0]['doc']
-        logger.info('found list in datastore')
-        # TODO: set the status to "unsubscribed" no matter what the current
-        # status is as long as this message is newer than the newest message
-        # from which we've updated the list; see the Mailman step 3 code
-        # for the details of how this should work.
-        if (list['status'] == 'unsubscribe-confirmed'):
-            logger.info('list status is unsubscribe-confirmed; setting to unsubscribed')
-            list['status'] = 'unsubscribed'
-            update_documents([list])
-        else:
-            logger.info('list status is not unsubscribe-confirmed; ignoring')
-    else:
+    if not rows:
         logger.info("didn't find list; can't update it")
+        return
+
+    logger.info('found list in datastore')
+
+    list = rows[0]['doc']
+
+    if (list['status'] == 'unsubscribed'):
+        logger.info('list status is already unsubscribed; ignoring')
+        return
+
+    # If the user is using Raindrop to unsubscribe from the list,
+    # then the list status should be "unsubscribe-confirmed" at this point.
+    # However, when a user starts using Raindrop and imports a bunch
+    # of messages, the list status might be "subscribed" here, depending on
+    # the order in which the messages are imported.
+    #
+    # Nevertheless, we should still set the status to "unsubscribed" now
+    # to reflect that the user is no longer subscribed to the list.  If we
+    # subsequently process a message that indicates the user later
+    # resubscribed to the list, we'll set the status back to "subscribed"
+    # at that point.
+
+    # If the list has been changed by a newer message, that means the user
+    # has received a message from the list since this unsubscription
+    # confirmation, which means that either the unsubscription didn't work
+    # or (more likely) the user resubscribed to the list.  In either case,
+    # we shouldn't set the list to unsubscribed here, since it isn't.
+    if 'changed_timestamp' in list \
+            and timestamp < list['changed_timestamp']:
+        logger.info('list has been changed by a newer message; ignoring')
+        return
+
+    logger.info('list status is %s; setting it to unsubscribed',
+                list['status'])
+
+    list['status'] = 'unsubscribed'
+    update_documents([list])
 
 def _handle_unsubscribe_confirm_request_mailman(message, list_id):
     if not list_id:
@@ -412,6 +441,7 @@ def _handle_unsubscribe_confirmation_mailman(message, list_id, timestamp):
 
 def handler(message):
     # Extract the timestamp of the message we're processing.
+    timestamp = 0
     if 'date' in message['headers']:
         date = message['headers']['date'][0]
         if date:
@@ -420,7 +450,6 @@ def handler(message):
             except (ValueError, TypeError), exc:
                 logger.debug('Failed to parse date %r in message %r: %s',
                              date, message['_id'], exc)
-                timestamp = 0
 
     if 'list-id' in message['headers']:
         logger.debug("list-* headers: %s", [h for h in message['headers'].keys()
@@ -445,6 +474,8 @@ def handler(message):
         logger.debug("linking message %s to its mailing list %s",
                      message['headers']['message-id'][0], list_id)
         emit_schema('rd.msg.email.mailing-list', { 'list_id': list_id })
+    else:
+        list_id = None
 
     # Google Groups Step 2 (List Requests Confirmation) Detector
     # A request is a message from the address "noreply@googlegroups.com"
@@ -463,7 +494,8 @@ def handler(message):
             message['headers']['from'][0] == "noreply@googlegroups.com" and \
             'x-google-loop' in message['headers'] and \
             message['headers']['x-google-loop'][0] == 'unsub_success':
-        _handle_unsubscribe_confirmation_google_groups(message)
+        _handle_unsubscribe_confirmation_google_groups(message, list_id,
+                                                       timestamp)
 
     # Mailman Step 2 (List Requests Confirmation) Detector
     # A request is a message with X-Mailman-Version and X-List-Administrivia
