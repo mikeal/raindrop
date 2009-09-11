@@ -1,0 +1,50 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.231.37.138 with SMTP id x10cs753604ibd;
+        Wed, 12 Aug 2009 11:26:49 -0700 (PDT)
+Return-Path: <noreply@googlegroups.com>
+Received-SPF: pass (example3.com: domain of noreply@googlegroups.com designates 10.151.25.17 as permitted sender) client-ip=10.151.25.17;
+Authentication-Results: mr.example3.com; spf=pass (example3.com: domain of noreply@googlegroups.com designates 10.151.25.17 as permitted sender) smtp.mail=noreply@googlegroups.com; dkim=pass header.i=noreply@googlegroups.com
+Received: from mr.example3.com ([10.151.25.17])
+        by 10.151.25.17 with SMTP id c17mr56573ybj.28.1250101608742 (num_hops = 1);
+        Wed, 12 Aug 2009 11:26:48 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=beta;
+        h=domainkey-signature:received:from:to:subject:reply-to:message-id
+         :x-google-loop:date:mime-version:content-type;
+        bh=HJOVqODBJCYXq9ncVh39u1GFMVhWPlOmVDYYnsZCsdU=;
+        b=Et96qKHf1D+A4h6mfVshRB/XJeDVV1zVFlcfRL9iDlzzLZ9zm+Kl8a1wcFWaCIRqwx
+         R7XknpeoPvLd9UGygHSLemeCZ+mXXcxylUDZryFmvQyGqejzQOBP3r+RC1s56SCJOEBX
+         CWVamnJZa4AnEdUFgxQLTlN15cIXKUNsSn2Xs=
+DomainKey-Signature: a=rsa-sha1; c=nofws;
+        d=googlegroups.com; s=beta;
+        h=from:to:subject:reply-to:message-id:x-google-loop:date:mime-version
+         :content-type;
+        b=QA99vf8iGlK+fkj8pn7PDz2pCyjqEG1IbBQuAsbk1ymQKti2qMyDb+UcMAaDMjB9eg
+         DI8ai5Qi1AAUXQk+/+Awu4JknYAFnU4tr1LLFWJM+zgm4sw68gW5sSVbtDPIvw0mjguG
+         Nru5dYdtSMjIkcUr09ZiGuKanu0Qjx2ErLZmg=
+Received: by 10.151.25.17 with SMTP id c17mr56573ybj.28.1250101608738;
+        Wed, 12 Aug 2009 11:26:48 -0700 (PDT)
+From: noreply@googlegroups.com
+To: mykmelez@example2.com
+Subject: Google Groups: Please confirm unsubscribe to mozilla-labs-personas
+Reply-To: mozilla-labs-personas+unsubconfirm-sdcHiwwAAAAL-sWq-5e5BoW-SoL8Od9V@googlegroups.com
+Message-Id: 6342cce407e17325.5124b6e786027db0@googlegroups.com
+X-Google-Loop: unsub_requested
+Date: Wed, 12 Aug 2009 18:26:48 +0000
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+
+ Hello mykmelez@example2.com,
+
+We have received a request to unsubscribe you from mozilla-labs-personas.
+Please confirm this request to unsubscribe by replying to this email or by 
+going to the following confirmation URL:
+
+http://groups.example3.com/group/mozilla-labs-personas/unsub?u=sdcHiwwAAAAL-sWq-5e5BoW-SoL8Od9V&hl=en
+
+If you have questions related to this or any other Google group, please visit 
+the Help Center at http://groups.example3.com/support?hl=en.
+Thanks,
+
+The Google Groups Team
+

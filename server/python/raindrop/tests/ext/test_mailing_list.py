@@ -364,3 +364,47 @@ class TestSimpleCorpus(TestCaseWithCorpus):
 
         list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
         yield self.get_docs(list_key, expected=0)
+
+    # The mailing list is in the "unsubscribe-pending" state, and Raindrop
+    # receives a request to confirm unsubscription.  Raindrop should create
+    # a message confirming the unsubscription and set the list state to
+    # "unsubscribe-confirmed".
+    @defer.inlineCallbacks
+    def test_google_groups_unsub_conf_req(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('mailing-list')
+
+        # Process a message to create the mailing list record.
+        yield self.put_docs('mailing-list', 'google-groups-message-older', 1)
+
+        # Put the mailing list record into the "unsubscribe-pending" state.
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+        doc = (yield self.get_docs(list_key))[0]
+        doc['status'] = "unsubscribe-pending"
+        _ = yield self.doc_model.db.updateDocuments([doc])
+
+        # Process the confirm unsubscribe request.
+        yield self.put_docs('mailing-list', 'google-groups-unsub-conf-req', 1)
+
+        # There should be an outgoing message confirming the unsubscription.
+        message_key = ['rd.core.content', 'schema_id', 'rd.msg.outgoing.simple']
+        doc = (yield self.get_docs(message_key, expected=1))[0]
+
+        # The outgoing message should have the expected properties/values.
+        expected_doc = {
+            'body': '',
+            'from': ['email', 'raindrop_test_user@mozillamessaging.com'],
+            'from_display': 'raindrop_test_user@mozillamessaging.com',
+            'outgoing_state': 'outgoing',
+            'subject': '',
+            'to': [['email',
+                    'mozilla-labs-personas+unsubconfirm-sdcHiwwAAAAL-sWq-5e5BoW-SoL8Od9V@googlegroups.com']],
+            'to_display': ['']
+        }
+        self.ensure_doc(doc, expected_doc)
+
+        # The status of the mailing list should be "unsubscribe-confirmed".
+        doc = (yield self.get_docs(list_key))[0]
+        self.failUnlessEqual(doc['status'], 'unsubscribe-confirmed',
+                             repr('list status is unsubscribe-confirmed'))
+
