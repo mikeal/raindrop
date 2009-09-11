@@ -248,6 +248,49 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(doc['status'], 'unsubscribed',
                              repr('Mailman list status is unsubscribed'))
 
+    # The mailing list is in the "unsubscribe-pending" state, and Raindrop
+    # receives a request to confirm unsubscription.  Raindrop should create
+    # a message confirming the unsubscription and set the list state to
+    # "unsubscribe-confirmed".
+    @defer.inlineCallbacks
+    def test_mailman_unsub_conf_req(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('mailing-list')
+
+        # Process a message to create the mailing list record.
+        yield self.put_docs('mailing-list', 'mailman-message-older', 1)
+
+        # Put the mailing list record into the "unsubscribe-pending" state.
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+        doc = (yield self.get_docs(list_key))[0]
+        doc['status'] = "unsubscribe-pending"
+        _ = yield self.doc_model.db.updateDocuments([doc])
+
+        # Process the confirm unsubscribe request.
+        yield self.put_docs('mailing-list', 'mailman-unsub-conf-req', 1)
+
+        # There should be an outgoing message confirming the unsubscription.
+        message_key = ['rd.core.content', 'schema_id', 'rd.msg.outgoing.simple']
+        doc = (yield self.get_docs(message_key, expected=1))[0]
+
+        # The outgoing message should have the expected properties/values.
+        expected_doc = {
+            'body': '',
+            'from': ['email', 'raindrop_test_user@mozillamessaging.com'],
+            'from_display': 'raindrop_test_user@mozillamessaging.com',
+            'outgoing_state': 'outgoing',
+            'subject': 'Your confirmation is required to leave the test mailing list',
+            'to': [['email',
+                    'test-confirm+018e404890076d94e6026d8333c887f8edd0c41f@lists.example.com']],
+            'to_display': ['']
+        }
+        self.ensure_doc(doc, expected_doc)
+
+        # The status of the mailing list should be "unsubscribe-confirmed".
+        doc = (yield self.get_docs(list_key))[0]
+        self.failUnlessEqual(doc['status'], 'unsubscribe-confirmed',
+                             repr('list status is unsubscribe-confirmed'))
+
     @defer.inlineCallbacks
     def test_google_groups_message_older_unsub_conf_newer(self):
         # Initialize the corpus & database.
