@@ -14,8 +14,7 @@
 body {
   background-color: #e6e6e6;
   margin: 0px 0px 0px 0px;
-  /*background-image: url("i/bg.png");*/
-  background-attachment: fixed;
+  background-repeat: repeat-x;
 }
 
 a img{
@@ -98,7 +97,6 @@ a img{
   display: table;
   min-width: 25em;
   max-width: 55em;
-  background-image: url("i/bg.png");
   background-color: #e6e6e6;
   border-right: 1px solid #e6e6e6;
   margin-left: 36px;
@@ -118,6 +116,7 @@ a img{
   display: table-cell;
   width: 40em;
   padding-bottom: 24px;
+  background-image: url("i/bg.png");
 }
 
 #mainList {
@@ -130,9 +129,23 @@ a img{
   width: 15em;
   min-height: 40ex;
   vertical-align: top;
-  background-color: #e6e6e6;
-  padding-bottom: 200px;
+  padding-bottom: 800px;
   padding-top: 123px;
+}
+
+.miniOrganizer {
+  position: fixed;
+  top: 25px;
+  display:block;
+  margin-left: 8px;
+}
+
+.miniOrganizerTitle {
+  font-family: Droid-serif, Georgia, Times, serif;
+  font-size: x-small;
+  color: #888888;
+  margin-bottom: 4px;
+  font-style: italic;
 }
 
 #footer {

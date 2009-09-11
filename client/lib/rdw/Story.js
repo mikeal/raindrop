@@ -52,6 +52,13 @@ dojo.declare("rdw.Story", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
+    if (this.msgs.length > 0) {
+      var messageBag = this.msgs[0];
+      var target = (messageBag['rd.msg.recip-target'] && messageBag['rd.msg.recip-target']['target']) || "";
+      if (target) {
+        this.domNode.setAttribute("target", target);
+      }
+    }
     if (this.displayOnCreate) {
       this.display();
     }

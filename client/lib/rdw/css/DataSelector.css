@@ -19,6 +19,15 @@
   -moz-border-radius-topright:0px;
 }
 
+.Message.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.Message.active .rdwDataSelector .dijitComboBox input.dijitReset, 
+.Message.active .rdwDataSelector .dijitSpinner input.dijitReset,
+.Story.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.Story.active .rdwDataSelector .dijitComboBox input.dijitReset, 
+.Story.active .rdwDataSelector .dijitSpinner input.dijitReset {
+  background-color: #FFF !important;
+}
+
 .rdwDataSelector .dijitTextBox, 
 .rdwDataSelector .dijitComboBox, 
 .rdwDataSelector .dijitSpinner {
@@ -63,10 +72,13 @@
   background-color: #1a1a1a;
   color: white;
   opacity: .9;
-  padding: 8px 8px 8px 8px;
+  padding: 8px;
   -moz-box-sizing: border-box;
   margin: 0;
   -moz-border-radius: 5px;
+  max-height: 450px !important;
+  height: 100% !important;
+  overflow-y: auto !important;
 }
 
 .dijitMenuItem {

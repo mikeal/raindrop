@@ -7,12 +7,16 @@
     <form dojoAttachEvent="onsubmit: onSubmit">
       <div>
         <div class="to" dojoAttachPoint="toNode">
+        <div style="display:inline-block; display:-moz-inline-box;">
+          <div style="display:inline-block; margin-right:8px;">
           <label for="subject">From:</label>
-          <span dojoAttachPoint="addressNode" class="medium you"></span>
-          </label>
-          <label style="margin-left: 10px;" for="to">To:</label>
-          <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div>
-          <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
+          <span dojoAttachPoint="addressNode" class="mediumYou"></span>
+          </label></div>
+          <div style="display:inline-block;">
+          <label for="to">To:</label>
+          <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div></div>
+        </div>
+        <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
         </div>
         <div class="subject" dojoAttachPoint="subjectNode">
           <label for="subject">Subject:</label>
@@ -20,7 +24,10 @@
         </div>
       </div>
       <textarea dojoAttachEvent="onfocus: onFocusTextArea, onclick: onFocusTextArea" dojoAttachPoint="textAreaNode">Type something...</textarea>
-      <div class="actions" dojoAttachPoint="actionsNode"><input class="send" type="submit" value="${sendButtonText}"/></div>
+      <div class="actions" dojoAttachPoint="actionsNode">
+        <a class="close" href="#close" dojoAttachEvent="onclick: onCloseClick">close</a>
+        <input class="send" type="submit" value="${sendButtonText}"/>
+      </div>
     </form>
     <div class="status" dojoAttachPoint="statusNode"></div>
   </div>

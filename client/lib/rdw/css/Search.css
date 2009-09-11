@@ -23,6 +23,7 @@
   padding: 0px;
   margin-top: 0;
   margin-bottom: 10px;
+  display: none;
 }
 
 .Search > ol > li {
@@ -43,4 +44,6 @@
   font-weight: bold;
   font-size: x-small;
   margin-top: 10px; 
+  display: none;
 }
+

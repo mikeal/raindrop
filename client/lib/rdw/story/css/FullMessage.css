@@ -4,9 +4,26 @@
   font-variant: small-caps;
   text-transform: lowercase;
   line-height: 18px;
-  margin-right: 175px;
+  margin-right: 180px;
   padding: 6px 0px 6px 30px;
   min-height: 18px;
+  background-repeat: no-repeat;
+}
+
+[target="broadcast"] .fullMessageTitle {
+  background-image: url("../../css/i/icon_twitter_bird.png");
+}
+
+[target="from"] .fullMessageTitle {
+  background-image: url("../../css/i/icon_direct_message.png");
+}
+
+[target="direct"] .fullMessageTitle {
+  background-image: url("../../css/i/icon_direct_message.png");
+}
+
+[target="group"] .fullMessageTitle {
+  background-image: url("../../css/i/icon_group_message.png");
 }
 
 .rdwStoryFullMessage.Message .actions {

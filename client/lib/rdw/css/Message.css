@@ -17,6 +17,29 @@
   background-color: #FFB0B0;
 }
 
+.rdwStoryFullStory .active .Message,
+.rdwStoryFullStory .Message.active,
+.rdwStoryFullStory .Message.reply.active {
+  background-color: #FFFFFF;
+}
+
+.rdwStoryFullStory .active .Message .messageIndicator,
+.rdwStoryFullStory .Message.active .messageIndicator,
+.rdwStoryFullStory .Message.reply.active .messageIndicator {
+  background-color: #FFB0B0;
+}
+
+.rdwStoryFullStory .messageIndicator {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  background-color: #E6E6E6;
+  -moz-border-radius: 6px;
+  position: relative;
+  top: 1px;
+
+}
+
 .Message div.photo {
   position: absolute;
   left: 8px;
@@ -27,19 +50,19 @@
   background-color: transparent;
 }
 
-.Message[target="broadcast"] div.photo {
+[target="broadcast"] .Message div.photo {
   background-image: url("i/icon_twitter_bird.png");
 }
 
-.Message[target="from"] div.photo {
+[target="from"] .Message div.photo {
   background-image: url("i/icon_direct_message.png");
 }
 
-.Message[target="direct"] div.photo {
+[target="direct"] .Message div.photo {
   background-image: url("i/icon_direct_message.png");
 }
 
-.Message[target="group"] div.photo {
+[target="group"] .Message div.photo {
   background-image: url("i/icon_group_message.png");
 }
 
@@ -196,7 +219,7 @@
 
 .Message > .message > .timestamp {
   font-size: x-small;
-  font-family: Arial, Verdana, sans-serif;
+  font-family: Droid-serif, Georgia, times, serif;
   font-size:x-small;
   text-align:right;
 }

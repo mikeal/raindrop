@@ -61,7 +61,7 @@
   font-size: small;
   font-variant: small-caps;
   text-transform: lowercase;
-  letter-spacing: 1px;
+  font-weight: bold;
   float: right;
   margin-top: 8px;
   margin-right: 0px;
@@ -91,10 +91,16 @@
   width: 100%;
 }
 
-.QuickCompose.expanded .compose > form div.to,
-.QuickCompose.expanded .compose > form div.subject {
+.QuickCompose.expanded .compose > form div.to {
   display: inherit;
   height: 100%;
+  width: 100%;
+}
+
+.QuickCompose.expanded .compose > form div.subject {
+  display: inline-block;
+  height: 100%;
+  width: 100%;
 }
 
 .QuickCompose.twitter.expanded .compose > form div.subject {
@@ -114,9 +120,8 @@
   text-align:left;
   text-transform: lowercase;
   font-variant: small-caps;
-  display: inline-block;
-  letter-spacing: 1px;
-  line-height: 24px;
+  display: block;
+  font-weight: bold;
   margin-right: 12px;
 }
 
@@ -125,7 +130,7 @@
   font-weight: normal;
   width: 100%;
   background-color: #E6E6E6;
-  color: #888888;
+  color: #1a1a1a;
   padding: 5px;
   -moz-border-radius: 5px;
   border: none;
@@ -136,8 +141,8 @@
   color: inherit;
 }
 
-.Story:hover .QuickCompose .to input,
-.Story:hover .QuickCompose .subject input {
+.Message.active .QuickCompose .to input,
+.Story.active .QuickCompose .subject input {
   background-color: #FFF;
 }
 
@@ -256,9 +261,9 @@
 }
 
 .QuickCompose .characterCount {
-  display: inline-block;
-  float: right;
-  line-height: 25px;
+  position: relative;
+  float:right;
+  top: 23px;
 }
 
 .dijitTextBox input, .dijitComboBox input, .dijitSpinner input {
@@ -288,10 +293,15 @@
   font-size:small;
   font-variant: small-caps;
   text-transform: lowercase;
-  letter-spacing: 1px;
+  font-weight: bold;
   vertical-align:middle;
   text-decoration: none;
-  padding: 1px 6px 1px 6px;
+  padding: 1px 9px 1px 9px;
+  display: none;
+}
+
+.QuickCompose.expanded .close {
+  display: inline;
 }
 
 .QuickCompose .status {
@@ -302,3 +312,21 @@
   font-style: italic;
   font-family: Georgia,times,serif;
 }
+
+.Story .QuickCompose .mediumYou {
+  padding: 6px;
+  display: block;
+  background-color: #e6e6e6;
+  -moz-border-radius: 5px;
+  color: #888888;
+}
+
+.Message.active .QuickCompose .mediumYou,
+.Story.active .QuickCompose .mediumYou {
+  background-color: #FFFFFF;
+}
+
+.Story .QuickCompose textarea {
+  min-height: 99px !important;
+}
+

@@ -224,6 +224,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     dojo.stopEvent(evt);
   },
 
+  onCloseClick: function(evt) {
+    dojo.removeClass(this.domNode, "expanded");
+    dojo.stopEvent(evt);
+  },
+
   onSenderAddressChange: function(/*String*/value) {
     this.updateFields(value);
   },

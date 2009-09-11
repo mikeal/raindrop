@@ -28,15 +28,6 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     dojo.addClass(this.domNode, "rdwReplyForward");
     dojo.addClass(this.domNode, this.replyType);
 
-    //Add in a close button
-    var closeNode = dojo.create("a", {
-      href: "#",
-      "class": "close",
-      innerHTML: this.i18n.closeIcon
-    }, this.actionsNode, "first");
-
-    dojo.connect(closeNode, "onclick", this, "onCloseClick");
-
     //Make the textarea expand to fit its content.
     this.textArea = this.addSupporting(new dijit.form.Textarea({}, this.textAreaNode));
     this.textAreaNode = this.textArea.domNode;

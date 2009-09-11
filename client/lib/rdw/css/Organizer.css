@@ -17,6 +17,7 @@
   background-image: url("i/menu/icon_home.png");
   background-repeat: no-repeat;
   background-position: left center;
+  margin-top: 8px;
 }
 
 .Organizer ol > li[type="direct"] {
@@ -61,7 +62,6 @@
 .Organizer ol > li > a:hover {
   text-decoration: underline;
 }
-
 
 .Organizer ol > li > a[href*=home] {
   font-weight: bold;
