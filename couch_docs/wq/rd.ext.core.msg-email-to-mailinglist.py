@@ -225,7 +225,7 @@ def _change_list(list, headers, name, identity, status):
 def _handle_unsubscribe_confirm_request_google_groups(list, message, identity):
     logger.debug('Google Groups unsubscribe confirm request')
 
-    if list['status'] is not 'unsubscribe-pending':
+    if list['status'] != 'unsubscribe-pending':
         logger.debug('list status is "%s", not "unsubscribe-pending"; ignoring',
                      list['status'])
         return None
