@@ -18,9 +18,14 @@ dojo.require("dojox.date.posix");
                    "utc" : date.toUTCString() };
   
       /* some kind of error */
-      if ( isNaN(day_diff) || day_diff < 0)
-        return date.toString();
-  
+      if (day_diff < 0) {
+        dObj.friendly = "in the future";
+        return dObj;
+      } else if ( isNaN(day_diff) ) {
+        dObj.friendly = dObj.additional = "unknown";
+        return dObj;
+      }
+
       if ( day_diff == 0 ) {
         /* XXX hack %I to strip the leading zeros that we don't want */
         dObj["additional"] = posix.strftime(date, "%I:%M%p").replace(/^0?/,'');

@@ -32,7 +32,7 @@ rd.api.me = {
         //Transform the response to be identity IDs
         //so it can be consumed by identity()
         if(!json.rows.length) {
-          return new Error("no accounts");
+          rd.pub("rd.api.me.noAccounts");
         } else {
           var ids = [];
           for (var i = 0, row; row = json.rows[i]; i++) {

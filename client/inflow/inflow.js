@@ -4,6 +4,7 @@ dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
+dojo.require("rdw.Account");
 dojo.require("rdw.Summary");
 dojo.require("rdw.ContactList");
 dojo.require("rdw.Stories");
@@ -47,6 +48,42 @@ inflow = {
       dijit.byId("contactList").domNode.style.display = "";
       this.showState = "contacts";
     }
+  },
+
+  addAccountUrl: "/raindrop/settings/index.html",
+
+  showAccounts: function() {
+    //summary: shows the account setup in an iframe.
+    dojo["require"]("dijit.Dialog");
+    dojo.addOnLoad(this, function() {
+      this.accountsDialog = new dijit.Dialog({
+        "class": "inflowAddAccountFrame"  
+      }, dojo.create("div", null, dojo.body()));
+
+      this.accountsDialog.containerNode.innerHTML = '<iframe src="' + this.addAccountUrl + '"></iframe>';
+      this.accountsDialog.show();
+    });
+  },
+
+  onAccountFrameMessage: function(evt) {
+    //summary: a postMessage endpoint for messages from the account frame.
+    if (evt.data == "settings-done") {
+      this.accountsDialog.hide();
+      this.accountsDialog.destroy();
+      this.accountsDialog = null;
+    }
+  },
+
+  onKeyPress: function(evt) {
+    console.log(evt);
+    //Show help on key of question mark.
+    if (this.keyboardNavShowing) {
+      dojo.byId("keyboardHelp").style.display = "none";
+      this.keyboardNavShowing = false;
+    } else if (evt && evt.charCode == 63) {
+      dojo.byId("keyboardHelp").style.display = "block";
+      this.keyboardNavShowing = true;
+    }
   }
 };
 
@@ -68,6 +105,11 @@ inflow = {
 
     dojo.stopEvent(evt);
   });
+
+
+  //Listen to no accounts/show account settings subscriptions
+  rd.sub("rd.api.me.noAccounts", inflow, "showAccounts");
+  rd.sub("rd-protocol-account-settings", inflow, "showAccounts");
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
@@ -94,6 +136,13 @@ inflow = {
         rd.pub("rd-protocol-home");
       }
     });
+
+    //Listen for completion for the addAccount frame.
+    window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
+
+
+    //Listen for ? to show the help
+    dojo.connect(dojo.doc, "onkeypress", inflow, "onKeyPress");
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;
