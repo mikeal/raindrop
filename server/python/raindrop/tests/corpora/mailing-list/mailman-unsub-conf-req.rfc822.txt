@@ -1,0 +1,56 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.143.45.16 with SMTP id x16cs144482wfj;
+        Sun, 23 Aug 2009 22:26:30 -0700 (PDT)
+Received: by 10.115.133.39 with SMTP id k39mr5333171wan.94.1251091590584;
+        Sun, 23 Aug 2009 22:26:30 -0700 (PDT)
+Return-Path: <test-bounces+mykmelez=example2.com@lists.example.com>
+Received: from lists.example.com (notorious.example.com [63.245.208.166])
+        by mx.example3.com with ESMTP id 1si17732030pxi.40.2009.08.23.22.26.30;
+        Sun, 23 Aug 2009 22:26:30 -0700 (PDT)
+Received-SPF: pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) client-ip=63.245.208.166;
+Authentication-Results: mx.example3.com; spf=pass (example3.com: domain of test-bounces+mykmelez=example2.com@lists.example.com designates 63.245.208.166 as permitted sender) smtp.mail=test-bounces+mykmelez=example2.com@lists.example.com
+X-Virus-Scanned: amavisd-new at example.com
+Received: from notorious.example.com (localhost.localdomain [127.0.0.1])
+	by lists.example.com (Postfix) with ESMTP id 1F3CD12B63
+	for <mykmelez@example2.com>; Sun, 23 Aug 2009 22:26:30 -0700 (PDT)
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+From: test-confirm+018e404890076d94e6026d8333c887f8edd0c41f@lists.example.com
+To: mykmelez@example2.com
+Subject: Your confirmation is required to leave the test mailing list
+Reply-To: test-confirm+018e404890076d94e6026d8333c887f8edd0c41f@lists.example.com
+Message-ID: <mailman.199.1251091588.4291.test@lists.example.com>
+Date: Sun, 23 Aug 2009 22:26:28 -0700
+Precedence: bulk
+X-BeenThere: test@lists.example.com
+X-Mailman-Version: 2.1.12
+List-Id: test messages go here <test.lists.example.com>
+X-List-Administrivia: yes
+Sender: test-bounces+mykmelez=example2.com@lists.example.com
+Errors-To: test-bounces+mykmelez=example2.com@lists.example.com
+
+Mailing list removal confirmation notice for mailing list test
+
+We have received a request for the removal of your email address,
+"mykmelez@example2.com" from the test@lists.example.com mailing list.  To
+confirm that you want to be removed from this mailing list, simply
+reply to this message, keeping the Subject: header intact.  Or visit
+this web page:
+
+    https://lists.example.com/confirm/test/018e404890076d94e6026d8333c887f8edd0c41f
+
+
+Or include the following line -- and only the following line -- in a
+message to test-request@lists.example.com:
+
+    confirm 018e404890076d94e6026d8333c887f8edd0c41f
+
+Note that simply sending a `reply' to this message should work from
+most mail readers, since that usually leaves the Subject: line in the
+right form (additional "Re:" text in the Subject: is okay).
+
+If you do not wish to be removed from this list, please simply
+disregard this message.  If you think you are being maliciously
+removed from the list, or have any other questions, send them to
+test-owner@lists.example.com.

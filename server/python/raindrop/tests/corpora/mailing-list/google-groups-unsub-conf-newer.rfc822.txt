@@ -1,0 +1,44 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.231.37.138 with SMTP id x10cs753658ibd;
+        Wed, 12 Aug 2009 11:28:47 -0700 (PDT)
+Return-Path: <noreply@googlegroups.com>
+Received-SPF: pass (example3.com: domain of noreply@googlegroups.com designates 10.224.71.152 as permitted sender) client-ip=10.224.71.152;
+Authentication-Results: mr.example3.com; spf=pass (example3.com: domain of noreply@googlegroups.com designates 10.224.71.152 as permitted sender) smtp.mail=noreply@googlegroups.com; dkim=pass header.i=noreply@googlegroups.com
+Received: from mr.example3.com ([10.224.71.152])
+        by 10.224.71.152 with SMTP id h24mr72039qaj.21.1250101726774 (num_hops = 1);
+        Wed, 12 Aug 2009 11:28:46 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=googlegroups.com; s=beta;
+        h=domainkey-signature:received:from:to:subject:message-id
+         :x-google-loop:date:mime-version:content-type;
+        bh=aHtGRKUakeDAlnJwlp8L8WiRGw/hhQ5wLKvmZTx52lg=;
+        b=A3aHBL1kMHRpePokcvkC7jwKyknfab705CihxbhqN8yz4466x1xWcyxIHmYfL+Tij3
+         Z3aem27/xk5AokEY4WpHBQU5+aiC7w/LBuaaTFbbHydi7emAAcctV/qXXso+JudL8aa+
+         D31Z+dleFtgzrL7aWFV5YryIJ7ZOIU0QcAx70=
+DomainKey-Signature: a=rsa-sha1; c=nofws;
+        d=googlegroups.com; s=beta;
+        h=from:to:subject:message-id:x-google-loop:date:mime-version
+         :content-type;
+        b=pbYeiC84R1xoK+BfXH1E1sgGjlWnI5jbxFVy8PhBb738qcRE+L78I5ZeSUuDpBdeuJ
+         nii/u3KrvFt12ZgDw5QcLCoPULKDeNINKPbDttJ3jrAfQhQaXidAZLegvdvei4eIXjGJ
+         EEjj5cDdM7YI51xMUBKetU/4UPoarL43gMWAc=
+Received: by 10.224.71.152 with SMTP id h24mr72039qaj.21.1250101726764;
+        Wed, 12 Aug 2009 11:28:46 -0700 (PDT)
+From: noreply@googlegroups.com
+To: mykmelez@example2.com
+Subject: Google Groups: You have unsubscribed from mozilla-labs-personas
+Message-Id: 8fdc69e790446e3d.f11048bf054b68d9@googlegroups.com
+X-Google-Loop: unsub_success
+Date: Wed, 12 Aug 2009 18:28:46 +0000
+Mime-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+
+ Hello mykmelez@example2.com,
+
+Your unsubscription to mozilla-labs-personas was successful.
+
+If you have questions related to this or any other Google group, please visit 
+the Help Center at http://groups.example3.com/support?hl=en.
+Thanks,
+
+The Google Groups Team

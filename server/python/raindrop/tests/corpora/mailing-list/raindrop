@@ -1,0 +1,14 @@
+# This is a config file - just like the "real" config file - but used
+# for this test corpus.
+
+[account-imap]
+proto=imap
+username=raindrop_test_user@mozillamessaging.com
+
+[account-skype]
+proto=skype
+username=raindrop_test_user
+
+[account-twitter]
+proto=twitter
+username=raindrop_test_user
