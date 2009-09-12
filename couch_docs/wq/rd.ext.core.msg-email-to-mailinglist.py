@@ -479,7 +479,7 @@ def handler(message):
         status = _handle_unsubscribe_confirmation_mailman(list, timestamp)
 
     else:
-        if list['status'] is 'unsubscribed':
+        if list['status'] == 'unsubscribed':
             status = 'subscribed'
 
     changed = False
