@@ -112,6 +112,42 @@ a img{
   right: 25px;
 }
 
+#keyboardHelp {
+  width: 800px;
+  background-color: #FFB0B0;
+  background-image: url("i/keyboard/keyboard.png");
+  background-repeat: no-repeat;
+  -moz-border-radius: 5px;
+  padding: 8px;
+  display:block;
+  position: fixed;
+  left: 50%;
+  margin-left: -408px;
+  z-index: 100;
+  top: 25%;
+}
+
+.keyboardColumn {
+  width: 266px;
+  float: left;
+  font-size: small;
+  color: #1a1a1a;
+  display:inline;
+  margin-top: 191px;
+}
+
+.keyboardColumn .a {
+  font-weight: normal;
+  display: inline;
+  font-family: Droid-serif, Georgia, Times, serif;
+  font-style: italic;
+}
+
+.keyboardColumn .b {
+  font-weight: bold;
+  display: inline;
+}
+
 #column1 {
   display: table-cell;
   width: 40em;

@@ -1,25 +1,21 @@
 #wrap {
-  padding: 1em;
+  margin-right: auto;
+  margin-left: auto;
+  padding: 0;
+  width: 400px;
 }
 
 #settings {
-  margin: 0;
+  margin-right: auto;
+  margin-left: auto;
   padding: 0;
+  width: 400px;
 }
 
 /*** ACCOUNT ***/
 
 .account {
-  margin: 12px 0;
-  padding: 6px;
-  display: list-item;
-  list-style: none;
-  max-width: 400px;
-  border: 2px solid #fff;
-  -moz-border-radius: 6px;
-  outline: 2px solid #e8eefa;
-  -moz-outline-radius: 6px;
-  background-color: #e8eefa;
+
 }
 
 .account .name {
@@ -55,10 +51,19 @@
 table.login {
   margin: 0;
   padding: 0;
-  font-size: small;
+  font-size: normal;
+  width: 100%;
 }
 
 table.login input {
-  font-size: x-small;
+  -moz-border-radius-bottomleft:5px;
+  -moz-border-radius-bottomright:5px;
+  -moz-border-radius-topleft:5px;
+  -moz-border-radius-topright:5px;
+  background-color:#1A1A1A;
+  border:medium none;
+  color:#FFFFFF;
+  padding:6px;
+  width:100%;
 }
 
