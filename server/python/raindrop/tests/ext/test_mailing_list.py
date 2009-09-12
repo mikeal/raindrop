@@ -352,8 +352,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                              repr('Google Groups list status is subscribed'))
 
     # Just an unsubscribe confirmation from a Google Groups list.  The list
-    # shouldn't be created (Google Groups unsubscribe confirmations don't
-    # include a List-ID header identifying the list).
+    # should be created, and its status should be set to "unsubscribed".
     @defer.inlineCallbacks
     def test_google_groups_unsub_conf(self):
         # Initialize the corpus & database.
@@ -363,7 +362,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         yield self.put_docs('mailing-list', 'google-groups-unsub-conf-newer', 1)
 
         list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
-        yield self.get_docs(list_key, expected=0)
+        yield self.get_docs(list_key, expected=1)
 
     # The mailing list is in the "unsubscribe-pending" state, and Raindrop
     # receives a request to confirm unsubscription.  Raindrop should create
