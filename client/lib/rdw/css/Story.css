@@ -1,15 +1,15 @@
 @import url("Message.css");
 
-.Story {
+.rdwStory {
   margin: 0;
   padding: 0 0 16px 0;
 }
 
-.Story:last-child {
+.rdwStory:last-child {
   margin-bottom: 0px;
 }
 
-.Story .tools {
+.rdwStory .tools {
   height:18px;
   position:absolute;
   right:8px;
@@ -21,11 +21,11 @@
   visibility: hidden;
 }
 
-.Story:hover .tools {
+.rdwStory:hover .tools {
   visibility: hidden;
 }
 
-.Story .tools a {
+.rdwStory .tools a {
   font-variant: small-caps;
   letter-spacing: 1px;
   text-transform: lowercase;
@@ -37,7 +37,7 @@
   text-decoration: none;
 }
 
-.Story .tools .reply {
+.rdwStory .tools .reply {
   padding: 0 6px 0 6px;
   background-image: url("i/bg_reply.png");
   background-repeat: repeat-x;
@@ -48,11 +48,11 @@
   display: inline-block;
 }
 
-.Story .tools .reply:hover {
+.rdwStory .tools .reply:hover {
   background-color: #1a1a1a;
 }
 
-.Story .tools .moreMessages {
+.rdwStory .tools .moreMessages {
   padding: 0 6px 0 6px;
   background-image: url("i/bg_reply.png");
   background-repeat: repeat-x;
@@ -63,7 +63,7 @@
   display: inline-block;
 }
 
-.Story .tools .moreMessages:hover {
+.rdwStory .tools .moreMessages:hover {
   background-color: #1a1a1a;
 }
 
@@ -77,24 +77,24 @@
   z-index: 1;
 }
 
-.Story.active .Message .triangle,
-.Story .Message.active .triangle {
+.rdwStory.active .rdwMessage .triangle,
+.rdwStory .rdwMessage.active .triangle {
   background-image: url("i/tri_pink.png");
 }
 
-.Story .Message:last-child {
+.rdwStory .rdwMessage:last-child {
   margin-bottom: 0;
 }
 
-.Story .Message:last-child .triangle {
+.rdwStory .rdwMessage:last-child .triangle {
   visibility: hidden;
 }
 
-.Story.archived .archive {
+.rdwStory.archived .archive {
   display: none;
 }
 
-.Story.deleted .delete {
+.rdwStory.deleted .delete {
   display: none;
 }
 

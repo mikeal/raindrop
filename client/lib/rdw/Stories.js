@@ -115,6 +115,12 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       if (target.tabIndex > -1) {
         this._setActiveNode(target);
         break;
+      } else if (dojo.hasClass(target, "rdwStory")) {
+        //Went up to Story, so find first focusable node
+        var nodes = dojo.query('[tabindex="0"]', target);
+        if (nodes.length) {
+          this._setActiveNode(nodes[0]);
+        }
       }
     } while ((target = target.parentNode));
   },
@@ -175,7 +181,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
-  _setActiveNode: function(/*DOMNode*/domNode) {
+  _setActiveNode: function(/*DOMNode*/domNode, /*String?*/viewType) {
     //summary: sets the active node in the stories area.
     if (this.activeNode) {
       dojo.removeClass(this.activeNode, "active");
@@ -184,10 +190,20 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       dojo.removeClass(this.activeParentNode, "active");
     }
 
-    domNode.focus();
+    //See if click is on the interesting widget node.
+    if (dijit.getEnclosingWidget(domNode).domNode == domNode) {
+      domNode.focus();
+    } else {
+      //Find the more appropriate interesting widget node.
+      domNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
+    }
+
     this.activeNode = domNode;
 
-    if (this.viewType == "summary") {
+    //Allow caller to set the viewType this active node call is for.
+    viewType = viewType || this.viewType;
+
+    if (viewType == "summary") {
       this.activeParentNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
       dojo.addClass(this.activeParentNode, "active");
     } else {
@@ -311,7 +327,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
 
     //If transitioning away from summary, hold on to old activeNode
-    if (viewType != "summary") {
+    if (viewType == "summary") {
+      if (this.summaryActiveNode) {
+        this._setActiveNode(this.summaryActiveNode, "summary");
+      }
+    } else {
       this.summaryActiveNode = this.activeNode;
     }
 

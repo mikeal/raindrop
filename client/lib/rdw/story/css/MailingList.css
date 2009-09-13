@@ -9,7 +9,7 @@
   float:right;
 }  
 
-.rdwStoryMailingList .Message .topActions {
+.rdwStoryMailingList .rdwMessage .topActions {
   position: absolute;
   right: 0;
   top: 0;
@@ -29,22 +29,22 @@
   background-position: right center;
 }
 
-.rdwStoryMailingList .Message .message {
+.rdwStoryMailingList .rdwMessage .message {
   margin: 0;
   padding: 0;
 }
 
-.rdwStoryMailingList .Message .subject {
+.rdwStoryMailingList .rdwMessage .subject {
   font-weight:normal;
   font-family: Georgia, times, serif;
   font-style: italic;
 }
 
-.rdwStoryMailingList.active .Message .subject {
+.rdwStoryMailingList.active .rdwMessage .subject {
   background-color: #FFB0B0;
 }
 
-.rdwStoryMailingList .Message .process {
+.rdwStoryMailingList .rdwMessage .process {
   display: none;
 }
 

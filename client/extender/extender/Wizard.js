@@ -70,7 +70,7 @@ dojo.declare("extender.Wizard", [rdw._Base], {
                 }
       );
     }, 1000 * 1);
-    window.setTimeout(function() { $(".Message > .message > .content > .widget-extension").slideDown("slow"); }, 1000 * 2);
+    window.setTimeout(function() { $(".rdwMessage > .message > .content > .widget-extension").slideDown("slow"); }, 1000 * 2);
   },
 
   destroy: function() {

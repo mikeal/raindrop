@@ -26,7 +26,7 @@
   background-image: url("../../css/i/icon_group_message.png");
 }
 
-.rdwStoryFullMessage.Message .actions {
+.rdwStoryFullMessage.rdwMessage .actions {
   visibility: inherit;
 }
 
@@ -34,19 +34,19 @@
   visibility: visible;
 }
 
-.Story:hover .rdwStoryFullMessage .additionalTime {
+.rdwStory:hover .rdwStoryFullMessage .additionalTime {
   visibility: visible;
 }
 
-.rdwStoryFullMessage.Message .message {
+.rdwStoryFullMessage.rdwMessage .message {
   margin-left: 8px;
 }
 
-.rdwStoryFullMessage.Message .actions {
+.rdwStoryFullMessage.rdwMessage .actions {
   text-align: left;
 }
 
-.rdwStoryFullMessage.Message .actions a {
+.rdwStoryFullMessage.rdwMessage .actions a {
   color: #1a1a1a;
   height: 16px;
   padding: 0 0 0 20px;
@@ -54,14 +54,14 @@
   line-height: 16px;
 }
 
-.rdwStoryFullMessage.Message .actions .reply {
+.rdwStoryFullMessage.rdwMessage .actions .reply {
   background-image: url("i/reply.png");
   background-repeat: no-repeat;
   background-position: left center;
   display: inline-block;
 }
 
-.rdwStoryFullMessage.Message .actions .fwd {
+.rdwStoryFullMessage.rdwMessage .actions .fwd {
   background-image: url("i/forward.png");
   background-repeat: no-repeat;
   background-position: left center;

@@ -34,7 +34,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
   replyWidget: "rdw.ReplyForward",
   forwardWidget: "rdw.ReplyForward",
   
-  templateString: '<li class="Story" dojoAttachEvent="onclick: onClick"> \
+  templateString: '<li class="rdwStory" dojoAttachEvent="onclick: onClick"> \
                     <div class="messages" dojoAttachPoint="containerNode"></div> \
                     <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
                     </div> \

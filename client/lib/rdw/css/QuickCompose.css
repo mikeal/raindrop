@@ -19,7 +19,7 @@
   width: 100%;
 }
 
-.Story .QuickCompose .compose {
+.rdwStory .QuickCompose .compose {
   padding-top: 18px;
 }
 
@@ -68,7 +68,7 @@
   font-family: Droid-sans, Arial, Verdana, sans-serif;
 }
 
-.Message .QuickCompose .send {
+.rdwMessage .QuickCompose .send {
   margin-right: 52px;
 }
 
@@ -141,8 +141,8 @@
   color: inherit;
 }
 
-.Message.active .QuickCompose .to input,
-.Story.active .QuickCompose .subject input {
+.rdwMessage.active .QuickCompose .to input,
+.rdwStory.active .QuickCompose .subject input {
   background-color: #FFF;
 }
 
@@ -158,8 +158,8 @@
   color: #888;
 }
 
-.Message.active .QuickCompose textarea,
-.Story.active .QuickCompose textarea {
+.rdwMessage.active .QuickCompose textarea,
+.rdwStory.active .QuickCompose textarea {
   background-color: #FFF;
 }
 
@@ -194,14 +194,14 @@
   -moz-border-radius-topright:0px;
 }
 
-.Message.active .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Message.active .rdwDataSelector .dijitComboBox input.dijitReset,
-.Message.active .dijitComboBox input.dijitReset, 
-.Message.active .rdwDataSelector .dijitSpinner input.dijitReset,
-.Story.active .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Story.active .rdwDataSelector .dijitComboBox input.dijitReset,
-.Story.active .dijitComboBox input.dijitReset, 
-.Story.active .rdwDataSelector .dijitSpinner input.dijitReset, {
+.rdwMessage.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.rdwMessage.active .rdwDataSelector .dijitComboBox input.dijitReset,
+.rdwMessage.active .dijitComboBox input.dijitReset, 
+.rdwMessage.active .rdwDataSelector .dijitSpinner input.dijitReset,
+.rdwStory.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.rdwStory.active .rdwDataSelector .dijitComboBox input.dijitReset,
+.rdwStory.active .dijitComboBox input.dijitReset, 
+.rdwStory.active .rdwDataSelector .dijitSpinner input.dijitReset, {
   background-color: #FFF !important;
 }
 
@@ -240,10 +240,10 @@
   -moz-border-radius-topright:5px;
 }
 
-.Message.active .rdwDataSelector .dijitButtonNode,
-.Message.active .dijitButtonNode,
-.Story.active .rdwDataSelector .dijitButtonNode,
-.Story.active .dijitButtonNode {
+.rdwMessage.active .rdwDataSelector .dijitButtonNode,
+.rdwMessage.active .dijitButtonNode,
+.rdwStory.active .rdwDataSelector .dijitButtonNode,
+.rdwStory.active .dijitButtonNode {
   background-color:#FFF;
 }
 
@@ -270,14 +270,14 @@
   display: table !important;
 }
 
-.Story .QuickCompose {
+.rdwStory .QuickCompose {
   margin: 8px 0 0 0;
   -moz-border-radius: 5px;
   -moz-box-shadow: 0 1px 3px #CCCCCC;
 }
 
-.Story.active .QuickCompose,
-.Story .active .QuickCompose {
+.rdwStory.active .QuickCompose,
+.rdwStory .active .QuickCompose {
   background-color: #FFB0B0;
 }
 
@@ -313,7 +313,7 @@
   font-family: Georgia,times,serif;
 }
 
-.Story .QuickCompose .mediumYou {
+.rdwStory .QuickCompose .mediumYou {
   padding: 6px;
   display: block;
   background-color: #e6e6e6;
@@ -321,12 +321,12 @@
   color: #888888;
 }
 
-.Message.active .QuickCompose .mediumYou,
-.Story.active .QuickCompose .mediumYou {
+.rdwMessage.active .QuickCompose .mediumYou,
+.rdwStory.active .QuickCompose .mediumYou {
   background-color: #FFFFFF;
 }
 
-.Story .QuickCompose textarea {
+.rdwStory .QuickCompose textarea {
   min-height: 99px !important;
 }
 

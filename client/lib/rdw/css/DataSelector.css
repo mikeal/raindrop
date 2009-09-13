@@ -19,12 +19,12 @@
   -moz-border-radius-topright:0px;
 }
 
-.Message.active .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Message.active .rdwDataSelector .dijitComboBox input.dijitReset, 
-.Message.active .rdwDataSelector .dijitSpinner input.dijitReset,
-.Story.active .rdwDataSelector .dijitTextBox input.dijitReset, 
-.Story.active .rdwDataSelector .dijitComboBox input.dijitReset, 
-.Story.active .rdwDataSelector .dijitSpinner input.dijitReset {
+.rdwMessage.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.rdwMessage.active .rdwDataSelector .dijitComboBox input.dijitReset, 
+.rdwMessage.active .rdwDataSelector .dijitSpinner input.dijitReset,
+.rdwStory.active .rdwDataSelector .dijitTextBox input.dijitReset, 
+.rdwStory.active .rdwDataSelector .dijitComboBox input.dijitReset, 
+.rdwStory.active .rdwDataSelector .dijitSpinner input.dijitReset {
   background-color: #FFF !important;
 }
 

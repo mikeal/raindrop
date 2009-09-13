@@ -1,6 +1,6 @@
 @import url("ContactSelector.css");
 
-.Message {
+.rdwMessage {
   position: relative;
   background-color: #FFF;
   -moz-border-radius-bottomleft: 5px;
@@ -11,21 +11,21 @@
   outline: none;
 }
 
-.active .Message,
-.Message.active,
-.Message.reply.active {
+.active .rdwMessage,
+.rdwMessage.active,
+.rdwMessage.reply.active {
   background-color: #FFB0B0;
 }
 
-.rdwStoryFullStory .active .Message,
-.rdwStoryFullStory .Message.active,
-.rdwStoryFullStory .Message.reply.active {
+.rdwStoryFullStory .active .rdwMessage,
+.rdwStoryFullStory .rdwMessage.active,
+.rdwStoryFullStory .rdwMessage.reply.active {
   background-color: #FFFFFF;
 }
 
-.rdwStoryFullStory .active .Message .messageIndicator,
-.rdwStoryFullStory .Message.active .messageIndicator,
-.rdwStoryFullStory .Message.reply.active .messageIndicator {
+.rdwStoryFullStory .active .rdwMessage .messageIndicator,
+.rdwStoryFullStory .rdwMessage.active .messageIndicator,
+.rdwStoryFullStory .rdwMessage.reply.active .messageIndicator {
   background-color: #FFB0B0;
 }
 
@@ -40,7 +40,7 @@
 
 }
 
-.Message div.photo {
+.rdwMessage div.photo {
   position: absolute;
   left: 8px;
   top: 8px;
@@ -50,29 +50,29 @@
   background-color: transparent;
 }
 
-[target="broadcast"] .Message div.photo {
+[target="broadcast"] .rdwMessage div.photo {
   background-image: url("i/icon_twitter_bird.png");
 }
 
-[target="from"] .Message div.photo {
+[target="from"] .rdwMessage div.photo {
   background-image: url("i/icon_direct_message.png");
 }
 
-[target="direct"] .Message div.photo {
+[target="direct"] .rdwMessage div.photo {
   background-image: url("i/icon_direct_message.png");
 }
 
-[target="group"] .Message div.photo {
+[target="group"] .rdwMessage div.photo {
   background-image: url("i/icon_group_message.png");
 }
 
-.Message .topActions {
+.rdwMessage .topActions {
   position: absolute;
   right: 8px;
   top: 10px;
 }
 
-.Message .topActions a {
+.rdwMessage .topActions a {
   display: block;
   float: left;
   width: 16px;
@@ -85,36 +85,36 @@
   font-weight: bold;
 }
 
-.Message:hover .topActions a {
+.rdwMessage:hover .topActions a {
   visibility: visible;
 }
 
-.Message .topActions a:hover {
+.rdwMessage .topActions a:hover {
   border-color: #44617E;
   color: #44617E;
   opacity: 1.0;
 }
 
-.Message .topActions .expand {
+.rdwMessage .topActions .expand {
   margin-right: 4px;
   background-image: url("i/overlay_expand.png");
 }
 
-.Message .topActions .archive {
+.rdwMessage .topActions .archive {
   margin-right: 4px;
   background-image: url("i/overlay_archive.png");
 }
 
-.Message .topActions .delete {
+.rdwMessage .topActions .delete {
   background-image: url("i/overlay_delete.png");
 }
 
-.Message .actions {
+.rdwMessage .actions {
   text-align: left;
   font-size: x-small;
 }
 
-.Message .actions a {
+.rdwMessage .actions a {
   color: #1a1a1a;
   text-decoration: none;
   font-family: Droid-serif, Georgia, times, serif;
@@ -125,67 +125,67 @@
   display: inline-block;
 }
 
-.Message .actions a:hover {
+.rdwMessage .actions a:hover {
   text-decoration: underline;
   color: #1a1a1a;
 }
 
-.Message .actions .reply {
+.rdwMessage .actions .reply {
   display: none;
 }
 
-.Message:last-child .actions .reply {
+.rdwMessage:last-child .actions .reply {
   display: inline-block;
   margin-right: 8px;
 }
 
-.Message:last-child .actions .moreMessages {
+.rdwMessage:last-child .actions .moreMessages {
   display: inline-block;
   margin-right: 8px;
 }
 
-.Message .actions .identity {
+.rdwMessage .actions .identity {
   display: inline-block;
 }
 
-.Message .message {
+.rdwMessage .message {
   margin-left: 40px;
   margin-right: 8px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
 
-.Message img.photo {
+.rdwMessage img.photo {
   width: 24px;
   height: 24px;
   display: none;
 }
 
-.Message .header {
+.rdwMessage .header {
   border-bottom: 1px dotted #1a1a1a;
   padding-bottom: 2px;
 }
 
-.Message .header .from {
+.rdwMessage .header .from {
   font-size: small;
   text-transform: capitalize;
 }
 
-.Message .from {
+.rdwMessage .from {
   text-decoration: none;
   font-style: italic;
   font-family: Droid-serif, Georgia, times, serif;
   color: #1A1A1A;
 }
 
-.Message .medium {
+.rdwMessage .medium {
   font-size: small;
   font-family: Droid-sans, Arial, Verdana, sans-serif;
   color: #888;
   display: none;
 }
 
-.Message .subject {
+.rdwMessage .subject {
   padding-right: 0;
   font-weight: bold;
   font-variant: small-caps;
@@ -194,11 +194,11 @@
   display: block;
 }
 
-.Message .subject:empty {
+.rdwMessage .subject:empty {
   padding-right: 0px;
 }
 
-.Message > .message > .content {
+.rdwMessage > .message > .content {
   overflow: hidden;
   font-size: small;
   font-family: Droid-sans, Arial, Verdana, sans-serif;
@@ -207,28 +207,28 @@
   margin: 6px 0 0;
 }
 
-.Message > .message > .content > a {
+.rdwMessage > .message > .content > a {
   color: #1a1a1a;
   text-decoration: none;
 }
 
-.Message > .message > .content > a:hover {
+.rdwMessage > .message > .content > a:hover {
   color: #1a1a1a;
   text-decoration: underline;
 }
 
-.Message > .message > .timestamp {
+.rdwMessage > .message > .timestamp {
   font-size: x-small;
   font-family: Droid-serif, Georgia, times, serif;
   font-size:x-small;
   text-align:right;
 }
 
-.Message:hover .timestamp {
+.rdwMessage:hover .timestamp {
   visibility: hidden;
 }
 
-.Message > .message > .timestamp > span {
+.rdwMessage > .message > .timestamp > span {
   text-transform: lowercase;
   font-family: Droid-serif, Georgia, times, serif;
   font-style: italic;
@@ -238,23 +238,23 @@
   right:8px;
 }
 
-.Message > .message > .timestamp > .additional {
+.rdwMessage > .message > .timestamp > .additional {
   font-family: Georgia, times, serif;
   font-style: italic;
   color: #888888;
   visibility: hidden;
 }
 
-.Message > .message > .timestamp:hover > .additional {
+.rdwMessage > .message > .timestamp:hover > .additional {
   color: #888888;
 }
 
-.Message > .message > .timestamp > .additional:before {
+.rdwMessage > .message > .timestamp > .additional:before {
   content: " - ";
 }
 
 /* "reply" type of messages */
-.Message.reply {
+.rdwMessage.reply {
   position: relative;
   margin-left: 64px;
   margin-top: 8px;
@@ -262,28 +262,28 @@
   border-left: 8px solid transparent;
 }
 
-.Message.reply div.photo {
+.rdwMessage.reply div.photo {
   display: none;
 }
 
-.Message.reply div.photo img.photo {
+.rdwMessage.reply div.photo img.photo {
   display: none;
 }
 
-.Message.reply .message {
+.rdwMessage.reply .message {
   margin-left: 0px;
 }
 
-.Message.reply .message .header .from {
+.rdwMessage.reply .message .header .from {
   font-size: small;
   text-transform: capitalize;
 }
 
-.Message.reply .message .content {
+.rdwMessage.reply .message .content {
   margin-top: 6px;
 }
 
-.Message.reply .message .content .subject {
+.rdwMessage.reply .message .content .subject {
   display: none;
 }
 

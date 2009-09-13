@@ -1,7 +1,7 @@
-.Message > .message > .content > .username[type='twitter'] {
+.rdwMessage > .message > .content > .username[type='twitter'] {
   font-weight: bold;
 }
-.Message > .message > .content > .tag[type='twitter'] {
+.rdwMessage > .message > .content > .tag[type='twitter'] {
 
 }
 

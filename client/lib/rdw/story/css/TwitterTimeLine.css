@@ -5,7 +5,7 @@
   float: left;
 }
 
-.rdwStoryTwitterTimeLine .Message .topActions {
+.rdwStoryTwitterTimeLine .rdwMessage .topActions {
   position: absolute;
   right: 0;
   top: 0;
@@ -35,7 +35,7 @@
   background-color: #FFB0B0;
 }
 
-.rdwStoryTwitterTimeLine .Message {
+.rdwStoryTwitterTimeLine .rdwMessage {
   background-color: transparent;
   -moz-border-radius: 0px;
   margin-bottom: 5px;
@@ -43,7 +43,7 @@
   border-bottom: 1px dotted #1a1a1a;
 }
 
-.rdwStoryTwitterTimeLine .Message:hover {
+.rdwStoryTwitterTimeLine .rdwMessage:hover {
   background-color: transparent;
 }
 
@@ -56,7 +56,7 @@
   margin-top: 6px;
 }
 
-.rdwStoryTwitterTimeLine .Message .topActions a {
+.rdwStoryTwitterTimeLine .rdwMessage .topActions a {
   top: 0;
   right: 0;
 }
@@ -65,18 +65,18 @@
   display: none;
 }
 
-.rdwStoryTwitterTimeLine .Message div.photo {
+.rdwStoryTwitterTimeLine .rdwMessage div.photo {
   display: none;
   width: 20px;
   height: 20px;
 }
 
-.rdwStoryTwitterTimeLine .Message img.photo {
+.rdwStoryTwitterTimeLine .rdwMessage img.photo {
   width: 18px;
   height: 18px;
 }
 
-.rdwStoryTwitterTimeLine .Message .message {
+.rdwStoryTwitterTimeLine .rdwMessage .message {
   margin-left: 0px;
   padding-top: 0px;
   margin-right: 0px;
@@ -111,22 +111,22 @@
   right: 0px;
 }
 
-.rdwStoryTwitterTimeLine .Message .medium {
+.rdwStoryTwitterTimeLine .rdwMessage .medium {
   display: none;
 }
 
-.rdwStoryTwitterTimeLine .Message .triangle {
+.rdwStoryTwitterTimeLine .rdwMessage .triangle {
   visibility: hidden;
 }
 
-.rdwStoryTwitterTimeLine .Message .shadow {
+.rdwStoryTwitterTimeLine .rdwMessage .shadow {
   visibility: hidden;
 }
 
-.tweetList .Message .message {
+.tweetList .rdwMessage .message {
   padding-bottom: 0;
 }
 
-.rdwStoryTwitterTimeLine .tweetList .Message .actions {
+.rdwStoryTwitterTimeLine .tweetList .rdwMessage .actions {
   display: none;
 }

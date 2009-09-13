@@ -1,21 +1,21 @@
-.Message:hover > .message > .debug {
+.rdwMessage:hover > .message > .debug {
   visibility: visible;
 }
 
-.Message > .message > .debug {
+.rdwMessage > .message > .debug {
   font-size: x-small;
   line-height: 1em;
   visibility: hidden;
 }
 
-.Message > .message > .debug > a {
+.rdwMessage > .message > .debug > a {
   color: #44617E;
   margin-right: 1em;
   padding: 0px 0.5em;
   -moz-border-radius: 0.2em;
 }
 
-.Message > .message > .debug > a:hover {
+.rdwMessage > .message > .debug > a:hover {
   color: #fff;
   background-color: #44617E;
 }

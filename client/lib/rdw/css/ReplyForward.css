@@ -23,7 +23,7 @@
   font-size: small;
 }
 
-.rdwReplyForward .Message .QuickCompose {
+.rdwReplyForward .rdwMessage .QuickCompose {
   background-color: transparent;
   position: relative;
   max-width: 100%;
@@ -33,19 +33,19 @@
   -moz-border-radius-bottomright: 5px;
 }
 
-.rdwReplyForward .Message .QuickCompose .info {
+.rdwReplyForward .rdwMessage .QuickCompose .info {
   color: #666666;
   font-size: small;
   margin: 0px;
 }
 
-.rdwReplyForward .Message .QuickCompose .info .name {
+.rdwReplyForward .rdwMessage .QuickCompose .info .name {
   font-family: Arial Black, Gadget, sans-serif;
   font-weight: bold;
   letter-spacing: 0.15em;
 }
 
-.rdwReplyForward .Message .QuickCompose .info .medium {
+.rdwReplyForward .rdwMessage .QuickCompose .info .medium {
   font-family: Arial, Verdana, sans-serif;
   font-size: small;
 }
@@ -59,17 +59,17 @@
 }
 
 
-.rdwReplyForward .Message .QuickCompose form {
+.rdwReplyForward .rdwMessage .QuickCompose form {
   display: block;
   margin: 0px;
   padding: 0px;
 }
 
-.rdwReplyForward .Message:hover .QuickCompose textarea {
+.rdwReplyForward .rdwMessage:hover .QuickCompose textarea {
   background-color: #FFF;
   height: auto;
 }
 
-.rdwReplyForward .Story:hover .QuickCompose textarea {
+.rdwReplyForward .rdwStory:hover .QuickCompose textarea {
   background-color: #FFF;
 }

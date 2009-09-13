@@ -1,4 +1,4 @@
-.Message > .message > .content > .youTube {
+.rdwMessage > .message > .content > .youTube {
   min-width: 425px;
   margin: 0.5em;
   font-size: small;
@@ -7,7 +7,7 @@
   -moz-border-radius: 0.2em;
 }
 
-.Message > .message > .content > .youTube > .thumbnail {
+.rdwMessage > .message > .content > .youTube > .thumbnail {
   display: inline-block;
   height: 92px;
   width: 122px;
@@ -15,32 +15,32 @@
   border: 1px solid #666;
 }
 
-.Message > .message > .content > .youTube > .thumbnail > a > img {
+.rdwMessage > .message > .content > .youTube > .thumbnail > a > img {
   max-width: 120px;
   max-height: 90px;
   border: 1px solid transparent;
 }
 
-.Message > .message > .content > .youTube > .info {
+.rdwMessage > .message > .content > .youTube > .info {
   display: inline-block;
   margin: 0.5em;
   width: 60%;
   vertical-align: top;
 }
 
-.Message > .message > .content > .youTube > .info > a.title {
+.rdwMessage > .message > .content > .youTube > .info > a.title {
   font-weight: bold;
   text-decoration: none;
   color: #22262e;
 }
 
-.Message > .message > .content > .youTube > .info > .views {
+.rdwMessage > .message > .content > .youTube > .info > .views {
   margin: 0.5em 0px;
   color: #606c82;
   font-size: x-small;
 }
 
-.Message > .message > .content > .youTube > .player {
+.rdwMessage > .message > .content > .youTube > .player {
   margin:1em auto;
   padding-top:1em;
   border-top:1px solid #EFEFEF;
