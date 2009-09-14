@@ -393,7 +393,12 @@ class DocumentModel(object):
                     ret.append(None)
                 else:
                     raise DocumentOpenError(row['error'])
+            elif 'value' in row and row['value'].get('deleted', False):
+                logger.debug("document %r has only deleted versions available",
+                             row['key'])
+                ret.append(None)
             else:
+                assert 'doc' in row, row
                 logger.debug("opened document %(_id)r at revision %(_rev)s",
                              row['doc'])
                 ret.append(row['doc'])
