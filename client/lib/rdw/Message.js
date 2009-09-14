@@ -35,7 +35,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
 
-    this.fromId = msgDoc.from[1];
+    this.fromId = msgDoc.from[1] || "";
     this.fromName = msgDoc.from_display || this.fromId;
     this.subject = rd.hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
 
