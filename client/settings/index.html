@@ -167,6 +167,9 @@
             /* cache this result in our GLOBAL var... */
             docs.push(doc); 
             var kind = doc.kind || doc.proto;
+            if (!document.getElementById(kind + "AccountTemplate")) {
+              continue;
+            }
             try {
               var account = tmpl(kind + "AccountTemplate", doc);
               $("#settings").append(account);
