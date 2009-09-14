@@ -498,6 +498,12 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
   },
 
+  removeAnimEasing: function(/* Decimal? */n){
+    //summary: easing function for animations. This is a copy of
+    //the default easing function for dojo.Animation(s)
+    return 0.5 + ((Math.sin((n + 1.5) * Math.PI)) / 2);
+  },
+
   onTransitionEnd: function() {
     //summary: called at the end of a summary transition.
 
@@ -564,7 +570,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
     //First, animate it out.
     node.style.overflow = "hidden";
-    dojo.anim(node, { height: 0}, 1000, this.animEasing, dojo.hitch(this, function() {
+    dojo.anim(node, { height: 0}, 800, this.removeAnimEasing, dojo.hitch(this, function() {
       //Then destroy it.
       this.removeSupporting(storyWidget);
       storyWidget.destroy();
