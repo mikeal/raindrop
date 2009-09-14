@@ -4,7 +4,7 @@
   <title>settings</title>
   <meta http-equiv="Content-Type" content="text/html;charset=utf-8">
 
-  <link type="text/css" rel="stylesheet" href="/raindrop/rd_list/index.css">
+  <!--<link type="text/css" rel="stylesheet" href="/raindrop/rd_list/index.css">-->
   <link type="text/css" rel="stylesheet" href="index.css">
 
   <script charset="utf-8" src="/_utils/script/jquery.js?1.3.1"></script>
@@ -52,7 +52,7 @@
     <form id="<%=id%>" class="account <%=kind%>">
       <strong class="name">IMAP</strong>
       <span class="url"><%=host%></span>
-      <a editid="<%=id%>" docid="<%=_id%>" class="delete">delete</a>
+      <a editid="<%=id%>" docid="<%=_id%>" class="delete"></a>
       <table class="login">
         <tr>
           <td><label for="imap-username">username:</label></td>
@@ -73,7 +73,7 @@
         <tr>
           <td>&nbsp;</td>
           <td style="text-align:right;">
-            <button>update</button>
+            <button>ok &#x2714;</button>
           </td>
         </tr>
       </table>
@@ -83,7 +83,7 @@
   <script id="twitterAccountTemplate" type="text/html">
     <form id="<%=id%>" class="account <%=kind%>">
       <strong class="name">Twitter</strong>
-      <a editid="<%=id%>" docid="<%=_id%>" class="delete">delete</a>
+      <a editid="<%=id%>" docid="<%=_id%>" class="delete"></a>
       <span class="url">twitter.com<span class="twitter.com"><%=username%></span></span>
       <table class="login">
         <tr>
@@ -97,7 +97,7 @@
         <tr>
           <td>&nbsp;</td>
           <td style="text-align:right;">
-            <button>update</button>
+            <button>ok &#x2714;</button>
           </td>
         </tr>
       </table>
@@ -107,8 +107,8 @@
   <script id="gmailAccountTemplate" type="text/html">
     <form id="<%=id%>" class="account <%=kind%>">
       <strong class="name">Gmail</strong>
+      <a editid="<%=id%>" docid="<%=_id%>" class="delete"></a>
       <span class="url">mail.google.com</span>
-      <a editid="<%=id%>" docid="<%=_id%>" class="delete">delete</a>
       <table class="login">
         <tr>
           <td><label for="gmail-username">username:</label></td>
@@ -121,7 +121,7 @@
         <tr>
           <td>&nbsp;</td>
           <td style="text-align:right;">
-            <button>update</button>
+            <button>ok &#x2714;</button>
           </td>
         </tr>
       </table>
@@ -132,7 +132,7 @@
     <form id="<%=id%>" class="account <%=kind%>">
       <strong class="name">Skype</strong>
       <span class="url"><%=username%></span>
-      <a editid="<%=id%>" docid="<%=_id%>" class="delete">delete</a>
+      <a editid="<%=id%>" docid="<%=_id%>" class="delete"></a>
       <table class="login">
         <tr>
           <td><label for="skype-username">username:</label></td>
@@ -213,10 +213,11 @@
     });
   </script>
 </head>
-<body>
+<body class="settings">
   <div id="wrap">
-    <a href="#close" onclick="parent.postMessage('settings-done', '*')">close</a>
     <ul id="settings"></ul>
+    <div class="note">*more networks will be added in the near future</div>
+    <a href="#close" class="close" onclick="parent.postMessage('settings-done', '*')"></a>
 
   </div>
 </body>

@@ -83,6 +83,7 @@
   text-decoration: none;
   text-indent: -200em;
   font-weight: bold;
+  outline: none;
 }
 
 .rdwMessage:hover .topActions a {

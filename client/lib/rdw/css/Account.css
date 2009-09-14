@@ -1,3 +1,19 @@
 .rdwAccount {
+  font-size: x-small;
+  height: 13px;
+  margin: 12px 0;
+  padding: 0 8px 0 8px;
+  color: #1a1a1a;
+}
 
+.rdwAccount a {
+  text-decoration: none;
+  color: #1a1a1a;
+  float: right;
+  font-family: Droid-serif, Georgia, Times, serif;
+  font-style: italic;
+}
+
+.rdwAccount a:hover {
+  text-decoration: underline;
 }

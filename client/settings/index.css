@@ -1,8 +1,37 @@
+@import url("/raindrop/inflow/inflow.css");
+
+body.settings {
+  background-color: transparent;
+  background-image: none;
+  
+}
+
 #wrap {
-  margin-right: auto;
-  margin-left: auto;
-  padding: 0;
-  width: 400px;
+  background-image: url("i/accounts.png");
+  background-repeat: no-repeat;
+  left:50%;
+  margin-left:-200px;
+  margin-top:-235px;
+  padding: 165px 0 0 0;
+  position:absolute;
+  top:50%;
+  width:400px;
+}
+
+.note {
+  font-size: x-small;
+  color: #1a1a1a;
+  display: inline-block;
+}
+
+a.close {
+  width: 50px;
+  height: 50px;
+  display: block;
+  position: absolute;
+  top: 0;
+  right: -25px;
+  background-image: url("i/close.png");
 }
 
 #settings {
@@ -15,29 +44,41 @@
 /*** ACCOUNT ***/
 
 .account {
-
+  margin-top: 12px;
 }
 
-.account .name {
+.account .name{
   font-weight: bold;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  letter-spacing: 1px;
+  display: inline-block;
+  height: 24px;
+  line-height: 24px;
+  margin-left: 3px;
 }
 
 .account .url {
   font-size: small;
   font-weight: normal;
-  color: #999;
+  color: #1a1a1a;
+  display: inline-block;
+  margin-right: 3px;
+  float: right;
+  line-height: 24px;
 }
 
 .account a.delete {
-  float: right;
-  margin: 3px 3px 0 0;
-  font-size: xx-small;
-  text-decoration: underline;
-  color: #0066dd;
-  cursor: pointer;
-}
-.account a.delete:hover {
-  color: rgb(200,20,20);
+  background-image:url("../lib/rdw/css/i/overlay_delete.png");
+  background-position:left center;
+  background-repeat:no-repeat;
+  color:#1A1A1A;
+  cursor:pointer;
+  display:inline-block;
+  float:left;
+  height:24px;
+  margin:0 3px 0 2px;
+  width:16px;
 }
 
 /*** TWITTER ***/
@@ -68,3 +109,9 @@ table.login input {
   -moz-box-sizing: border-box;
 }
 
+button {
+  background-color: #1a1a1a;
+  color: #FFFFFF;
+  border: none;
+  -moz-border-radius: 5px;
+}

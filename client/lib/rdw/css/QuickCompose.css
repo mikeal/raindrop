@@ -273,7 +273,6 @@
 .rdwStory .QuickCompose {
   margin: 8px 0 0 0;
   -moz-border-radius: 5px;
-  -moz-box-shadow: 0 1px 3px #CCCCCC;
 }
 
 .rdwStory.active .QuickCompose,

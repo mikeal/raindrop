@@ -97,15 +97,3 @@
 .rdwStory.deleted .delete {
   display: none;
 }
-
-.shadow {
-  background-color: transparent;
-  background-image: url("i/shadow.png");
-  height:8px;
-  position: absolute;
-  right: 0px;
-  width:100%;
-  background-position: center;
-  background-repeat: no-repeat;
-  opacity:0.5;
-}

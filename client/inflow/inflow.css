@@ -14,8 +14,8 @@
 
 body {
   background-color: #e6e6e6;
+  background-image: url("i/bg.png");
   margin: 0px 0px 0px 0px;
-  background-repeat: repeat-x;
 }
 
 a img{
@@ -99,8 +99,6 @@ a img{
   min-width: 25em;
   max-width: 55em;
   background-color: #e6e6e6;
-  border-right: 1px solid #e6e6e6;
-  margin-left: 36px;
 }
 
 #newcompose {
@@ -119,6 +117,7 @@ a img{
   background-image: url("i/keyboard/keyboard.png");
   background-repeat: no-repeat;
   -moz-border-radius: 5px;
+  -moz-box-shadow: -5px 5px 0 #888888;
   padding: 8px;
   display:none;
   position: fixed;
@@ -153,7 +152,6 @@ a img{
   display: table-cell;
   width: 40em;
   padding-bottom: 24px;
-  background-image: url("i/bg.png");
 }
 
 #mainList {
@@ -167,7 +165,7 @@ a img{
   min-height: 40ex;
   vertical-align: top;
   padding-bottom: 800px;
-  padding-top: 123px;
+  padding-top: 86px;
 }
 
 .miniOrganizer {
@@ -201,18 +199,23 @@ a img{
 .inflowAddAccountFrame {
   width: 500px;
   height: 500px;
+  outline: none;
 }
 
 .inflowAddAccountFrame  .dijitDialogPaneContent {
   overflow: hidden;
+  outline: none;
  }
 
 .inflowAddAccountFrame iframe {
   width: 500px;
   height: 500px;
   border: 0;
+  outline: none;
 }
 
 .inflowAddAccountFrame_underlay {
   opacity: 0.9;
+  background-color: #FFF !important;
+  outline: none;
 }
