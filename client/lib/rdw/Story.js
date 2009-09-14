@@ -96,12 +96,9 @@ dojo.declare("rdw.Story", [rdw._Base], {
           this.responseWidget.placeAt(this.toolDisplayNode);
         }));
         evt.preventDefault();
-      } else if (href == "archive") {
-        rd.pub("rdw.Story.archive", this, this.msgs);
-        evt.preventDefault();
-      } else if (href == "delete") {
-        rd.pub("rdw.Story.delete", this, this.msgs);
-        evt.preventDefault();
+      } else if (href == "archive" || href == "delete" || href == "spam") {
+        rd.pub("rdw.Story." + href, this, this.msgs);
+        dojo.stopEvent(evt);
       }
     }
   },
@@ -196,26 +193,26 @@ dojo.declare("rdw.Story", [rdw._Base], {
       }
 
       //If any left over messages, then show that info.
-        var notShownCount = this.msgs.length - toShow.length;
-        if (notShownCount) {
-          //Find last widget.
-          var lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
-          //Set up the link for the more action. Need the conversation ID.
-          var convoId = lastWidget.messageBag
-                && lastWidget.messageBag["rd.msg.conversation"]
-                && lastWidget.messageBag["rd.msg.conversation"].conversation_id;
+      var notShownCount = this.msgs.length - toShow.length;
+      if (notShownCount) {
+        //Find last widget.
+        var lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
+        //Set up the link for the more action. Need the conversation ID.
+        var convoId = lastWidget.messageBag
+              && lastWidget.messageBag["rd.msg.conversation"]
+              && lastWidget.messageBag["rd.msg.conversation"].conversation_id;
 
-          if (lastWidget && lastWidget.actionsNode) {
-            var html = dojo.string.substitute(this.moreMessagesTemplate, {
-              url: convoId ? "rd:conversation:" + convoId : "",
-              message: dojo.string.substitute(this.i18n.moreMessages, {
-                count: notShownCount,
-                messagePlural: (notShownCount == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
-              })
+        if (lastWidget && lastWidget.actionsNode) {
+          var html = dojo.string.substitute(this.moreMessagesTemplate, {
+            url: convoId ? "rd:conversation:" + convoId : "",
+            message: dojo.string.substitute(this.i18n.moreMessages, {
+              count: notShownCount,
+              messagePlural: (notShownCount == 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
             })
-            dojo.place(html, lastWidget.actionsNode, 2);
-          }
+          })
+          dojo.place(html, lastWidget.actionsNode, 2);
         }
+      }
     }));
   },
 

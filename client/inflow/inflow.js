@@ -2,6 +2,7 @@ dojo.provide("inflow");
 
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
+dojo.require("rdw.Notify");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
 dojo.require("rdw.Account");

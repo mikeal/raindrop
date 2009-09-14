@@ -1,0 +1,19 @@
+.rdwNotify {
+  position: fixed;
+  top: 85px;
+  right: 25px;
+  width: 11em;
+  height: 20ex;
+  overflow: hidden;
+  font-size: x-small;
+}
+
+.rdwNotify .anim {
+  position: absolute;
+  width: 10em;
+  padding: 8px;
+  -moz-border-radius: 5px;
+  background-color: white;
+  color: black;
+  font-size: x-small;
+}
