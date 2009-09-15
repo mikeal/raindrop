@@ -11,6 +11,7 @@
 
 .rdwNotify .anim {
   position: absolute;
+  min-width: 17.25em;
 }
 
 .rdwNotify .anim .arrow {

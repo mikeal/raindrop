@@ -163,13 +163,14 @@
 }
 
 .rdwMessage .header {
-  border-bottom: 1px dotted #1a1a1a;
   padding-bottom: 2px;
 }
 
 .rdwMessage .header .from {
   font-size: small;
   text-transform: capitalize;
+  border-bottom: 1px dotted #1a1a1a;
+  outline: none;
 }
 
 .rdwMessage .from {

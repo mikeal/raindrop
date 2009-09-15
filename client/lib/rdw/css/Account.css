@@ -17,3 +17,20 @@
 .rdwAccount a:hover {
   text-decoration: underline;
 }
+
+.rdwAccount a.logout {
+  text-decoration: none;
+  float: none;
+}
+
+.rdwAccount a.logout:hover {
+  text-decoration: underline;
+}
+
+.rdwAccount a.settings {
+  padding: 0 14px 0 0;
+  display: inline-block;
+  background-image: url("i/icon_settings.png");
+  background-position: right center;
+  background-repeat: no-repeat;
+}

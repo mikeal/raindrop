@@ -118,7 +118,7 @@ a img{
   background-image: url("i/keyboard/keyboard.png");
   background-repeat: no-repeat;
   -moz-border-radius: 5px;
-  -moz-box-shadow: -5px 5px 0 #888888;
+  -moz-box-shadow: -5px 5px 0 #666;
   padding: 8px;
   display:none;
   position: fixed;
@@ -174,14 +174,23 @@ a img{
   top: 25px;
   display:block;
   margin-left: 8px;
-}
-
-.miniOrganizerTitle {
   font-family: Droid-serif, Georgia, Times, serif;
   font-size: x-small;
-  color: #888888;
+  color: #1a1a1a;
   margin-bottom: 4px;
   font-style: italic;
+}
+
+.miniOrganizer a {
+  color: #888888;
+  text-decoration: none;
+  font-family: Droid-serif, Georgia, Times, serif;
+  font-style: italic;
+  display: block;
+}
+
+.miniOrganizer a:hover {
+  color: #1a1a1a;
 }
 
 #footer {

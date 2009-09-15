@@ -43,6 +43,10 @@
   border-bottom: 1px dotted #1a1a1a;
 }
 
+.rdwStoryTwitterTimeLine .rdwMessage .header .from {
+  border-bottom: none;
+}
+
 .rdwStoryTwitterTimeLine .rdwMessage:hover {
   background-color: transparent;
 }
