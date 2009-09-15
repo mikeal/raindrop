@@ -248,6 +248,27 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         self.failUnlessEqual(doc['status'], 'unsubscribed',
                              repr('Mailman list status is unsubscribed'))
 
+    # An unsubscription notification (not confirmation) from a Mailman list
+    # to which the user is subscribed and which the user owns, informing
+    # the user that someone *else* has been unsubscribed.  The list status
+    # should remain "subscribed" in this case, since it isn't the user
+    # who was unsubscribed.
+    @defer.inlineCallbacks
+    def test_mailman_unsub_note(self):
+        # Initialize the corpus & database.
+        yield self.init_corpus('mailing-list')
+
+        # Process a message to create the mailing list record.
+        yield self.put_docs('mailing-list', 'mailman-message-older', 1)
+
+        # Process the unsubscribe notification.
+        yield self.put_docs('mailing-list', 'mailman-unsub-note', 1)
+
+        list_key = ['rd.core.content', 'schema_id', 'rd.mailing-list']
+        doc = (yield self.get_docs(list_key, expected=1))[0]
+        self.failUnlessEqual(doc['status'], 'subscribed',
+                             repr('Mailman list status is subscribed'))
+
     # The mailing list is in the "unsubscribe-pending" state, and Raindrop
     # receives a request to confirm unsubscription.  Raindrop should create
     # a message confirming the unsubscription and set the list state to

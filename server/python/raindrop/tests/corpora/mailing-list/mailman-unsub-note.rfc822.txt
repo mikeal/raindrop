@@ -1,0 +1,39 @@
+Received: from a.example2.com (unverified [10.1.2.3]) 
+	by mail.example2.com (SurgeMail 3.8f2) with ESMTP id 8726d8bb-bc65-4205-a684-3bbcbe80afff 
+	for <john_smith@example2.com>; Fri, 04 Sep 2009 09:46:51 +0930 (CST)
+Return-Path: <mailman-bounces@lists.example.com>
+Received: from b.example2.com (b.example2.com [10.2.3.4])
+	by a.example2.com (8.14.2/8.14.2) with ESMTP id 404f972f-e99b-4d1c-a4c3-f666931d50fb
+	for <john_smith@example3.com>; Fri, 4 Sep 2009 09:46:51 +0930 (CST)
+	(envelope-from mailman-bounces@lists.example.com)
+Received: from lists.example.com ([10.3.4.5])
+  by c.example2.com with ESMTP; 04 Sep 2009 09:46:49 +0930
+Received: from localhost ([127.0.0.1] helo=lists.example.com)
+	by lists.example.com with esmtp (Exim 4.69)
+	(envelope-from <mailman-bounces@lists.example.com>)
+	id 42be0537-bf6a-4c2d-854d-cee7406a36d8
+	for john_smith@example3.com; Fri, 04 Sep 2009 00:24:45 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+Content-Transfer-Encoding: 7bit
+Subject: test unsubscribe notification
+From: mailman-bounces@lists.example.com
+To: test-owner@lists.example.com
+Message-ID: <mailman.5ef15af4-29d1-4168-8dd5-38da988f2e26.test@lists.example.com>
+Date: Fri, 04 Sep 2009 00:22:25 +0000
+Precedence: bulk
+X-BeenThere: test@lists.example.com
+X-Mailman-Version: 2.1.11
+List-Id: test messages go here
+	<test.lists.example.com>
+X-List-Administrivia: yes
+Sender: mailman-bounces@lists.example.com
+Errors-To: mailman-bounces@lists.example.com
+X-Rcpt-To: <john_smith@example2.com>
+X-Vpipe: Scanner said clean (/local/app/clamav/bin/vscand-clamav)
+X-NotAscii: charset=us-ascii
+X-IP-stats: Incoming Last 7, First 72, in=33, out=0, spam=0 ip=10.3.4.5
+X-Originating-IP: 10.3.4.5
+
+jane_doe@example4.com has been removed from test.
+

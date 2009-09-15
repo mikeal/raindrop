@@ -139,6 +139,8 @@ def _get_subscribed_identity(headers):
                     logger.debug("identity from Received header: %s", identity)
                     return identity
 
+    # TODO: try to use X-Rcpt-To to narrow down the identity.
+
     # We have multiple identities, and we haven't narrowed down the one that
     # is subscribed to the list.  So we don't return anything, and we'll make
     # the front-end figure out what to do in this situation. For example,
@@ -471,11 +473,15 @@ def handler(message):
 
     # Mailman Step 3 (User is Unsubscribed) Detector
     # A request is a message with X-Mailman-Version and X-List-Administrivia
-    # headers (the latter set to "yes").
-    # TODO: find a way to identify a request with greater certainty.
+    # headers (the latter set to "yes") and whose subject starts
+    # "You have been unsubscribed".
+    # TODO: handle localized messages whose subjects aren't in English.
     elif 'x-mailman-version' in message['headers'] \
             and 'x-list-administrivia' in message['headers'] \
-            and message['headers']['x-list-administrivia'][0] == "yes":
+            and message['headers']['x-list-administrivia'][0] == 'yes' \
+            and 'subject' in message['headers'] \
+            and re.match(r'You have been unsubscribed',
+                         message['headers']['subject'][0]):
         status = _handle_unsubscribe_confirmation_mailman(list, timestamp)
 
     else:
