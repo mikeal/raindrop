@@ -6,8 +6,11 @@ dojo.require("rdw._Base");
 dojo.declare("rdw.Notify", [rdw._Base], {
   templateString: '<div class="rdwNotify" dojoAttachEvent="onclick: onClick"> \
                      <div class="anim" dojoAttachPoint="animNode"> \
+                       <div class="arrow" ></div> \
+                       <div class="messageWrap"> \
                        <span class="message" dojoAttachPoint="messageNode"></span> \
                        <a class="undo" dojoAttachPoint="undoNode" href="#undo">undo</a> \
+                       </div> \
                      </div> \
                    </div>',
 

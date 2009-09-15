@@ -2,18 +2,37 @@
   position: fixed;
   top: 85px;
   right: 25px;
-  width: 11em;
+  width: 17.25em;
   height: 20ex;
   overflow: hidden;
   font-size: x-small;
+  z-index: 1000;
 }
 
 .rdwNotify .anim {
   position: absolute;
-  width: 10em;
-  padding: 8px;
+}
+
+.rdwNotify .anim .arrow {
+  height: 8px;
+  width: 16px;
+  background-image: url("i/tri_black.png");
+  display:block;
+  float: right;
+  margin-right: 16px;
+}
+
+.rdwNotify .anim .messageWrap {
   -moz-border-radius: 5px;
-  background-color: white;
-  color: black;
-  font-size: x-small;
+  background-color: #1a1a1a;
+  color: #FFFFFF;
+  font-size: small;
+  padding: 8px;
+  display: block;
+  margin-top: 8px;
+}
+
+.rdwNotify .anim a {
+  color: #FFFFFF;
+  text-decoration: underline;
 }

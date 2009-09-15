@@ -6,6 +6,7 @@ dojo.require("rd.api");
 dojo.declare("rdw.Account", [rdw._Base], {
   templateString: '<div class="rdwAccount" dojoAttachEvent="onclick: onClick"> \
                     <span class="name" dojoAttachPoint="nameNode"></span> \
+                    <a class"settings" style="float:none; margin-left: 4px;" href="#">logout</a> \
                     <a class"settings" href="#rd:account-settings">settings</a> \
                    </div>',
 
