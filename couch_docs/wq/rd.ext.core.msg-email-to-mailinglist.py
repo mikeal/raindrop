@@ -388,10 +388,10 @@ def handler(message):
         list_id = message['headers']['list-id'][0]
         match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
         if (match):
-            logger.debug("complex list-id header with ID '%s' and name '%s'",
-                         match.group(2), match.group(1))
             list_id = match.group(2)
-            list_name = match.group(1)
+            list_name = match.group(1).lstrip().rstrip()
+            logger.debug("complex list-id header with ID '%s' and name '%s'",
+                         list_id, list_name)
         else:
             logger.debug("simple list-id header with ID '%s'", list_id)
 
