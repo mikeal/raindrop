@@ -382,9 +382,9 @@ def handler(message):
     # types that are identified via different methods below.
     if 'list-id' in message['headers']:
         # Extract the ID and name of the mailing list from the list-id header.
-        # Some mailing lists give only the ID, but others (Google Groups, Mailman)
-        # provide both using the format 'NAME <ID>', so we extract them separately
-        # if we detect that format.
+        # Some mailing lists give only the ID, but others (Google Groups,
+        # Mailman) provide both using the format 'NAME <ID>', so we extract them
+        # separately if we detect that format.
         list_id = message['headers']['list-id'][0]
         match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
         if (match):
@@ -401,15 +401,16 @@ def handler(message):
     # is identified by the part of the Reply-To header before the plus sign
     # followed by ".googlegroups.com".  For example, based on the following
     # header the ID is mozilla-labs-personas.googlegroups.com:
-    #     Reply-To: mozilla-labs-personas+unsubconfirm-ttVMSQwAAAAyzbmfKdXzOjrwK-0FmDri@googlegroups.com
+    #   Reply-To: mozilla-labs-personas+unsubconfirm-ttVMSQwAAAAyzbmfKdXzOjrwK-0FmDri@googlegroups.com
     elif 'from' in message['headers'] and \
             message['headers']['from'][0] == "noreply@googlegroups.com" and \
             'x-google-loop' in message['headers'] and \
             message['headers']['x-google-loop'][0] == 'unsub_requested' and \
             'reply-to' in message['headers']:
-        list_id = message['headers']['reply-to'][0].split('+')[0] + '.googlegroups.com'
-        logger.debug("LIST ID %s from Google Groups unsubscribe confirm request",
-                     list_id)
+        list_id = message['headers']['reply-to'][0].split('+')[0] + \
+                  '.googlegroups.com'
+        logger.debug(
+          "LIST ID %s from Google Groups unsubscribe confirm request", list_id)
 
     # This is a Google Groups unsubscribe confirmation whose list is identified
     # by the part of the Subject header after the English text "Google Groups:
@@ -503,6 +504,7 @@ def handler(message):
             update_documents([list])
         else:
             logger.debug("CREATE LIST %s", list_id)
-            emit_schema('rd.mailing-list', list, rd_key=["mailing-list", list_id])
+            emit_schema('rd.mailing-list', list,
+                        rd_key=["mailing-list", list_id])
     else:
         logger.debug("LIST UNCHANGED")
