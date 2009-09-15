@@ -254,6 +254,12 @@
   content: " - ";
 }
 
+.rdwMessage > .message > .content a.quoteToggle {
+  display: block;
+  margin: 1ex;
+  color: #B000B0;
+}
+
 /* "reply" type of messages */
 .rdwMessage.reply {
   position: relative;

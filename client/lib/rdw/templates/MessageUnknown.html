@@ -1,4 +1,4 @@
-<div class="rdwMessage rdwMessageUnknown ${type}" tabindex="0">
+<div class="rdwMessage rdwMessageUnknown ${type}" tabindex="0" dojoAttachEvent="onclick: onClick">
   <div class="topActions">
     <a href="#${expandLink}" class="expand" title="${i18n.expand}">${i18n.expand}</a>
     <a href="#archive" class="archive" title="${i18n.archive}">${i18n.archive}</a>
@@ -16,7 +16,7 @@
     <div class="content">
       <span class="subject">${subject}</span> ${message}
     </div>
-    <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
+    <div class="actions" dojoAttachPoint="actionsNode">
       <a class="reply" href="#reply" dojoattachpoint="replyNode">&#9654; ${i18n.reply}</a>
       <a class="identity" title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode" ></a>
     </div>

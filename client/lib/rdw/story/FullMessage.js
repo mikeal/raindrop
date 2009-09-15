@@ -13,6 +13,9 @@ dojo.declare("rdw.story.FullMessage", [rdw.Message], {
     //Make sure to show the whole body.
     var msgBag = this.messageBag;
     var msgDoc = this.messageBag['rd.msg.body'];
-    this.message = msgDoc.body.replace(/\n/g, "<br>");
+
+    //Collapse quote regions in the text and hyperlink things.
+    //TODO: make message transforms extensionized.
+    this.message = this.collapseQuotes(rd.hyperlink.add(msgDoc.body.replace(/\n/g, "<br>")));
   }
 });

@@ -1,4 +1,4 @@
-<div class="rdwMessage rdwStoryFullMessage ${type}" tabindex="0">
+<div class="rdwMessage rdwStoryFullMessage ${type}" tabindex="0" dojoAttachEvent="onclick: onClick">
   <div class="message">
     <div class="header">
       <div class="messageIndicator"></div>
@@ -10,7 +10,7 @@
     <div class="content">
       ${message}
     </div>
-    <div class="actions" dojoAttachPoint="actionsNode" dojoAttachEvent="onclick: onActionClick">
+    <div class="actions" dojoAttachPoint="actionsNode">
       <a class="reply" href="#reply">Reply</a>
       <a class="fwd" href="#forward">Forward</a>
     </div>

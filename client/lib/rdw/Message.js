@@ -88,14 +88,30 @@ dojo.declare("rdw.Message", [rdw._Base], {
     }
   },
 
-  onActionClick: function(evt) {
-    //summary: handles clicks for actions. Uses event
+  onClick: function(evt) {
+    //summary: handles clicks. Uses event
     //delegation to publish the right action.
-    var href = evt.target.href;
+    var target = evt.target;
+    var href = target.href;
     if (href && (href = href.split("#")[1])) {
       if (href == "know") {
         rdw.contactDropDown.open(evt.target, this, this.fromName, this.matches);
         evt.preventDefault();
+      } else if (href == "quote") {
+        if (dojo.hasClass(target, "collapsed")) {
+          rd.escapeHtml(this.i18n.hideQuotedText, target, "only");
+          dojo.query(target).next(".quote").style({
+            display: "block"
+          });
+          dojo.removeClass(target, "collapsed");
+        } else {
+          rd.escapeHtml(this.i18n.showQuotedText, target, "only");
+          dojo.query(target).next(".quote").style({
+            display: "none"
+          });
+          dojo.addClass(target, "collapsed");          
+        }
+        dojo.stopEvent(evt);
       }
     }
   },
@@ -146,5 +162,45 @@ dojo.declare("rdw.Message", [rdw._Base], {
         }
       }
     }
+  },
+  
+  //Warning, this is a global regexp, for all Message instances.
+  //Be sure to reset lastIndex accordingly.
+  collapseRegExp: /\<br\>[^\>]/g,
+
+  collapseQuotes: function(/*String*/text) {
+    //summary: insert collapseable divs around quotes.
+    
+    var startIndex = 0, oldIndex = 0;
+    this.collapseRegExp.lastIndex = 0;
+    var ret = "";
+    while (startIndex != -1 && (startIndex = text.indexOf('<br>>', startIndex)) != -1) {
+      //output the unquoted text
+      ret += text.substring(oldIndex, startIndex);
+      
+      //Put in the start wrapper.
+      //The awkward use of single quotes for attributes is to
+      //get around encoding issue with dijit.
+      ret += "<a href='#quote' class='quoteToggle collapsed'>" + this.i18n.showQuotedText + "</a>"
+           + "<div class='quote' style='display: none'>"
+           
+      //Find the end block and write that out.
+      this.collapseRegExp.lastIndex = startIndex;
+      this.collapseRegExp.exec(text);
+      ret += text.substring(startIndex, this.collapseRegExp.lastIndex);
+      
+      //Put in the end wrapper.
+      ret += "</div>";
+      
+      //Increment position in the string.
+      oldIndex = startIndex = this.collapseRegExp.lastIndex;
+    }
+
+    //Add any trailing unqouted text.
+    if (oldIndex < text.length) {
+      ret += text.substring(oldIndex, text.length);
+    }
+
+    return ret || text;
   }
 });
