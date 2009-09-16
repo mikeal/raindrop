@@ -233,7 +233,9 @@ class ImapProvider(object):
       _ = yield self._updateFolders(conn, todo)
     except:
       log_exception("Failed to update folders")
-    logger.info('imap queue generation finished - waiting for queues to finish')
+    acid = self.account.details.get('id','')
+    logger.info('%r imap interactions complete - waiting for queues to finish',
+                acid)
 
   @defer.inlineCallbacks
   def _checkQuickRecent(self, conn, folder_path, max_to_fetch):
@@ -346,8 +348,11 @@ class ImapProvider(object):
         else:
           delim, name = info
           # do later ones first...
-          batch = [mi for mi in todo[-50:] if self.shouldFetchMessage(mi)]
-          rest = todo[:-50]
+          batch = []
+          while len(batch) < 50 and todo:
+              mi = todo.pop()
+              if self.shouldFetchMessage(mi):
+                  batch.insert(0, mi)
           logger.log(1, 'queueing check of %d items in %r', len(batch), name)
           self.fetch_queue.put((name, batch))
           # see if these items also need location records...
@@ -360,9 +365,7 @@ class ImapProvider(object):
           if new_locs:
             logger.debug('queueing %d new location records', len(new_locs))
             self.write_queue.put(new_locs)
-          if rest:
-            sync_by_name[info] = rest
-          else:
+          if not todo:
             del sync_by_name[info]
 
   @defer.inlineCallbacks
@@ -538,8 +541,8 @@ class ImapProvider(object):
                             'source': ['imap', acct_id]},
                   }
       to_add[uid] = new_item
-    logger.info("folder %r info needs to update %d and delete %d location records",
-                folder_name, len(to_add), len(to_nuke))
+    logger.debug("folder %r info needs to update %d and delete %d location records",
+                 folder_name, len(to_add), len(to_nuke))
     defer.returnValue((to_nuke, to_add))
 
   def results_by_rdkey(self, infos):
