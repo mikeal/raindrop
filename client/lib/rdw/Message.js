@@ -166,7 +166,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
   
   //Warning, this is a global regexp, for all Message instances.
   //Be sure to reset lastIndex accordingly.
-  collapseRegExp: /\<br\>[^\>]/g,
+  collapseRegExp: /\<br\>(?!\&gt\;)/g,
 
   collapseQuotes: function(/*String*/text) {
     //summary: insert collapseable divs around quotes.
@@ -174,7 +174,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var startIndex = 0, oldIndex = 0;
     this.collapseRegExp.lastIndex = 0;
     var ret = "";
-    while (startIndex != -1 && (startIndex = text.indexOf('<br>>', startIndex)) != -1) {
+    while (startIndex != -1 && (startIndex = text.indexOf('<br>&gt;', startIndex)) != -1) {
       //output the unquoted text
       ret += text.substring(oldIndex, startIndex);
       
@@ -186,14 +186,20 @@ dojo.declare("rdw.Message", [rdw._Base], {
            
       //Find the end block and write that out.
       this.collapseRegExp.lastIndex = startIndex;
-      this.collapseRegExp.exec(text);
-      ret += text.substring(startIndex, this.collapseRegExp.lastIndex);
-      
+      var matches = this.collapseRegExp.exec(text);
+      if (matches) {
+        var position = this.collapseRegExp.lastIndex;
+      } else {
+        //No match, so quote must be to the end of the string.
+        position = text.length - 1;
+      }
+      ret += text.substring(startIndex, position);
+
       //Put in the end wrapper.
       ret += "</div>";
-      
+  
       //Increment position in the string.
-      oldIndex = startIndex = this.collapseRegExp.lastIndex;
+      oldIndex = startIndex = position;
     }
 
     //Add any trailing unqouted text.
