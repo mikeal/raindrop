@@ -111,7 +111,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'help': 'mailto:test-request@lists.example.com?subject=help',
             'id': 'test.lists.example.com',
             'identity': ['email', 'raindrop_test_user@mozillamessaging.com'],
-            'name': 'test list ',
+            'name': 'test list',
             'post': 'mailto:test@lists.example.com',
             'status': 'subscribed',
             'subscribe': 'https://lists.example.com/listinfo/test>,\n\t' +
@@ -163,7 +163,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'help': 'mailto:test-request@lists.example.com?subject=help',
             'id': 'test.lists.example.com',
             'identity': ['email', 'raindrop_test_user@mozillamessaging.com'],
-            'name': 'the test list ',
+            'name': 'the test list',
             'post': 'mailto:test@lists.example.com',
             'status': 'subscribed',
             'subscribe': 'https://lists.example.com/listinfo/thetest>,\n\t' +
