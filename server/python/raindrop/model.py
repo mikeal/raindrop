@@ -82,6 +82,7 @@ def _encode_options(options):
 
 
 class CouchDB(paisley.CouchDB):
+    _has_adbs = None # does this couch support the old _all_docs_by_seq api?
     def __init__(self, host, port=5984, dbName=None, username=None, password=None):
         paisley.CouchDB.__init__(self, host, port, dbName)
         self.username = username
@@ -214,7 +215,7 @@ class CouchDB(paisley.CouchDB):
                     ).addCallback(self.parseResult
                     )
 
-    def listDocsBySeq(self, dbName, **kw):
+    def listDocsBySeq_Orig(self, dbName, **kw):
         """
         List all documents in a given database by the document's sequence number
         """
@@ -230,6 +231,62 @@ class CouchDB(paisley.CouchDB):
             uri += "?%s" % (urlencode(args),)
         return self.get(uri
             ).addCallback(self.parseResult)
+
+
+    @defer.inlineCallbacks
+    def listDocsBySeq_Changes(self, dbName, **kw):
+        """
+        List all documents in a given database by the document's sequence 
+        number using the _changes API.
+
+        Transforms the results into what the old _all_docs_by_seq API
+        returned, but ultimately this needs to die and move exclusively
+        with the new API and new result format.
+        """
+        kwuse = kw.copy()
+        if 'startkey' in kwuse:
+            kwuse['since'] = kwuse.pop('startkey')
+
+        uri = "/%s/_changes" % (dbName,)
+        # suck the kwargs in
+        args = _encode_options(kwuse)
+        if args:
+            uri += "?%s" % (urlencode(args),)
+        raw = yield self.get(uri)
+        result = self.parseResult(raw)
+        # convert it back to the 'old' format.
+        rows = []
+        for seq in result['results']:
+            last_change = seq['changes'][-1]
+            row = {'id': seq['id'],
+                   'key': seq['seq'],
+                   'value': last_change, # has 'rev'
+                  }
+            if 'doc' in seq:
+                row['doc'] = seq['doc']
+            rows.append(row)
+        defer.returnValue({'rows': rows})
+
+    @defer.inlineCallbacks
+    def listDocsBySeq(self, dbName, **kw):
+        # determine what API we should use.  Note that even though _changes
+        # appeared in 0.10, support for 'limit=' didn't appear until 0.11 - 
+        # after _all_docs_by_seq was removed.  So we must use _all_docs_by_seq
+        # if it exists.
+        if self._has_adbs is None:
+            try:
+                ret = yield self.listDocsBySeq_Orig(dbName, **kw)
+                self._has_adbs = True
+                defer.returnValue(ret)
+            except twisted.web.error.Error, exc:
+                if exc.status != '404':
+                    raise
+                self._has_adbs = False
+        if self._has_adbs:
+            ret = yield self.listDocsBySeq_Orig(dbName, **kw)
+        else:
+            ret = yield self.listDocsBySeq_Changes(dbName, **kw)
+        defer.returnValue(ret)
 
     # Hack so our new bound methods work.
     def bindToDB(self, dbName):
