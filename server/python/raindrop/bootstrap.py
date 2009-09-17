@@ -590,6 +590,7 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
     rtail = "-reduce"
     ltail = "-list"
     stail = "-show"
+    optstail = "-options"
     files = os.listdir(ddir)
     for fn in files:
         fqf = os.path.join(ddir, fn)
@@ -645,6 +646,18 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
                 logger.warning("can't open list file %r - skipping this list", fqf)
                 continue
 
+        tail = optstail + ".json"
+        if fn.endswith(tail):
+            view_name = fn[:-len(tail)]
+            try:
+                with open(fqf) as f:
+                    data = f.read()
+                    ret_views[view_name]['options'] = json.loads(data)
+                    fprinter.get_finger(view_name+tail).update(data)
+            except ValueError, why:
+                logger.warning("can't json-decode %r: %s", fqf, why)
+                continue
+        
 
     ret['rd_fingerprints'] = fprinter.get_prints()
     ret['language'] = this_lang
