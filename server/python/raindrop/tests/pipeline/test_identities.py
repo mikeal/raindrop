@@ -11,11 +11,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TestIDPipelineBase(TestCaseWithTestDB):
+    def get_options(self):
+        ret = TestCaseWithTestDB.get_options(self)
+        ret.exts = ['rd.test.core.test_converter']
+        return ret
+
     @defer.inlineCallbacks
-    def process_doc(self, exts=None, emit_common_ids=True):
+    def process_doc(self, emit_common_ids=True):
         test_proto.set_test_options(emit_identities=True,
                                     emit_common_identities=emit_common_ids)
-        self.pipeline.options.exts = exts or ['rd.test.core.test_converter']
         _ = yield self.deferMakeAnotherTestMessage(None)
         _ = yield self.pipeline.start()
 
@@ -70,7 +74,6 @@ class TestIDPipeline(TestIDPipelineBase):
                 self.failUnless(this_rel in ['personal', 'public'], this_rel)
             # and that will do!
 
-        dm = get_doc_model()
         return self.process_doc(
                 ).addCallback(check_it,
                 )
@@ -158,7 +161,7 @@ class TestIDPipeline(TestIDPipelineBase):
 
 
         return self.test_one_testmsg(
-                ).addCallback(lambda _: self.process_doc(None, False)
+                ).addCallback(lambda _: self.process_doc(False)
                 ).addCallback(check_it,
                 ).addCallback(self.deferVerifyCounts, 2, 3
                 )

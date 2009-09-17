@@ -18,11 +18,15 @@ class TestPipelineBase(TestCaseWithTestDB):
             'rd.ext.core.msg-email-to-body',
         ]
 
+    def get_options(self):
+        ret = TestCaseWithTestDB.get_options(self)
+        ret.exts = self.simple_extensions
+        ret.no_process = self.use_chasing_pipeline
+        ret.protocols = ['test']
+        return ret
+
     @defer.inlineCallbacks
-    def process_doc(self, exts = None):
-        self.pipeline.options.exts = exts or self.extensions
-        self.pipeline.options.no_process = self.use_chasing_pipeline
-        self.pipeline.options.protocols = ['test']
+    def process_doc(self):
         # populate our test DB with the raw message(s).
         _ = yield self.deferMakeAnotherTestMessage(None)
         if self.use_chasing_pipeline:
@@ -75,7 +79,6 @@ class TestPipeline(TestPipelineBase):
 
         targets = set(('rd.msg.body', 'rd.msg.email', 'rd.msg.flags', 'rd.tags',
                        'rd.msg.rfc822', 'rd.msg.test.raw'))
-        dm = get_doc_model()
         return self.process_doc(
                 ).addCallback(check_targets, targets
                 )
@@ -83,8 +86,6 @@ class TestPipeline(TestPipelineBase):
     def test_one_again_does_nothing(self):
         # Test that attempting to process a message which has already been
         # processed is a noop.
-        dm = get_doc_model()
-
         def check_targets_same(lasts, targets_b4):
             # Re-processing should not have modified the targets in any way.
             db_types = set(row['doc']['rd_schema_id'] for row in lasts)
@@ -126,8 +127,6 @@ class TestErrors(TestPipelineBase):
 
     def test_reprocess_errors(self):
         # Test that reprocessing an error results in the correct thing.
-        dm = get_doc_model()
-
         def check_target_last(lasts, expected):
             got = set(row['doc']['rd_schema_id'] for row in lasts)
             self.failUnlessEqual(got, expected)

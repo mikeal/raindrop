@@ -340,15 +340,7 @@ class DocumentModel(object):
     MAX_INLINE_ATTACH_SIZE = 100000 # pulled from a hat!
     def __init__(self, db):
         self.db = db
-        self._provider_processors = []
         self._important_views = None # views we update periodically
-
-    def add_provider_processor(self, proc):
-        assert proc not in self._provider_processors # already listening?
-        self._provider_processors.append(proc)
-
-    def remove_provider_processor(self, proc):
-        self._provider_processors.remove(proc)
 
     @classmethod
     def quote_id(cls, doc_id):
@@ -468,18 +460,9 @@ class DocumentModel(object):
                     update_item['_rev'] = dinfo['rev']
                     update_items.append(update_item)
                 real_ret.append(dinfo)
-        # If anyone is listening for new items, call them now.
-        for proc in self._provider_processors:
-            proc.on_new_items(update_items)
         if errors:
             raise DocumentSaveError(errors)
         defer.returnValue(real_ret)
-
-    @defer.inlineCallbacks
-    def provide_schema_items(self, items):
-        _ = yield self.create_schema_items(items)
-        for proc in self._provider_processors:
-            _ = yield proc.process_all()
 
     def create_schema_items(self, item_defs):
         docs = []
@@ -646,10 +629,6 @@ class DocumentModel(object):
 
         logger.debug("saved %d documents with %d errors", len(new_items),
                      len(errors))
-        # If anyone is listening for new items, call them now.
-        for proc in self._provider_processors:
-            proc.on_new_items(new_items)
-
         if errors:
             raise DocumentSaveError(errors)
 

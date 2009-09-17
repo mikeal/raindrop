@@ -122,12 +122,15 @@ class TestCaseWithTestDB(TestCaseWithDB):
     def setUp(self):
         raindrop.config.CONFIG = None
         self.config = self.make_config()
-        opts = FakeOptions()
+        opts = self.get_options()
         self.doc_model = get_doc_model()
         self.pipeline = Pipeline(self.doc_model, opts)
         return self.prepare_test_db(self.config
             ).addCallback(lambda _: self.pipeline.initialize()
             )
+
+    def get_options(self):
+        return FakeOptions()
 
     def make_config(self):
         # change the name of the DB used.

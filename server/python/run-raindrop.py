@@ -117,14 +117,15 @@ def reprocess(result, parser, options):
         print "Message pipeline has finished..."
     return g_pipeline.reprocess().addCallback(done)
 
+@defer.inlineCallbacks
 def retry_errors(result, parser, options):
     """Reprocess all conversions which previously resulted in an error."""
     def done_errors(result):
-        print "Error retry pipeline has finished - processing work queue..."
         return result
-    return g_pipeline.start_retry_errors(
-                ).addCallback(done_errors
-                ).addCallback(process, parser, options)
+    _ = yield g_pipeline.start_retry_errors()
+    print "Error retry pipeline has finished - waiting for work-queue..."
+    if g_pipeline.incoming_processor:
+        _ = yield g_pipeline.incoming_processor.ensure_done()
 
 @allargs_command
 def show_view(result, parser, options, args):

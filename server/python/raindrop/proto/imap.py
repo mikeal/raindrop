@@ -149,11 +149,11 @@ class ImapProvider(object):
   # regular extensions.
   rd_extension_id = 'proto.imap'
 
-  def __init__(self, account, options, reactor):
+  def __init__(self, account, conductor):
     self.account = account
-    self.options = options
+    self.options = conductor.options
+    self.conductor = conductor
     self.doc_model = account.doc_model
-    self.reactor = reactor
     self.fetch_queue = defer.DeferredQueue()
     self.write_queue = defer.DeferredQueue()
     self.updated_folder_infos = None
@@ -659,7 +659,7 @@ class ImapProvider(object):
         num = yield self._processFolderBatch(conn, folder, items)
         logger.debug('queued %d items for %r', num, folder)
       except:
-        if not self.reactor.running:
+        if not self.conductor.reactor.running:
           break
         log_exception('failed to process a message batch in folder %r',
                       folder)
@@ -667,6 +667,7 @@ class ImapProvider(object):
   @defer.inlineCallbacks
   def _consumeWriteRequests(self):
     q = self.write_queue
+    pipeline = self.conductor.pipeline
     while True:
       items = yield q.get()
       if items is None:
@@ -675,7 +676,7 @@ class ImapProvider(object):
       # else a real set of schemas to write and process.
       logger.debug('write queue popped %d schema items', len(items))
       try:
-        _ = yield self.doc_model.provide_schema_items(items)
+        _ = yield pipeline.provide_schema_items(items)
       except DocumentSaveError, exc:
         # So - conflicts are a fact of life in this 'queue' model: we check
         # if a record exists and it doesn't, so we queue the write.  By the
@@ -700,7 +701,7 @@ class ImapProvider(object):
                      len(conflicts), conflicts[:3])
       except:
         # premature shutdown...
-        if not self.reactor.running:
+        if not self.conductor.reactor.running:
           break
         raise
 
@@ -824,7 +825,7 @@ class IMAPAccount(base.AccountBase):
 
   @defer.inlineCallbacks
   def startSync(self, conductor):
-    prov = ImapProvider(self, conductor.options, conductor.reactor)
+    prov = ImapProvider(self, conductor)
 
     @defer.inlineCallbacks
     def start_fetchers(n):

@@ -20,7 +20,7 @@ def get_conductor(options=None):
   else:
     assert options is None, 'can only set this at startup'
   return _conductor
-  
+
 
 # XXX - rename this to plain 'Conductor' and move to a different file.
 # This 'conducts' synchronization, the work queues and the interactions with
@@ -37,6 +37,7 @@ class SyncConductor(object):
     self.coop = task.Cooperator()
     reactor.addSystemEventTrigger("before", "shutdown", self._kill_coop)
     self.doc_model = get_doc_model()
+    self.pipeline = None
 
     self.accounts_syncing = []
     self.outgoing_handlers = None
@@ -81,8 +82,7 @@ class SyncConductor(object):
           continue
       if not self.options.protocols or account_proto in self.options.protocols:
         if account_proto in proto.protocols:
-          account = proto.protocols[account_proto](self.doc_model,
-                                                   account_details)
+          account = proto.protocols[account_proto](self.doc_model, account_details)
           self.log.debug('loaded %s account: %s', account_proto,
                          account_details.get('name', '(un-named)'))
           self.all_accounts.append(account)
@@ -99,38 +99,22 @@ class SyncConductor(object):
                         account_proto)
 
   @defer.inlineCallbacks
-  def _process_outgoing_row(self, row, pipeline):
+  def _process_outgoing_row(self, row):
     val = row['value']
     # push it through the pipeline.
-    proc = pipeline.sync_processor
-    new_items = [{'_id': row['id'], '_rev': val['_rev'], 'schema_id': val['rd_schema_id']}]
-    proc.on_new_items(new_items)
-    _ = yield proc.process_all()
-
-    # Now attempt to find the 'outgoing' message.
-    keys = []
-    for ot in self.outgoing_handlers:
-      keys.append(['rd.core.content', 'key-schema_id', [val['rd_key'], ot]])
-    out_schema = None
-    out_result = yield self.doc_model.open_view(keys=keys, reduce=False)
-    for out_row in out_result['rows']:
-      if 'error' not in row:
-        # hrm - I don't think we want to let multiple accounts handle the
-        # same item without more thought...
-        if out_schema is not None:
-          raise RuntimeError, "Found multiple outgoing schemas!!"
-        out_schema = out_row['value']['rd_schema_id']
-        out_id = out_row['id']
-        break
-    else:
+    new_items = [(row['id'], val['_rev'], val['rd_schema_id'], None)]
+    out_id, out_rev, out_sch = yield self.pipeline.process_until(new_items,
+                                                   self.outgoing_handlers)
+    if out_id is None:
       raise RuntimeError("the queues failed to create an outgoing schema")
-    logger.info('found outgoing message with schema %s', out_schema)
+
+    logger.info('found outgoing message with schema %s', out_sch)
     # open the original source doc and the outgoing schema we just found.
     dids = [row['id'], out_id]
     src_doc, out_doc = yield self.doc_model.open_documents_by_id(dids)
     if src_doc['_rev'] != val['_rev']:
       raise RuntimeError('the document changed since it was processed.')
-    senders = self.outgoing_handlers[out_schema]
+    senders = self.outgoing_handlers[out_sch]
     # There may be multiple senders, but first one to process it wins
     # (eg, outgoing imap items have one per account, but each account may be
     # passed one for a different account - it just ignores it, so we continue
@@ -143,7 +127,7 @@ class SyncConductor(object):
         break
 
   @defer.inlineCallbacks
-  def _do_sync_outgoing(self, pipeline):
+  def _do_sync_outgoing(self):
     # XXX - we need a registry of 'outgoing source docs'.
     source_schemas = ['rd.msg.outgoing.simple',
                       'rd.msg.seen',
@@ -157,7 +141,7 @@ class SyncConductor(object):
     for row in result['rows']:
       logger.info("found outgoing document %(id)r", row)
       try:
-        def_done = self._process_outgoing_row(row, pipeline)
+        def_done = self._process_outgoing_row(row)
         dl.append(def_done)
       except Exception:
         logger.error("Failed to process doc %r\n%s", row['id'],
@@ -166,16 +150,17 @@ class SyncConductor(object):
 
   @defer.inlineCallbacks
   def sync(self, pipeline, incoming=True, outgoing=True):
+    assert self.pipeline is None, 'already syncing?'
+    self.pipeline = pipeline
+
     if self.all_accounts is None:
       _ = yield self._load_accounts()
 
-    if not self.options.no_process:
-      pipeline.prepare_sync_processor()
     try:
       dl = []
       if outgoing:
         # start looking for outgoing schemas to sync...
-        dl.extend((yield self._do_sync_outgoing(pipeline)))
+        dl.extend((yield self._do_sync_outgoing()))
 
       if incoming:
         # start synching all 'incoming' accounts.
@@ -197,9 +182,7 @@ class SyncConductor(object):
       # wait for each of the deferreds to finish.
       _ = yield defer.DeferredList(dl)
     finally:
-      if not self.options.no_process:
-        num = pipeline.finish_sync_processor()
-        logger.info("generated %d documents", num)
+      self.pipeline = None
 
   def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):

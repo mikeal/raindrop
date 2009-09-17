@@ -47,7 +47,8 @@ class TestMessageProvider(object):
         for i in xrange(num_docs):
             yield self.check_test_message(i)
         if self.bulk_docs:
-            yield self.doc_model.provide_schema_items(self.bulk_docs
+            pipeline = self.conductor.pipeline
+            yield pipeline.provide_schema_items(self.bulk_docs
                     ).addCallback(self.saved_bulk_messages, len(self.bulk_docs),
                     )
 
@@ -59,7 +60,7 @@ class TestMessageProvider(object):
 
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
-        rd_key = ['raindrop-test-message', i]
+        rd_key = ['email', 'TestMessage%d' % i]
         return self.doc_model.open_schemas(rd_key, "rd.msg.test.raw"
                         ).addCallback(self.process_test_message, i)
 
@@ -70,7 +71,7 @@ class TestMessageProvider(object):
                                         "data" : 'test\0blob'
                                         }
             }
-            rd_key = ['raindrop-test-message', doc_num]
+            rd_key = ['email', 'TestMessage%d' % doc_num]
             data = dict(
               storage_key=doc_num,
               _attachments=attachments,
