@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Translates rd.msg.body's body text into a structured schema rd.msg.body.quoted that indicates the quoted parts, from emails."
+    }
+  }
+}

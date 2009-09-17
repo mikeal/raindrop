@@ -163,50 +163,39 @@ dojo.declare("rdw.Message", [rdw._Base], {
       }
     }
   },
-  
-  //Warning, this is a global regexp, for all Message instances.
-  //Be sure to reset lastIndex accordingly.
-  collapseRegExp: /\<br\>(?!\&gt\;)/g,
 
-  collapseQuotes: function(/*String*/text) {
-    //summary: insert collapseable divs around quotes.
+  formatQuotedBody: function() {
+    //Looks at the rd.msg.body.quoted schema for quoted blocks and formats them.
+    //If no rd.msg.body.quoted exists, the message body will be used.
+    var quoted = this.messageBag["rd.msg.body.quoted"];
     
-    var startIndex = 0, oldIndex = 0;
-    this.collapseRegExp.lastIndex = 0;
-    var ret = "";
-    while (startIndex != -1 && (startIndex = text.indexOf('<br>&gt;', startIndex)) != -1) {
-      //output the unquoted text
-      ret += text.substring(oldIndex, startIndex);
-      
-      //Put in the start wrapper.
-      //The awkward use of single quotes for attributes is to
-      //get around encoding issue with dijit.
-      ret += "<a href='#quote' class='quoteToggle collapsed'>" + this.i18n.showQuotedText + "</a>"
-           + "<div class='quote' style='display: none'>"
-           
-      //Find the end block and write that out.
-      this.collapseRegExp.lastIndex = startIndex;
-      var matches = this.collapseRegExp.exec(text);
-      if (matches) {
-        var position = this.collapseRegExp.lastIndex;
-      } else {
-        //No match, so quote must be to the end of the string.
-        position = text.length - 1;
+    //No quoted, fallback to body text.
+    if (!quoted) {
+      var text = this.prepBodyPart(this.messageBag["rd.msg.body"].body);
+    } else {
+      var parts = quoted.parts || [];
+      text = "";
+      for (var i = 0, part; part = parts[i]; i++) {
+        if (part.type == "quote") {
+          //Add in a collapsible wrapper around the text.
+          //The awkward use of single quotes for attributes is to
+          //get around encoding issue with dijit.
+          text += "<a href='#quote' class='quoteToggle collapsed'>" + this.i18n.showQuotedText + "</a>"
+               + "<div class='quote' style='display: none'>"
+               + this.prepBodyPart(part.text)
+               + "</div>";
+        } else {
+          text += this.prepBodyPart(part.text);
+        }
       }
-      ret += text.substring(startIndex, position);
-
-      //Put in the end wrapper.
-      ret += "</div>";
-  
-      //Increment position in the string.
-      oldIndex = startIndex = position;
     }
 
-    //Add any trailing unqouted text.
-    if (oldIndex < text.length) {
-      ret += text.substring(oldIndex, text.length);
-    }
+    return text;
+  },
 
-    return ret || text;
+  prepBodyPart: function(/*String*/text) {
+    //summary: does final formatting of a body part for display, HTML sanitation/transforms.
+    //TODO: make this extensible, or pull out hyperlinking as an extension?
+    return rd.hyperlink.add(rd.escapeHtml(text).replace(/\n/g, "<br>"));
   }
 });

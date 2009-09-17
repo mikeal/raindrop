@@ -16,6 +16,6 @@ dojo.declare("rdw.story.FullMessage", [rdw.Message], {
 
     //Collapse quote regions in the text and hyperlink things.
     //TODO: make message transforms extensionized.
-    this.message = this.collapseQuotes(rd.hyperlink.add(rd.escapeHtml(msgDoc.body).replace(/\n/g, "<br>")));
+    this.message = this.formatQuotedBody();
   }
 });
