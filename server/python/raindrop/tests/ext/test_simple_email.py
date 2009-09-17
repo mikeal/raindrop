@@ -76,3 +76,29 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             result = yield self.doc_model.open_view(key=key, reduce=False,
                                                     include_docs=True)
             self.failUnlessEqual(len(result['rows']), 1, addy)
+
+    @defer.inlineCallbacks
+    def test_body_quoted_hyperlinks(self):
+        ndocs = yield self.load_corpus("hand-rolled", "rd-msg-body-quoted-hyperlinks")
+        self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
+        _ = yield self.pipeline.start()
+
+        # load the hyperlinks document and compare the results.
+        key = ["rd.core.content", "schema_id", "rd.msg.body.quoted.hyperlinks"]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+        
+        # Make sure we got one result.
+        self.failUnlessEqual(len(result['rows']), 1)
+        
+        # Make sure the right hyperlinks were found
+        doc = result['rows'][0]['doc']
+        self.failUnlessEqual(sorted(doc['links']),
+                             sorted(['http://bit.ly/HQFyP',
+                                     'http://www.example.com/2009/01/01/upcoming-events-new-york-london',
+                                     'http://www.example.com/user/1/subscriptions',
+                                     'http://en.wikipedia.org/wiki/Sport_(disambiguation)',
+                                     'http://en.wikipedia.org/wiki/Sport_(magazine))',
+                                     'http://python.org/about/index.html',
+                                     'http://mozilla.com',
+                                     'http://example.com/something/0,123,133.html']))

@@ -1,5 +1,9 @@
 import re
 
+collapseRegExp = re.compile("\n(?!>)")
+startRegExp = re.compile("\n>")
+linefeeds = re.compile('\r')
+
 # Creates 'rd.msg.body.quoted' schemas for messages...
 def handler(doc):
     text = doc['body']
@@ -9,13 +13,10 @@ def handler(doc):
         return
     
     #Remove \r to make processing easier.
-    linefeeds = re.compile('\r')
     text = linefeeds.sub('', text)
 
     startIndex = 0;
     oldIndex = 0;
-    collapseRegExp = re.compile("\n(?!>)")
-    startRegExp = re.compile("\n>")
     ret = []
     startMatch = startRegExp.search(text, startIndex)
     while startMatch and startMatch.start() != -1:

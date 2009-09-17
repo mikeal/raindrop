@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body.quoted"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Pulls out hyperlinks from the non-quoted parts of a rd.msg.body.quoted schema. and puts them in a rd.msg.body.quoted.hyperlinks schema"
+    }
+  }
+}
