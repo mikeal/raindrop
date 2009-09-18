@@ -1,0 +1,229 @@
+@charset "UTF-8";
+/* CSS Document */
+
+* {
+	padding: 0px;
+	border: 0px;
+	margin-top: 0px;
+	margin-bottom: 0px;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("f/Droid-Sans/DroidSans.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("f/Droid-Sans/DroidSans-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans-mono;
+  src: url("f/Droid-Sans-Mono/DroidSansMono.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("f/Droid-Serif/DroidSerif-Regular.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("f/Droid-Serif/DroidSerif-Italic.ttf");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("f/Droid-Serif/DroidSerif-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("f/Droid-Serif/DroidSerif-BoldItalic.ttf");
+  font-weight: bold;
+  font-style: italic;
+}
+
+
+body {
+	height: 100%;
+	font-family: Droid-sans, arial, verdana, sans-serif;
+	color: #1a1a1a;
+	font-size: 11.75px;
+	line-height: 16px;
+	background-color: #e6e6e6;
+}
+
+#wrapper {
+  width: 916px;
+  height: 100%;
+  display: block;
+  margin: 10px; 
+}
+
+#extend {
+  position: absolute;
+  background-image: url("i/rd_extend.png");
+  top: 25px;
+  right: 25px;
+  height: 48px;
+  width: 48px;
+  display: block;
+  z-index: 1000;
+}
+
+#c1 {
+  width: 124px;
+  height: 100%;
+  padding: 36px 0 0 0;
+  float: left;
+  position: fixed;
+  background-image: url("i/rd_wordmark.png");
+  background-repeat: no-repeat;
+}
+
+#c2 {
+  width: 782px;
+  float: right;
+  padding-top: 4px;
+}
+
+a.menu,
+a.menuQuery {
+  display: block;
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+a.menu:hover,
+a.menuQuery:hover {
+  display: block;
+  color: #1a1a1a;
+  text-decoration: underline;
+}
+
+a.menuQuery {
+  background-image: url("i/new-window.png");
+  background-repeat: no-repeat;
+  background-position: right center;
+  display: inline;
+  padding: 0 14px 0 0;
+}
+
+a.menuQuery:hover {
+  display: inline;
+}
+  
+
+p.title {
+  font-variant: small-caps;
+  font-weight: bold;
+  margin-bottom: 16px;
+  margin-top: 32px;
+  text-transform: lowercase;
+  clear: both;
+}
+
+.contentBox {
+  margin: 0 5px 16px 5px;
+  width: 381px;
+  display: inline-block;
+  float: left;
+  clear: both;
+}
+
+.contentBox input.name {
+  background-color: #1a1a1a;
+  display: inline-block;
+  color: white;
+  font-weight: bold;
+  padding: 6px;
+  width: 50%;
+  margin-top: 16px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+.contentBox input.button {
+  background-color: #00D6C6;
+  display: inline-block;
+  color: white;
+  font-weight: bold;
+  padding: 5px;
+  margin-top: 16px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+}
+
+.contentBoxRight {
+  margin: 0 5px 16px 5px;
+  width: 381px;
+  display: inline-block;
+  float: right;
+  clear: none;
+}
+
+.contentBox .small,
+.contentBoxRight .small {
+  color: #888;
+  font-size: x-small;
+  margin-top: 7.5px;
+}
+
+.contentBox a,
+.contentBoxRight a {
+  color: #1a1a1a;
+  text-decoration: underline;
+}
+
+.contentBox li,
+.contentBoxRight li {
+  list-style-type: none;
+  color: #666;
+  font-size: x-small;
+  margin-bottom: 16px;
+  padding-left: 14px;
+  background-image: url("i/new-window-list.png");
+  background-repeat: no-repeat;
+}
+
+
+.contentBox li a,
+.contentBoxRight li a {
+  list-style-type: none;
+  color: #1a1a1a;
+  font-size: 11.75px;
+  text-decoration: none;
+}
+
+.contentBox li a:hover,
+.contentBoxRight li a:hover {
+  text-decoration: underline;
+}
+
+.code {
+  display: block;
+  width: 100%;
+  background-color: #FFb0b0;
+  font-family: Droid-sans-mono, monaco, courier, monospace;
+  padding: 2px 8px;
+  -moz-box-sizing: border-box;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  margin: 14px 0;
+  clear:both;
+}
+

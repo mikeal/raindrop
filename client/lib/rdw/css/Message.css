@@ -173,6 +173,10 @@
   outline: none;
 }
 
+.rdwMessage .header .from:hover {
+  border-bottom: 1px solid #1a1a1a;
+}
+
 .rdwMessage .from {
   text-decoration: none;
   font-style: italic;
@@ -209,14 +213,16 @@
   margin: 6px 0 0;
 }
 
-.rdwMessage > .message > .content > a {
+.rdwMessage > .message > .content a {
   color: #1a1a1a;
   text-decoration: none;
+  opacity: .5;
 }
 
-.rdwMessage > .message > .content > a:hover {
+.rdwMessage > .message > .content a:hover {
   color: #1a1a1a;
   text-decoration: underline;
+  opacity: 1;
 }
 
 .rdwMessage > .message > .timestamp {
@@ -256,9 +262,32 @@
 }
 
 .rdwMessage > .message > .content a.quoteToggle {
-  display: block;
-  margin: 1ex;
-  color: #B000B0;
+  color: #888888;
+  font-size: x-small;
+  margin: 1ex 0;
+  outline: none;
+  text-decoration: none;
+  opacity: 1;
+}
+
+.rdwMessage > .message > .content a.quoteToggle:hover {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.rdwMessage > .message > .content .quote {
+  color: #888;
+}
+
+.rdwMessage > .message > .content .quote a {
+  color: #888;
+  text-decoration: none;
+  opacity: 1;
+}
+
+.rdwMessage > .message > .content .quote a:hover {
+  color: #888;
+  text-decoration: underline;
 }
 
 /* "reply" type of messages */

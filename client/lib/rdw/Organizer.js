@@ -86,7 +86,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
       }
 
       if (html) {
-        this.addItems("listLocation", "&mdash;Mail Folders", dojo._toDom(html));
+        this.addItems("listLocation", "Mail Folders", dojo._toDom(html));
       }
     }));
   },

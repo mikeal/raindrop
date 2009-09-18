@@ -1,10 +1,24 @@
 * {
-  font:100%/normal verdana,geneva,sans-serif;
+  font:100%/normal Droid-sans,verdana,geneva,sans-serif;
 }
 
 body {
   margin: 0px;
   padding: 0px;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("../inflow/fonts/Droid-Sans/DroidSans.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("../inflow/fonts/Droid-Sans/DroidSans-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
 }
 
 h1.topheader {
@@ -26,7 +40,7 @@ h1.topheader > strong {
   padding-left: 0.25em;
   color: #FFF;
   position: absolute;
-  top: 10px;
+  top: 12px;
 }
 
 h1.topheader > strong:before {

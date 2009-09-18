@@ -1,5 +1,5 @@
 .extenderUiManager {
-  padding: 0 6px 0 0;
+  padding: 6px;
 }
 
 .extenderUiManager a {
@@ -8,5 +8,5 @@
 }
 
 .extenderUiManager li {
-  list-style-type: decimal-leading-zero;
+  list-style-type: decimal;
 }

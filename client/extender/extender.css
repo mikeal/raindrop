@@ -1,7 +1,21 @@
 @import url("/raindrop/lib/rdw/css/Loading.css");
 
 * {
-  font:100%/normal verdana,geneva,sans-serif;
+  font:100%/normal Droid-sans,verdana,geneva,sans-serif;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("../inflow/fonts/Droid-Sans/DroidSans.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("../inflow/fonts/Droid-Sans/DroidSans-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
 }
 
 html, body {

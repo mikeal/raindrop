@@ -131,7 +131,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
         }
   
         if (html) {
-          this.addItems("listMailingList", "&mdash;Mailing Lists", dojo._toDom(html));
+          this.addItems("listMailingList", "Mailing Lists", dojo._toDom(html));
         }
       }));
     }

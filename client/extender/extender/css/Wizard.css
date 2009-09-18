@@ -4,7 +4,7 @@
 .extenderWizard .nav {
   position: absolute;
   right: 10px;
-  top: 10px;
+  top: 12px;
 }
 
 .extenderWizard .wrap { display: table; }
@@ -68,9 +68,8 @@
 .extenderWizard .panel {
   display: block;
   float: left;
-  overflow-x: hidden;
+  overflow-x: auto;
   overflow-y: auto;
-  padding: 6px;
 }
 
 .extenderWizard .menu {
@@ -87,4 +86,8 @@
 
 .extenderWizard .menu a:hover {
   text-decoration: underline;
+}
+
+.extenderWidgetSelector {
+  padding: 6px;
 }

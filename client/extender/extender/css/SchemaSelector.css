@@ -1,5 +1,5 @@
 .extenderSchemaSelector {
-  padding: 0;
+  padding: 6px;
 }
 
 .extenderSchemaSelector ul {
@@ -12,5 +12,5 @@
 }
 
 .extenderSchemaSelector li {
-  list-style-type: decimal-leading-zero;
+  list-style-type: decimal;
 }
