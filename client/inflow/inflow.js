@@ -89,24 +89,9 @@ inflow = {
 };
 
 (function(){
-  var extender = null;
-  //Open the extender in a new sized window so it does not open
-  //as a tab.
-  dojo.query(".extendLink").onclick(function(evt){
-    if(!extender || extender.closed) {
-      //open a new window but specify the URL as same as current page
-      //so we can hopefully allow cross-window JS calling.
-      //But I am not sure document.write loading is the most robust, in particular
-      //across browsers. Use a timeout to deal with occasional issue with
-      //DOM not being ready right away.
-      var win = extender = window.open(evt.target.href, "extender", "width=830,height=700,scrollbars=yes,resizable=yes,status=yes,toolbar=yes,location=yes");
-    }
-
-    extender.focus();
-
-    dojo.stopEvent(evt);
-  });
-
+  //Set the window name, so extender can target it.
+  //TODO: need to make this more generic, to work across raindrop apps.
+  window.name = "raindrop";
 
   //Listen to no accounts/show account settings subscriptions
   rd.sub("rd.api.me.noAccounts", inflow, "showAccounts");

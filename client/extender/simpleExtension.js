@@ -21,7 +21,7 @@ rd.applyExtension("ext.linkIndex", "rdw.Message", {
         );
       });
 
-      $(this.domNode).append('<ul class="linkIndex">' + links.join() + '</ul>');
+      $(this.domNode).append('<ul class="linkIndex">' + links.join('') + '</ul>');
     }
   }
 });

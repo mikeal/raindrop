@@ -42,6 +42,33 @@ dojo._mixin(rd.api, {
   },
 
   /**
+   * Adds a new chainable method to the rd.api() structure.
+   * Assumes that if args.ids exist, the underlying function should be
+   * called immediately, otherwise, it will wait for ids to be passed to
+   * it via the previous chain call.
+   *
+   * @param {String} chainName the name of the method to add to rd.api()
+   *
+   * @param {Object} obj that contains the private method doing the work.
+   *
+   * @param {String} funcName the function on obj that does the real work.
+   */
+  addMethod: function(chainName, obj, funcName) {
+    var o = {};
+    o[chainName] = function(args) {
+      if (args && args.ids) {
+        obj[funcName](this._deferred, args, args.ids);
+      } else {
+        this.addParentCallback(dojo.hitch(obj, funcName, this._deferred, args));
+      }
+      return this;
+    };
+
+    rd.api.extend(o);
+  },
+
+
+  /**
    * Constructs a function that automatically creates a new rd.api.Api
    * object for use in the method, to allow Deferreds to be chained together.
    *
@@ -287,6 +314,13 @@ rd.api.extend({
     args = dojo.delegate(args);
     args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
     args.url += "_design/raindrop!content!all/_view/megaview";
+    return this.xhr(args);
+  },
+
+  doc: function(args) {
+    args = dojo.delegate(args);
+    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
+    args.url += args.id;
     return this.xhr(args);
   },
 

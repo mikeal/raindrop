@@ -15,20 +15,23 @@
 
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("extender.Editor");
+  rd.require("rd.api");
+  rd.require("extender.BackEndEditor");
   rd.addOnLoad(function(){
-    var parts = location.href.split("#")[1].split(":");
-    var moduleName = parts[0];
-    var targetNames = parts[1].split(",");
+    var id = location.href.split("#")[1];
 
-    var htmlName = rd.escapeHtml(moduleName);
-    rd.query("p.title").addContent(htmlName);
-    document.title = htmlName;
-    
-    new extender.Editor({
-      moduleName: moduleName,
-      targetNames: targetNames
-    }, dojo.byId("editor"));
+    rd.api().doc({
+      id: id
+    })
+    .ok(function(doc) {
+      var htmlName = rd.escapeHtml(doc.rd_key[1]);
+      rd.query("p.title").addContent(htmlName);
+      document.title = htmlName;
+
+      new extender.BackEndEditor({
+        doc: doc
+      }, dojo.byId("editor"));
+    });
   })
 </script>
 

@@ -124,8 +124,7 @@ dojo.declare("extender.BackEndEditor", [rdw._Base], {
           dojo.xhrDelete({
             url: this.couchDocPath() + "?rev=" + _rev,
             load: dojo.hitch(this, function() {
-              //Destroy this panel.
-              this.extender.back(true);
+              location = "extensions.html";
             })
           });
         })
@@ -163,7 +162,7 @@ dojo.declare("extender.BackEndEditor", [rdw._Base], {
 
   onResize: function() {
     //summary: handles window resize actions to best show the editable content.
-    var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
+    var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y - 5) + "px";
     this.iframeNode.style.height = editorHeight;
   }
 });

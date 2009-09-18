@@ -198,9 +198,12 @@ dojo.declare("extender.Editor", [rdw._Base], {
 
                       //Disable the extension in the live page.
                       this.enableExtension(false);
-
-                      //Destroy this panel.
-                      this.extender.back(true);
+                      
+                      //Paranoid, give a bit of time for parent frame operations
+                      //to complete.
+                      setTimeout(function() {
+                        location = "extensions.html";
+                      }, 1000);
                     })
                   });
                 })
@@ -252,7 +255,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
   onResize: function() {
     //summary: handles window resize actions to best show the editable content.
     if (this.useViewportResize) {
-      var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
+      var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y - 5) + "px";
     } else {
       //Add up sibling element heights, then use the remainder (as compared to parent
       //height) as the height for this

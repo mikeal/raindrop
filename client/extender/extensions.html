@@ -2,10 +2,11 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-<title>Raindrop Extender</title>
+<link REL="SHORTCUT ICON" HREF="i/favicon.ico">
+<title>Your Extensions</title>
     
 <!--stylesheet-->
-<link rel="stylesheet" type="text/css" href="x.css" />
+<link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
   rd.require("rd.api");
@@ -20,9 +21,9 @@
     //Stores the backend extensions, indexed by their rd_key.
     beExts: null,
   
-    extTemplate: '<li><a href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
+    extTemplate: '<li><a target="_blank" href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
   
-    beTemplate: '<li><a href="backExtension.html#${rd_key.1}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
+    beTemplate: '<li><a target="_blank" href="backExtension.html#${_id}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
 
     postCreate: function() {
       //summary: dijit lifecycle method, after template is in the DOM.
@@ -117,42 +118,6 @@
           })
         }
         rd.place(html, parentNode, "only");
-      }
-    },
-  
-    onExtClick: function(evt) {
-      //summary: Captures extension clicks to load them for viewing.
-      var linkId = this.getFragmentId(evt);
-      var extPrefix = "uimanager-ext-";
-      if (linkId && linkId.indexOf("uimanager-") == 0) {
-        if (linkId.indexOf(extPrefix) == 0) {
-          //Get the module name and get the text for the module.
-          var parts = linkId.substring(extPrefix.length, linkId.length);
-          
-          //Pull off extension type.
-          var dashIndex = parts.indexOf("-");
-          var extType = parts.substring(0, dashIndex);
-          parts = parts.substring(dashIndex + 1, parts.length);
-  
-          var parts = parts.split(":");
-          var moduleName = parts[0];
-          var targetNames = parts[1].split(",");
-  
-          if (extType == "be") {
-            //Back end extension
-            this.extender.add(new extender.BackEndEditor({
-              doc: this.beExts["ext," + moduleName]
-            }));
-          } else {
-            //Front end extension.
-            this.extender.add(new extender.Editor({
-              moduleName: moduleName,
-              targetNames: targetNames,
-              extType: extType
-            }));
-          }
-        }
-        rd.stopEvent(evt);
       }
     }
   }
