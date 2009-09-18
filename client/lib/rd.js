@@ -2,6 +2,7 @@
 dojo.provide("rd");
 
 dojo.require("dojo.data.ItemFileReadStore");
+dojo.require("dojo.string");
 dojo.require("dojox.encoding.base64");
 dojo.require("dojo.NodeList-traverse");
 dojo.require("dojo.NodeList-manipulate");
@@ -104,6 +105,8 @@ dojo._listener.getDispatcher = function(){
         return html;
       }
     },  
+
+    template: dojo.string.substitute,
 
     toBase64: function(/*Object*/obj) {
       //summary: returns a base64 string encoding of the JS object.

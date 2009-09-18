@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Raindrop Extender</title>
+    
+<!--stylesheet-->
+<link rel="stylesheet" type="text/css" href="x.css" />
+<style type="text/css">
+  #c2 {
+    position: relative;
+  }
+</style>
+
+<script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
+<script type="text/javascript">
+  rd.require("extender.Editor");
+  rd.addOnLoad(function(){
+    var parts = location.href.split("#")[1].split(":");
+    var moduleName = parts[0];
+    var targetNames = parts[1].split(",");
+
+    rd.query("p.title").addContent(rd.escapeHtml(moduleName));
+
+    new extender.Editor({
+      moduleName: moduleName,
+      targetNames: targetNames
+    }, dojo.byId("editor"));
+  })
+</script>
+
+</head>
+<body>
+
+<div id="wrapper">
+
+  <div id="extend"></div>
+  
+  <div id="c1">
+    <a href="index.html" class="menu">Home</a>
+    <a href="extensions.html" class="menu">Your extensions</a>
+    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+  </div>
+
+  <div id="c2">
+    <p class="title">&mdash; </p>
+    <div id="editor"></div>
+  </div>
+</div>
+
+
+</body>
+</html>

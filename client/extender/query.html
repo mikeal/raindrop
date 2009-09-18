@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Raindrop Extender</title>
+    
+<!--stylesheet-->
+<link rel="stylesheet" type="text/css" href="x.css" />
+<script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
+<script type="text/javascript">
+  rd.require("rd.api");
+  rd.addOnLoad(function() {
+    //Fetch the schema names.
+    rd.api().megaview({
+      startkey: ["rd.core.content", "schema_id"],
+      endkey: ["rd.core.content", "schema_id", {}],
+      group: true
+    }).ok(function(json) {
+      //Generate the HTML for each schema name.
+      var html = "";
+      rd.forEach(json.rows, function(row) {
+        html += rd.template('<li><a href="schema.html#${name}" target="_blank">${name}</a></li>', {
+          name: row.key[2]
+        })
+      });
+
+      //Insert the HTML in the page.
+      if (html) {
+        rd.place(html, rd.byId("schemaList"), "only");
+      }
+    });
+  });
+</script>
+
+</head>
+<body>
+
+<div id="wrapper">
+
+  <div id="extend"></div>
+  
+  <div id="c1">
+    <a href="index.html" class="menu">Home</a>
+    <a href="extensions.html" class="menu">Your extensions</a>
+    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+  </div>
+
+  <div id="c2">
+    <div class="contentBox"> 
+      <p class="title">&mdash; Select the raindrop schema to use</p>
+      <ul id="schemaList">
+      </ul>
+    </div>
+
+  </div>
+</div>
+
+
+</body>
+</html>

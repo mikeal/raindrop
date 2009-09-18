@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>Raindrop Extender</title>
+    
+<!--stylesheet-->
+<link rel="stylesheet" type="text/css" href="x.css" />
+<style type="text/css">
+  td {
+    border: 1px solid gray;
+  }
+  
+  th,
+  .prop {
+    font-weight: bold;
+  }
+  
+  .privateForm {
+    margin: 1em;
+  }
+
+  h2 {
+    font-size: smaller;
+    margin: 1em;
+  }
+</style>
+<script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
+<script type="text/javascript">
+  rd.require("rd.api");
+  
+  var viewer = {
+    init: function() {
+      this.schemaId = location.href.split("#")[1];
+      
+      //Set page title
+      rd.query("p.title").addContent(rd.escapeHtml(this.schemaId));
+      
+      //Grab nodes for later, set up event handlers.
+      rd.query('[rdAttachPoint]').forEach(function(node) {
+        this[node.getAttribute("rdAttachPoint")] = node;
+      }, this);
+      rd.connect(this.showPrivateNode, "onclick", this, "onShowPrivateClick");
+
+      this.display();
+    },
+
+    //The number of sample documents to use.
+    limit: 10,
+  
+    //Flag on whether to show private fields.
+    showPrivate: false,
+    
+    propTemplate: '<tr><td class="prop">${name}</th><td class="value">${value}</th></tr>',
+  
+    display: function() {
+      //Get some sample documents for this schema.
+      rd.api().megaview({
+        key: ["rd.core.content", "schema_id", this.schemaId],
+        include_docs: true,
+        reduce: false,
+        limit: this.limit
+      })
+      .ok(this, function(json) {
+        this.docs = [];
+        this.example = {};
+        this.props = [];
+        for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+          //Save the document, then collect properties that can exist
+          //on this type of document. Collect the properties as an array
+          //so we can sort and display easier.
+  
+          //Strip off private props if necessary.
+          doc = this.showPrivate ? doc : this._stripPrivate(doc);
+
+          this.docs.push(doc);
+          var empty = {};
+          for (var prop in doc) {
+            if (!(prop in empty) && !(prop in this.example)) {
+              this.example[prop] = doc[prop];
+              this.props.push(prop);
+            }
+          }
+        }
+
+        this.props.sort();
+
+        //Show the example properties
+        var html = '';
+        for (var i = 0, prop; prop = this.props[i]; i++) {
+          var value = this.example[prop] === null ? "" : this.example[prop];
+          if (rd.isObject(value)) {
+            value = rd.toJson(value);
+          }
+          html += rd.template(this.propTemplate, {
+            name: prop,
+            value: rd.escapeHtml(value + "")
+          });
+        }
+        if (html) {
+          rd.place(html, this.tbodyNode, "only");
+        }
+
+        //Show the complete exampe documents.
+        rd.escapeHtml(rd.toJson(this.docs, true), this.exampleNode, "only");
+      });
+    },
+  
+    onShowPrivateClick: function(/*Event*/evt) {
+      //summary: handles clicks to checkbox to toggle showing private fields.
+      this.showPrivate = !!this.showPrivateNode.checked;
+      this.display();
+    },
+
+    _stripPrivate: function(/*Object*/doc) {
+      //summary: strips off the private fields from the doc, this includes
+      //couch-private and raindrop-private fields.
+      var newDoc = {};
+      var empty = {};
+      for (var prop in doc) {
+        if (!(prop in empty) && prop.charAt(0) != "_" && prop.indexOf("rd_") != 0) {
+          newDoc[prop] = doc[prop];
+        }
+      }
+      return newDoc;
+    }
+  }
+
+  rd.addOnLoad(rd.hitch(viewer, "init"));
+</script>
+
+</head>
+<body>
+
+<div id="wrapper">
+
+  <div id="extend"></div>
+  
+  <div id="c1">
+    <a href="index.html" class="menu">Home</a>
+    <a href="extensions.html" class="menu">Your extensions</a>
+    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+  </div>
+
+  <div id="c2">
+    <div class="contentBox"> 
+      <p class="title">&mdash; </p>
+    
+      <form class="privateForm" onsubmit="return false">
+        <input type="checkbox" rdAttachPoint="showPrivateNode">
+        Show private properties
+      </form>
+    
+      <table rdAttachPoint="tableNode">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Example Value</th>
+          </tr>
+        </thead>
+        <tbody rdAttachPoint="tbodyNode">
+        </tbody>
+      </table>
+      
+      <h2>Example documents</h2>
+      <pre rdAttachPoint="exampleNode"></pre>
+
+    </div>
+
+  </div>
+</div>
+
+
+</body>
+</html>

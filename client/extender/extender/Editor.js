@@ -2,6 +2,7 @@ dojo.provide("extender.Editor");
 
 dojo.require("rdw._Base");
 dojo.require("rd.store");
+dojo.require("extender.util");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
@@ -24,6 +25,12 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //If none is provided, the module will be fetched
   //from its moduleName.
   content: "",
+
+  //Indicates if the editor should listen to resize to make the content as big
+  //as possible as compared to the viewport -- only account for space above the
+  //editor iframe. If false, then it just makes sure to fit its parent container,
+  //which should be a fixed size.
+  useViewportResize: true,
 
   //Bespin url for the iframe.
   iframeUrl: dojo.moduleUrl("extender", "../bespin.html"),
@@ -56,10 +63,12 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //disable for all moduleName+targetName combinations.
     //This is just an initial guess based on the loaded app.
     //The definitive answer comes when the manifest is loaded via fetchManifest.
-    this.enabledNode.checked = opener.rd.extensionEnabled(this.moduleName, this.targetNames[0]);
+    this.enabledNode.checked = extender.util.opener().rd.extensionEnabled(this.moduleName, this.targetNames[0]);
 
     //Bind to resize and make sure size is initially correct.
-    this.connect(window, "onresize", "onResize");
+    if (this.useViewportResize) {
+      this.connect(window, "onresize", "onResize");
+    }
     setTimeout(dojo.hitch(this, "onResize"), 100);
   },
 
@@ -146,7 +155,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
                   this.updateStatus("Error: " + response);
                 } else {
                   //Trigger update in opener.
-                  opener.rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
+                  extender.util.opener().rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
 
                   //Make sure to get latest manifest, since _rev can change.
                   this.fetchManifest();
@@ -217,7 +226,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
     }
     //Update the runtime display
     for(var i = 0, target; target = this.targetNames[i]; i++) {
-      opener.rd.extensionEnabled(this.moduleName, target, enabled);
+      extender.util.opener().rd.extensionEnabled(this.moduleName, target, enabled);
     }
   },
 
@@ -242,7 +251,17 @@ dojo.declare("extender.Editor", [rdw._Base], {
 
   onResize: function() {
     //summary: handles window resize actions to best show the editable content.
-    var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
+    if (this.useViewportResize) {
+      var editorHeight = (dijit.getViewport().h - dojo.coords(this.iframeNode).y) + "px";
+    } else {
+      //Add up sibling element heights, then use the remainder (as compared to parent
+      //height) as the height for this
+      var sibHeight = 0;
+      dojo.query(this.iframeNode).siblings().forEach(function(node) {
+        sibHeight += dojo.marginBox(node).h;
+      });
+      editorHeight = (dojo.contentBox(this.iframeNode.parentNode).h - sibHeight) + "px";
+    }
     this.iframeNode.style.height = editorHeight;
   },
 

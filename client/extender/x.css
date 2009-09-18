@@ -227,3 +227,9 @@ p.title {
   clear:both;
 }
 
+.bespin {
+  position: relative;
+  width: 750px;
+  height: 600px;
+  margin-bottom: 8ex;
+}
