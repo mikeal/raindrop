@@ -234,7 +234,7 @@ class ImapProvider(object):
     except:
       log_exception("Failed to update folders")
     acid = self.account.details.get('id','')
-    logger.info('%r imap interactions complete - waiting for queues to finish',
+    logger.info('%r imap querying complete - waiting for queues to finish',
                 acid)
 
   @defer.inlineCallbacks
@@ -293,14 +293,11 @@ class ImapProvider(object):
     self.updated_folder_infos = []
 
     # Now update the cache for all folders...
-    sync_by_name = {}
-    all_loc_to_nuke = [] # simple list of schema items to nuke.
-    all_loc_to_add = {} # map of maps [folder_path][uid] = item_to_add
     for delim, name in all_names:
       try:
         info = yield conn.select(name)
         logger.debug("info for %r is %r", name, info)
-  
+
         cache_doc = caches.get(name, {})
         dirty = yield self._syncFolderCache(conn, name, info, cache_doc)
       except imap4.IMAP4Exception, exc:
@@ -324,49 +321,40 @@ class ImapProvider(object):
         sync_items = cache_doc['infos']
       else:
         sync_items = cache_doc.get('infos')
-      sync_by_name[(delim, name)] = sync_items[:]
+
       # fetch folder info, and delete information about 'stale' locations
-      # before fetching.
+      # before fetching the actual messages.
       loc_to_nuke, loc_needed = yield self._makeLocationInfos(name, delim,
                                                               sync_items)
-      all_loc_to_nuke.extend(loc_to_nuke)
-      all_loc_to_add[name] = loc_needed
-    # XXX - todo - should nuke old folders which no longer exist.
 
-    if all_loc_to_nuke:
-      self.write_queue.put(all_loc_to_nuke)
+      # queue the write of location records we want to nuke first.
+      if loc_to_nuke:
+        self.write_queue.put(loc_to_nuke)
 
-    # now use the cached info to sync the IMAP nessages for each and every
-    # mailbox.
-    while sync_by_name:
-      # do 'n' in each folder, then n more in each folder, etc.
-      for info in all_names:
-        try:
-          todo = sync_by_name[info]
-        except KeyError:
+      todo = sync_items[:]
+      while todo:
+        # do later ones first...
+        batch = []
+        while len(batch) < 50 and todo:
+            mi = todo.pop()
+            if self.shouldFetchMessage(mi):
+                batch.insert(0, mi)
+        if not batch:
           continue
-        else:
-          delim, name = info
-          # do later ones first...
-          batch = []
-          while len(batch) < 50 and todo:
-              mi = todo.pop()
-              if self.shouldFetchMessage(mi):
-                  batch.insert(0, mi)
-          logger.log(1, 'queueing check of %d items in %r', len(batch), name)
-          self.fetch_queue.put((name, batch))
-          # see if these items also need location records...
-          new_locs = []
-          for mi in batch:
-            try:
-              new_locs.append(all_loc_to_add[name][mi['UID']])
-            except KeyError:
-              pass
-          if new_locs:
-            logger.debug('queueing %d new location records', len(new_locs))
-            self.write_queue.put(new_locs)
-          if not todo:
-            del sync_by_name[info]
+        logger.log(1, 'queueing check of %d items in %r', len(batch), name)
+        self.fetch_queue.put((name, batch))
+        # see if these items also need location records...
+        new_locs = []
+        for mi in batch:
+          try:
+            new_locs.append(loc_needed[mi['UID']])
+          except KeyError:
+            pass
+        if new_locs:
+          logger.debug('queueing %d new location records', len(new_locs))
+          self.write_queue.put(new_locs)
+
+    # XXX - todo - should nuke old folders which no longer exist.
 
   @defer.inlineCallbacks
   def _syncFolderCache(self, conn, folder_path, server_info, cache_doc):
