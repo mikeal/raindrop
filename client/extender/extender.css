@@ -116,11 +116,7 @@ a.menuQuery:hover {
 }
 
 a.menuQuery {
-  background-image: url("i/new-window.png");
-  background-repeat: no-repeat;
-  background-position: right center;
   display: inline;
-  padding: 0 14px 0 0;
 }
 
 a.menuQuery:hover {
@@ -157,7 +153,7 @@ p.title {
   -webkit-border-radius: 5px;
 }
 
-.contentBox input.button {
+button {
   background-color: #00D6C6;
   display: inline-block;
   color: white;
@@ -166,6 +162,15 @@ p.title {
   margin-top: 16px;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #00FFFF;
+}
+
+button.delete:hover {
+  background-color: #D60000;
 }
 
 .contentBoxRight {
@@ -196,7 +201,6 @@ p.title {
   font-size: x-small;
   margin-bottom: 16px;
   padding-left: 14px;
-  background-image: url("i/new-window-list.png");
   background-repeat: no-repeat;
 }
 

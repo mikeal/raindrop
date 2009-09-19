@@ -20,6 +20,7 @@
         var widget = new extender.Editor({
           "class": node.className,
           useViewportResize: false,
+          useTryMode: true,
           moduleName: rd.attr(node, "data-modulename"),
           targetNames: [
             rd.attr(node, "data-targetname")
@@ -40,7 +41,7 @@
   <div id="c1">
     <a href="index.html" class="menu">Home</a>
     <a href="extensions.html" class="menu">Your extensions</a>
-    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+    <a href="query.html" class="menuQuery">Query tool</a>
   </div>
 
   <div id="c2">

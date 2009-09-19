@@ -26,6 +26,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //from its moduleName.
   content: "",
 
+  //Show the UI in the "try it" mode.
+  useTryMode: false,
+
   //Indicates if the editor should listen to resize to make the content as big
   //as possible as compared to the viewport -- only account for space above the
   //editor iframe. If false, then it just makes sure to fit its parent container,
@@ -39,8 +42,41 @@ dojo.declare("extender.Editor", [rdw._Base], {
 
   widgetsInTemplate: true,
 
+  onTryClick: function(/*Event*/evt) {
+    //summary: handles clicks to try it button, instantly saves the extension,
+    //and show other action buttons.
+
+    //Switch the buttons out
+    //Set button state.
+    dojo.forEach([this.cloneNode, this.saveNode, this.enabledSectionNode, this.deleteNode], function(node) {
+      dojo.style(node, {
+        display: ""
+      });
+    });
+    dojo.style(this.tryNode, {
+      display: "none"
+    });
+    
+    this.onSave(null, dojo.hitch(this, function() {
+      this.enableExtension(true);
+    }));
+  },
+
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
+
+    //Set button state.
+    if (this.useTryMode) {
+      dojo.forEach([this.cloneNode, this.saveNode, this.enabledSectionNode, this.deleteNode], function(node) {
+        dojo.style(node, {
+          display: "none"
+        });
+      });
+    } else {
+      dojo.style(this.tryNode, {
+        display: "none"
+      });
+    }
 
     //Some hackery to get .js path from Dojo code.
     var parts = this.moduleName.split(".");
@@ -110,7 +146,18 @@ dojo.declare("extender.Editor", [rdw._Base], {
     return this.couchDocPath() + "/" + modulePath + ".js";
   },
 
-  onSave: function(evt) {
+  onClone: function(evt) {
+    //summary: handles clicks to clone button.
+    var moduleName = prompt("Choose a name for the cloned extension:");
+    moduleName = moduleName && dojo.trim(moduleName);
+    if (moduleName) {
+        //Make sure extName is valid.
+        moduleName = moduleName.replace(/[^\w_]/g, "");
+        window.location = "frontExtension.html?r=" + (new Date()).getTime() + "#" + moduleName + ":" + this.targetNames.join(",") + ":clone:" + this.moduleName;
+    }
+  },
+
+  onSave: function(evt, callback) {
     //summary: handles click events to save button.
 
     if (!this._iframeLoaded) {
@@ -163,6 +210,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
                   this.updateConfigJs("save");
 
                   this.updateStatus("File Saved");
+                  if (callback) {
+                    callback();
+                  }
                 }
               })
             });
@@ -203,7 +253,7 @@ dojo.declare("extender.Editor", [rdw._Base], {
                       //to complete.
                       setTimeout(function() {
                         location = "extensions.html";
-                      }, 1000);
+                      }, 200);
                     })
                   });
                 })

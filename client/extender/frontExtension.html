@@ -16,19 +16,57 @@
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
   rd.require("extender.Editor");
+  rd.require("dojo.cache");
+
   rd.addOnLoad(function(){
     var parts = location.href.split("#")[1].split(":");
     var moduleName = parts[0];
     var targetNames = parts[1].split(",");
+    var action = parts[2];
 
+    var content = null;
+    if (action == "new") {
+      //Create some content for the new extension.
+      var template = rd.cache("extender.templates", "sampleObjectExtension.js");
+      var content = rd.template(template, {
+        extName: moduleName,
+        targetModule: targetNames[0]
+      });
+
+      //Make sure moduleName goes in the right place.
+      moduleName = "ext." + moduleName;
+    } else if (action == "clone") {
+      //Make sure moduleName goes in the right place.
+      moduleName = "ext." + moduleName;
+
+      //Some hackery to get .js path from Dojo code.
+      var origModuleName = parts[3];
+      var parts = origModuleName.split(".");
+      var path = rd.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
+      content = rd._getText(path + "?nocache=" + ((new Date()).getTime()));
+
+      //Replace the names.
+      var regExp = new RegExp(origModuleName, "g");
+      content = content.replace(regExp, moduleName);
+      
+      //Remove any style references, to avoid weirdness.
+      content = content.replace(/rd\.addStyle\s*\(\s*["'][^"']+["']\s*\)(\;)?/g, "");
+    }
+
+    //Set titles.
     var htmlName = rd.escapeHtml(moduleName);
     rd.query("p.title").addContent(htmlName);
     document.title = htmlName;
-    
-    new extender.Editor({
+
+    var editor = new extender.Editor({
       moduleName: moduleName,
-      targetNames: targetNames
-    }, dojo.byId("editor"));
+      targetNames: targetNames,
+      content: content
+    }, rd.byId("editor"));
+
+    if (action == "new" || action == "clone") {
+      editor.onSave();
+    }
   })
 </script>
 
@@ -42,7 +80,7 @@
   <div id="c1">
     <a href="index.html" class="menu">Home</a>
     <a href="extensions.html" class="menu">Your extensions</a>
-    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+    <a href="query.html" class="menuQuery">Query tool</a>
   </div>
 
   <div id="c2">

@@ -9,7 +9,6 @@
   margin-bottom:-3px;
 }
 
-.extenderEditor .delete {
-  position: absolute;
-  right: 6px;
+.extenderEditor .actions {
+  text-align: right;
 }

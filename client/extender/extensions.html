@@ -15,15 +15,44 @@
     init: function() {
       this.extNode = rd.byId("ext");
       this.beNode = rd.byId("be");
+
+      this.nameInputNode = rd.byId("nameInput");
+      this.nameInputNode.value = this.newNameDefault;
+      rd.connect(this.nameInputNode, "onclick", this, "onNameClick");
+      
+      rd.connect(rd.byId("newForm"), "onsubmit", this, "onNewSubmit");
       this.display();
+    },
+
+    newNameDefault: "Extension name",
+
+    onNameClick: function(evt) {
+      //Clear default message
+      if (this.nameInputNode.value == this.newNameDefault) {
+        this.nameInputNode.value = "";
+      }
+    },
+
+    onNewSubmit: function(evt) {
+      //Sanitize the name
+      var extName = rd.trim(this.nameInputNode.value);
+      if (!extName) {
+        alert("Please enter a name for the extension");
+      } else {
+        //Make sure extName is valid.
+        extName = extName.replace(/[^\w_]/g, "");
+  
+        location = "frontExtension.html#" + extName + ":" + "rdw.Message:new";
+      }
+      dojo.stopEvent(evt);
     },
 
     //Stores the backend extensions, indexed by their rd_key.
     beExts: null,
   
-    extTemplate: '<li><a target="_blank" href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
+    extTemplate: '<li><a href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
   
-    beTemplate: '<li><a target="_blank" href="backExtension.html#${_id}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
+    beTemplate: '<li><a href="backExtension.html#${_id}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
 
     postCreate: function() {
       //summary: dijit lifecycle method, after template is in the DOM.
@@ -135,14 +164,17 @@
   <div id="c1">
     <a href="index.html" class="menu">Home</a>
     <a href="extensions.html" class="menu">Your extensions</a>
-    <a href="query.html" class="menuQuery" target="_blank">Query tool</a>
+    <a href="query.html" class="menuQuery">Query tool</a>
   </div>
 
   <div id="c2">
     <div class="contentBox">
       <p class="title" style="display:inline-block">Create new extension</p><br>
       What name do you want for your extension? (alphanumerics and underscores only, please)<br>
-      <input class="name" type="text" value="Extension name"/> <input class="button" type="button" value="create extension"> 
+      <form id="newForm">
+        <input id="nameInput" class="name" type="text" value="Extension name"/>
+        <button id="createButton">create extension</button>
+      </form>
       <div class="small">*you may also clone an extension from the following lists</div>
       
       <p class="title">&mdash; front end extensions</p>

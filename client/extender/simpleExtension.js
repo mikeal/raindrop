@@ -16,7 +16,7 @@ rd.applyExtension("ext.linkIndex", "rdw.Message", {
 
       links = dojo.map(links, function(link) {
         return rd.template(
-          '<li><a target="_blank" href="${url}">${url}</a></li>',
+          '<li><a href="${url}">${url}</a></li>',
           { url: link }
         );
       });
