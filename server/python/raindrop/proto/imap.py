@@ -830,7 +830,7 @@ class IMAPAccount(base.AccountBase):
         factory = ImapClientFactory(self, conductor)
         connection = yield factory.connect()
         conns.append(connection)
-        ds.append(prov._consumeQueue(prov.query_queue, connection))
+        ds.append(prov._consumeConnectionQueue(prov.query_queue, connection))
       _ = yield defer.DeferredList(ds)
       # queryers done - post to the fetch queue telling it everything is done.
       acid = self.details.get('id','')
@@ -841,7 +841,7 @@ class IMAPAccount(base.AccountBase):
       # queue.
       ds = []
       for connection in conns:
-        ds.append(prov._consumeQueue(prov.fetch_queue, connection))
+        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, connection))
       _ = yield defer.DeferredList(ds)
       for connection in conns:
         _ = yield connection.logout()
@@ -854,7 +854,7 @@ class IMAPAccount(base.AccountBase):
         factory = ImapClientFactory(self, conductor)
         fetch_connection = yield factory.connect()
         conns.append(fetch_connection)
-        ds.append(prov._consumeQueue(prov.fetch_queue, fetch_connection))
+        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, fetch_connection))
       _ = yield defer.DeferredList(ds)
       # fetchers done - write the cache docs last.
       if prov.updated_folder_infos:
