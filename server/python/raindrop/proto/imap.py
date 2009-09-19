@@ -154,8 +154,10 @@ class ImapProvider(object):
     self.options = conductor.options
     self.conductor = conductor
     self.doc_model = account.doc_model
-    self.fetch_queue = defer.DeferredQueue()
-    self.write_queue = defer.DeferredQueue()
+    # We have a few queues to do the work
+    self.query_queue = defer.DeferredQueue() # IMAP folder etc query requests 
+    self.fetch_queue = defer.DeferredQueue() # IMAP message fetch requests
+    self.write_queue = defer.DeferredQueue() # schema items to be written.
     self.updated_folder_infos = None
 
   @defer.inlineCallbacks
@@ -233,26 +235,29 @@ class ImapProvider(object):
       _ = yield self._updateFolders(conn, todo)
     except:
       log_exception("Failed to update folders")
-    acid = self.account.details.get('id','')
-    logger.info('%r imap interactions complete - waiting for queues to finish',
-                acid)
+    # and tell the query queue everything is done.
+    self.query_queue.put(None)
 
   @defer.inlineCallbacks
   def _checkQuickRecent(self, conn, folder_path, max_to_fetch):
-    nitems = yield conn.search("((OR UNSEEN (OR RECENT FLAGGED))"
-                               " UNDELETED SMALLER 50000)", uid=True)
-    if not nitems:
-      logger.debug('folder %r has no quick items', folder_path)
-      return
-    nitems = nitems[-max_to_fetch:]
-    batch = imap4.MessageSet(nitems[0], nitems[-1])
-    results = yield conn.fetchAll(batch, uid=True)
-    logger.info('folder %r has %d quick items', folder_path, len(results))
-    # Make a simple list.
-    infos = [results[seq] for seq in sorted(int(k) for k in results)
-             if self.shouldFetchMessage(results[seq])]
-    if infos:
-      self.fetch_queue.put((folder_path, infos))
+    try:
+      _ = yield conn.select(folder_path)
+      nitems = yield conn.search("((OR UNSEEN (OR RECENT FLAGGED))"
+                                 " UNDELETED SMALLER 50000)", uid=True)
+      if not nitems:
+        logger.debug('folder %r has no quick items', folder_path)
+        return
+      nitems = nitems[-max_to_fetch:]
+      batch = imap4.MessageSet(nitems[0], nitems[-1])
+      results = yield conn.fetchAll(batch, uid=True)
+      logger.info('folder %r has %d quick items', folder_path, len(results))
+      # Make a simple list.
+      infos = [results[seq] for seq in sorted(int(k) for k in results)
+               if self.shouldFetchMessage(results[seq])]
+      if infos:
+        self.fetch_queue.put((self._processFolderBatch, (folder_path, infos)))
+    except imap4.IMAP4Exception, exc:
+      logger.error("Failed to check %r for quick items: %s", folder_path, exc)
 
   @defer.inlineCallbacks
   def _updateFolders(self, conn, all_names):
@@ -281,92 +286,81 @@ class ImapProvider(object):
     # treatment...
     for delim, name in all_names:
       if name not in caches:
-        try:
-          _ = yield conn.select(name)
-          _ = yield self._checkQuickRecent(conn, name, 20)
-        except imap4.IMAP4Exception, exc:
-          logger.error("Failed to check %r for quick items: %s", name, exc)
+        self.query_queue.put((self._checkQuickRecent, (name, 20)))
 
     # We only update the cache of the folder once all items from that folder
-    # have been written, so extensions which runwritten once all items from folder fetched.
+    # have been written, so extensions only run once all items fetched.
     assert self.updated_folder_infos is None
     self.updated_folder_infos = []
 
-    # Now update the cache for all folders...
-    sync_by_name = {}
-    all_loc_to_nuke = [] # simple list of schema items to nuke.
-    all_loc_to_add = {} # map of maps [folder_path][uid] = item_to_add
     for delim, name in all_names:
-      try:
-        info = yield conn.select(name)
-        logger.debug("info for %r is %r", name, info)
+      self.query_queue.put((self._updateFolderFromCache, (caches, delim, name)))
+
+  @defer.inlineCallbacks
+  def _updateFolderFromCache(self, conn, cache_docs, folder_delim, folder_name):
+    # Now queue the updates of the folders
+    acct_id = self.account.details.get('id')
+    try:
+      info = yield conn.select(folder_name)
+      logger.debug("info for %r is %r", folder_name, info)
   
-        cache_doc = caches.get(name, {})
-        dirty = yield self._syncFolderCache(conn, name, info, cache_doc)
-      except imap4.IMAP4Exception, exc:
-        logger.error("Failed to synch folder %r: %s", name, exc)
+      cache_doc = cache_docs.get(folder_name, {})
+      dirty = yield self._syncFolderCache(conn, folder_name, info, cache_doc)
+    except imap4.IMAP4Exception, exc:
+      logger.error("Failed to synch folder %r: %s", folder_name, exc)
+      return
+
+    if dirty:
+      logger.debug("need to update folder cache for %r", folder_name)
+      items = {'uidvalidity': cache_doc['uidvalidity'],
+               'infos': cache_doc['infos']
+               }
+      new_item = {'rd_key' : ['imap-mailbox', [acct_id, folder_name]],
+                  'schema_id': 'rd.imap.mailbox-cache',
+                  'ext_id': self.rd_extension_id,
+                  'items': items,
+      }
+      if '_id' in cache_doc:
+        new_item['_id'] = cache_doc['_id']
+        new_item['_rev'] = cache_doc['_rev']
+      self.updated_folder_infos.append(new_item)
+      sync_items = cache_doc['infos']
+    else:
+      sync_items = cache_doc.get('infos')
+
+    # fetch folder info, and delete information about 'stale' locations
+    # before fetching the actual messages.
+    loc_to_nuke, loc_needed = yield self._makeLocationInfos(folder_name,
+                                                            folder_delim,
+                                                            sync_items)
+
+    # queue the write of location records we want to nuke first.
+    if loc_to_nuke:
+      self.write_queue.put(loc_to_nuke)
+
+    todo = sync_items[:]
+    while todo:
+      # do later ones first...
+      batch = []
+      while len(batch) < 50 and todo:
+          mi = todo.pop()
+          if self.shouldFetchMessage(mi):
+              batch.insert(0, mi)
+      if not batch:
         continue
-
-      if dirty:
-        logger.debug("need to update folder cache for %r", name)
-        items = {'uidvalidity': cache_doc['uidvalidity'],
-                 'infos': cache_doc['infos']
-                 }
-        new_item = {'rd_key' : ['imap-mailbox', [acct_id, name]],
-                    'schema_id': 'rd.imap.mailbox-cache',
-                    'ext_id': self.rd_extension_id,
-                    'items': items,
-        }
-        if '_id' in cache_doc:
-          new_item['_id'] = cache_doc['_id']
-          new_item['_rev'] = cache_doc['_rev']
-        self.updated_folder_infos.append(new_item)
-        sync_items = cache_doc['infos']
-      else:
-        sync_items = cache_doc.get('infos')
-      sync_by_name[(delim, name)] = sync_items[:]
-      # fetch folder info, and delete information about 'stale' locations
-      # before fetching.
-      loc_to_nuke, loc_needed = yield self._makeLocationInfos(name, delim,
-                                                              sync_items)
-      all_loc_to_nuke.extend(loc_to_nuke)
-      all_loc_to_add[name] = loc_needed
-    # XXX - todo - should nuke old folders which no longer exist.
-
-    if all_loc_to_nuke:
-      self.write_queue.put(all_loc_to_nuke)
-
-    # now use the cached info to sync the IMAP nessages for each and every
-    # mailbox.
-    while sync_by_name:
-      # do 'n' in each folder, then n more in each folder, etc.
-      for info in all_names:
+      logger.log(1, 'queueing check of %d items in %r', len(batch), folder_name)
+      self.fetch_queue.put((self._processFolderBatch, (folder_name, batch)))
+      # see if these items also need location records...
+      new_locs = []
+      for mi in batch:
         try:
-          todo = sync_by_name[info]
+          new_locs.append(loc_needed[mi['UID']])
         except KeyError:
-          continue
-        else:
-          delim, name = info
-          # do later ones first...
-          batch = []
-          while len(batch) < 50 and todo:
-              mi = todo.pop()
-              if self.shouldFetchMessage(mi):
-                  batch.insert(0, mi)
-          logger.log(1, 'queueing check of %d items in %r', len(batch), name)
-          self.fetch_queue.put((name, batch))
-          # see if these items also need location records...
-          new_locs = []
-          for mi in batch:
-            try:
-              new_locs.append(all_loc_to_add[name][mi['UID']])
-            except KeyError:
-              pass
-          if new_locs:
-            logger.debug('queueing %d new location records', len(new_locs))
-            self.write_queue.put(new_locs)
-          if not todo:
-            del sync_by_name[info]
+          pass
+      if new_locs:
+        logger.debug('queueing %d new location records', len(new_locs))
+        self.write_queue.put(new_locs)
+    # XXX - todo - should nuke old folders which no longer exist.
 
   @defer.inlineCallbacks
   def _syncFolderCache(self, conn, folder_path, server_info, cache_doc):
@@ -644,25 +638,26 @@ class ImapProvider(object):
     defer.returnValue(num)
 
   @defer.inlineCallbacks
-  def _consumeFetchRequests(self, conn):
-    q = self.fetch_queue
+  def _consumeConnectionQueue(self, q, conn):
+    """Processes one of our 'connection queues'.  (function, arg) tuples
+    are put into the queue; consumers of the queue have a free connection and
+    call the function with the connection object and the specified args.
+    """
     while True:
       result = yield q.get()
       if result is None:
-        logger.info('fetch queue processor stopping')
+        logger.debug('queue processor stopping')
         q.put(None) # for anyone else processing the queue...
         break
       # else a real item to process.
-      folder, items = result
-      logger.debug('checking %d items from %r', len(items), folder)
       try:
-        num = yield self._processFolderBatch(conn, folder, items)
-        logger.debug('queued %d items for %r', num, folder)
+        func, xtra_args = result
+        logger.debug('calling %r', func)
+        _ = yield func(*(conn,)+xtra_args)
       except:
         if not self.conductor.reactor.running:
           break
-        log_exception('failed to process a message batch in folder %r',
-                      folder)
+        log_exception('failed to process a message batch')
 
   @defer.inlineCallbacks
   def _consumeWriteRequests(self):
@@ -828,6 +823,30 @@ class IMAPAccount(base.AccountBase):
     prov = ImapProvider(self, conductor)
 
     @defer.inlineCallbacks
+    def start_queryers(n):
+      ds = []
+      conns = []
+      for i in range(n):
+        factory = ImapClientFactory(self, conductor)
+        connection = yield factory.connect()
+        conns.append(connection)
+        ds.append(prov._consumeConnectionQueue(prov.query_queue, connection))
+      _ = yield defer.DeferredList(ds)
+      # queryers done - post to the fetch queue telling it everything is done.
+      acid = self.details.get('id','')
+      logger.info('%r imap querying complete - waiting for queues to finish',
+                  acid)
+      prov.fetch_queue.put(None)
+      # all the connections are now available to finish consuming the 'fetch'
+      # queue.
+      ds = []
+      for connection in conns:
+        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, connection))
+      _ = yield defer.DeferredList(ds)
+      for connection in conns:
+        _ = yield connection.logout()
+
+    @defer.inlineCallbacks
     def start_fetchers(n):
       ds = []
       conns = []
@@ -835,7 +854,7 @@ class IMAPAccount(base.AccountBase):
         factory = ImapClientFactory(self, conductor)
         fetch_connection = yield factory.connect()
         conns.append(fetch_connection)
-        ds.append(prov._consumeFetchRequests(fetch_connection))
+        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, fetch_connection))
       _ = yield defer.DeferredList(ds)
       # fetchers done - write the cache docs last.
       if prov.updated_folder_infos:
@@ -846,19 +865,8 @@ class IMAPAccount(base.AccountBase):
         _ = yield c.logout()
 
     @defer.inlineCallbacks
-    def start_producer():
-      factory = ImapClientFactory(self, conductor)
-      client = yield factory.connect()
-      _ = yield prov._reqList(client)
-      # We've now finished producing 'fetch' requests for the queue - but with
-      # a perfectly good connection sitting here doing nothing - so first,
-      # post a message to the queue telling it we are done, then immediately
-      # start processing the queue to help it finish.
-      logger.debug('producer done - posting stop request to consumer')
-      prov.fetch_queue.put(None)
-      _ = yield prov._consumeFetchRequests(client)
-      logger.debug('producer finished consuming!')
-      _ = yield client.logout()
+    def start_producing(conn):
+      _ = yield prov._reqList(conn)
 
     @defer.inlineCallbacks
     def start_writer():
@@ -873,13 +881,16 @@ class IMAPAccount(base.AccountBase):
 
     lc = task.LoopingCall(log_status)
     lc.start(10)
+    # put something in the fetch queue to fire things off...
+    prov.query_queue.put((start_producing, ()))
+
     # fire off the producer and queue consumers.  We have 2 'fetchers', which
     # are io-bound talking to the IMAP server, and a single 'writer', which
     # is responsible for writing couch docs, and as a side-effect, doing the
     # 'processing' of these items (we can't have multiple things writing at
     # the moment as the 'conversation' extension in particular will generate
     # conflicts if run concurrently...)
-    _ = yield defer.DeferredList([start_producer(),
+    _ = yield defer.DeferredList([start_queryers(4),
                                   start_fetchers(2),
                                   start_writer()])
 
