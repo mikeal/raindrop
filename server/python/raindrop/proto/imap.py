@@ -154,11 +154,46 @@ class ImapProvider(object):
     self.options = conductor.options
     self.conductor = conductor
     self.doc_model = account.doc_model
-    # We have a few queues to do the work
+    # We have a couple of queues to do the work
     self.query_queue = defer.DeferredQueue() # IMAP folder etc query requests 
     self.fetch_queue = defer.DeferredQueue() # IMAP message fetch requests
-    self.write_queue = defer.DeferredQueue() # schema items to be written.
     self.updated_folder_infos = None
+
+  @defer.inlineCallbacks
+  def write_items(self, items):
+    try:
+      _ = yield self.conductor.pipeline.provide_schema_items(items)
+    except DocumentSaveError, exc:
+      # So - conflicts are a fact of life in this 'queue' model: we check
+      # if a record exists and it doesn't, so we queue the write.  By the
+      # time the write gets processed, it may have been written by a
+      # different extension...
+      conflicts = []
+      for info in exc.infos:
+        if info['error']=='conflict':
+          # The only conflicts we are expecting are creating the rd.msg.rfc822
+          # schema, which arise due to duplicate message IDs (eg, an item
+          # in 'sent items' and also the received copy).  Do a 'poor-mans'
+          # check that this is indeed the only schema with a problem...
+          if not info.get('id', '').endswith('!rd.msg.rfc822'):
+            raise
+          conflicts.append(info)
+        else:
+          raise
+      if not conflicts:
+        raise # what error could this be??
+      # so, after all the checking above, a debug log is all we need for this
+      logger.debug('ignored %d conflict errors writing this batch (first 3=%r)',
+                   len(conflicts), conflicts[:3])
+
+  @defer.inlineCallbacks
+  def maybe_queue_fetch_items(self, folder_path, infos):
+    if not infos:
+      return
+    by_uid = yield self._findMissingItems(folder_path, infos)
+    if not by_uid:
+      return
+    self.fetch_queue.put((self._processFolderBatch, (folder_path, by_uid)))
 
   @defer.inlineCallbacks
   def _reqList(self, conn, *args, **kwargs):
@@ -240,24 +275,20 @@ class ImapProvider(object):
 
   @defer.inlineCallbacks
   def _checkQuickRecent(self, conn, folder_path, max_to_fetch):
-    try:
-      _ = yield conn.select(folder_path)
-      nitems = yield conn.search("((OR UNSEEN (OR RECENT FLAGGED))"
-                                 " UNDELETED SMALLER 50000)", uid=True)
-      if not nitems:
-        logger.debug('folder %r has no quick items', folder_path)
-        return
-      nitems = nitems[-max_to_fetch:]
-      batch = imap4.MessageSet(nitems[0], nitems[-1])
-      results = yield conn.fetchAll(batch, uid=True)
-      logger.info('folder %r has %d quick items', folder_path, len(results))
-      # Make a simple list.
-      infos = [results[seq] for seq in sorted(int(k) for k in results)
-               if self.shouldFetchMessage(results[seq])]
-      if infos:
-        self.fetch_queue.put((self._processFolderBatch, (folder_path, infos)))
-    except imap4.IMAP4Exception, exc:
-      logger.error("Failed to check %r for quick items: %s", folder_path, exc)
+    _ = yield conn.select(folder_path)
+    nitems = yield conn.search("((OR UNSEEN (OR RECENT FLAGGED))"
+                               " UNDELETED SMALLER 50000)", uid=True)
+    if not nitems:
+      logger.debug('folder %r has no quick items', folder_path)
+      return
+    nitems = nitems[-max_to_fetch:]
+    batch = imap4.MessageSet(nitems[0], nitems[-1])
+    results = yield conn.fetchAll(batch, uid=True)
+    logger.info('folder %r has %d quick items', folder_path, len(results))
+    # Make a simple list.
+    infos = [results[seq] for seq in sorted(int(k) for k in results)
+             if self.shouldFetchMessage(results[seq])]
+    _ = yield self.maybe_queue_fetch_items(folder_path, infos)
 
   @defer.inlineCallbacks
   def _updateFolders(self, conn, all_names):
@@ -290,7 +321,7 @@ class ImapProvider(object):
 
     # We only update the cache of the folder once all items from that folder
     # have been written, so extensions only run once all items fetched.
-    assert self.updated_folder_infos is None
+    assert not self.updated_folder_infos
     self.updated_folder_infos = []
 
     for delim, name in all_names:
@@ -300,15 +331,11 @@ class ImapProvider(object):
   def _updateFolderFromCache(self, conn, cache_docs, folder_delim, folder_name):
     # Now queue the updates of the folders
     acct_id = self.account.details.get('id')
-    try:
-      info = yield conn.select(folder_name)
-      logger.debug("info for %r is %r", folder_name, info)
-  
-      cache_doc = cache_docs.get(folder_name, {})
-      dirty = yield self._syncFolderCache(conn, folder_name, info, cache_doc)
-    except imap4.IMAP4Exception, exc:
-      logger.error("Failed to synch folder %r: %s", folder_name, exc)
-      return
+    info = yield conn.select(folder_name)
+    logger.debug("info for %r is %r", folder_name, info)
+
+    cache_doc = cache_docs.get(folder_name, {})
+    dirty = yield self._syncFolderCache(conn, folder_name, info, cache_doc)
 
     if dirty:
       logger.debug("need to update folder cache for %r", folder_name)
@@ -336,20 +363,19 @@ class ImapProvider(object):
 
     # queue the write of location records we want to nuke first.
     if loc_to_nuke:
-      self.write_queue.put(loc_to_nuke)
+      _ = yield self.write_items(loc_to_nuke)
 
     todo = sync_items[:]
     while todo:
-      # do later ones first...
+      # do later ones first and limit the batch size - larger batches means
+      # fewer couch queries, but the queue appears to 'stall' for longer.
       batch = []
-      while len(batch) < 50 and todo:
+      while len(batch) < 100 and todo:
           mi = todo.pop()
           if self.shouldFetchMessage(mi):
               batch.insert(0, mi)
-      if not batch:
-        continue
       logger.log(1, 'queueing check of %d items in %r', len(batch), folder_name)
-      self.fetch_queue.put((self._processFolderBatch, (folder_name, batch)))
+      _ = yield self.maybe_queue_fetch_items(folder_name, batch)
       # see if these items also need location records...
       new_locs = []
       for mi in batch:
@@ -359,7 +385,7 @@ class ImapProvider(object):
           pass
       if new_locs:
         logger.debug('queueing %d new location records', len(new_locs))
-        self.write_queue.put(new_locs)
+        _ = yield self.write_items(new_locs)
     # XXX - todo - should nuke old folders which no longer exist.
 
   @defer.inlineCallbacks
@@ -539,11 +565,13 @@ class ImapProvider(object):
                  folder_name, len(to_add), len(to_nuke))
     defer.returnValue((to_nuke, to_add))
 
-  def results_by_rdkey(self, infos):
+  @defer.inlineCallbacks
+  def _findMissingItems(self, folder_path, results):
     # Transform a list of IMAP infos into a map with the results keyed by the
     # 'rd_key' (ie, message-id)
+    assert results, "don't call me with nothing to do!!"
     msg_infos = {}
-    for msg_info in infos:
+    for msg_info in results:
       msg_id = msg_info['ENVELOPE'][-1]
       if msg_id in msg_infos:
         # This isn't a very useful check - we are only looking in a single
@@ -551,15 +579,6 @@ class ImapProvider(object):
         logger.warn("Duplicate message ID %r detected", msg_id)
         # and it will get clobbered below :(
       msg_infos[get_rdkey_for_email(msg_id)] = msg_info
-    return msg_infos
-
-  @defer.inlineCallbacks
-  def _findMissingItems(self, results, folder_path):
-    # 'invert' the map so we have one keyed by our raindrop key
-    msg_infos = self.results_by_rdkey(results)
-    if not msg_infos:
-      # nothing new in this batch
-      defer.returnValue(None)
 
     # Get all messages that already have this schema
     keys = [['rd.core.content', 'key-schema_id', [k, 'rd.msg.rfc822']]
@@ -582,15 +601,10 @@ class ImapProvider(object):
     defer.returnValue(by_uid)
 
   @defer.inlineCallbacks
-  def _processFolderBatch(self, conn, folder_path, infos):
+  def _processFolderBatch(self, conn, folder_path, by_uid):
     """Called asynchronously by a queue consumer"""
     conn.select(folder_path) # should check if it already is selected?
     acct_id = self.account.details.get('id')
-    by_uid = yield self._findMissingItems(infos, folder_path)
-    if not by_uid:
-      # nothing new in this batch
-      defer.returnValue(0)
-
     num = 0
     # fetch most-recent (highest UID) first...
     left = sorted(by_uid.keys(), reverse=True)
@@ -634,71 +648,8 @@ class ImapProvider(object):
                       'schema_id': 'rd.msg.rfc822',
                       'items': items})
       num += len(infos)
-      self.write_queue.put(infos)
+      _ = yield self.write_items(infos)
     defer.returnValue(num)
-
-  @defer.inlineCallbacks
-  def _consumeConnectionQueue(self, q, conn):
-    """Processes one of our 'connection queues'.  (function, arg) tuples
-    are put into the queue; consumers of the queue have a free connection and
-    call the function with the connection object and the specified args.
-    """
-    while True:
-      result = yield q.get()
-      if result is None:
-        logger.debug('queue processor stopping')
-        q.put(None) # for anyone else processing the queue...
-        break
-      # else a real item to process.
-      try:
-        func, xtra_args = result
-        logger.debug('calling %r', func)
-        _ = yield func(*(conn,)+xtra_args)
-      except:
-        if not self.conductor.reactor.running:
-          break
-        log_exception('failed to process a message batch')
-
-  @defer.inlineCallbacks
-  def _consumeWriteRequests(self):
-    q = self.write_queue
-    pipeline = self.conductor.pipeline
-    while True:
-      items = yield q.get()
-      if items is None:
-        logger.info('write queue processor stopping')
-        break
-      # else a real set of schemas to write and process.
-      logger.debug('write queue popped %d schema items', len(items))
-      try:
-        _ = yield pipeline.provide_schema_items(items)
-      except DocumentSaveError, exc:
-        # So - conflicts are a fact of life in this 'queue' model: we check
-        # if a record exists and it doesn't, so we queue the write.  By the
-        # time the write gets processed, it may have been written by a
-        # different extension...
-        conflicts = []
-        for info in exc.infos:
-          if info['error']=='conflict':
-            # The only conflicts we are expecting are creating the rd.msg.rfc822
-            # schema, which arise due to duplicate message IDs (eg, an item
-            # in 'sent items' and also the received copy).  Do a 'poor-mans'
-            # check that this is indeed the only schema with a problem...
-            if not info.get('id', '').endswith('!rd.msg.rfc822'):
-              raise
-            conflicts.append(info)
-          else:
-            raise
-        if not conflicts:
-          raise # what error could this be??
-        # so, after all the checking above, a debug log is all we need for this
-        logger.debug('ignored %d conflict errors writing this batch (first 3=%r)',
-                     len(conflicts), conflicts[:3])
-      except:
-        # premature shutdown...
-        if not self.conductor.reactor.running:
-          break
-        raise
 
   def shouldFetchMessage(self, msg_info):
     if self.options.max_age:
@@ -823,76 +774,88 @@ class IMAPAccount(base.AccountBase):
     prov = ImapProvider(self, conductor)
 
     @defer.inlineCallbacks
+    def apply_with_connection(func, conn, xargs):
+      last_exc = None
+      for i in range(4):
+        if conn is None:
+          factory = ImapClientFactory(self, conductor)
+          conn = yield factory.connect()
+        try:
+          args = (conn,) + xargs
+          _ = yield func(*args)
+          # we worked!
+          defer.returnValue(conn)
+        except imap4.IMAP4Exception, exc:
+          # XXX - need to distinguish transient errors from fatal ones...
+          # XXX - needs a backoff strategy.
+          logger.debug("failed to call %s(%s)", func, args)
+          logger.info("IMAP error - might retry: %s", exc)
+          conn = None
+          last_exc = exc
+      # failed even after all retries
+      raise last_exc
+
+    @defer.inlineCallbacks
+    def consume_connection_queue(q):
+      """Processes the query queue."""
+      conn = None
+      while True:
+        result = yield q.get()
+        if result is None:
+          logger.debug('queue processor stopping')
+          q.put(None) # for anyone else processing the queue...
+          break
+        # else a real item to process.
+        try:
+          func, xtra_args = result
+          conn = yield apply_with_connection(func, conn, xtra_args)
+        except:
+          if not conductor.reactor.running:
+            break
+          log_exception('failed to process an IMAP query request')
+      if conn is not None:
+        _ = yield conn.close()
+
+    @defer.inlineCallbacks
     def start_queryers(n):
       ds = []
-      conns = []
       for i in range(n):
-        factory = ImapClientFactory(self, conductor)
-        connection = yield factory.connect()
-        conns.append(connection)
-        ds.append(prov._consumeConnectionQueue(prov.query_queue, connection))
+        ds.append(consume_connection_queue(prov.query_queue))
       _ = yield defer.DeferredList(ds)
       # queryers done - post to the fetch queue telling it everything is done.
       acid = self.details.get('id','')
-      logger.info('%r imap querying complete - waiting for queues to finish',
+      logger.info('%r imap querying complete - waiting for fetch queue',
                   acid)
       prov.fetch_queue.put(None)
-      # all the connections are now available to finish consuming the 'fetch'
-      # queue.
-      ds = []
-      for connection in conns:
-        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, connection))
-      _ = yield defer.DeferredList(ds)
-      for connection in conns:
-        _ = yield connection.logout()
 
     @defer.inlineCallbacks
     def start_fetchers(n):
       ds = []
-      conns = []
       for i in range(n):
-        factory = ImapClientFactory(self, conductor)
-        fetch_connection = yield factory.connect()
-        conns.append(fetch_connection)
-        ds.append(prov._consumeConnectionQueue(prov.fetch_queue, fetch_connection))
+        ds.append(consume_connection_queue(prov.fetch_queue))
       _ = yield defer.DeferredList(ds)
       # fetchers done - write the cache docs last.
       if prov.updated_folder_infos:
-        prov.write_queue.put(prov.updated_folder_infos)
-      # and finally post a stop request to the writer...
-      prov.write_queue.put(None)
-      for c in conns:
-        _ = yield c.logout()
+        _ = yield prov.write_items(prov.updated_folder_infos)
 
     @defer.inlineCallbacks
     def start_producing(conn):
       _ = yield prov._reqList(conn)
 
-    @defer.inlineCallbacks
-    def start_writer():
-      _ = yield prov._consumeWriteRequests()
-
     def log_status():
-      nf = sum(len(i) for i in prov.fetch_queue.pending if i is not None)
-      nw = sum(len(i) for i in prov.write_queue.pending if i is not None)
-      if nf or nw:
-        logger.info('%r fetch queue has %d items, write queue has %d',
-                    self.details.get('id',''), nf, nw)
+      nf = sum(len(i[1]) for i in prov.fetch_queue.pending if i is not None)
+      if nf:
+        logger.info('%r fetch queue has %d messages',
+                    self.details.get('id',''), nf)
 
     lc = task.LoopingCall(log_status)
     lc.start(10)
     # put something in the fetch queue to fire things off...
     prov.query_queue.put((start_producing, ()))
 
-    # fire off the producer and queue consumers.  We have 2 'fetchers', which
-    # are io-bound talking to the IMAP server, and a single 'writer', which
-    # is responsible for writing couch docs, and as a side-effect, doing the
-    # 'processing' of these items (we can't have multiple things writing at
-    # the moment as the 'conversation' extension in particular will generate
-    # conflicts if run concurrently...)
-    _ = yield defer.DeferredList([start_queryers(4),
-                                  start_fetchers(2),
-                                  start_writer()])
+    # fire off the producer and queue consumers.  We have 2 'fetcher queues'
+    _ = yield defer.DeferredList([start_queryers(3),
+                                  start_fetchers(3)])
 
     lc.stop()
 
