@@ -50,7 +50,9 @@
 }
 
 [target="broadcast"] .rdwMessage div.photo {
-  background-image: url("i/icon_twitter_bird.png");
+  background-image: url("i/menu/icon_broadcasts.png");
+  background-position: 4px 5px;
+  background-repeat: no-repeat;
 }
 
 [target="from"] .rdwMessage div.photo {

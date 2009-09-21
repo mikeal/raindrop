@@ -19,6 +19,8 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
   if (!ids.length) {
     if (errback) {
       errback("no ids");
+    } else {
+      callback([]);
     }
     return;
   }
@@ -341,7 +343,7 @@ dojo._mixin(rd.conversation, {
       //Remap the services that count, from uses "email", not "imap"
       var allowedServices = {
         twitter: "twitter",
-        imap: "email"
+        email: "imap"
       };
 
       //Build up a list of identity IDs for yourself
@@ -356,10 +358,14 @@ dojo._mixin(rd.conversation, {
 
       //Lookup the array of contacts by the array of identities
       rd.contact.byIdentity(senders, dojo.hitch(this, function(contacts){
-        var contact_ids = rd.map(contacts, function(contact) {
-          return contact.rd_key[1];
-        });
-        this.contact(contact_ids, callback, errback);
+        if (!contacts) {
+          callback([]);
+        } else {
+          var contact_ids = rd.map(contacts, function(contact) {
+            return contact.rd_key[1];
+          });
+          this.contact(contact_ids, callback, errback);
+        }
       }));
     });
   },

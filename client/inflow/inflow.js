@@ -28,7 +28,8 @@ inflow = {
     "rd-protocol-home",
     "rd-protocol-direct",
     "rd-protocol-contact",
-    "rd-protocol-broadcast",
+    "rd-protocol-group",
+    "rd-protocol-sent",
     "rd-protocol-locationTag",
     "rd-protocol-conversation"
   ],
