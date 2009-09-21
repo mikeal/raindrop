@@ -76,7 +76,6 @@ inflow = {
   },
 
   onKeyPress: function(evt) {
-    console.log(evt);
     //Show help on key of question mark.
     if (this.keyboardNavShowing) {
       dojo.byId("keyboardHelp").style.display = "none";
@@ -84,6 +83,14 @@ inflow = {
     } else if (evt && evt.charCode == 63) {
       dojo.byId("keyboardHelp").style.display = "block";
       this.keyboardNavShowing = true;
+    } else if (!this.firstNav) {
+      //Only focus on first story if this is the first
+      //keypress.
+      var widget = dijit.byId("stories");
+      if (evt.keyCode == widget.navKeys.down) {
+        widget.onKeyPress(evt);
+      }
+      this.firstNav == true;
     }
   }
 };
@@ -127,7 +134,7 @@ inflow = {
     window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
 
 
-    //Listen for ? to show the help
+    //Listen for ? to show the help, also to start keyboard nav
     dojo.connect(dojo.doc, "onkeypress", inflow, "onKeyPress");
 
     //Start up the autosyncing if desired, time is in seconds.
@@ -144,6 +151,7 @@ inflow = {
       }
     }
 
+    //watch for auto sync
     if (autoSync) {
       rd.engine.autoSync(autoSync);
     }

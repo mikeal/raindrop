@@ -143,12 +143,22 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           var found = widget.domNode;
           //It is an up/down action. Show selection of the right element.
           if (key == "up" || key == "down") {
-            //Need to select the next message widget. If it was a tab, it is
-            //already selected.
             found = null;
-            var method = key == "up" ? "previousSibling" : "nextSibling";
-            var found = this._nextFocusNode(widget.domNode, method);
-      
+
+            if (key == "down" && dojo.doc.activeElement == dojo.body()) {
+              //If the focused node is the body, then select first elligible node
+              //inside the widget.
+              var widgetNodes = dojo.query("[widgetid]", this.domNode);
+              if (widgetNodes.length) {
+                found = dojo.query("[tabindex]", widgetNodes[0])[0];
+              }
+            } else {
+              //Need to select the next message widget. If it was a tab, it is
+              //already selected.
+              var method = key == "up" ? "previousSibling" : "nextSibling";
+              var found = this._nextFocusNode(widget.domNode, method);
+            }
+
             //If did not find a match then break out.
             if (!found) {
               return;
