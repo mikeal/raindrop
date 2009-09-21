@@ -26,6 +26,7 @@
   background-color: #1a1a1a;
   opacity: 0.9;
   -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
 }
 
 .rdwContactSelector ul {

@@ -3,10 +3,8 @@
 .rdwMessage {
   position: relative;
   background-color: #FFF;
-  -moz-border-radius-bottomleft: 5px;
-  -moz-border-radius-bottomright: 5px;
-  -moz-border-radius-topleft: 5px;
-  -moz-border-radius-topright: 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   margin-bottom: 8px;
   outline: none;
 }
@@ -35,6 +33,7 @@
   display: inline-block;
   background-color: #E6E6E6;
   -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
   position: relative;
   top: 1px;
 

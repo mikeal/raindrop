@@ -14,9 +14,11 @@
 .rdwStoryTwitterTimeLine .tweetList {
   background-color: #FFF;
   -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   padding: 12px 8px 8px 8px;
   width: 100%;
   -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 .rdwStoryTwitterTimeLine .tweetList .tweetTitle {
@@ -38,6 +40,7 @@
 .rdwStoryTwitterTimeLine .rdwMessage {
   background-color: transparent;
   -moz-border-radius: 0px;
+  -webkit-border-radius: 0px;
   margin-bottom: 5px;
   padding: 0;
   border-bottom: 1px dotted #1a1a1a;
@@ -96,6 +99,8 @@
   background-color: #888;
   -moz-border-radius-bottomright: 5px;
   -moz-border-radius-bottomleft: 5px;
+  -webkit-border-radius-bottomright: 5px;
+  -webkit-border-radius-bottomleft: 5px;
   font-size: small;
   text-align: center;
   margin-right: 8px;

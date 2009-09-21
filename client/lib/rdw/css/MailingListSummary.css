@@ -13,10 +13,8 @@
   color: #FFF;
   opacity: 0.5;
   border: none;
-  -moz-border-radius-bottomleft: 5px;
-  -moz-border-radius-bottomright: 5px;
-  -moz-border-radius-topleft: 5px;
-  -moz-border-radius-topright: 5px;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   vertical-align: middle;
   font-size: x-small;
   padding: 1px 5px;

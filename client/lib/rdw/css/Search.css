@@ -11,6 +11,7 @@
 .Search > form > input {
   border: 1px solid gray;
   -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
   background-image: url('chrome://global/skin/icons/Search-glass.png');
   background-repeat: no-repeat;
   background-attachment: scroll;

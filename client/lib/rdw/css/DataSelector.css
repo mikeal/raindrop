@@ -17,6 +17,12 @@
   -moz-border-radius-bottomright:0px;
   -moz-border-radius-topleft:5px;
   -moz-border-radius-topright:0px;
+
+  -webkit-border-radius-bottomleft:5px;
+  -webkit-border-radius-bottomright:0px;
+  -webkit-border-radius-topleft:5px;
+  -webkit-border-radius-topright:0px;
+
 }
 
 .rdwMessage.active .rdwDataSelector .dijitTextBox input.dijitReset, 
@@ -60,6 +66,8 @@
   border: none !important;
   -moz-border-radius-bottomright:5px;
   -moz-border-radius-topright:5px;
+  -webkit-border-radius-bottomright:5px;
+  -webkit-border-radius-topright:5px;
 }
 
 .rdwDataSelector .dijitRight {

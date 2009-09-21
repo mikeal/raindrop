@@ -21,8 +21,10 @@
   background-color: #FFF;
   padding: 8px;
   -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   width: 49.25%;
   -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 .ContactList .contact:nth-child(odd) {
