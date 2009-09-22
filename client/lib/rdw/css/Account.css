@@ -21,6 +21,7 @@
 .rdwAccount a.logout {
   text-decoration: none;
   float: none;
+  display: none;
 }
 
 .rdwAccount a.logout:hover {

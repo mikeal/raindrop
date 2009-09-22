@@ -13,6 +13,16 @@
   margin-left: 0.5em;
 }
 
+.Organizer ol > li.selected {
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  background-color: #1A1A1A;
+}
+
+.Organizer ol > li.selected a {
+  color: #A1A1A1;
+}
+
 .Organizer ol > li[type="home"] {
   background-image: url("i/menu/icon_home.png");
   background-repeat: no-repeat;
