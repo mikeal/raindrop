@@ -8,7 +8,7 @@
   deleted: "delete",
   directName: "Direct Messages",
   directTitle: "You and one other person are talking",
-  expand: "expand",
+  expand: "open",
   forward: "forward message",
   forwardSubjectPrefix: "Fwd: ",
   home: "Home",

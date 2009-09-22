@@ -74,26 +74,29 @@
 }
 
 .rdwMessage .topActions a {
-  display: block;
-  float: left;
-  width: 16px;
-  height: 16px;
-  font-size: x-small;
+  display: inline-block;
+  min-height: 16px;
+  padding: 0 0 0 20px;
   visibility: hidden;
+  line-height: 16px;
   opacity: 0.5;
+  color: #1A1A1A;
   text-decoration: none;
-  text-indent: -200em;
+  font-size: x-small;
   font-weight: bold;
   outline: none;
+  background-position: left center;
+  background-repeat: no-repeat;
 }
 
+.rdwStory.active .rdwMessage:not(.reply) .topActions a,
 .rdwMessage:hover .topActions a {
   visibility: visible;
 }
 
 .rdwMessage .topActions a:hover {
-  border-color: #44617E;
-  color: #44617E;
+  text-decoration: underline;
+  color: #1A1A1A;
   opacity: 1.0;
 }
 
@@ -233,6 +236,7 @@
   text-align:right;
 }
 
+.rdwStory.active .rdwMessage:not(.reply) .timestamp,
 .rdwMessage:hover .timestamp {
   visibility: hidden;
 }
@@ -294,10 +298,9 @@
 /* "reply" type of messages */
 .rdwMessage.reply {
   position: relative;
-  margin-left: 64px;
+  margin-left: 40px;
   margin-top: 8px;
-  /* border hack because we can't use padding here w/ the abs photo */
-  border-left: 8px solid transparent;
+  padding-left: 8px;
 }
 
 .rdwMessage.reply div.photo {
