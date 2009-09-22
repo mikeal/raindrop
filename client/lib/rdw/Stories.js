@@ -145,7 +145,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           if (key == "up" || key == "down") {
             found = null;
 
-            if (key == "down" && dojo.doc.activeElement == dojo.body()) {
+            if (key == "down" && evt.forceFirstActiveItem) {
               //If the focused node is the body, then select first elligible node
               //inside the widget.
               var widgetNodes = dojo.query("[widgetid]", this.domNode);
@@ -165,8 +165,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
             }
           }
 
-          this._setActiveNode(found);
-          dojo.stopEvent(evt);
+          this._setActiveNode(found, null, evt.skipAnimation);
+          if (!evt._fake) {
+            dojo.stopEvent(evt);
+          }
         }
       }
     }
@@ -256,18 +258,16 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
       var pos = dojo.position(animNode, true);
       //Create the args for the scroll over effect.
-      if (dojo.global.scrollTop != pos.y) {
-        this.activeNodeAnim = dojox.fx.smoothScroll({
-          win: dojo.global,
-          target: { x: 0, y: pos.y},
-          easing: this.animEasing,
-          duration: 400,
-          onEnd: dojo.hitch(this, function() {
-            this.activeNode.focus();
-          })
-        });
-        this.activeNodeAnim.play();
-      }
+      this.activeNodeAnim = dojox.fx.smoothScroll({
+        win: dojo.global,
+        target: { x: 0, y: pos.y},
+        easing: this.animEasing,
+        duration: 400,
+        onEnd: dojo.hitch(this, function() {
+          this.activeNode.focus();
+        })
+      });
+      this.activeNodeAnim.play();
 
       //dijit.scrollIntoView(this.activeNode);
     }
@@ -373,6 +373,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
       //Inject nodes all at once for best performance.
       this.listNode.appendChild(frag);
+
+      this.configureFirstActiveItem();
     }
 
     this.transition(viewType);
@@ -388,7 +390,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //If showing another summary type, then clear out the saved summary
     if (!this.viewType || viewType == this.viewType && viewType == "summary") {
       this.summaryScrollHeight = 0;
-      window.scrollTo(0, 0);
     }
 
     //If transitioning away from summary, hold on to old activeNode
@@ -406,10 +407,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       this.viewType = viewType;
       this._postRender = true;
       console.log("transition: end, no animation.");
+      this.checkTransitionEnd();
       return;
     }
 
-    if (this.viewType != viewType) {
+    if (this.viewType == viewType) {
+      this.checkTransitionEnd();
+    } else {
       if (!this.switchNode) {
         this.switchNode = dojo.create("div", {
           "class": "rdwStoriesSwipe"
@@ -575,13 +579,36 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         ids: this.oneConversation
       });
     }
+    this.checkTransitionEnd();
+  },
 
+  checkTransitionEnd: function() {
+    //summary: checks for an action to run after the end of the transition.
     if (this.onTransitionEndCallback) {
       setTimeout(dojo.hitch(this, function() {
         this.onTransitionEndCallback();
         delete this.onTransitionEndCallback;
       }), 15);
     }
+  },
+
+  configureFirstActiveItem: function() {
+    //summary: sets the transition callback to select the first
+    //item in the updated list. Only do this for actions that
+    //refresh the displayed list of items.
+
+    this.onTransitionEndCallback = dojo.hitch(this, function() {
+      //Select the first element in the list.
+      setTimeout(dojo.hitch(this, function() {
+        this.onKeyPress({
+          keyCode: this.navKeys.down,
+          forceFirstActiveItem: true,
+          skipAnimation: true,
+          _fake: true
+        });
+        rd.pub("rdw.Stories.firstItemSelected");
+      }), 500);
+    });
   },
 
   destroy: function() {
@@ -735,6 +762,8 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       this.listNode.appendChild(frag);
 
       console.log("_renderHome widgets injected into the dom");
+
+      this.configureFirstActiveItem();
       this.transition("summary");
     }));
   },

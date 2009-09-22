@@ -1,5 +1,7 @@
 dojo.provide("inflow");
 
+dojo.require("dojox.fx.scroll");
+
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
@@ -41,6 +43,8 @@ inflow = {
       dijit.byId("contactList").domNode.style.display = "none";
       this.showState = "stories";
     }
+    
+    //Scroll to top of the 
   },
 
   showContacts: function() {
@@ -84,15 +88,38 @@ inflow = {
     } else if (evt && evt.charCode == 63) {
       dojo.byId("keyboardHelp").style.display = "block";
       this.keyboardNavShowing = true;
-    } else if (!this.firstNav) {
-      //Only focus on first story if this is the first
-      //keypress.
-      var widget = dijit.byId("stories");
-      if (evt.keyCode == widget.navKeys.down) {
-        widget.onKeyPress(evt);
-      }
-      this.firstNav == true;
     }
+  },
+  
+  onFirstStoryItemSelected: function() {
+    //summary: when the first story item is selected in the stories
+    //widget, scroll the page up above the summary widget.
+    if (this.firstItemAnim) {
+      this.firstItemAnim.stop();
+    }
+
+    console.log("onFirstStoryItemSelected");
+
+    //get position of summary.
+    var position = dojo.position(dojo.byId("summary"), true);
+
+    //animate the scroll.
+    this.firstItemAnim = dojox.fx.smoothScroll({
+      win: dojo.global,
+      target: { x: 0, y: position.y - 5},
+      easing: this.animEasing,
+      duration: 400,
+      onEnd: dojo.hitch(this, function() {
+        delete this.firstItemAnim;
+      })
+    });
+    this.firstItemAnim.play();
+  },
+
+  animEasing: function(/* Decimal? */n){
+    //summary: easing function for animations. This is a copy of
+    //dojo.fx.easing.expoOut
+    return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
   }
 };
 
@@ -130,6 +157,9 @@ inflow = {
         rd.pub("rd-protocol-home");
       }
     });
+
+    //Listen for first story selection in stories so can scroll summary into view.
+    rd.sub("rdw.Stories.firstItemSelected", inflow, "onFirstStoryItemSelected");
 
     //Listen for completion for the addAccount frame.
     window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
