@@ -22,24 +22,6 @@
   background-color: #FFFFFF;
 }
 
-.rdwStoryFullStory .active .rdwMessage .messageIndicator,
-.rdwStoryFullStory .rdwMessage.active .messageIndicator,
-.rdwStoryFullStory .rdwMessage.reply.active .messageIndicator {
-  border-color: #FFB0B0;
-}
-
-.rdwStoryFullStory .messageIndicator {
-  width: 12px;
-  height: 12px;
-  display: inline-block;
-  background-color: #E6E6E6;
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  position: relative;
-  top: 1px;
-
-}
-
 .rdwMessage div.photo {
   position: absolute;
   left: 8px;
