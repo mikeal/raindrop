@@ -7,12 +7,13 @@
   -webkit-border-radius: 5px;
   margin-bottom: 8px;
   outline: none;
+  border: 2px double transparent;
 }
 
 .active .rdwMessage,
 .rdwMessage.active,
 .rdwMessage.reply.active {
-  background-color: #FFB0B0;
+  border-color: #FFB0B0;
 }
 
 .rdwStoryFullStory .active .rdwMessage,
@@ -24,7 +25,7 @@
 .rdwStoryFullStory .active .rdwMessage .messageIndicator,
 .rdwStoryFullStory .rdwMessage.active .messageIndicator,
 .rdwStoryFullStory .rdwMessage.reply.active .messageIndicator {
-  background-color: #FFB0B0;
+  border-color: #FFB0B0;
 }
 
 .rdwStoryFullStory .messageIndicator {
