@@ -123,7 +123,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
       rd.tag.lists(dojo.hitch(this, function(ids) {
         var html = "";
         for (var i = 0, id; id = ids[i]; i++) {
-          html += dojo.string.substitute('<li class="mailingList dojoDndItem"><a title="${id}" href="#rd:mailingList:${id}" >${name}</a></li>', {
+          html += dojo.string.substitute('<li type="mailingList:${id}" class="mailingList dojoDndItem"><a title="${id}" href="#rd:mailingList:${id}" >${name}</a></li>', {
             id: id,
             //TODO: use the mailing list doc's "name" property if available.
             name: id.split(".")[0]
@@ -132,6 +132,9 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
   
         if (html) {
           this.addItems("listMailingList", "Mailing Lists", dojo._toDom(html));
+
+          //Listen to set current selection state.
+          this.subscribeSelection("mailingList");
         }
       }));
     }

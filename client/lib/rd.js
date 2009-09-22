@@ -254,9 +254,11 @@ dojo._listener.getDispatcher = function(){
 	//Strip off rd: and protocol: for the final
 	//value to pass to protocol handler.
 	fragId.splice(0, 2);
-	var value = fragId.join(":");
-
-	rd.pub("rd-protocol-" + proto, value);
+	if (fragId.length) {
+	  rd.pub("rd-protocol-" + proto, fragId.join(":"));
+	} else {
+	  rd.pub("rd-protocol-" + proto);
+	}
       }
     },
 

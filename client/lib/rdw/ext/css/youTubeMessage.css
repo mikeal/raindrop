@@ -5,6 +5,7 @@
   border: 1px solid #A1B4D9;
   background-color: #D2E3FB;
   -moz-border-radius: 0.2em;
+  -webkit-border-radius: 0.2em;
 }
 
 .rdwMessage > .message > .content > .youTube > .thumbnail {

@@ -31,6 +31,8 @@
   padding: 0;
   -moz-border-radius-bottomleft: 5px;
   -moz-border-radius-bottomright: 5px;
+  -webkit-border-radius-bottomleft: 5px;
+  -webkit-border-radius-bottomright: 5px;
 }
 
 .rdwReplyForward .rdwMessage .QuickCompose .info {

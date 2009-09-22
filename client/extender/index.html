@@ -25,7 +25,10 @@
           targetNames: [
             rd.attr(node, "data-targetname")
           ],
-          content: code
+          content: code,
+          onEditorLoad: function() {
+            window.scrollTo(0, 0);
+          }
         }, node);
       });
     });
@@ -58,8 +61,12 @@
     </div>
       
       <p class="title">&mdash; run code</p>
-      blahblahblah
+      Simple URL listing example:
       <div class="bespin" data-modulename="ext.linkIndex" data-targetname="rdw.Message" data-path="simpleExtension.js"></div>
+
+      <p class="title">&mdash; run code</p>
+      Flickr URL example:
+      <div class="bespin" data-modulename="ext.flickrIndex" data-targetname="rdw.Message" data-path="flickrExtension.js"></div>
   </div>
 </div>
 

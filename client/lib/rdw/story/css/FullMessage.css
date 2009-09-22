@@ -11,7 +11,8 @@
 }
 
 [target="broadcast"] .fullMessageTitle {
-  background-image: url("../../css/i/icon_twitter_bird.png");
+  background-image: url("../../css/i/menu/icon_broadcasts.png");
+  background-position: 5px 10px;
 }
 
 [target="from"] .fullMessageTitle {

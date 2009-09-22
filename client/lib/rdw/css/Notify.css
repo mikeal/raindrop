@@ -25,6 +25,7 @@
 
 .rdwNotify .anim .messageWrap {
   -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   background-color: #1a1a1a;
   color: #FFFFFF;
   font-size: small;

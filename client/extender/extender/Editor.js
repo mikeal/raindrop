@@ -35,6 +35,9 @@ dojo.declare("extender.Editor", [rdw._Base], {
   //which should be a fixed size.
   useViewportResize: true,
 
+  //A callback that can be issued once the editor completely loads.
+  onEditorLoad: null,
+
   //Bespin url for the iframe.
   iframeUrl: dojo.moduleUrl("extender", "../bespin.html"),
 
@@ -125,7 +128,12 @@ dojo.declare("extender.Editor", [rdw._Base], {
     //summary: once bespin loads, set the content.
     this._iframeLoaded = true;
     this.editorContent(this.editorText);
-    setTimeout(dojo.hitch(this, "onResize"), 1000);
+    setTimeout(dojo.hitch(this, function() {
+      this.onResize();
+      if (this.onEditorLoad) {
+        this.onEditorLoad();
+      }
+    }), 1000);
     if (this._saveOnLoad) {
       this.onSave();
     }

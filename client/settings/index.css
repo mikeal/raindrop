@@ -97,16 +97,15 @@ table.login {
 }
 
 table.login input {
-  -moz-border-radius-bottomleft:5px;
-  -moz-border-radius-bottomright:5px;
-  -moz-border-radius-topleft:5px;
-  -moz-border-radius-topright:5px;
+  -moz-border-radius:5px;
+  -webkit-border-radius:5px;
   background-color:#1A1A1A;
   border:medium none;
   color:#FFFFFF;
   padding:6px;
   width:100%;
   -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 button {
@@ -114,4 +113,5 @@ button {
   color: #FFFFFF;
   border: none;
   -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
 }

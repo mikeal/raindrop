@@ -13,14 +13,19 @@ dojo.declare("rdw.Account", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method, after template is in the DOM.
     rd.api().me().ok(this, function(idtys) {
+      var name = "";
       for (var i = 0, idty; idty = idtys[i]; i++) {
+        if (i == 0) {
+          name = idty.rd_key[1][1];
+        }
         //First identity with a name wins until there is a contact
         //written for all identities.
         if (idty.name) {
-          rd.escapeHtml(idty.name, this.nameNode);
+          name = idty.name;
           break;
         }
       }
+      rd.escapeHtml(name, this.nameNode);
     });
   },
 

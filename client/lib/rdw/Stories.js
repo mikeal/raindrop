@@ -119,7 +119,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         //Went up to Story, so find first focusable node
         var nodes = dojo.query('[tabindex="0"]', target);
         if (nodes.length) {
-          this._setActiveNode(nodes[0]);
+          this._setActiveNode(nodes[0], null, true);
         }
       }
     } while ((target = target.parentNode));
@@ -143,12 +143,22 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           var found = widget.domNode;
           //It is an up/down action. Show selection of the right element.
           if (key == "up" || key == "down") {
-            //Need to select the next message widget. If it was a tab, it is
-            //already selected.
             found = null;
-            var method = key == "up" ? "previousSibling" : "nextSibling";
-            var found = this._nextFocusNode(widget.domNode, method);
-      
+
+            if (key == "down" && dojo.doc.activeElement == dojo.body()) {
+              //If the focused node is the body, then select first elligible node
+              //inside the widget.
+              var widgetNodes = dojo.query("[widgetid]", this.domNode);
+              if (widgetNodes.length) {
+                found = dojo.query("[tabindex]", widgetNodes[0])[0];
+              }
+            } else {
+              //Need to select the next message widget. If it was a tab, it is
+              //already selected.
+              var method = key == "up" ? "previousSibling" : "nextSibling";
+              var found = this._nextFocusNode(widget.domNode, method);
+            }
+
             //If did not find a match then break out.
             if (!found) {
               return;
@@ -156,6 +166,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           }
 
           this._setActiveNode(found);
+          dojo.stopEvent(evt);
         }
       }
     }
@@ -196,8 +207,21 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
   },
 
-  _setActiveNode: function(/*DOMNode*/domNode, /*String?*/viewType) {
+  _setActiveNode: function(/*DOMNode*/domNode, /*String?*/viewType, /*Boolean?*/skipAnimation) {
     //summary: sets the active node in the stories area.
+    
+    //Make sure current node has focus, otherwise, if the transition
+    //animation is in mid-progress, the next focusable node will not be
+    //found correctly.
+    if (this.activeNode) {
+      this.activeNode.focus();
+    }
+    //Also stop any in-process animation for active node.
+    if (this.activeNodeAnim) {
+      this.activeNodeAnim.stop();
+      this.activeNodeAnim = null;
+    }
+
     if (this.activeNode) {
       dojo.removeClass(this.activeNode, "active");
     }
@@ -206,9 +230,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     }
 
     //See if click is on the interesting widget node.
-    if (dijit.getEnclosingWidget(domNode).domNode == domNode) {
-      domNode.focus();
-    } else {
+    if (dijit.getEnclosingWidget(domNode).domNode != domNode) {
       //Find the more appropriate interesting widget node.
       domNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
     }
@@ -222,20 +244,45 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       this.activeParentNode = dijit.getEnclosingWidget(domNode.parentNode).domNode;
       dojo.addClass(this.activeParentNode, "active");
     } else {
+      this.activeParentNode = null;
       dojo.addClass(this.activeNode, "active");
     }
 
-    dijit.scrollIntoView(this.activeNode);
+    if (skipAnimation) {
+      this.activeNode.focus();
+    } else {
+      //Favor active parent node if available.
+      var animNode = this.activeParentNode || this.activeNode;
+
+      var pos = dojo.position(animNode, true);
+      //Create the args for the scroll over effect.
+      if (dojo.global.scrollTop != pos.y) {
+        this.activeNodeAnim = dojox.fx.smoothScroll({
+          win: dojo.global,
+          target: { x: 0, y: pos.y},
+          easing: this.animEasing,
+          duration: 400,
+          onEnd: dojo.hitch(this, function() {
+            this.activeNode.focus();
+          })
+        });
+        this.activeNodeAnim.play();
+      }
+
+      //dijit.scrollIntoView(this.activeNode);
+    }
   },
 
   _nextFocusNode: function(/*DOMNode*/domNode, /*String*/method) {
     //Finds the next focusable widget in the stories hierarchy of nodes.
 
-    //Try node's siblings first.
-    var test = domNode;
-    while (test && (test = test[method])) {
-      if (test && test.tabIndex > -1) {
-        return test;
+    //Try node's siblings first, if in a full conversation.
+    if (this.viewType == "conversation") {
+      var test = domNode;
+      while (test && (test = test[method])) {
+        if (test && test.tabIndex > -1) {
+          return test;
+        }
       }
     }
 
@@ -347,7 +394,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //If transitioning away from summary, hold on to old activeNode
     if (viewType == "summary") {
       if (this.summaryActiveNode) {
-        this._setActiveNode(this.summaryActiveNode, "summary");
+        this._setActiveNode(this.summaryActiveNode, "summary", true);
       }
     } else {
       this.summaryActiveNode = this.activeNode;
@@ -514,13 +561,13 @@ dojo.declare("rdw.Stories", [rdw._Base], {
 
     if (this.viewType == "summary") {
       if (this.summaryActiveNode) {
-        this._setActiveNode(this.summaryActiveNode);
+        this._setActiveNode(this.summaryActiveNode, null, true);
       }
     } else {
       //Select the first focusable node in the conversation.
       var tabbys = dojo.query('[tabindex="0"]', this.convoWidget.domNode);
       if (tabbys.length) {
-        this._setActiveNode(tabbys[0]);
+        this._setActiveNode(tabbys[0], null, true);
       }
 
       //Set the read state

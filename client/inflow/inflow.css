@@ -90,7 +90,6 @@ a img{
 }
 
 .QuickCompose {
-  max-width: 80ex;
   margin: 0 0.75em 8px 0.75em;
 }
 
@@ -119,6 +118,8 @@ a img{
   background-repeat: no-repeat;
   -moz-border-radius: 5px;
   -moz-box-shadow: -5px 5px 0 #666;
+  -webkit-border-radius: 5px;
+  -webkit-box-shadow: -5px 5px 0 #666;
   padding: 8px;
   display:none;
   position: fixed;
@@ -156,7 +157,6 @@ a img{
 }
 
 #mainList {
-  max-width: 80ex;
   margin: 0 0.75em 8px 0.75em;
 }
 
