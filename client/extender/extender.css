@@ -166,7 +166,7 @@ button {
 }
 
 button:hover {
-  background-color: #00FFFF;
+  background-color: #1a1a1a;
 }
 
 button.delete:hover {

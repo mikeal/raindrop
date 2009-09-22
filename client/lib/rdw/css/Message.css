@@ -70,7 +70,7 @@
 .rdwMessage .topActions {
   position: absolute;
   right: 8px;
-  top: 10px;
+  top: 8px;
 }
 
 .rdwMessage .topActions a {
@@ -87,6 +87,9 @@
   outline: none;
   background-position: left center;
   background-repeat: no-repeat;
+  font-family: Droid-serif, georgia, times, serif;
+  font-weight: normal;
+  font-style: italic;
 }
 
 .rdwStory.active .rdwMessage:not(.reply) .topActions a,
