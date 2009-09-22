@@ -77,7 +77,7 @@ def show_info(result, parser, options):
     print
 
     print "Raindrop extensions:"
-    exts = sorted(pipeline.extensions.items()) # sort by ID.
+    exts = sorted((yield pipeline.load_extensions(dm)).items()) # sort by ID.
     for _, ext in exts:
         print "  %s: %s" % (ext.id, ext.doc['info'])
     print
@@ -105,10 +105,32 @@ def sync_outgoing(result, parser, options):
     conductor = get_conductor()
     _ = yield conductor.sync(g_pipeline, incoming=False, outgoing=True)
 
-def process(result, parser, options):
+def process_backlog(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
         print "Message pipeline has finished - created", result, "docs"
+    return g_pipeline.start_backlog().addCallback(done)
+
+def process_incoming(result, parser, options):
+    """Waits forever for new items to arrive and processes them.  Stop with ctrl+c.
+    """
+    if options.no_process:
+        parser.error("--no-process can't be used to process incoming")
+
+    @defer.inlineCallbacks
+    def report():
+        dm = model.get_doc_model()
+        info = yield dm.db.infoDB()
+        db_seq = info['update_seq']
+        proc_seq = g_pipeline.incoming_processor.runner.current_seq
+        left = db_seq - proc_seq
+        print "still waiting for new raindrops (%d items to be processed) ..." \
+              % (left)
+
+    # just return a deferred that never fires!
+    lc = task.LoopingCall(report)
+    return lc.start(30, False)
+
     return g_pipeline.start_backlog().addCallback(done)
 
 def reprocess(result, parser, options):
@@ -346,7 +368,9 @@ def main():
             d.addCallback(func, parser, options)
 
     # and some final deferreds to control the process itself.
+    @defer.inlineCallbacks
     def done(whateva):
+        yield g_pipeline.finalize()
         if reactor.running:
             print "Apparently everything is finished - terminating."
             reactor.stop()
