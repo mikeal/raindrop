@@ -89,7 +89,7 @@
   background-repeat: no-repeat;
 }
 
-.rdwStory.active .rdwMessage .topActions a,
+.rdwStory.active .rdwMessage:not(.reply) .topActions a,
 .rdwMessage:hover .topActions a {
   visibility: visible;
 }
@@ -236,7 +236,7 @@
   text-align:right;
 }
 
-.rdwStory.active .rdwMessage .timestamp,
+.rdwStory.active .rdwMessage:not(.reply) .timestamp,
 .rdwMessage:hover .timestamp {
   visibility: hidden;
 }
@@ -298,10 +298,9 @@
 /* "reply" type of messages */
 .rdwMessage.reply {
   position: relative;
-  margin-left: 64px;
+  margin-left: 40px;
   margin-top: 8px;
-  /* border hack because we can't use padding here w/ the abs photo */
-  border-left: 8px solid transparent;
+  padding-left: 8px;
 }
 
 .rdwMessage.reply div.photo {
