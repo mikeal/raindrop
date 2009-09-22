@@ -21,7 +21,7 @@ class TestIDPipelineBase(TestCaseWithTestDB):
         test_proto.set_test_options(emit_identities=True,
                                     emit_common_identities=emit_common_ids)
         _ = yield self.deferMakeAnotherTestMessage(None)
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
 
 class TestIDPipeline(TestIDPipelineBase):

@@ -11,9 +11,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# A set of extensions keyed by ext ID.
-extensions = {}
-
 def split_rc_docid(doc_id):
     if not doc_id.startswith('rc!'):
         raise ValueError("Not a raindrop content docid")
@@ -39,6 +36,7 @@ class Extension(object):
 
 @defer.inlineCallbacks
 def load_extensions(doc_model):
+    extensions = {}
     # now try the DB - load everything with a rd.ext.workqueue schema
     key = ["rd.core.content","schema_id", "rd.ext.workqueue"]
     ret = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
@@ -68,6 +66,7 @@ def load_extensions(doc_model):
             continue
         assert ext_id not in extensions, ext_id # another with this ID??
         extensions[ext_id] = Extension(ext_id, doc, handler, globs)
+    defer.returnValue(extensions)
 
 
 class Pipeline(object):
@@ -82,26 +81,35 @@ class Pipeline(object):
 
     @defer.inlineCallbacks
     def initialize(self):
-        if not extensions:
-            _ = yield load_extensions(self.doc_model)
-            assert extensions # this can't be good!
         if not self.options.no_process:
-            procs = self.get_ext_processors()
+            procs = yield self.get_ext_processors()
+            assert self.incoming_processor is None # already initialized?
             self.incoming_processor = IncomingItemProcessor(self.doc_model,
                                                             procs)
             _ = yield self.incoming_processor.initialize()
 
     @defer.inlineCallbacks
+    def finalize(self):
+        if self.incoming_processor is not None:
+            _ = yield self.incoming_processor.finalize()
+
+    @defer.inlineCallbacks
     def provide_schema_items(self, items):
+        """The main entry-point for 'providers' - the new items are written,
+        then we block until the 'incoming processor' has got to the end (ie,
+        until all those new items are fully processed)
+        """
         _ = yield self.doc_model.create_schema_items(items)
         if self.incoming_processor is not None:
             _ = yield self.incoming_processor.ensure_done()
 
+    @defer.inlineCallbacks
     def get_extensions(self, spec_exts=None):
         if spec_exts is None:
             spec_exts = self.options.exts
         ret = set()
         ret_names = set()
+        extensions = yield load_extensions(self.doc_model)
         for ext_id, ext in extensions.items():
             if spec_exts is None:
                 ret.add(ext)
@@ -114,28 +122,37 @@ class Pipeline(object):
             if missing:
                 logger.error("The following extensions are unknown: %s",
                              missing)
-        return ret
+        defer.returnValue(ret)
 
+    @defer.inlineCallbacks
     def get_ext_processors(self, spec_exts=None):
         """Get all the work-queues we know about"""
         ret = []
-        for ext in self.get_extensions(spec_exts):
+        for ext in (yield self.get_extensions(spec_exts)):
             proc = ExtensionProcessor(self.doc_model, ext, self.options)
             ret.append(proc)
-        return ret
+        defer.returnValue(ret)
 
     @defer.inlineCallbacks
-    def start(self):
-        assert self.runner is None, "already doing an async process"
-        self.num_queue_failures = 0 # only for the test suite!
-        qrunners = [StatefulExtensionQueueRunner(self.doc_model, [p])
-                    for p in self.get_ext_processors()]
-        self.runner = StatefulQueueManager(self.doc_model, qrunners, self.options)
+    def start_backlog(self):
+        assert self.runner is None, "already doing a backlog process"
+        procs = yield self.get_ext_processors()
+        self.runner = StatefulQueueManager(self.doc_model, procs,
+                                           self.incoming_processor,
+                                           self.options)
         try:
             _ = yield self.runner.run()
         finally:
             self.runner = None
-        self.num_queue_failures = len([qr for qr in qrunners if qr.failure])
+        # count the number of errors - mainly for the test suite.
+        nerr = sum([p.num_errors for p in procs])
+        # if an incoming processor is running, we also need to wait for that,
+        # as it is what is doing the items created by the queue
+        if self.incoming_processor is not None:
+            logger.info("backlog processing done - waiting for incoming to finish")
+            _ = yield self.incoming_processor.ensure_done()
+            nerr += sum([p.num_errors for p in self.incoming_processor.processors])
+        defer.returnValue(nerr)
 
     @defer.inlineCallbacks
     def unprocess(self):
@@ -143,7 +160,7 @@ class Pipeline(object):
         # XXX - should do this in a loop with a limit to avoid chewing
         # all mem...
         if self.options.exts:
-            exts = self.get_extensions()
+            exts = yield self.get_extensions()
             keys = [['rd.core.content', 'ext_id', e.id] for e in exts]
             result = yield self.doc_model.open_view(
                                 keys=keys, reduce=False)
@@ -164,7 +181,7 @@ class Pipeline(object):
 
     @defer.inlineCallbacks
     def _reprocess_items(self, item_gen):
-        ps = self.get_ext_processors()
+        ps = yield self.get_ext_processors()
         for p in ps:
             p.options.force = True
 
@@ -213,7 +230,7 @@ class Pipeline(object):
                     for k in self.options.keys]
             result = yield dm.open_view(keys=keys, reduce=False)
                 
-            ps = self.get_ext_processors()
+            ps = yield self.get_ext_processors()
             for p in qs:
                 p.options.force = True
             chugger = ExtensionQueueRunner(self.doc_model, ps)
@@ -222,7 +239,7 @@ class Pipeline(object):
         else:
             # do each specified extension one at a time to avoid the races
             # if extensions depend on each other...
-            for ext in self.get_extensions():
+            for ext in (yield self.get_extensions()):
                 # fetch all items this extension says it depends on
                 if self.options.keys:
                     # But only for the specified rd_keys
@@ -269,7 +286,9 @@ class Pipeline(object):
         matching schema, or (None, None, None) if nothing happened.
         """
         # push it through the pipeline.
-        ps = self.get_ext_processors()
+        if self.incoming_processor is not None:
+            _ = yield self.incoming_processor.ensure_done()
+        ps = yield self.get_ext_processors()
         doc_model = self.doc_model
         runner = ExtensionQueueRunner(doc_model, ps)
 
@@ -306,7 +325,12 @@ class IncomingItemProcessor(object):
     items which are created after that will be processed.  Includes a helper
     function which waits until the end of the queue is reached, which can be
     useful for 'throttling' the rate of incoming messages - eg, provide a
-    batch, wait until complete, write next batch, etc
+    batch, wait until complete, write next batch, etc.
+
+    Note that we do NOT use a 'continuous' _changes feed as that would make
+    it very hard to determine when we are at the end.  We use a _continuous
+    feed to tell us *when* something changed, but once told, we open a new
+    _changes connection and process it until it stops giving us rows.
     """
     def __init__(self, doc_model, processors):
         self.processors = processors
@@ -317,18 +341,38 @@ class IncomingItemProcessor(object):
 
     @defer.inlineCallbacks
     def initialize(self):
-        info = yield self.doc_model.db.infoDB()
+        db = self.doc_model.db
+        info = yield db.infoDB()
         self.runner = ExtensionQueueRunner(self.doc_model, self.processors)
         self.start_seq = info['update_seq']
         self.runner.current_seq = self.start_seq
+        self.feed_stopper = yield db.feedContinuousChanges(self.feed_sink,
+                                                           since=self.start_seq)
+
+    @defer.inlineCallbacks
+    def finalize(self):
+        _ = yield self.ensure_done()
+        if self.feed_stopper is not None:
+            self.feed_stopper()
+            self.feed_stopper = None
+
+    def feed_sink(self, factory, changes):
+        # we don't look at the changes, just notice there are some.
+        # our feed should be stopped if we are currently working.
+        assert self.def_process_done is None
+        # and ask the reactor to do its thing - which will immediately
+        # close this feed...
+        self.ensure_done()
 
     @defer.inlineCallbacks
     def ensure_done(self):
         if self.def_process_done is not None:
-            # already processing!
-            yield self.def_process_done
+            _ = yield self.def_process_done
             return
-
+        # do it -  stop the _changes feed while we process...
+        self.feed_stopper()
+        self.feed_stopper = None
+        # process the feed.
         doc_model = self.doc_model
         runner = self.runner
         self.def_process_done = defer.Deferred()
@@ -336,37 +380,65 @@ class IncomingItemProcessor(object):
             logger.debug("incoming queue starting with sequence ID %d",
                          runner.current_seq)
             while True:
-                result = yield doc_model.db.listDocsBySeq(limit=5000,
+                result = yield doc_model.db.listDocsBySeq(limit=2000,
                                             startkey=runner.current_seq)
                 rows = result['rows']
                 logger.debug('incoming queue has %d items to check.', len(rows))
                 if not rows:
                     break
-    
+
                 src_gen = _gen_view_sources(rows)
                 _ = yield runner.process_queue(src_gen)
+            # start listening for new changes
+            assert self.feed_stopper is None
+            self.feed_stopper = yield doc_model.db.feedContinuousChanges(
+                                        self.feed_sink,
+                                        since=self.runner.current_seq)
         finally:
-            self.def_process_done.callback(None)
+            # reset our deferred before making the callback else we might
+            # think we are still inside the loop.
+            def_done = self.def_process_done
             self.def_process_done = None
+            def_done.callback(None)
 
 # Used by the 'process' operation - runs all of the 'stateful work queues';
 # when a single queue finishes, we restart any other queues already finished
 # so they can then work on the documents since created by the running queues.
 # Once all queues report they are at the end, we stop.
 class StatefulQueueManager(object):
-    def __init__(self, dm, qs, options):
+    def __init__(self, dm, processors, incoming_processor, options):
+        assert processors, "nothing to do?"
         self.doc_model = dm
-        self.queues = qs
-        assert qs, "nothing to do?"
+        # If we have an incoming processor running, we consider the end of
+        # the queue exactly where that started.
+        if incoming_processor is None:
+            last_seq = None
+        else:
+            last_seq = incoming_processor.start_seq - 1
+        # XXX - we limit ourselves to last_seq - should we catch up, we
+        # need to be able to update our state docs to reflect that fact...
+        self.incoming_processor = incoming_processor
+        self.queues = [StatefulExtensionQueueRunner(dm, [p], last_seq)
+                       for p in processors]
         self.options = options
         self.status_msg_last = None
 
-    def _start_q(self, q, def_done):
+    def _start_q(self, q, def_done, do_incoming=False):
         assert not q.running, q
         q.running = True
-        q.run_queue(
-                ).addBoth(self._q_done, q, def_done
-                )
+
+        # in the interests of not letting the backlog processing cause
+        # too much of a backlog for the 'incoming' processor, we wait
+        # until the incoming queue is up-to-date before restarting.
+        def doinc():
+            if do_incoming and self.incoming_processor:
+                return self.incoming_processor.ensure_done()
+        def dostart(result):
+            q.run_queue(
+                    ).addBoth(self._q_done, q, def_done
+                    )
+        defer.maybeDeferred(doinc
+            ).addCallback(dostart)
 
     def _q_status(self):
         lowest = (0xFFFFFFFFFFFF, None)
@@ -415,12 +487,12 @@ class StatefulQueueManager(object):
             if qlook is not q and not qlook.running and not qlook.failure and \
                qlook.current_seq < q.current_seq:
                 still_going = True
-                self._start_q(qlook, def_done)
+                self._start_q(qlook, def_done, True)
 
         if not stop_all and not failed and not result:
             # The queue which called us back hasn't actually finished yet...
             still_going = True
-            self._start_q(q, def_done)
+            self._start_q(q, def_done, True)
 
         if not still_going:
             # All done.
@@ -519,24 +591,29 @@ class StatefulExtensionQueueRunner(ExtensionQueueRunner):
     As each extension generally gets its own queue and state, this is
     generally called with a single processor.
     """
-    def __init__(self, doc_model, processors):
+    def __init__(self, doc_model, processors, last_seq):
         super(StatefulExtensionQueueRunner, self).__init__(doc_model, processors)
         self.running = None
         self.stopping = False
         self.failure = None
         self._cached_queue_state = None
+        self.last_seq = last_seq
 
     def get_queue_name(self):
         assert len(self.processors)==1
         return self.processors[0].ext.id
 
     @defer.inlineCallbacks
-    def run_queue(self, num_to_process=5000):
+    def run_queue(self, num_to_process=2000):
         state_info = yield self.load_queue_state()
         start_seq = state_info['items']['seq']
+        if self.last_seq is not None and self.current_seq > self.last_seq:
+            # queue is done (at the specified max)
+            defer.returnValue(True)
+
         src_gen = yield self._get_queue_gen(start_seq, num_to_process)
         if src_gen is None:
-            # queue is done!
+            # queue is done (at the end)
             defer.returnValue(True)
 
         num_created = yield self.process_queue(src_gen)
@@ -599,7 +676,7 @@ class StatefulExtensionQueueRunner(ExtensionQueueRunner):
 
 
     @defer.inlineCallbacks
-    def _get_queue_gen(self, seq, num_to_process=5000):
+    def _get_queue_gen(self, seq, num_to_process):
         doc_model = self.doc_model
         qname = self.get_queue_name()
         logger.debug("Work queue %r starting with sequence ID %d",
@@ -620,6 +697,8 @@ class StatefulExtensionQueueRunner(ExtensionQueueRunner):
         for result in _gen_view_sources(rows):
             if self.stopping:
                 return
+            if self.last_seq is not None and self.current_seq > self.last_seq:
+                return
             yield result
 
 
@@ -630,6 +709,7 @@ class ExtensionProcessor(object):
         self.doc_model = doc_model
         self.ext = ext
         self.options = options
+        self.num_errors = 0
 
     def _get_ext_env(self, context, src_doc):
         # Each ext has a single 'globals' which is updated before it is run;
@@ -754,6 +834,7 @@ class ExtensionProcessor(object):
         # use out log but include the extension name.
         logger.warn("Extension %r failed to process document %r: %s",
                     self.ext.id, src_doc['_id'], result.getTraceback())
+        self.num_errors += 1
         if self.options.stop_on_error:
             logger.info("--stop-on-error specified - stopping queue")
             self.failure = result
@@ -773,5 +854,3 @@ class ExtensionProcessor(object):
                          'ext_id' : self.ext.id,
                          'items' : edoc,
                          }]
-
-

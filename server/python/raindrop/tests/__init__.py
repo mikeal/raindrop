@@ -59,6 +59,28 @@ class TestCase(unittest.TestCase):
     pass
 
 class TestCaseWithDB(TestCase):
+    @defer.inlineCallbacks
+    def tearDown(self):
+        if self.pipeline is not None:
+            _ = yield self.pipeline.finalize()
+
+    @defer.inlineCallbacks
+    def ensure_pipeline_complete(self):
+        # later we will support *both* backlog and incoming at the
+        # same time, but currently the test suite done one or the other...
+        ip = self.pipeline.incoming_processor 
+        if ip is None:
+            nerr = yield self.pipeline.start_backlog()
+        else:
+            # We have an 'incoming processor' running.
+            # we call this twice - first time it may be on the way out of the
+            # loop while a few new ones are arriving.
+            _ = yield ip.ensure_done()
+            _ = yield ip.ensure_done()
+            # manually count the errors.
+            nerr = sum([p.num_errors for p in ip.processors])
+        defer.returnValue(nerr)
+
     """A test case that is setup to work with a temp database"""
     def prepare_test_db(self, config):
         # change the name of the DB used.
@@ -248,8 +270,6 @@ class TestCaseWithCorpus(TestCaseWithDB):
     @defer.inlineCallbacks
     def init_corpus(self, corpus_name):
         _ = yield self.prepare_corpus_environment(corpus_name)
-        _ = yield self.prepare_test_db(self.config)
-        _ = yield self.pipeline.initialize()
 
     @defer.inlineCallbacks
     def load_corpus(self, corpus_name, corpus_spec="*"):

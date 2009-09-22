@@ -8,7 +8,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     def test_simple_email(self):
         ndocs = yield self.load_corpus("hand-rolled", "sent-email-simple")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
         # There should be exactly one 'rd.msg.email' mail in our DB - check that.
         key = ["rd.core.content", "schema_id", "rd.msg.email"]
@@ -30,7 +30,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     def test_simple_body(self):
         ndocs = yield self.load_corpus("hand-rolled", "sent-email-simple")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
         # There should be exactly one 'rd.msg.body' mail in our DB - check that
         key = ["rd.core.content", "schema_id", "rd.msg.body"]
@@ -57,7 +57,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     def test_simple_recips(self):
         ndocs = yield self.load_corpus("hand-rolled", "sent-email-simple")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
         # All people we sent mail to should get an identity and contact
         # record.
@@ -81,7 +81,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
     def test_body_quoted_hyperlinks(self):
         ndocs = yield self.load_corpus("hand-rolled", "rd-msg-body-quoted-hyperlinks")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
         # load the hyperlinks document and compare the results.
         key = ["rd.core.content", "schema_id", "rd.msg.body.quoted.hyperlinks"]

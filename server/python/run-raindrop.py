@@ -109,7 +109,7 @@ def process(result, parser, options):
     """Process all messages to see if any extensions need running"""
     def done(result):
         print "Message pipeline has finished - created", result, "docs"
-    return g_pipeline.start().addCallback(done)
+    return g_pipeline.start_backlog().addCallback(done)
 
 def reprocess(result, parser, options):
     """Reprocess all messages even if they are up to date."""

@@ -1,4 +1,4 @@
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 
 from raindrop.tests import TestCaseWithCorpus
 
@@ -80,7 +80,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         if expected is not None:
             self.failUnlessEqual(len(docs), expected)
         _ = yield self.doc_model.db.updateDocuments(docs)
-        _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
     @defer.inlineCallbacks
     def test_mailing_list(self):

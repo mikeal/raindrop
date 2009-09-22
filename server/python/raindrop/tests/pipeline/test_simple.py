@@ -10,7 +10,12 @@ import logging
 logger = logging.getLogger(__name__)
 
 class TestPipelineBase(TestCaseWithTestDB):
-    use_chasing_pipeline = True
+    # If use_backlog_processor is true, then we disable the 'incoming
+    # processor' while loading the items, then use the 'backlog processor'
+    # to bring things up-to-date.
+    # If false, we just allow the incoming processor to run making the
+    # docs as it goes.
+    use_backlog_processor = True
     extensions = None # default extensions for test.
     simple_extensions = [
             'rd.test.core.test_converter',
@@ -21,7 +26,7 @@ class TestPipelineBase(TestCaseWithTestDB):
     def get_options(self):
         ret = TestCaseWithTestDB.get_options(self)
         ret.exts = self.simple_extensions
-        ret.no_process = self.use_chasing_pipeline
+        ret.no_process = self.use_backlog_processor
         ret.protocols = ['test']
         return ret
 
@@ -29,9 +34,7 @@ class TestPipelineBase(TestCaseWithTestDB):
     def process_doc(self):
         # populate our test DB with the raw message(s).
         _ = yield self.deferMakeAnotherTestMessage(None)
-        if self.use_chasing_pipeline:
-            # execute our pipeline
-            _ = yield self.pipeline.start()
+        _ = yield self.ensure_pipeline_complete()
 
     def get_last_by_seq(self, n=1):
         def extract_rows(result):
@@ -41,7 +44,7 @@ class TestPipelineBase(TestCaseWithTestDB):
                 if 'doc' in row and 'rd_schema_id' in row['doc']:
                     # If we are using a 'chasing' pipeline, then we can
                     # expect some 'state' docs to get in the way...
-                    if self.use_chasing_pipeline and \
+                    if self.use_backlog_processor and \
                        row['doc']['rd_schema_id']=='rd.core.workqueue-state':
                         continue
                     ret.append(row)
@@ -105,7 +108,7 @@ class TestPipeline(TestPipelineBase):
                 )
 
 class TestPipelineSync(TestPipeline):
-    use_chasing_pipeline = False
+    use_backlog_processor = False
 
 class TestErrors(TestPipelineBase):
     extensions = ['rd.test.core.test_converter']
@@ -164,4 +167,4 @@ class TestErrors(TestPipelineBase):
                 )
 
 class TestErrorsSync(TestErrors):
-    use_chasing_pipeline = False
+    use_backlog_processor = False
