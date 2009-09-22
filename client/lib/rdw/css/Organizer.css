@@ -66,8 +66,6 @@
   color: #1A1A1A;
   font-size: small;
   font-weight: bold;
-  font-variant: small-caps;
-  text-transform: lowercase;
 }
 
 .Organizer ol > li > a:hover {
