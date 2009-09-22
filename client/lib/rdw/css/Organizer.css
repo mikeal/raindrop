@@ -5,62 +5,59 @@
 .Organizer ol {
   list-style: none;
   padding: 0px;
-  margin: 0px 0px 3px 0px;
+  margin: 3px 0px 3px 0px;
 }
 
 .Organizer ol > li {
-  padding: 0.2em 20px;
+  padding: 0.2em 0 0.2em 2px;
   margin-left: 0.5em;
 }
 
 .Organizer ol > li.selected {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
-  background-color: #1A1A1A;
+  background-color: #FFB0B0;
 }
 
-.Organizer ol > li.selected a {
-  color: #A1A1A1;
-}
-
-.Organizer ol > li[type="home"] {
+.Organizer ol > li[type="home"] > a {
   background-image: url("i/menu/icon_home.png");
   background-repeat: no-repeat;
   background-position: left center;
   margin-top: 8px;
 }
 
-.Organizer ol > li[type="direct"] {
+.Organizer ol > li[type="direct"] > a {
   background-image: url("i/menu/icon_directmessage.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-.Organizer ol > li[type="group"] {
+.Organizer ol > li[type="group"] > a {
   background-image: url("i/menu/icon_groupmessage.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-.Organizer ol > li[type="broadcast"] {
+.Organizer ol > li[type="broadcast"] > a {
   background-image: url("i/menu/icon_broadcasts.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-.Organizer ol > li[type="sent"] {
+.Organizer ol > li[type="sent"] > a {
   background-image: url("i/menu/icon_sent.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
-.Organizer ol > li[type="contacts"] {
+.Organizer ol > li[type="contacts"] > a {
   background-image: url("i/menu/icon_contacts.png");
   background-repeat: no-repeat;
   background-position: left center;
 }
 
 .Organizer ol > li > a {
+  padding-left: 20px;
   text-decoration: none;
   background-color: transparent;
   color: #1A1A1A;
@@ -77,7 +74,6 @@
   font-family: Droid-sans, arial,verdana,geneva,sans-serif;
   font-style: normal;
   font-variant: small-caps;
-  text-transform: lowercase;
 }
 
 .Organizer ol > li.locationTag > a {
