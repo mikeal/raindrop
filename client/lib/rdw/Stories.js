@@ -257,10 +257,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       var animNode = this.activeParentNode || this.activeNode;
 
       var pos = dojo.position(animNode, true);
+
       //Create the args for the scroll over effect.
       this.activeNodeAnim = dojox.fx.smoothScroll({
         win: dojo.global,
-        target: { x: 0, y: pos.y},
+        target: { x: 0, y: Math.min(Math.abs(pos.y - 8), pos.y)},
         easing: this.animEasing,
         duration: 400,
         onEnd: dojo.hitch(this, function() {

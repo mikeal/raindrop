@@ -76,6 +76,7 @@
   height:8px;
   position: absolute;
   right:24px;
+  bottom: -10px; /*  8px (size) + 2px (border) */
   width:16px;
   background-image: url("i/tri_white.png");
   z-index: 1;
