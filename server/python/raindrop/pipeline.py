@@ -346,11 +346,13 @@ class IncomingItemProcessor(object):
         self.runner = ExtensionQueueRunner(self.doc_model, self.processors)
         self.start_seq = info['update_seq']
         self.runner.current_seq = self.start_seq
+        self.stopping = False
         self.feed_stopper = yield db.feedContinuousChanges(self.feed_sink,
                                                            since=self.start_seq)
 
     @defer.inlineCallbacks
     def finalize(self):
+        self.stopping = True
         _ = yield self.ensure_done()
         if self.feed_stopper is not None:
             self.feed_stopper()
@@ -379,7 +381,7 @@ class IncomingItemProcessor(object):
         try:
             logger.debug("incoming queue starting with sequence ID %d",
                          runner.current_seq)
-            while True:
+            while not self.stopping:
                 result = yield doc_model.db.listDocsBySeq(limit=2000,
                                             startkey=runner.current_seq)
                 rows = result['rows']
