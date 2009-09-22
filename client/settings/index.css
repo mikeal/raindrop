@@ -60,27 +60,23 @@ a.close {
 
 .account .url {
   font-size: small;
-  font-weight: normal;
   color: #1a1a1a;
-  display: inline-block;
-  margin-right: 3px;
-  float: right;
   line-height: 24px;
 }
 
 .account a.delete {
-  background-image:url("../lib/rdw/css/i/overlay_delete.png");
-  background-position:left center;
-  background-repeat:no-repeat;
-  color:#1A1A1A;
+  font-size: x-small;
+  color: red;
   cursor:pointer;
-  display:inline-block;
-  float:left;
-  height:24px;
-  margin:0 3px 0 2px;
-  width:16px;
+  float: right;
+  padding: 1px 1ex;
+  -moz-border-radius: 3px;
 }
 
+.account a.delete:hover {
+  color: white;
+  background-color: red;
+}
 /*** TWITTER ***/
 
 .twitter\.com:before {
