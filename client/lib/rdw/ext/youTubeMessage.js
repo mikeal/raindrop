@@ -64,7 +64,7 @@ rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
       });
 
       //Attach the you tube HTML to the message.
-      dojo.query(".message .content", this.domNode).addContent(youTubeNode);
+      dojo.query(".message .attachments", this.domNode).addContent(youTubeNode);
 
       dojo.connect(youTubeNode, "onclick", this, "onYouTubeClick");
 
@@ -120,7 +120,7 @@ rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
           innerHTML: obj
         });
 
-        dojo.query(".message > .content > .youTube", this.domNode).addContent(player);
+        dojo.query(".message > .attachments > .youTube", this.domNode).addContent(player);
 
         dojo.fx.wipeIn({
           node: player,
