@@ -199,8 +199,6 @@
 .rdwMessage .subject {
   padding-right: 0;
   font-weight: bold;
-  font-variant: small-caps;
-  text-transform: lowercase;
   font-family: Droid-sans, Arial, Verdana, sans-serif;
   display: block;
 }
