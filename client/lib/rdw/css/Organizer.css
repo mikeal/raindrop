@@ -80,7 +80,6 @@
   font-weight: bold;
   font-family: Droid-sans, arial,verdana,geneva,sans-serif;
   font-style: normal;
-  font-variant: small-caps;
 }
 
 .Organizer ol > li.locationTag > a {
@@ -134,8 +133,6 @@
 
 .dijitTitlePaneTextNode {
   font-weight: bold !important;
-  font-variant: small-caps;
-  text-transform: lowercase;
   cursor: pointer;
 }
 
