@@ -29,7 +29,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //all instances. Reassign the property to a new object to affect
   //only one instance.
   topics: {
-    "rd-engine-sync-done": "engineSyncDone",
+    "rd-engine-sync-done": "checkUpdateInfo",
     "rd-protocol-home": "home",
     "rd-protocol-contact": "contact",
     "rd-protocol-direct": "direct",
@@ -94,6 +94,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         this._sub(prop, this.topics[prop]);
       }
     }
+    
+    //See if there was a last known state of displayed messages and
+    //show them.
+    this.checkUpdateInfo();
   },
 
   //elements to ignore for click selection.
@@ -332,6 +336,14 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       }
       this._isBack = false;
     }));
+  },
+
+  checkUpdateInfo: function() {
+    //summary: Sees if last request should be updated.
+    var info = this._updateInfo;
+    if (info) {
+      this[info.funcName].apply(this, info.args);
+    }
   },
 
   updateConversations: function(/*String*/viewType, /*Array*/conversations) {
@@ -662,14 +674,6 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //**************************************************
   //start topic subscription endpoints
   //**************************************************
-  engineSyncDone: function() {
-    //summary: responds to rd-engine-sync-done topic.
-    var info = this._updateInfo;
-    if (info) {
-      this[info.funcName].apply(this, info.args);
-    }
-  },
-
   home: function() {
     //summary: responds to rd-protocol-home topic.
 

@@ -39,8 +39,9 @@ inflow = {
   showStories: function() {
     //summary: shows the Stories widget and hides the ContactList widget.
     if (this.showState != "stories") {
-      dijit.byId("stories").domNode.style.display = "";
-      dijit.byId("contactList").domNode.style.display = "none";
+      //Using class lookups since extender refreshes can change DOM IDs.
+      this._firstWidgetNode("rdw.Stories").style.display = "";
+      this._firstWidgetNode("rdw.ContactList").style.display = "none";
       this.showState = "stories";
     }
     
@@ -50,8 +51,9 @@ inflow = {
   showContacts: function() {
     //summary: shows the ContactList widget and hides the Stories widget.
     if (this.showState != "contacts") {
-      dijit.byId("stories").domNode.style.display = "none";
-      dijit.byId("contactList").domNode.style.display = "";
+      //Using class lookups since extender refreshes can change DOM IDs.
+      this._firstWidgetNode("rdw.Stories").style.display = "none";
+      this._firstWidgetNode("rdw.ContactList").style.display = "";
       this.showState = "contacts";
     }
   },
@@ -101,7 +103,8 @@ inflow = {
     console.log("onFirstStoryItemSelected");
 
     //get position of summary.
-    var position = dojo.position(dojo.byId("summary"), true);
+    //Using class lookups since extender refreshes can change DOM IDs.
+    var position = dojo.position(this._firstWidgetNode("rdw.Summary"), true);
 
     //animate the scroll.
     this.firstItemAnim = dojox.fx.smoothScroll({
@@ -120,6 +123,12 @@ inflow = {
     //summary: easing function for animations. This is a copy of
     //dojo.fx.easing.expoOut
     return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+  },
+
+  _firstWidgetNode: function(/*String*/widgetClass) {
+    //summary: gets the DOM node for the first instance
+    //of a widget with widgetClass.
+    return dijit.registry.byClass(widgetClass).toArray()[0].domNode;
   }
 };
 
