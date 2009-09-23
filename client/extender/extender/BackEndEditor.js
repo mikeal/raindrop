@@ -71,6 +71,10 @@ dojo.declare("extender.BackEndEditor", [rdw._Base], {
     return rd.path + this.doc._id;
   },
 
+  onClone: function(evt) {
+    //TODO
+  },
+
   onSave: function(evt) {
     //summary: handles click events to save button.
 
