@@ -455,7 +455,7 @@ ul.metadata {
 }
 
 #projectpage.jetpack #pageheader h1 {
-	background: url(img/jetpack-header.png) no-repeat;
+	background: transparent url(logo.png) no-repeat scroll center;
 }
 
 

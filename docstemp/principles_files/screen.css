@@ -1,0 +1,407 @@
+html {
+	padding-bottom: 0px; 
+	padding-top: 40px;
+	padding-left: 10px;
+	padding-right: 10px;
+}
+
+body { 
+	font-family: 'Lucida Grande', 'Lucida Sans Unicode', Lucida, Arial, Helvetica, sans-serif;
+	font-family: 'DroidSans';
+	background: #dbdbdb url('../index_files/img/jetpack-bg.jpg') repeat-x top center;
+	padding: 0px; 
+	color:#787878;
+	font-size:12px;
+	line-height: 18px;
+	margin: 0 auto;
+	
+}
+
+	h1 {font-family: 'DroidSans-Bold'; color: #fff; font-size: 28px; font-weight: normal; margin-bottom: 12px; margin-left: 10px; letter-spacing: -1px}
+	h2 {font-family: 'DroidSans-Bold'; color: #345b7d; font-weight: normal; font-size: 24px; margin-bottom: 12px; letter-spacing: -1px;}
+	h3 {font-family: 'DroidSans'; color: #ccc; font-size: 22px; font-weight: normal; letter-spacing: -1px; margin-left: 10px;}
+	h4 {font-family: 'DroidSans'; font-weight: normal; color: #555; font-size: 22px; letter-spacing: -0.2px; margin-left: 10px;}
+	
+	h5 {color: #4c6b86; font-size: 32px; margin: 20px 0px;letter-spacing: -1px;}
+	
+    h3 a:link, a:hover, a:active, a:focus, a:visited{color: #fff;}
+	h3 a:hover {color: #fff;}
+	
+	p, ul {font-size: 12px;}
+	
+	a:link, a:hover, a:active, a:focus, a:visited {color: #9f423b; text-decoration: none;}
+	a:hover {color: #9f423b; text-decoration: none;}
+
+	
+	li {list-style-type: circle;}
+
+	.spacer {height: 75px;}
+
+
+@font-face{
+font-family: 'DroidSans'; 
+src: url('../f/Droid-Sans/DroidSans.ttf') format('truetype');
+}
+
+@font-face{
+font-family: 'DroidSans-Bold'; 
+src: url('../f/Droid-Sans/.ttf') format('truetype');
+}
+
+.clearBg {
+
+	margin: 20px auto;
+	max-width: 500px;
+	text-align: center;
+
+}
+
+.code {
+	color: #853b2f;
+	font-weight: bold;
+}
+
+.buttonFloat {
+	display: inline;
+}
+
+.buttonImg {
+	margin-top: -4px;
+	margin-bottom: -6px;
+}
+
+.header {
+
+	margin: 0px auto;
+	margin-top: -40px;
+	max-width: 840px;
+	height: 340px;
+	width: 840px;
+	background: transparent url(../index_files/logo.png) no-repeat scroll center;
+
+}
+
+.float {
+	float: right;
+	display: block;
+	margin-right: -20px;
+}
+
+.sidebar {
+	display: block;
+}
+
+.mainLink {
+    
+    text-align: center;
+    font-weight: normal; 
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: -0.2px; 
+    margin: 0px auto;
+    margin-top: 24px;
+    padding: 10px;
+
+
+}
+
+.links {
+    font-weight: normal;
+    font-family: 'DroidSans';
+    font-size: 14px;
+}
+
+.sep {
+    font-weight: normal;
+    font-family: 'DroidSans';
+    color: #b2c4d3;
+    margin: 0px 15px;
+    font-size: 14px;
+}
+
+.reqs {
+	float: right;
+	margin-top: 6px;
+	color: #666;
+}
+
+.title {
+	font-family: 'DroidSans'; 
+	font-weight: normal; 
+	font-size: 22px; 
+	letter-spacing: -0.2px;
+	color: #555;
+}
+
+.news {
+	font-family: 'DroidSans'; 
+	font-weight: normal; 
+	font-size: 14px; 
+	letter-spacing: -0.2px;
+	margin-right: 10px;
+	color: #454545;
+}
+
+.introBg {
+
+	font-family: 'DroidSans';
+	margin: 20px auto;
+	max-width: 800px;
+	text-align: left;
+	padding: 20px 40px;
+	width: 800px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	//border-top: 1px solid #fff;
+	//border-left: 1px solid #fff;
+	//border-right: 1px solid #fff;
+	//border-bottom: 3px solid #fff;
+	//background: transparent url('../images/mask.png') repeat top center;
+
+
+}
+
+.whiteBg {
+
+	font-family: 'DroidSans';
+	margin: 20px auto;
+	max-width: 800px;
+	text-align: left;
+	padding: 20px 40px;
+	padding-bottom: 40px;
+	width: 800px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border-top: 1px solid #adb6ba;
+	border-left: 1px solid #adb6ba;
+	border-right: 1px solid #adb6ba;
+	border-bottom: 3px solid #adb6ba;
+	-moz-border-bottom-colors:#adb6ba #e7eaec #e7eaec;
+	background-color: #fff;
+
+}
+
+.newsBg {
+
+	font-family: 'DroidSans';
+	margin: 20px auto;
+	max-width: 800px;
+	text-align: left;
+	padding: 10px 40px;
+	width: 800px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border: 1px solid rgba(132, 52, 46, 0.6);
+	-moz-box-shadow: inset rgba(0, 0, 0, 0.2) 0 -2px 4px, inset rgba(0, 0, 0, 0.2) 0 1px 2px;
+	background-color: rgba(159, 66, 59, 0.1);
+
+}
+
+.greyBg {
+
+	font-family: 'DroidSans';
+	margin: 20px auto;
+	max-width: 800px;
+	text-align: left;
+	padding: 20px 40px;
+	padding-bottom: 30px;
+	padding-top: 10px;
+	width: 800px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border-top: 1px solid #adb6ba;
+	border-left: 1px solid #adb6ba;
+	border-right: 1px solid #adb6ba;
+	border-bottom: 3px solid #adb6ba;
+	-moz-border-bottom-colors:#adb6ba #e7eaec #e7eaec;
+	background: #f4f4f4 url('../images/rocketbg.jpg') no-repeat top right;
+
+}
+
+.footer {
+
+	color:#999;
+	font-family: 'DroidSans';
+	font-size: 9px;
+	margin: 20px auto;
+	margin-top: -30px;
+	max-width: 800px;
+	text-align: left;
+	padding: 20px 40px;
+	width: 800px;
+
+
+}
+
+.downloadBg {
+
+	color:#ffffff;
+	font-family: 'DroidSans';
+	margin: 20px auto;
+	margin-top: -6px;
+	max-width: 800px;
+	text-align: left;
+	padding: 20px 40px;
+	width: 800px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border-top: 1px solid #333;
+	border-left: 1px solid #333;
+	border-right: 1px solid #333;
+	border-bottom: 3px solid #111;
+	-moz-border-bottom-colors:#111 #111 #111;
+	-moz-box-shadow: 
+		inset rgba(120, 120, 120, 1) 0 0px 6px, 
+		inset rgba(10, 10, 10, 1) 0 -4px 9px,
+		inset rgba(80, 80, 80, 1) 0 2px 18px; 
+		
+	background-color: #222;
+
+}
+
+.downloadButton {
+
+	color:#ffffff;
+	font-family: 'DroidSans';
+	text-align: left;
+	padding: 10px 10px;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border-top: 1px solid #333;
+	border-left: 1px solid #333;
+	border-right: 1px solid #333;
+	border-bottom: 3px solid #111;
+	-moz-border-bottom-colors:#111 #111 #111;
+	-moz-box-shadow: 
+		inset rgba(120, 120, 120, 1) 0 0px 6px, 
+		inset rgba(10, 10, 10, 1) 0 -4px 9px,
+		inset rgba(80, 80, 80, 1) 0 2px 18px; 
+		
+	background-color: #222;
+	display: inline;
+
+}
+
+.arrow {
+	margin: -23px auto;
+	max-width: 800px;
+	text-align: center;
+}
+
+.video {
+    
+    padding: 20px;
+    font-family: 'DroidSans';
+    margin-top: 20px;
+    -moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	background-color: #000;
+	border-top: 8px solid #b2c4d3;
+	border-left: 8px solid #b2c4d3;
+	border-right: 8px solid #b2c4d3;
+	border-bottom: 8px solid #b2c4d3;
+	text-align: center;
+}
+
+.leftSidebar {
+	width: 400px;
+	padding-right: 20px;
+	font-size:10px;
+	vertical-align: top;
+}
+
+.rightSidebar {
+	width: 400px;
+	font-size:10px;
+	vertical-align: top;
+	padding-left: 20px;
+	
+	
+}
+
+.floatLeft {
+	float: left;
+	margin-right: 20px;
+}
+
+.floatRight {
+	float: right;
+	margin-left: 20px;
+}
+
+.demo {
+	padding-bottom: 24px;
+	display: inline;
+	clear: both;
+}
+
+
+.moz {
+	margin-top: 5px;
+	margin-bottom: -5px;
+	margin-right: 10px;
+}
+
+
+
+/* ------- MENU ------- */
+
+#menu {
+	margin: 20px auto;
+	margin-top: -60px;
+	max-width: 800px;
+	padding: 4px 40px;
+	width: 800px;
+	text-align: left;
+	-moz-border-radius: 0.25em;
+	-webkit-border-radius: 0.25em;
+	border-top: 1px solid #adb6ba;
+	border-left: 1px solid #adb6ba;
+	border-right: 1px solid #adb6ba;
+	border-bottom: 3px solid #adb6ba;
+	-moz-border-bottom-colors:#adb6ba #e7eaec #e7eaec;
+	background-color: #fff;
+}
+
+.menuItem {
+	margin-right: 30px;
+	font-size: 14px;
+	text-shadow: 1px 1px 1px rgba(173, 182, 186, 0.6);
+	padding: 5px 8px 6px 8px;
+}
+
+.menuOn {
+	margin-right: 30px;
+	font-size: 14px;
+	text-shadow: 1px 1px 1px rgba(173, 182, 186, 1);
+	background-color: rgba(173, 182, 186, 0.3);
+	padding: 5px 8px 6px 8px;
+}
+
+.menuItem a {color: #9f423b; text-decoration: none;}
+.menuItem a:hover {color: #9f423b; text-decoration: none; border-bottom: 1px dotted #9f423b;}
+
+
+.menuOn a {color: #345b7d; text-decoration: none;}
+.menuOn a:hover {color: #345b7d; text-decoration: none; border-bottom: 1px dotted #345b7d;}
+
+
+/* ------- BUTTON ------- */
+
+.button {
+	padding: 8px 6px;
+	margin: 32px;
+	-moz-border-radius: 0.5em;
+	-webkit-border-radius: 0.5em;
+	border-top: 4px solid #ccc;
+	border-left: 4px solid #ccc;
+	border-right: 4px solid #ccc;
+	border-bottom: 4px solid #aaa;
+	-moz-border-top-colors:#3b3b3b #888888 #616161 #4f4f4f;
+	-moz-border-right-colors:#2d2d2d #6f6f6f #585858 #4f4f4f;
+	-moz-border-left-colors:#2d2d2d #6f6f6f #585858 #4f4f4f;
+	-moz-border-bottom-colors:#111111 #5f5f5f #585858 #4f4f4f;
+	background: #4b4b4b url('buttonBg.png') repeat-x top center;
+	display: inline;
+}
+
