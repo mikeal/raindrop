@@ -102,6 +102,16 @@ class LevelColorFormatter(logging.Formatter):
         level_decile = min(5, record.levelno // 10)
         return self.LEVEL_DECILE_TO_COLOR[level_decile] + s + self.RESET
 
+def log_twisted(record):
+    if record['isError']:
+        level = logging.ERROR
+    else:
+        level = logging.DEBUG
+    message = ''.join(record['message'])
+    if 'failure' in record:
+        message += "\n" + record['failure'].getTraceback()
+    logging.getLogger('twisted').log(level, message)
+
 # possibly misplaced....
 def setup_logging(options):
     init_errors = []
@@ -138,3 +148,7 @@ def setup_logging(options):
     # write the errors after the logging is completely setup.
     for e in init_errors:
         logging.getLogger().error(e)
+
+    # configure twisted logging...
+    import twisted.python.log
+    twisted.python.log.addObserver(log_twisted)
