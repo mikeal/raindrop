@@ -8,6 +8,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+__my_identities = []
+
 def get_ext_env(doc_model, context, src_doc, ext):
     # Hack together an environment for the extension to run in
     # (specifically, provide the emit_schema etc globals)
@@ -59,8 +61,9 @@ def get_ext_env(doc_model, context, src_doc, ext):
         return threads.blockingCallFromThread(reactor,
                     doc_model.update_documents, docs)
 
-    def get_my_identities(__my_identities=[]):
-        # XXX - can't use globals here!!
+    def get_my_identities():
+        # XXX - can't use globals here - so we cheat!
+        from raindrop.extenv import __my_identities
         # Some extensions need to know which identity IDs mean the current
         # user for various purposes - eg, "was it sent to/from me?".
         # We could let such extensions use open_view, but then it would
