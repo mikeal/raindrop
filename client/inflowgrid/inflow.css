@@ -1,0 +1,94 @@
+@import url("/raindrop/dojo/dijit/themes/dijit.css");
+@import url("/raindrop/lib/rdw/css/Search.css");
+
+/* @font-face typography */
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("fonts/Droid-Sans/DroidSans.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans;
+  src: url("fonts/Droid-Sans/DroidSans-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-sans-mono;
+  src: url("fonts/Droid-Sans-Mono/DroidSansMono.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("fonts/Droid-Serif/DroidSerif-Regular.ttf");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("fonts/Droid-Serif/DroidSerif-Italic.ttf");
+  font-weight: normal;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("fonts/Droid-Serif/DroidSerif-Bold.ttf");
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: Droid-serif;
+  src: url("fonts/Droid-Serif/DroidSerif-BoldItalic.ttf");
+  font-weight: bold;
+  font-style: italic;
+}
+
+/* end @font-face typography */
+
+.inflowOrganizer {
+  display: inline;
+}
+
+.Search {
+  display: inline-block;
+  border: 1px solid black;
+}
+
+.rdwLoading {
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  overflow:hidden;
+  display: inline-block;
+  text-indent: -40em;
+  width: 32px;
+  height: 32px;
+  background-image: url("i/ajax-loader.gif");
+  background-color:transparent;
+}
+
+#logo {
+  position: fixed;
+  height: 50px;
+  width: 50px;
+  background-image: url("i/logo.png");
+  z-index: 1;
+  top: 25px;
+  right: 25px;
+}
+
+.rdwStory {
+  width: 300px;
+  height:300px;
+  float: left;
+  border: 1px solid black;
+}

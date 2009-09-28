@@ -23,6 +23,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   //The widget to use to show a full story.
   fullStoryCtorName: "rdw.story.FullStory",
 
+  //Widget used for story objects.
+  storyCtorName: "rdw.Story",
+
   //List of topics to listen to and modify contents based
   //on those topics being published. Note that this is an object
   //on the rdw.Stories prototype, so modifying it will affect
@@ -379,7 +382,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       //and load up each story widget in there.
       var frag = dojo.doc.createDocumentFragment();
       for (var i = 0, conv; conv = this.conversations[i]; i++) {
-        this.addSupporting(new rdw.Story({
+        this.addSupporting(new (dojo.getObject(this.storyCtorName))({
            msgs: conv
          }, dojo.create("div", null, frag)));        
       }
@@ -778,7 +781,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //should not display itself immediately since prioritization of the home
     //widgets still needs to be done. Similarly, it should not try to attach
     //to the document's DOM yet. Override for more custom behavior/subclasses.
-    return new rdw.Story({
+    return new (dojo.getObject(this.storyCtorName))({
       msgs: msgs,
       unreadReplyLimit: 2,
       displayOnCreate: false,
