@@ -1,6 +1,12 @@
 @import url("/raindrop/dojo/dijit/themes/dijit.css");
 @import url("/raindrop/lib/rdw/css/Search.css");
 
+* {
+  border: 0px;
+  margin: 0px;
+  padding: 0px;
+}
+
 /* @font-face typography */
 
 @font-face {
@@ -54,6 +60,49 @@
 
 /* end @font-face typography */
 
+/* begin Andy's modifications */
+
+body {
+  color: #1a1a1a;
+  font-family: Droid-sans, Helvetica, Arial, Sans-serif;
+  font-size: 11px;
+  line-height: 14px;
+  background-image: url("i/baseline.png");
+}
+
+#nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-image: url("i/bg.png");
+  z-index: 100;
+}
+
+.navHeader {
+  font-family: droid-serif, georgia, times, serif;
+  width: 940px;
+  margin: 16px 10px 9px 10px;
+}
+
+.navHeader select {
+  font-family: droid-serif, georgia, times, serif;
+  width: 120px;
+  margin: 0 7px 0 0;
+}
+
+.navHeader ul {
+  list-style-type: none;
+}
+
+.navHeader li {
+  display: inline;
+  margin-right: 7px;
+}
+
+#stories {
+  margin-top: 44px;
+}
+
 .inflowOrganizer {
   display: inline;
 }
@@ -81,14 +130,52 @@
   height: 50px;
   width: 50px;
   background-image: url("i/logo.png");
-  z-index: 1;
+  z-index: 101;
   top: 25px;
   right: 25px;
 }
 
 .rdwStory {
   width: 300px;
-  height:300px;
+  height:281px;
+  margin: 0 10px 20px 10px;
   float: left;
-  border: 1px solid black;
+}
+
+.rdwStory a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.topActions,
+.photo,
+.medium {
+  display: none;
+}
+
+.message .additional {
+  display: none;
+}
+
+.subject {
+  display: block;
+  padding: 6px 0 0 0;
+  border-top: 1px solid #1a1a1a;
+  font-weight: bold;
+  color: #FF5959;
+}
+
+.subject a {
+  color: #FF5959;
+}
+
+.reply .subject {
+  display: none;
+}
+
+.actions {
+  margin: 7px 0 0 0;
+  text-align: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
 }

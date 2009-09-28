@@ -34,11 +34,11 @@ title {
 body {
 	font: 12px/1.4 "Droid Sans", "trebuchet ms", sans-serif;
 	color: #333;
-	background: #fff url(img/bg.jpg) no-repeat center top;
+	background: #fff url/*(img/bg.jpg)*/ no-repeat center top;
 }
 
 body.jetpack { 
-	background: #fff url(img/jetpack-bg.jpg) no-repeat center top;
+	background: #fff url(img/raindrop_bg.jpg) no-repeat center top;
 }
 
 a:link, a:visited {
@@ -455,7 +455,7 @@ ul.metadata {
 }
 
 #projectpage.jetpack #pageheader h1 {
-	background: transparent url(logo.png) no-repeat scroll center;
+	background: transparent url(img/raindrop_header.png) no-repeat scroll center;
 }
 
 

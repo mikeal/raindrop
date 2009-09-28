@@ -8,7 +8,7 @@ html {
 body { 
 	font-family: 'Lucida Grande', 'Lucida Sans Unicode', Lucida, Arial, Helvetica, sans-serif;
 	font-family: 'DroidSans';
-	background: #dbdbdb url('../index_files/img/jetpack-bg.jpg') repeat-x top center;
+	background: #FFFFFF url('../index_files/img/raindrop_bg.jpg') repeat-x top center;
 	padding: 0px; 
 	color:#787878;
 	font-size:12px;
@@ -74,10 +74,10 @@ src: url('../f/Droid-Sans/.ttf') format('truetype');
 
 	margin: 0px auto;
 	margin-top: -40px;
-	max-width: 840px;
-	height: 340px;
-	width: 840px;
-	background: transparent url(../index_files/logo.png) no-repeat scroll center;
+	max-width: 880px;
+	height: 250px;
+	width: 880px;
+	background: transparent url(../index_files/img/raindrop_header2.png) no-repeat scroll left center;
 
 }
 
