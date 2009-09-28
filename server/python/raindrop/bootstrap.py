@@ -528,6 +528,15 @@ def check_accounts(whateva, config=None):
         _ = yield dm.create_schema_items([new_info])
 
 
+msg_no_erlang = """\
+This couch server is not configured for erlang view servers
+To enable erlang view servers, edit couch's local.ini and add the lines:
+
+[native_query_servers]
+erlang={couch_native_process, start_link, []}
+
+Then restart couch and re-run raindrop."""
+
 # Functions working with design documents holding views.
 @defer.inlineCallbacks
 def install_views(whateva, options):
@@ -540,12 +549,13 @@ def install_views(whateva, options):
 
     # first see if we have erlang available...
     extra_langs = []
-    config = yield db.get('/_config/native_query_servers')
+    raw_config = yield db.get('/_config/native_query_servers')
+    config = json.loads(raw_config)
     if 'erlang' in config:
         extra_langs = [('.erl', 'erlang')]
     else:
         # js is slower, so note that...
-        logger.info("This couch server is not configured for erlang view servers")
+        logger.info(msg_no_erlang)
 
     docs = [d for d in generate_view_docs_from_filesystem(schema_src, extra_langs)]
     logger.debug("Found %d documents in '%s'", len(docs), schema_src)
