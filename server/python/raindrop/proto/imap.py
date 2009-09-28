@@ -843,7 +843,7 @@ class IMAPAccount(base.AccountBase):
       _ = yield prov._reqList(conn)
 
     def log_status():
-      nf = sum(len(i[1]) for i in prov.fetch_queue.pending if i is not None)
+      nf = sum(len(i[1][1]) for i in prov.fetch_queue.pending if i is not None)
       if nf:
         logger.info('%r fetch queue has %d messages',
                     self.details.get('id',''), nf)
@@ -853,7 +853,7 @@ class IMAPAccount(base.AccountBase):
     # put something in the fetch queue to fire things off...
     prov.query_queue.put((start_producing, ()))
 
-    # fire off the producer and queue consumers.  We have 2 'fetcher queues'
+    # fire off the producer and queue consumers.
     _ = yield defer.DeferredList([start_queryers(3),
                                   start_fetchers(3)])
 
