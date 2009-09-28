@@ -1,6 +1,6 @@
 import logging
 
-from twisted.internet import reactor, defer, task
+from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
 import twisted.web.error
 import paisley
@@ -10,46 +10,57 @@ from .config import get_config
 
 logger = logging.getLogger(__name__)
 
-_conductor = None
 from .model import get_doc_model
 
-def get_conductor(options=None):
-  global _conductor
-  if _conductor is None:
-    _conductor = SyncConductor(options)
-  else:
-    assert options is None, 'can only set this at startup'
-  return _conductor
+# XXX - we need a registry of 'outgoing source docs'.
+source_schemas = ['rd.msg.outgoing.simple',
+                  'rd.msg.seen',
+                  ]
+
+
+@defer.inlineCallbacks
+def get_conductor(pipeline, options):
+  conductor = SyncConductor(pipeline, options)
+  _ = yield conductor.initialize()
+  defer.returnValue(conductor)
 
 
 # XXX - rename this to plain 'Conductor' and move to a different file.
 # This 'conducts' synchronization, the work queues and the interactions with
 # the extensions and database.
 class SyncConductor(object):
-  def __init__(self, options):
-    self.log = logger
+  def __init__(self, pipeline, options):
+    self.pipeline = pipeline
     self.options = options
     # apparently it is now considered 'good form' to pass reactors around, so
     # a future of multiple reactors is possible.
     # We capture it here, and all the things we 'conduct' use this reactor
     # (but later it should be passed to our ctor too)
     self.reactor = reactor
-    self.coop = task.Cooperator()
-    reactor.addSystemEventTrigger("before", "shutdown", self._kill_coop)
     self.doc_model = get_doc_model()
-    self.pipeline = None
 
     self.accounts_syncing = []
     self.outgoing_handlers = None
     self.all_accounts = None
 
-  def _kill_coop(self):
-    logger.debug('stopping the coordinator')
-    self.coop.stop()
-    logger.debug('coordinator stopped')
-
   def _ohNoes(self, failure, *args, **kwargs):
-    self.log.error('OH NOES! failure! %s', failure)
+    logger.error('OH NOES! failure! %s', failure)
+
+  @defer.inlineCallbacks
+  def initialize(self):
+    _ = yield self._load_accounts()
+    # ask the pipeline to tell us when new source schemas arrive.
+    def new_processor(src_id, src_rev):
+      # but our processor doesn't actually process it - it just schedules
+      # another 'check outgoing'.
+      logger.debug("saw new document %r (%s) - kicking outgoing check",
+                   src_id, src_rev)
+      self.reactor.callLater(0, self._do_sync_outgoing)
+      return [], False
+
+    inc = self.pipeline.incoming_processor 
+    if inc is not None:
+      inc.add_processor(new_processor, source_schemas, 'outgoing')
 
   @defer.inlineCallbacks
   def _load_accounts(self):
@@ -75,16 +86,16 @@ class SyncConductor(object):
         pass
       try:
           account_proto = account_details['proto']
-          self.log.debug("Found account using protocol %s", account_proto)
+          logger.debug("Found account using protocol %s", account_proto)
       except KeyError:
-          self.log.error("account %(id)r has no protocol specified - ignoring",
-                         account_details)
+          logger.error("account %(id)r has no protocol specified - ignoring",
+                       account_details)
           continue
       if not self.options.protocols or account_proto in self.options.protocols:
         if account_proto in proto.protocols:
           account = proto.protocols[account_proto](self.doc_model, account_details)
-          self.log.debug('loaded %s account: %s', account_proto,
-                         account_details.get('name', '(un-named)'))
+          logger.debug('loaded %s account: %s', account_proto,
+                       account_details.get('name', '(un-named)'))
           self.all_accounts.append(account)
           # Can it handle any 'outgoing' schemas?
           out_schemas = account.rd_outgoing_schemas
@@ -92,11 +103,11 @@ class SyncConductor(object):
             existing = self.outgoing_handlers.setdefault(sid, [])
             existing.append(account)
         else:
-          self.log.error("Don't know what to do with account protocol: %s",
-                         account_proto)
+          logger.error("Don't know what to do with account protocol: %s",
+                       account_proto)
       else:
-          self.log.info("Skipping account - protocol '%s' is disabled",
-                        account_proto)
+          logger.info("Skipping account - protocol '%s' is disabled",
+                      account_proto)
 
   @defer.inlineCallbacks
   def _process_outgoing_row(self, row):
@@ -128,10 +139,6 @@ class SyncConductor(object):
 
   @defer.inlineCallbacks
   def _do_sync_outgoing(self):
-    # XXX - we need a registry of 'outgoing source docs'.
-    source_schemas = ['rd.msg.outgoing.simple',
-                      'rd.msg.seen',
-                      ]
     keys = []
     for ss in source_schemas:
       keys.append([ss, 'outgoing_state', 'outgoing'])
@@ -149,63 +156,41 @@ class SyncConductor(object):
     defer.returnValue(dl)
 
   @defer.inlineCallbacks
-  def sync(self, pipeline, incoming=True, outgoing=True):
-    assert self.pipeline is None, 'already syncing?'
-    self.pipeline = pipeline
+  def sync(self, incoming=True, outgoing=True):
+    dl = []
+    if outgoing:
+      # start looking for outgoing schemas to sync...
+      dl.extend((yield self._do_sync_outgoing()))
 
-    if self.all_accounts is None:
-      _ = yield self._load_accounts()
+    if incoming:
+      # start synching all 'incoming' accounts.
+      for account in self.all_accounts:
+        if account in self.accounts_syncing:
+          logger.info("skipping acct %(id) - already synching...",
+                      account.details)
+          continue
+        # start synching
+        logger.info('Starting sync of %s account: %s',
+                    account.details['proto'],
+                    account.details.get('name', '(un-named)'))
+        def_done = account.startSync(self)
+        if def_done is not None:
+          self.accounts_syncing.append(account)
+          def_done.addBoth(self._cb_sync_finished, account)
+          dl.append(def_done)
 
-    try:
-      dl = []
-      if outgoing:
-        # start looking for outgoing schemas to sync...
-        dl.extend((yield self._do_sync_outgoing()))
-
-      if incoming:
-        # start synching all 'incoming' accounts.
-        for account in self.all_accounts:
-          if account in self.accounts_syncing:
-            logger.info("skipping acct %(id) - already synching...",
-                        account.details)
-            continue
-          # start synching
-          self.log.info('Starting sync of %s account: %s',
-                        account.details['proto'],
-                        account.details.get('name', '(un-named)'))
-          def_done = account.startSync(self)
-          if def_done is not None:
-            self.accounts_syncing.append(account)
-            def_done.addBoth(self._cb_sync_finished, account)
-            dl.append(def_done)
-
-      # wait for each of the deferreds to finish.
-      _ = yield defer.DeferredList(dl)
-    finally:
-      self.pipeline = None
+    # wait for each of the deferreds to finish.
+    _ = yield defer.DeferredList(dl)
 
   def _cb_sync_finished(self, result, account):
     if isinstance(result, Failure):
-      self.log.error("Account %s failed with an error: %s", account, result)
+      logger.error("Account %s failed with an error: %s", account, result)
       if self.options.stop_on_error:
-        self.log.info("--stop-on-error specified - re-throwing error")
+        logger.info("--stop-on-error specified - re-throwing error")
         result.raiseException()
     else:
-      self.log.debug("Account %s finished successfully", account)
+      logger.debug("Account %s finished successfully", account)
     assert account in self.accounts_syncing, (account, self.accounts_syncing)
     self.accounts_syncing.remove(account)
     if not self.accounts_syncing:
-      self.log.info("all incoming accounts have finished synchronizing")
-
-
-if __name__ == '__main__':
-  # normal entry-point is the app itself; this is purely for debugging...
-  logging.basicConfig()
-  logging.getLogger().setLevel(logging.DEBUG)
-
-  conductor = get_conductor()
-  conductor.reactor.callWhenRunning(conductor.sync)
-
-  logger.debug('starting reactor')
-  conductor.reactor.run()
-  logger.debug('reactor done')
+      logger.info("all incoming accounts have finished synchronizing")

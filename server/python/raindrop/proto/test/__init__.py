@@ -1,6 +1,6 @@
 # This is an implementation of a 'test' protocol.
 import logging
-from twisted.internet import defer, error
+from twisted.internet import defer, error, task
 
 logger = logging.getLogger(__name__)
 
@@ -55,8 +55,7 @@ class TestMessageProvider(object):
     def attach(self):
         logger.info("preparing to synch test messages...")
         self.bulk_docs = [] # anything added here will be done in bulk
-        # use the cooperator for testing purposes.
-        return self.conductor.coop.coiterate(self.sync_generator())
+        return task.coiterate(self.sync_generator())
 
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)

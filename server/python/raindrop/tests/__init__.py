@@ -68,7 +68,7 @@ class TestCaseWithDB(TestCase):
     def ensure_pipeline_complete(self):
         # later we will support *both* backlog and incoming at the
         # same time, but currently the test suite done one or the other...
-        ip = self.pipeline.incoming_processor 
+        ip = self.pipeline.incoming_processor
         if ip is None:
             nerr = yield self.pipeline.start_backlog()
         else:
@@ -78,7 +78,7 @@ class TestCaseWithDB(TestCase):
             _ = yield ip.ensure_done()
             _ = yield ip.ensure_done()
             # manually count the errors.
-            nerr = sum([p.num_errors for p in ip.processors])
+            nerr = sum([getattr(r.processor, 'num_errors', 0) for r in ip.runners])
         defer.returnValue(nerr)
 
     """A test case that is setup to work with a temp database"""
@@ -173,13 +173,14 @@ class TestCaseWithTestDB(TestCaseWithDB):
     def get_conductor(self, options=None):
         if options is None:
             options = self.pipeline.options
-        sync._conductor = None # hack away the singleton...
-        return sync.get_conductor(options)
+        return sync.get_conductor(self.pipeline, options)
 
+    @defer.inlineCallbacks
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol
         test_proto.test_num_test_docs += 1
-        return self.get_conductor().sync(self.pipeline)
+        c = yield self.get_conductor()
+        _ = yield c.sync()
 
 
 class TestCaseWithCorpus(TestCaseWithDB):

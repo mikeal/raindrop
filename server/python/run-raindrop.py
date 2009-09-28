@@ -26,6 +26,7 @@ from raindrop.config import get_config, init_config
 logger = logging.getLogger('raindrop')
 
 g_pipeline = None
+g_conductor = None
 
 class HelpFormatter(optparse.IndentedHelpFormatter):
     def format_description(self, description):
@@ -90,20 +91,17 @@ def show_info(result, parser, options):
 @defer.inlineCallbacks
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
-    conductor = get_conductor()
-    _ = yield conductor.sync(g_pipeline)
+    _ = yield g_conductor.sync()
 
 @defer.inlineCallbacks
 def sync_incoming(result, parser, options):
     """Synchronize all incoming messages from all accounts"""
-    conductor = get_conductor()
-    _ = yield conductor.sync(g_pipeline, incoming=True, outgoing=False)
+    _ = yield g_conductor.sync(incoming=True, outgoing=False)
 
 @defer.inlineCallbacks
 def sync_outgoing(result, parser, options):
     """Synchronize all outgoing messages from all accounts"""
-    conductor = get_conductor()
-    _ = yield conductor.sync(g_pipeline, incoming=False, outgoing=True)
+    _ = yield g_conductor.sync(incoming=False, outgoing=True)
 
 def process_backlog(result, parser, options):
     """Process all messages to see if any extensions need running"""
@@ -122,7 +120,7 @@ def process_incoming(result, parser, options):
         dm = model.get_doc_model()
         info = yield dm.db.infoDB()
         db_seq = info['update_seq']
-        proc_seq = g_pipeline.incoming_processor.runner.current_seq
+        proc_seq = g_pipeline.incoming_processor.current_seq
         left = db_seq - proc_seq
         print "still waiting for new raindrops (%d items to be processed) ..." \
               % (left)
@@ -131,7 +129,6 @@ def process_incoming(result, parser, options):
     lc = task.LoopingCall(report)
     return lc.start(30, False)
 
-    return g_pipeline.start_backlog().addCallback(done)
 
 def reprocess(result, parser, options):
     """Reprocess all messages even if they are up to date."""
@@ -286,9 +283,6 @@ def main():
     init_config()
     proto.init_protocols()
 
-    # do this very early just to set the options
-    get_conductor(options)
-
     # patch up keys.
     if options.keys:
         def _fix_unicode(result):
@@ -347,10 +341,13 @@ def main():
 
     @defer.inlineCallbacks
     def setup_pipeline(whateva):
-        global g_pipeline
+        global g_pipeline, g_conductor
         if g_pipeline is None:
             g_pipeline = pipeline.Pipeline(model.get_doc_model(), options)
             _ = yield g_pipeline.initialize()
+        if g_conductor is None:
+            g_conductor = yield get_conductor(g_pipeline, options)
+
     d.addCallback(setup_pipeline)
 
     # Now process the args specified.
