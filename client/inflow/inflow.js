@@ -1,5 +1,7 @@
 dojo.provide("inflow");
 
+dojo.require("dojox.fx.scroll");
+
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
@@ -37,17 +39,21 @@ inflow = {
   showStories: function() {
     //summary: shows the Stories widget and hides the ContactList widget.
     if (this.showState != "stories") {
-      dijit.byId("stories").domNode.style.display = "";
-      dijit.byId("contactList").domNode.style.display = "none";
+      //Using class lookups since extender refreshes can change DOM IDs.
+      this._firstWidgetNode("rdw.Stories").style.display = "";
+      this._firstWidgetNode("rdw.ContactList").style.display = "none";
       this.showState = "stories";
     }
+    
+    //Scroll to top of the 
   },
 
   showContacts: function() {
     //summary: shows the ContactList widget and hides the Stories widget.
     if (this.showState != "contacts") {
-      dijit.byId("stories").domNode.style.display = "none";
-      dijit.byId("contactList").domNode.style.display = "";
+      //Using class lookups since extender refreshes can change DOM IDs.
+      this._firstWidgetNode("rdw.Stories").style.display = "none";
+      this._firstWidgetNode("rdw.ContactList").style.display = "";
       this.showState = "contacts";
     }
   },
@@ -84,15 +90,45 @@ inflow = {
     } else if (evt && evt.charCode == 63) {
       dojo.byId("keyboardHelp").style.display = "block";
       this.keyboardNavShowing = true;
-    } else if (!this.firstNav) {
-      //Only focus on first story if this is the first
-      //keypress.
-      var widget = dijit.byId("stories");
-      if (evt.keyCode == widget.navKeys.down) {
-        widget.onKeyPress(evt);
-      }
-      this.firstNav == true;
     }
+  },
+  
+  onFirstStoryItemSelected: function() {
+    //summary: when the first story item is selected in the stories
+    //widget, scroll the page up above the summary widget.
+    if (this.firstItemAnim) {
+      this.firstItemAnim.stop();
+    }
+
+    console.log("onFirstStoryItemSelected");
+
+    //get position of summary.
+    //Using class lookups since extender refreshes can change DOM IDs.
+    var position = dojo.position(this._firstWidgetNode("rdw.Summary"), true);
+
+    //animate the scroll.
+    this.firstItemAnim = dojox.fx.smoothScroll({
+      win: dojo.global,
+      target: { x: 0, y: position.y - 5},
+      easing: this.animEasing,
+      duration: 400,
+      onEnd: dojo.hitch(this, function() {
+        delete this.firstItemAnim;
+      })
+    });
+    this.firstItemAnim.play();
+  },
+
+  animEasing: function(/* Decimal? */n){
+    //summary: easing function for animations. This is a copy of
+    //dojo.fx.easing.expoOut
+    return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+  },
+
+  _firstWidgetNode: function(/*String*/widgetClass) {
+    //summary: gets the DOM node for the first instance
+    //of a widget with widgetClass.
+    return dijit.registry.byClass(widgetClass).toArray()[0].domNode;
   }
 };
 
@@ -130,6 +166,9 @@ inflow = {
         rd.pub("rd-protocol-home");
       }
     });
+
+    //Listen for first story selection in stories so can scroll summary into view.
+    rd.sub("rdw.Stories.firstItemSelected", inflow, "onFirstStoryItemSelected");
 
     //Listen for completion for the addAccount frame.
     window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);

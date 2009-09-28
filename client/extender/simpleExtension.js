@@ -4,10 +4,6 @@ dojo.require("rdw.Message");
 rd.applyExtension("ext.linkIndex", "rdw.Message", {
   after: {
     postCreate: function() {
-      if (this.messageBag["rd.msg.email.mailing-list"]) {
-        return;
-      }
-
       var schema = this.messageBag["rd.msg.body.quoted.hyperlinks"];
       var links = schema && schema.links;
       if (!links) {
@@ -21,7 +17,20 @@ rd.applyExtension("ext.linkIndex", "rdw.Message", {
         );
       });
 
-      $(this.domNode).append('<ul class="linkIndex">' + links.join('') + '</ul>');
+      $(this.domNode)
+        .append('<ul class="linkIndex">' + links.join('') + '</ul>')
+        .find(".linkIndex")
+        .css({
+          paddingBottom: "8px",
+          listStyle: "none",
+          fontSize: "small"
+        })
+        .find("a")
+        .css({
+          color: "#1a1a1a",
+          opacity: 0.5,
+          textDecoration: "none"
+        });
     }
   }
 });

@@ -6,9 +6,12 @@
 }
 
 .rdwStoryTwitterTimeLine .rdwMessage .topActions {
-  position: absolute;
-  right: 0;
-  top: 0;
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine.active .rdwStoryTwitterTimeLine .timestamp,
+.rdwStoryTwitterTimeLine:hover .timestamp {
+  visibility: visible !important;
 }
 
 .rdwStoryTwitterTimeLine .tweetList {
@@ -64,8 +67,7 @@
 }
 
 .rdwStoryTwitterTimeLine .rdwMessage .topActions a {
-  top: 0;
-  right: 0;
+  text-indent: -400px;
 }
 
 .rdwStoryTwitterTimeLine .tools {

@@ -161,6 +161,19 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     });
   },
 
+  destroy: function() {
+    //summary: dijit lifecycle method.
+    var widgets = ["toSelectorWidget", "fromSelectorWidget"];
+    for (var i = 0, widget; widget = widgets[i]; i++) {
+      if (this[widget]) {
+        this[widget].destroy();
+        delete this[widget];
+      }
+    }
+
+    this.inherited("destroy", arguments);
+  },
+
   onFocusTextArea: function(evt) {
     //summary: expand the text area from it's simple entry space
     dojo.addClass(this.domNode, "expanded");

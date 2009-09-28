@@ -7,36 +7,19 @@
   -webkit-border-radius: 5px;
   margin-bottom: 8px;
   outline: none;
+  border: 2px double transparent;
 }
 
 .active .rdwMessage,
 .rdwMessage.active,
 .rdwMessage.reply.active {
-  background-color: #FFB0B0;
+  border-color: #FFB0B0;
 }
 
 .rdwStoryFullStory .active .rdwMessage,
 .rdwStoryFullStory .rdwMessage.active,
 .rdwStoryFullStory .rdwMessage.reply.active {
   background-color: #FFFFFF;
-}
-
-.rdwStoryFullStory .active .rdwMessage .messageIndicator,
-.rdwStoryFullStory .rdwMessage.active .messageIndicator,
-.rdwStoryFullStory .rdwMessage.reply.active .messageIndicator {
-  background-color: #FFB0B0;
-}
-
-.rdwStoryFullStory .messageIndicator {
-  width: 12px;
-  height: 12px;
-  display: inline-block;
-  background-color: #E6E6E6;
-  -moz-border-radius: 6px;
-  -webkit-border-radius: 6px;
-  position: relative;
-  top: 1px;
-
 }
 
 .rdwMessage div.photo {
@@ -70,7 +53,7 @@
 .rdwMessage .topActions {
   position: absolute;
   right: 8px;
-  top: 10px;
+  top: 8px;
 }
 
 .rdwMessage .topActions a {
@@ -87,6 +70,9 @@
   outline: none;
   background-position: left center;
   background-repeat: no-repeat;
+  font-family: Droid-serif, georgia, times, serif;
+  font-weight: normal;
+  font-style: italic;
 }
 
 .rdwStory.active .rdwMessage:not(.reply) .topActions a,
@@ -198,8 +184,6 @@
 .rdwMessage .subject {
   padding-right: 0;
   font-weight: bold;
-  font-variant: small-caps;
-  text-transform: lowercase;
   font-family: Droid-sans, Arial, Verdana, sans-serif;
   display: block;
 }

@@ -9,7 +9,6 @@
   margin-bottom:-3px;
 }
 
-.extenderBackEndEditor .delete {
-  position: absolute;
-  right: 6px;
+.extenderBackEndEditor .actions {
+  text-align: right;
 }

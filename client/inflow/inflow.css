@@ -117,9 +117,9 @@ a img{
   background-image: url("i/keyboard/keyboard.png");
   background-repeat: no-repeat;
   -moz-border-radius: 5px;
-  -moz-box-shadow: -5px 5px 0 #666;
+  -moz-box-shadow: 0 0 10px #666666;
   -webkit-border-radius: 5px;
-  -webkit-box-shadow: -5px 5px 0 #666;
+  -webkit-box-shadow: 0 0 10px #666666;
   padding: 8px;
   display:none;
   position: fixed;
@@ -152,6 +152,7 @@ a img{
 
 #column1 {
   display: table-cell;
+  max-width: 40em;
   width: 40em;
   padding-bottom: 24px;
 }

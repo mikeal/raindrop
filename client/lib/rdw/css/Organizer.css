@@ -14,13 +14,14 @@
 }
 
 .Organizer ol > li.selected {
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  background-color: #1A1A1A;
 }
 
 .Organizer ol > li.selected a {
-  color: #A1A1A1;
+  background-color: #FFB0B0;
+}
+
+.Organizer ol > li.selected a:hover {
+  text-decoration: none;
 }
 
 .Organizer ol > li[type="home"] {
@@ -61,13 +62,14 @@
 }
 
 .Organizer ol > li > a {
+  padding: 0 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
   text-decoration: none;
   background-color: transparent;
   color: #1A1A1A;
   font-size: small;
   font-weight: bold;
-  font-variant: small-caps;
-  text-transform: lowercase;
 }
 
 .Organizer ol > li > a:hover {
@@ -78,8 +80,6 @@
   font-weight: bold;
   font-family: Droid-sans, arial,verdana,geneva,sans-serif;
   font-style: normal;
-  font-variant: small-caps;
-  text-transform: lowercase;
 }
 
 .Organizer ol > li.locationTag > a {
@@ -100,7 +100,7 @@
   padding: 0.4em 0.3em;
   font-weight: bold;
   font-size: small;
-  padding: 0.2em 20px;
+  padding: 0.2em 26px;
   margin-left: 0.6em;
   background-image: url("i/menu/icon_mail.png");
   background-repeat: no-repeat;
@@ -133,8 +133,6 @@
 
 .dijitTitlePaneTextNode {
   font-weight: bold !important;
-  font-variant: small-caps;
-  text-transform: lowercase;
   cursor: pointer;
 }
 

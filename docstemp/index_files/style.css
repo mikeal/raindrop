@@ -1,0 +1,704 @@
+/*
+Theme Name: Labs 2.0 Project Wordpress Theme
+Theme URI: http://labs.mozilla.org/
+Description: Mozilla Labs 2.0 design for Projects
+Version: 2.0
+Author: Mozilla
+Author URI: http://www.mozilla.com/
+Tags: 
+*/
+
+body, html, div, blockquote, img, label, p, h1, h2, h3, h4, h5, h6, pre, ul,
+ol, li, dl, dt, dd, form, a, fieldset, th, td {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	outline: none;
+}
+
+title {
+    text-transform: capitalize;
+}
+
+@font-face {
+	font-family: "Droid Sans";
+	src: url(../f/Droid-Sans/DroidSans.ttf) format("truetype");
+}
+
+@font-face {
+	font-family: "Droid Sans";
+	font-weight: bold;
+	src: url(../f/Droid-Sans/DroidSans-Bold.ttf) format("truetype");
+}
+
+body {
+	font: 12px/1.4 "Droid Sans", "trebuchet ms", sans-serif;
+	color: #333;
+	background: #fff url(img/bg.jpg) no-repeat center top;
+}
+
+body.jetpack { 
+	background: #fff url(img/jetpack-bg.jpg) no-repeat center top;
+}
+
+a:link, a:visited {
+	text-decoration: none;
+	color: #375d74;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a img {
+	border: 0;
+}
+
+#page {
+	margin: 0 auto;
+	width: 950px;
+}
+
+#topnav {
+	height: 88px;
+	position: relative;
+	width: 950px;
+}
+
+#topnav h1 {
+	margin: 15px 0 0 33px;
+	float: left;
+}
+
+#topnav ul#mainnav {
+	float: left;
+	display: inline;
+	margin: 30px 0 0 38px;
+}
+
+#topnav ul#mainnav li {
+	float: left;
+	margin-right: 38px;
+	list-style: none;
+}
+
+#topnav ul#mainnav li a {
+	text-transform: uppercase;
+	font-size: 14px;
+	text-decoration: none;
+	color: #000;
+}
+
+#topnav #search {
+	float: right;
+	margin: 27px 22px 0 0;
+}
+
+#topnav #search label {
+	font-size: 14px;
+	color: #000;
+	text-transform: uppercase;
+}
+
+#searchfield {
+    border: 0;
+    background: url(img/searchfield.png) no-repeat;
+    width: 142px;
+    height: 22px;
+    padding: 5px 4px 0 10px;
+    margin: 0 0 0 4px;
+} 
+
+#spotlight {
+	clear: left;
+}
+
+#home #spotlight {
+	height: 351px;	
+}
+
+#home.subpage #spotlight {
+	background: url(img/subpage-header.png) no-repeat;
+	height: 216px;
+}
+
+#home #spotlight #pageheader {
+	float: left;
+	width: 590px;
+}
+
+#projectpage #spotlight #pageheader { 
+	width: 590px;
+	float: left;
+}
+
+#spotlight #pageheader h2 {
+	height: 202px;
+	background: url(img/conceptseries-header.png) no-repeat;
+	text-indent: -5000px;
+	margin: 20px 0 0 15px;
+}
+
+#spotlight .projects {
+	float: right;
+	width: 350px;
+	margin-top: 20px;
+}
+
+#spotlight #pageheader .blurb {
+	margin-left: 185px;
+	margin-top:  -35px;
+	width: 400px;
+}
+
+#pageheader a.moreinfo {
+	display: block;
+	width: 191px;
+	height: 28px;
+	margin-top: 25px;
+	padding-top: 5px;
+	font-size: 1.2em;
+}
+
+#spotlight .projects .project {
+	clear:  left;
+	margin: 0 10px 10px 10px;
+}
+
+#spotlight .projects .project h3 {
+	font-size: 1.5em;
+	font-weight: normal;
+	color: #333;
+	padding: 5px 0 0 0;
+}
+
+#spotlight .projects .project img {
+	float:  left;
+	margin-right: 10px;
+}
+
+#spotlight .projects .project p {
+	margin-left: 85px;
+	width: 220px;
+	font-size: 0.98em;
+	padding-bottom: 8px;
+}
+
+#spotlight .projects .projectinfo { 
+	padding-bottom: 10px;
+}
+
+.subpage #spotlight h2 {
+    text-indent: -5000px;  
+}
+
+#content {
+	padding: 0;
+	clear: left;
+	margin-top: 7px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;
+}
+
+#content:after, .projects .projectinfo:after {
+    content: ".";
+    display: block;
+    height: 0;
+    clear: both;
+    visibility: hidden;
+}
+
+.topicheader {
+	height: 79px;
+	z-index: 50;
+	padding-left: 25px;
+}
+
+#blog .topicheader {
+	background: url(img/test_arrow_1.png) no-repeat left;
+}
+
+#feeds .topicheader {
+	background: url(img/test_arrow_2.png) no-repeat center;
+}
+
+#getinvolved .topicheader { 
+	background: url(img/test_arrow_3.png) no-repeat right;
+}
+
+.topicheader h2 {
+	padding-top: 20px;
+	font-size: 1.5em;
+	font-weight: normal;
+}
+
+#projectpage .topicheader h2 { 
+	text-transform: capitalize;
+}
+
+#blog, #feeds, #getinvolved, #subnav, #pagecontent {
+	float: left;
+}
+
+#blog {
+    width: 526px;
+    position: relative;
+    min-height: 100%;
+}
+
+#pagecontent {
+    width: 528px;
+    margin-top: 8px;
+}
+
+/* Archives styles
+------------------------------------------------- */
+
+#smart-archives-list h2 { 
+	border-bottom: 1px dotted #ccc;
+	font-size: 1.7em;
+}
+
+#smart-archives-list li { 
+	margin-left: 3px;
+	list-style: none;
+}
+
+#smart-archives-block { 
+	margin: 20px 0;
+}
+
+#smart-archives-block a, #smart-archives-block span { 
+	margin-left: 10px;
+}
+
+#smart-archives-block .emptymonth { 
+	color: #aaa;
+}
+
+#smart-archives-block a { 
+	font-weight: bold;
+}
+
+.backtohome {
+    width: 167px;
+    margin: 0 5px 5px 0 !important;
+    padding: 30px 0 0 26px;
+    text-transform: capitalize;
+}
+
+.backtohome a {
+    font-size: 1.4em;
+}
+
+#subnav {
+    width: 209px;
+	padding: 0 0 0 10px;
+}
+
+#feeds {
+	width: 213px;
+	background: #f4f4f4 url(img/column-gradient-bg.jpg) no-repeat 0 bottom;
+	margin-bottom: 30px;
+}
+
+#getinvolved {
+	width: 203px;
+}
+
+.sectioncontent {
+	margin: 0;
+	padding: 20px 20px 25px 25px;
+	position: relative;
+}
+
+#subnav .sectioncontent { 
+	padding: 20px 0 0 0;
+}
+
+#blog .sectioncontent h2.sectionheader {
+	font-size: 2.0em;
+	font-weight: normal;
+	float: left;
+	text-transform: capitalize;
+}
+
+.sectioncontent .post h2 { 
+	font-weight: normal !important;
+	font-size: 1.5em;
+}
+
+.post img { 
+    max-width: 480px; 
+    overflow: auto;
+    margin: 10px auto;
+}
+
+#blog .blognav {
+	margin-top: 10px;
+	font-size: 1.3em;	
+}
+
+.sectionhead { 
+	margin: 4px 0;
+}
+
+.sectionhead h3 {
+	display: inline;
+	font-weight: normal;
+}
+
+h2.search.sectionhead { 
+	border-bottom: 1px solid #ccc;
+	font-weight: normal;
+	font-size: 1.5em;
+}
+
+.sectioncontent .title, .sectioncontent ul li {
+	font-weight: normal;
+	margin-bottom: 5px;
+}
+
+#feeds .sectioncontent ul, #getinvolved .sectioncontent ul { 
+	margin-bottom: 20px;
+}
+
+#feeds .sectioncontent ul li, #getinvolved ul li { 
+	border-bottom: 1px dotted #ccc;
+	padding-bottom: 3px;
+	font-size: 0.9em;
+}
+
+.search .title { 
+	font-size: 1.4em;
+}
+
+div.rss {
+	display: inline;
+	width: 16px;
+	height: 20px;
+}
+
+div.rss img {
+	margin: 1px 0 0 4px;
+}
+
+#blog div.rss img { 
+	margin: 9px 0 0 8px;
+}
+
+#blog .archiveslink {
+	position: absolute;
+	top: 20px;
+	right: 20px;
+}
+
+#blog .title, #pagecontent .post .title {
+	font-size: 2.2em;
+	line-height: 1.0;
+	clear: left;
+	font-weight: normal;
+	margin-bottom: 10px;
+}
+
+.search .post ul.metadata { 
+	margin-bottom: 10px;
+	padding-bottom: 6px;
+	border-bottom: 1px dotted #ccc;
+}
+
+.search .post ul.metadata li { 
+	display: inline;
+}
+
+.entry h2, .entry h3, .entry h4, .entry h5 {
+	margin: 8px 0;
+	clear: left;
+}
+
+.entry ol, .entry ul, .post ol, .post ul {
+    margin: 0 0 0 25px;
+}
+
+.entry ol {
+    list-style: decimal;
+}
+
+.entry ul {
+    list-style: disc;
+}
+
+ul.metadata {
+	list-style: none;
+	margin: 10px 0;
+}
+
+#feeds ul, #getinvolved ul, #feeds ol, #getinvolved ol {
+    list-style: none;
+}
+
+#content p { 
+	margin: 6px 0 10px 0;
+}
+
+/* Project pages
+---------------------------------------------------- */
+
+#projectpage #spotlight {
+	border: 0;
+}
+
+#projectpage #pageheader h1 { 
+	height: 200px;
+	margin: 47px 0 47px 5px;
+	text-indent: -5000px;
+}
+
+#projectpage.jetpack #pageheader h1 {
+	background: transparent url(logo.png) no-repeat scroll center;
+}
+
+
+#projectpage .projectdetails dt { 
+	color: #333;
+	font-size: 1.5em;
+	font-weight: normal;
+}
+
+.projectdetails dd { 
+	margin-bottom: 10px;
+	color: #333;
+}
+
+#projectbar { 
+	clear: left;
+	height: 62px;
+}
+
+#projectbar h2 { 
+	color: #333;
+	font-size: 2.3em;
+	background: url(img/downloadarrow.png) no-repeat 0 3px;
+	padding-left: 40px;
+	float: left;
+	margin: 10px 30px;
+}
+
+#projectbar h2 span { 
+	font-weight: normal;
+	margin-left: 30px;
+}
+
+#projectbar p { 
+	float: right;
+	line-height: 62px;
+	margin-right: 15px;
+	color: #8d8d8d;
+	text-decoration: underline;
+	font-size: 0.9em;
+}
+
+#projectnav { 
+	margin-bottom: 20px;
+	padding-left: 25px;
+}
+
+#projectnav h3 { 
+	font-weight: normal;
+	margin-bottom: 8px;
+}
+
+#projectnav ul {
+    list-style-type: none;
+}
+
+#projectnav li { 
+	margin-bottom: 4px;
+	font-size: 0.95em;
+}
+
+#projectnav .current { 
+	color: #000;
+	font-weight: bold;
+	font-size: 0.9em;
+}
+
+#projectnav .current a:before { 
+	content: "» ";
+}
+
+#feeds .post { 
+	padding: 10px 0 6px 0;
+	border-bottom: 1px dotted #ccc;
+}
+
+.projectintro { 
+	margin: 0 20px;
+	padding: 15px 10px 30px 5px;
+	font-size: 1.05em;
+	border-bottom: 1px dotted #ccc;
+}
+
+.projectintro h2 { 
+	font-size: 2em;
+	font-weight: normal;
+}
+
+.projectintro ol, .projectintro ul {
+    margin: 0 0 0 25px;
+}
+
+#projectpage .projectdetails {
+	float: right;
+	width: 340px !important;
+	margin: 40px 10px 0 10px !important;
+}
+
+#projectpage .projectdetailswrap { 
+	width: 330px;
+}
+
+#projectpage .projectdetails h3 { 
+	padding: 15px 35px 0 35px;
+	font-size: 1.6em;
+	font-weight: normal;
+}
+
+#projectpage .projectdetails p { 
+	padding: 5px 35px 15px 35px;
+}
+
+
+/* Superfooter 
+---------------------------------------------------- */
+
+#superfooter {
+	clear: left;
+	font-size: 0.9em;
+	background: url(img/footer_bg.png) no-repeat;
+}
+
+#superfooter #productlist {
+	height: 127px;
+	margin-top: 9px;
+}
+
+#superfooter #productlist ul { 
+	background: url(img/labs-footer-logo.png) no-repeat 21px 37px;
+	padding: 0 26px 0 178px;
+	height: 127px;
+}
+
+#superfooter #productlist ul li {
+	list-style: none;
+	float: left;
+	width:  75px;
+	text-align: center;
+	padding: 15px 0 0 25px;	
+}
+
+#superfooter #productlist ul li a {
+    display: block;
+}
+
+#superfooter #productlist ul li a:hover img { 
+	text-decoration: none;
+}
+
+#superfooter #productlist .viewall { 
+	padding-top: 50px;
+	white-space: nowrap;
+}
+
+#superfooter .item { 
+	width: 170px;
+	float: left;
+	margin: 23px 5px 23px 15px;
+}
+
+#superfooter .item .sectionhead { 
+	margin-bottom: 8px;
+}
+
+#superfooter .item ul li { 
+	list-style: none;
+	margin-bottom: 3px;
+}
+
+#superfooter .item h4 { 
+	margin-bottom: 5px;
+}
+
+#superfooter .item.featured { 
+	width: 330px;
+}
+
+#superfooter form li { 
+	float: left;
+	margin-top: 10px;
+}
+
+#superfooter .sectionhead {
+    font-size: 0.9em;
+}
+
+#listsignup { 
+	width: 125px;
+	margin-right: 5px;
+}
+
+#superfooter form li+li { 
+	padding-top: 5px;
+}
+
+#footercontent {
+	clear: left;
+}
+
+#footercontent .archivelist li { 
+	border-bottom: 1px dotted #ccc;
+	padding-bottom: 3px;
+}
+
+#footercontent .archivelist li.viewall { 
+	border-bottom: none;
+}
+
+
+
+#legal { 
+	clear: left;
+	width: 950px;
+}
+
+#copyright { 
+	float: left;
+	padding-bottom: 20px;
+}
+
+#copyright img { 
+	float: left;
+	margin-right: 8px;
+}
+
+#copyright p strong { 
+	display: block;
+	width: 400px;
+}
+
+#legal ul { 
+	float: right;
+	margin: 10px 30px 0 0;
+}
+
+#legal ul li { 
+	list-style: none;
+	float: left;
+	margin-left: 40px;
+}
+
+/* WP stats tracker inserts a smiley face image, wtf? */
+#wpstats {
+    position: absolute;
+    left: -10000px;
+}

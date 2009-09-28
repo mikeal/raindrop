@@ -2,9 +2,10 @@
   <div class="header">
     <form onsubmit="return false;">
       <div class="actions">
-        <button dojoAttachEvent="onclick: onSave">Save</button>
-        <input type="checkbox" dojoAttachPoint="enabledNode" dojoAttachEvent="onclick: onEnableClick"> Enabled
-        <button class="delete" dojoAttachEvent="onclick: onDelete">Delete</button>
+        <span dojoAttachPoint="enabledSectionNode"><input type="checkbox" dojoAttachPoint="enabledNode" dojoAttachEvent="onclick: onEnableClick"> Enabled</span>
+        <button dojoAttachPoint="cloneNode" dojoAttachEvent="onclick: onClone">Clone</button>
+        <button dojoAttachPoint="saveNode" dojoAttachEvent="onclick: onSave">Save</button>
+        <button class="delete" dojoAttachPoint="deleteNode" dojoAttachEvent="onclick: onDelete">Delete</button>
       </div>
       <div dojoAttachPoint="statusNode" class="status">
       </div>

@@ -6,10 +6,6 @@ dojo.require("dojo.io.script");
 rd.applyExtension("ext.flickrIndex", "rdw.Message", {
   after: {
     postCreate: function() {
-      if (this.messageBag["rd.msg.email.mailing-list"]) {
-        return;
-      }
-
       var schema = this.messageBag["rd.msg.body.quoted.hyperlinks"];
       var links = schema && schema.links;
       if (!links) {
