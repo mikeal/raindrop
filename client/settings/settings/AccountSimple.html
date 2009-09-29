@@ -1,0 +1,21 @@
+<form class="account ${doc.kind}" onsubmit="return false">
+  <strong class="name">${kindDocProps._name}</strong>
+  <a class="delete" dojoAttachEvent="onclick: onDelete">delete</a>
+  <span class="url">${kindDocProps._domain}<span class="username" dojoAttachPoint="userNameDisplayNode">${doc.name}</span></span>
+  <table class="login">
+    <tr>
+      <td><label for="username">username:</label></td>
+      <td><input type="text" name="userName" dojoAttachPoint="userNameNode" value="${doc.name}"></td>
+    </tr>
+    <tr>
+      <td><label for="password">password:</label></td>
+      <td><input type="password" name="password" dojoAttachPoint="passwordNode" value="${doc.password}"></td>
+    </tr>
+    <tr>
+      <td class="message" dojoAttachPoint="messageNode">&nbsp;</td>
+      <td style="text-align:right;">
+        <button dojoAttachEvent="onclick: onSave">ok &#x2714;</button>
+      </td>
+    </tr>
+  </table>
+</form>

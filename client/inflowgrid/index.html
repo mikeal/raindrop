@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link REL="SHORTCUT ICON" HREF="i/favicon.ico">
+
+  <title>Raindrop Inflow</title>
+  
+  <link type="text/css" rel="stylesheet" href="inflow.css">
+
+  <script data-appname="inflow" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
+
+  <script type="text/javascript" charset="utf-8">
+    rd.require("inflow");
+  </script>  
+</head>
+<body>
+  <div id="nav">
+    <div class="navHeader">
+    <ul>
+    <li>Inflow</li>
+    <li><div rdType="inflow.Organizer"></div></li>
+    </ul>
+    <!--<div rdType="rdw.Search"></div>-->
+    <div rdType="rdw.Notify"></div>
+    </div>
+    <div id="logo"><div rdType="rdw.Loading"></div></div>
+  </div>
+
+  <div id="stories" rdType="inflow.Stories"></div>
+</body>
+</html>

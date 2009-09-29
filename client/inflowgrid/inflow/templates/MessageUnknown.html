@@ -1,0 +1,30 @@
+<div class="rdwMessage rdwMessageUnknown ${type}" tabindex="0" dojoAttachEvent="onclick: onClick">
+  <div class="topActions">
+    <a href="#${expandLink}" class="expand" title="${i18n.expand}">${i18n.expand}</a>
+    <a href="#archive" class="archive" title="${i18n.archive}">${i18n.archive}</a>
+    <a href="#delete" class="delete" title="${i18n.deleted}">${i18n.deleted}</a>
+  </div>
+  <div class="photo"><img class="photo" src="${unknownImgUrl}"/></div>
+  <div class="message">
+    <div class="header">
+      <span class="from">
+        <!--<a target="_blank" class="from" dojoAttachPoint="fromNameNode">${fromName}</a>-->
+        <a href="#${expandLink}" class="from" title="${i18n.expand}">${fromName}</a>
+        </span>
+      <span class="medium">${fromId}</span>
+    </div>
+    <div class="content">
+      <span class="subject">${subject}</span> ${message}
+    </div>
+    <div class="attachments"></div>
+    <div class="actions" dojoAttachPoint="actionsNode">
+      <a class="reply" href="#reply" dojoattachpoint="replyNode">&#9654; ${i18n.reply}</a>
+      <a class="identity" title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode" ></a>
+    </div>
+    <div class="timestamp" title="${utcTime}">
+      <span class="friendly">${friendlyTime}</span>
+      <span class="additional">${additionalTime}</span>
+    </div>
+  </div>
+  <div class="triangle"></div>
+</div>

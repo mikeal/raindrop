@@ -341,6 +341,20 @@ rd.api.extend({
   },
 
   /**
+   * Does a bulk update of all the documents in docs.
+   *
+   * @param {Object} args options for the couchdb calls.
+   * @param {Array} args.doc the document to delete.
+   */
+  deleteDoc: function(args) {
+    args = dojo.delegate(args);
+    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
+    args.url += args.doc._id + "?rev=" + args.doc._rev;
+    args.method = "DELETE";
+    return this.xhr(args);
+  },
+
+  /**
    * puts a document in the raindrop data store.
    * If successful, callback is called with the doc as the only argument.
    * It will generate the _id and rd_ext_id on the document if it does

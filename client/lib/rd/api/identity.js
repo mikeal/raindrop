@@ -137,7 +137,7 @@ rd.api.identity = {
     ids = this._filter(ids);
 
     if (!ids.missing) {
-      dfd.callback(ids.found);
+      dfd.callback(ids.found || []);
     } else {
       var found = ids.found || [];
 
