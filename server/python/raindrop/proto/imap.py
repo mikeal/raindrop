@@ -676,7 +676,7 @@ class ImapUpdater:
     # Establish a connection to the server
     logger.debug("setting flags for %(rd_key)r: folder %(folder)r, uuid %(uid)s",
                  dest_doc)
-    client = get_connection(account, conductor)
+    client = yield get_connection(account, conductor)
     _ = yield client.select(dest_doc['folder'])
     # Write the fact we are about to try and (un-)set the flag.
     _ = yield account._update_sent_state(src_doc, 'sending')
