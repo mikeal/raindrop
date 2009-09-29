@@ -20,6 +20,11 @@ rd.engine = {
     }
   },
 
+  syncNow: function() {
+    //summary: tells the back-end to sync immediately.
+    this._autoCallback();
+  },
+
   cancelAutoSync: function() {
     clearTimeout(this._syncId);
     this._syncId = 0;
@@ -49,7 +54,9 @@ rd.engine = {
     this.syncMessages(
       //Success callback.
       dojo.hitch(this, function(){
-        this._syncId = setTimeout(dojo.hitch(this, "_autoCallback"), this._syncInterval);
+        if (this._syncInterval) {
+          this._syncId = setTimeout(dojo.hitch(this, "_autoCallback"), this._syncInterval);
+        }
         rd.pub("rd-engine-sync-done");
       }),
 
@@ -142,14 +149,17 @@ rd.engine = {
         }
 
         var empty = {},
-            running = response.running,
+            accounts = response.conductor.accounts,
             busy = false;
 
-        //A bit awkward to know if something is running.
-        for (var prop in running) {
-          if (!(prop in empty)) {
-            busy = true;
-            break;
+        //Make sure all accounts are done.
+        //TODO: can make this more fine-grained, syncing specific accounts.
+        if (accounts && accounts.length) {
+          for (var i = 0, account; account = accounts[i]; i++) {
+            if (account.status != "idle") {
+              busy = true;
+              break;
+            }
           }
         }
 
