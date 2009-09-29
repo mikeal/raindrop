@@ -813,7 +813,8 @@ class IMAPAccount(base.AccountBase):
           if not conductor.reactor.running:
             break
           log_exception('failed to process an IMAP query request')
-      _ = yield conn.close()
+      if conn is not None:
+        _ = yield conn.close()
 
     @defer.inlineCallbacks
     def start_queryers(n):
