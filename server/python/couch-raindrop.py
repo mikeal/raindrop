@@ -50,7 +50,8 @@ from twisted.python.failure import Failure
 from zope.interface import implements
 from twisted.internet import interfaces
 
-from raindrop import pipeline, model, opts, config, proto
+from raindrop import model, opts, config, proto
+from raindrop.pipeline import Pipeline
 import raindrop.sync
 
 logger = logging.getLogger('raindrop')
@@ -58,6 +59,9 @@ logger = logging.getLogger('raindrop')
 all_commands = {} # keyed by name, value is a function returning a deferred.
 running_tasks = {} # keyed by 'task name', value is a (deferred, time_started)
 finished_tasks = {} # keyed by 'task name', value is some json object
+
+pipeline = None
+conductor = None
 
 class HelpFormatter(optparse.IndentedHelpFormatter):
     def format_description(self, description):
@@ -84,6 +88,7 @@ def get_request_opts_help():
     tp.add_option_group(og)
     return tp.format_option_help(hf)
 
+
 def options_from_request(req):
     def mp_error(msg): # monkey-patch!
         raise RequestFailed(400, error=msg)
@@ -102,33 +107,14 @@ def options_from_request(req):
     options, _ = parser.parse_args(argv)
     return options
 
-_pipeline = None
-@defer.inlineCallbacks
-def _get_pipeline(req):
-    global _pipeline
-    if _pipeline is None:
-        opts = options_from_request(req)
-        _pipeline = pipeline.Pipeline(model.get_doc_model(), opts)
-        _ = yield _pipeline.initialize()
-    defer.returnValue(_pipeline)
-
-
-_conductor = None
-@defer.inlineCallbacks
-def _get_conductor(pl):
-    global _conductor
-    if _conductor is None:
-        _conductor = yield raindrop.sync.get_conductor(pl)
-    else:
-        assert pl is _conductor.pipeline
-    defer.returnValue(_conductor)
-
-
 @defer.inlineCallbacks
 def _init(req):
-    pl = yield _get_pipeline(req)
-    _ = yield _get_conductor(pl)
-
+    global pipeline, conductor
+    assert pipeline is None # don't call me twice!
+    opts = options_from_request(req)
+    pipeline = Pipeline(model.get_doc_model(), opts)
+    _ = yield pipeline.initialize()
+    conductor = yield raindrop.sync.get_conductor(pipeline)
 
 def log_twisted_failure(failure, msg, *args):
     f = StringIO()
@@ -147,17 +133,19 @@ def _done_async(result, key):
     else:
         logger.info("async task %r finished", key)
         resp = result
-    finished_tasks[key] = resp
-    del running_tasks[key]
+    if key is not None:
+        finished_tasks[key] = resp
+        del running_tasks[key]
 
 
 def _start_async(key, func, *args, **kw):
-    if key in running_tasks:
+    if key is not None and key in running_tasks:
         raise RequestFailed(423, error="already running")
     d = func(*args, **kw)
-    if key in finished_tasks:
-        del finished_tasks[key]
-    running_tasks[key] = (d, time.time())
+    if key is not None:
+        if key in finished_tasks:
+            del finished_tasks[key]
+        running_tasks[key] = (d, time.time())
     d.addBoth(_done_async, key)
     return {"code": 202, "json": {"result": "started"}}
 
@@ -169,38 +157,36 @@ def exit(req):
     sys.stdin.close()
     return {"code": 200, "json": {"result": "goodbye"}}
 
-
 def status(req):
     """request information about how things are going..."""
     running = {}
     for key, (defd, started) in running_tasks.iteritems():
         running[key] = time.time() - started
-    return {"code": 200, "json": {"running": running,
-                                  "finished": finished_tasks}}
+    ret = {"code": 200, "json": {"running": running,
+                                 "finished": finished_tasks,
+                                 "conductor": conductor.get_status_ob()}}
+    return ret
 
 
 def process_backlog(req):
     """process the work queues..."""
     @defer.inlineCallbacks
     def _process(req):
-        pl = yield _get_pipeline(req)
-        ret = yield pl.start_backlog()
+        ret = yield pipeline.start_backlog()
         defer.returnValue(ret)
 
-    return _start_async("process", _process, req)
+    return _start_async("process-backlog", _process, req)
 
 
 def sync_messages(req):
     """Synchronize all messages from all accounts"""
     @defer.inlineCallbacks
     def _sync_messages(req):
-        pl = yield _get_pipeline(req)
-        conductor = yield _get_conductor(pl)
         opts = options_from_request(req)
         num = None
         _ = yield conductor.sync(opts)
 
-    return _start_async("sync-messages", _sync_messages, req)
+    return _start_async(None, _sync_messages, req)
 
 
 def dispatch(req):
@@ -221,7 +207,7 @@ def _do_dispatch_ob(ob):
     def handle_err(failure):
         if isinstance(failure.value, RequestFailed):
             failure.raiseException()
-        txt = log_twisted_failure("Failed to process request:")
+        txt = log_twisted_failure(failure, "Failed to process request:")
         raise RequestFailed(500, error=txt)
 
     defd = defer.maybeDeferred(dispatch, ob)

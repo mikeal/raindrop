@@ -67,6 +67,20 @@ class SyncConductor(object):
     if self.accounts_listening and inc is not None:
       inc.add_processor(new_processor, source_schemas, 'outgoing')
 
+  def get_status_ob(self):
+    acct_infos = []
+    for acct in self.all_accounts:
+      if acct in self.accounts_syncing:
+        state = 'synchronizing'
+      elif acct in self.accounts_listening:
+        state = 'listening'
+      else:
+        state = 'idle'
+
+      acct_infos.append({'id': acct.details['id'],
+                         'status': state})
+    return {'accounts' : acct_infos}
+
   @defer.inlineCallbacks
   def _load_accounts(self):
     # get all accounts from the couch.
@@ -185,7 +199,7 @@ class SyncConductor(object):
       accts = self._get_specified_accounts(options)
       for account in accts:
         if account in self.accounts_syncing:
-          logger.info("skipping acct %(id) - already synching...",
+          logger.info("skipping acct %(id)s - already synching...",
                       account.details)
           continue
         # start synching
