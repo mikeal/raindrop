@@ -113,32 +113,29 @@ body {
 }
 
 .rdwLoading {
-  position: absolute;
-  right: 10px;
-  top: 10px;
   overflow:hidden;
   display: inline-block;
   text-indent: -40em;
-  width: 32px;
-  height: 32px;
+  width: 16px;
+  height: 16px;
   background-image: url("i/ajax-loader.gif");
   background-color:transparent;
 }
 
 #logo {
   position: fixed;
-  height: 50px;
-  width: 50px;
+  height: 16px;
+  width: 16px;
   background-image: url("i/logo.png");
   z-index: 101;
-  top: 25px;
-  right: 25px;
+  top: 15px;
+  right: 10px;
 }
 
 .rdwStory,
 .inflowStoryTwitterTimeLine {
   width: 300px;
-  height:281px;
+  height:211px;
   margin: 0 10px 20px 10px;
   float: left;
 }
@@ -170,6 +167,19 @@ body {
   color: #FF5959;
 }
 
+.header {
+  display: inline;
+}
+
+.from {
+  display: inline;
+  font-weight: bold;
+}
+
+.messageContent {
+  display: inline;
+}
+
 .reply .subject {
   display: none;
 }
@@ -179,4 +189,53 @@ body {
   text-align: right;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
+  display: none;
+}
+
+.rdwMessage {
+  outline: none;
+}
+
+.rdwMessage:last-child .actions {
+  display: block;
+}
+
+.rdwMessage.reply {
+  margin: 7px 0 0 14px;
+}
+
+.timestamp {
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  font-size: 10px;
+  text-align: right;
+}
+
+.rdwMessage:first-child .timestamp {
+  display: block;
+}
+
+.rdwMessage .timestamp {
+  display: none;
+}
+
+.active .timestamp,
+.timestamp.active, 
+.timestamp.reply.active {
+  background-color: yellow;
+}
+
+/* widgets */
+
+.rdwStoryTwitterTimeLine .tweetList {
+  -moz-border-radius: 0px !important;
+  width: 300px !important;
+  margin: 0 10px !important;
+  padding: 7px !important;
+  font-weight: normal;
+  font-size: 11px;
+}
+
+.rdwStoryTwitterTimeLine .tweetList .subject {
+  border-top: none;
 }
