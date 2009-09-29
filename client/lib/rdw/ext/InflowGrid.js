@@ -2,11 +2,11 @@ dojo.provide("rdw.ext.InflowGrid");
 
 //Only do the extensions for the inflowgrid app
 if (rd.appName == "inflowgrid") {
-  dojo.require("rdw._Base");
-  dojo.require("inflowgrid.Organizer");
-  dojo.require("inflowgrid.Stories");
+  dojo["require"]("rdw._Base");
+  dojo["require"]("inflowgrid.Organizer");
+  dojo["require"]("inflowgrid.Stories");
 
-  dojo.requireLocalization("inflowgrid", "i18n", "ROOT");
+  dojo["requireLocalization"]("inflowgrid", "i18n", "ROOT");
 
   rd.applyExtension("rdw.ext.InflowGrid", "rdw._Base", {
     after: {
