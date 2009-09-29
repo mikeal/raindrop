@@ -207,6 +207,7 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
     def make_config(self):
         config = TestCaseWithTestDB.make_config(self)
         # now clobber it with out smtp account
+        config.accounts = {}
         acct = config.accounts['test'] = {}
         acct['proto'] = 'smtp'
         acct['username'] = 'test_raindrop@test.mozillamessaging.com'
