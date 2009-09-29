@@ -1,12 +1,12 @@
-dojo.provide("inflow");
+dojo.provide("inflowgrid");
 
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
-dojo.require("inflow.Stories");
-dojo.require("inflow.Organizer");
+dojo.require("inflowgrid.Stories");
+dojo.require("inflowgrid.Organizer");
 
 dojo.require("rd.engine");
 dojo.require("rd.conversation");

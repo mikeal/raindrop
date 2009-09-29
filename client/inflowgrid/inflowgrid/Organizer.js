@@ -1,16 +1,16 @@
-dojo.provide("inflow.Organizer");
+dojo.provide("inflowgrid.Organizer");
 
 dojo.require("rd.conversation");
 dojo.require("rd.tag");
 dojo.require("rdw._Base");
 
-dojo.declare("inflow.Organizer", [rdw._Base], {
+dojo.declare("inflowgrid.Organizer", [rdw._Base], {
   // Mailing lists to which any messages in the datastore belong.
   // Populated by a view after the widget gets created.
 
   widgetsInTemplate: true,
 
-  templatePath: dojo.moduleUrl("inflow.templates", "Organizer.html"),
+  templatePath: dojo.moduleUrl("inflowgrid.templates", "Organizer.html"),
 
   listContainerHtml: '<select class="${listClass}></select>',
 
