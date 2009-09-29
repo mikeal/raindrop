@@ -135,7 +135,8 @@ body {
   right: 25px;
 }
 
-.rdwStory {
+.rdwStory,
+.inflowStoryTwitterTimeLine {
   width: 300px;
   height:281px;
   margin: 0 10px 20px 10px;
