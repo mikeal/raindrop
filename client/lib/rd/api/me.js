@@ -31,8 +31,9 @@ rd.api.me = {
       .ok(this, function(json) {
         //Transform the response to be identity IDs
         //so it can be consumed by identity()
-        if(!json.rows.length) {
+        if(!json.rows.length || (json.rows.length == 1 && json.rows[0].value.rd_key[1] == "account!rss")) {
           rd.pub("rd.api.me.noAccounts");
+          return [];
         } else {
           var ids = [];
           for (var i = 0, row; row = json.rows[i]; i++) {
