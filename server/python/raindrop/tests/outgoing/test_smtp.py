@@ -221,7 +221,7 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
         doc_model = get_doc_model()
         src_doc = yield self._prepare_test_doc()
         cond = yield self.get_conductor()
-        _ = yield cond.sync()
+        _ = yield cond.sync(self.pipeline.options)
 
     @defer.inlineCallbacks
     def test_outgoing_twice(self):
@@ -229,10 +229,10 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
         src_doc = yield self._prepare_test_doc()
         conductor = yield self.get_conductor()
         nc = FakeSMTPServer.num_connections
-        _ = yield conductor.sync()
+        _ = yield conductor.sync(self.pipeline.options)
         self.failUnlessEqual(nc+1, FakeSMTPServer.num_connections)
         nc = FakeSMTPServer.num_connections
         # sync again - better not make a connection this time!
-        _ = yield conductor.sync()
+        _ = yield conductor.sync(self.pipeline.options)
         self.failUnlessEqual(nc, FakeSMTPServer.num_connections)
 

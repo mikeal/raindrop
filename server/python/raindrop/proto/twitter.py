@@ -62,8 +62,9 @@ class TwitterProcessor(object):
     # XXX - should be managed by our caller once these 'protocols' become
     # regular extensions.
     rd_extension_id = 'proto.twitter'
-    def __init__(self, account, conductor):
+    def __init__(self, account, conductor, options):
         self.account = account
+        self.options = options
         self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
         self.twit = None
@@ -167,8 +168,8 @@ class TwitterProcessor(object):
 
 
 class TwitterAccount(base.AccountBase):
-  def startSync(self, conductor):
-    return TwitterProcessor(self, conductor).attach()
+  def startSync(self, conductor, options):
+    return TwitterProcessor(self, conductor, options).attach()
 
   def get_identities(self):
     return [('twitter', self.details['username'])]

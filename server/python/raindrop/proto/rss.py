@@ -58,7 +58,7 @@ def maybe_update_doc(doc_model, doc, options):
 
 class RSSAccount(base.AccountBase):
     @defer.inlineCallbacks
-    def startSync(self, conductor):
+    def startSync(self, conductor, options):
         # Find all RSS documents.
         key = ['rd.core.content', 'schema_id', 'rd.raw.rss']
         result = yield self.doc_model.open_view(key=key, reduce=False,
@@ -71,7 +71,7 @@ class RSSAccount(base.AccountBase):
             if doc.get('disabled', False):
                 logger.debug('rss feed %(id)r is disabled - skipping', row)
                 continue
-            dl.append(maybe_update_doc(self.doc_model, doc, conductor.options))
+            dl.append(maybe_update_doc(self.doc_model, doc, options))
         _ = yield defer.DeferredList(dl)
 
     def get_identities(self):

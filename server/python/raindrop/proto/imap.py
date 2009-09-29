@@ -13,15 +13,19 @@ brat = base.Rat
 
 logger = logging.getLogger(__name__)
 
+# Set this to see IMAP lines printed to the console.
+# NOTE: lines printed may include your password!
+TRACE_IMAP = False
+
+NUM_QUERYERS = 3
+NUM_FETCHERS = 3
+
+
 def log_exception(msg, *args):
   # inlineCallbacks don't work well with the logging module's handling of
   # exceptions - we need to use the Failure() object...
   msg = (msg % args) + "\n" + Failure().getTraceback()
   logger.error(msg)
-
-# Set this to see IMAP lines printed to the console.
-# NOTE: lines printed may include your password!
-TRACE_IMAP = False
 
 def get_rdkey_for_email(msg_id):
   # message-ids must be consistent everywhere we use them, and we decree
@@ -84,23 +88,15 @@ class ImapClient(imap4.IMAP4Client):
       return self.deferred.callback(self)
     if self.account.details.get('crypto') == 'TLS':
       d = self.startTLS(self.factory.ctx)
-      d.addErrback(self.accountStatus,
-                   brat.SERVER, brat.BAD, brat.CRYPTO, brat.PERMANENT)
       d.addCallback(self._doLogin)
     else:
       d = self._doLogin()
-    d.addErrback(self.accountStatus,
-                 brat.SERVER, brat.BAD, brat.PASSWORD, brat.PERMANENT)
     d.addCallback(return_self)
     return d
 
   def _doLogin(self, *args, **kwargs):
     return self.login(self.account.details['username'],
                       self.account.details['password'])
-
-  # XXX - this is misplaced...
-  def accountStatus(self, result, *args):
-    return self.account.reportStatus(*args)
 
   def xlist(self, reference, wildcard):
     # like 'list', but does XLIST.  Caller is expected to have checked the
@@ -131,7 +127,7 @@ class ImapClient(imap4.IMAP4Client):
 
   if TRACE_IMAP:
     def sendLine(self, line):
-      print 'C:', repr(line)
+      print 'C: %08x: %s' % (id(self), repr(line))
       return imap4.IMAP4Client.sendLine(self, line)
   
     def lineReceived(self, line):
@@ -139,7 +135,7 @@ class ImapClient(imap4.IMAP4Client):
         lrepr = repr(line[:50]) + (' <+ %d more bytes>' % len(line[50:]))
       else:
         lrepr = repr(line)
-      print 'S:', lrepr
+      print 'S: %08x: %s' % (id(self), lrepr)
       return imap4.IMAP4Client.lineReceived(self, line)
 
 
@@ -149,9 +145,9 @@ class ImapProvider(object):
   # regular extensions.
   rd_extension_id = 'proto.imap'
 
-  def __init__(self, account, conductor):
+  def __init__(self, account, conductor, options):
     self.account = account
-    self.options = conductor.options
+    self.options = options
     self.conductor = conductor
     self.doc_model = account.doc_model
     # We have a couple of queues to do the work
@@ -616,7 +612,9 @@ class ImapProvider(object):
       # We need to use fetchSpecific so we can 'peek' (ie, not reset the
       # \\Seen flag) - note that gmail does *not* reset the \\Seen flag on
       # a fetchMessages, but rfc-compliant servers do...
+      logger.debug("starting fetch of %d items from %r", len(this), folder_path)
       results = yield conn.fetchSpecific(to_fetch, uid=True, peek=True)
+      logger.debug("fetch from %r got %d", folder_path, len(results))
       #results = yield conn.fetchMessage(to_fetch, uid=True)
       # Run over the results stashing in our by_uid dict.
       infos = []
@@ -678,8 +676,7 @@ class ImapUpdater:
     # Establish a connection to the server
     logger.debug("setting flags for %(rd_key)r: folder %(folder)r, uuid %(uid)s",
                  dest_doc)
-    factory = ImapClientFactory(account, self.conductor)
-    client = yield factory.connect()
+    client = get_connection(account, conductor)
     _ = yield client.select(dest_doc['folder'])
     # Write the fact we are about to try and (un-)set the flag.
     _ = yield account._update_sent_state(src_doc, 'sending')
@@ -707,6 +704,10 @@ class ImapUpdater:
       _ = yield account._update_sent_state(src_doc, 'sent')
       logger.debug("successfully adjusted flags for %(rd_key)r", src_doc)
     client.logout()
+
+def get_connection(account, conductor):
+    factory = ImapClientFactory(account, conductor)
+    return factory.connect()
   
 
 class ImapClientFactory(protocol.ClientFactory):
@@ -720,6 +721,7 @@ class ImapClientFactory(protocol.ClientFactory):
 
     self.ctx = ssl.ClientContextFactory()
     self.backoff = 8 # magic number
+    self.retries_left = 4
 
   def buildProtocol(self, addr):
     p = self.protocol(self.ctx)
@@ -744,12 +746,19 @@ class ImapClientFactory(protocol.ClientFactory):
   def clientConnectionFailed(self, connector, reason):
     self.account.reportStatus(brat.SERVER, brat.BAD, brat.UNREACHABLE,
                               brat.TEMPORARY)
-    logger.warning('Failed to connect, will retry after %d secs',
-                   self.backoff)
     # It occurs that some "account manager" should be reported of the error,
     # and *it* asks us to retry later?  eg, how do I ask 'ignore backoff -
     # try again *now*"?
-    self.conductor.reactor.callLater(self.backoff, self.connect)
+    self.maybeRetry(reason, self.connect)
+
+  def maybeRetry(self, reason, func, *args):
+    self.retries_left -= 1
+    if not self.retries_left:
+      reason.raiseException()
+    logger.warning('Failed to connect, will retry after %d secs: %s',
+                   self.backoff, reason.getErrorMessage())
+    # XXX - check reason for errors which can be retried.
+    self.conductor.reactor.callLater(self.backoff, func, *args)
     self.backoff = min(self.backoff * 2, 600) # magic number
 
 
@@ -770,30 +779,8 @@ class IMAPAccount(base.AccountBase):
     return updater.handle_outgoing(conductor, src_doc, dest_doc)
 
   @defer.inlineCallbacks
-  def startSync(self, conductor):
-    prov = ImapProvider(self, conductor)
-
-    @defer.inlineCallbacks
-    def apply_with_connection(func, conn, xargs):
-      last_exc = None
-      for i in range(4):
-        if conn is None:
-          factory = ImapClientFactory(self, conductor)
-          conn = yield factory.connect()
-        try:
-          args = (conn,) + xargs
-          _ = yield func(*args)
-          # we worked!
-          defer.returnValue(conn)
-        except imap4.IMAP4Exception, exc:
-          # XXX - need to distinguish transient errors from fatal ones...
-          # XXX - needs a backoff strategy.
-          logger.debug("failed to call %s(%s)", func, args)
-          logger.info("IMAP error - might retry: %s", exc)
-          conn = None
-          last_exc = exc
-      # failed even after all retries
-      raise last_exc
+  def startSync(self, conductor, options):
+    prov = ImapProvider(self, conductor, options)
 
     @defer.inlineCallbacks
     def consume_connection_queue(q):
@@ -806,15 +793,27 @@ class IMAPAccount(base.AccountBase):
           q.put(None) # for anyone else processing the queue...
           break
         # else a real item to process.
+        if conn is None:
+          # getting the initial connection has its own retry semantics...
+          conn = yield get_connection(self, conductor)
+
         try:
-          func, xtra_args = result
-          conn = yield apply_with_connection(func, conn, xtra_args)
+          func, xargs = result
+          args = (conn,) + xargs
+          _ = yield func(*args)
+        except imap4.IMAP4Exception, exc:
+          # put the item back in the queue for later
+          q.put(result)
+          # then queue a 'retry' of the queue.
+          logger.debug("handling connection error: %s", exc)
+          conn.transport.loseConnection()
+          conn.factory.maybeRetry(Failure(), consume_connection_queue, q)
+          return
         except:
           if not conductor.reactor.running:
             break
           log_exception('failed to process an IMAP query request')
-      if conn is not None:
-        _ = yield conn.close()
+      _ = yield conn.close()
 
     @defer.inlineCallbacks
     def start_queryers(n):
@@ -854,8 +853,8 @@ class IMAPAccount(base.AccountBase):
     prov.query_queue.put((start_producing, ()))
 
     # fire off the producer and queue consumers.
-    _ = yield defer.DeferredList([start_queryers(3),
-                                  start_fetchers(3)])
+    _ = yield defer.DeferredList([start_queryers(NUM_QUERYERS),
+                                  start_fetchers(NUM_FETCHERS)])
 
     lc.stop()
 

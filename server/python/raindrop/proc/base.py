@@ -97,15 +97,10 @@ class AccountBase(Rat):
     logger.debug("ReportStatus: %s %s (why=%s, duration=%s)",
                  what, state, why, expectedDuration)
 
-  def startSync(self, conductor):
+  def startSync(self, conductor, options):
     """Check for incoming messages, or do nothing if this account doesn't
     have incoming messages.
     """
-    pass
-
-  def verify(self):
-    '''
-    '''
     pass
 
   def startSend(self, conductor, src_doc, raw_doc):

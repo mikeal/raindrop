@@ -109,7 +109,7 @@ class TestMessageProvider(object):
         # done
 
 class TestAccount(base.AccountBase):
-    def startSync(self, conductor):
+    def startSync(self, conductor, options):
         return TestMessageProvider(self, conductor).attach()
 
     def get_identities(self):

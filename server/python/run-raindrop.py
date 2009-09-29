@@ -91,17 +91,17 @@ def show_info(result, parser, options):
 @defer.inlineCallbacks
 def sync_messages(result, parser, options):
     """Synchronize all messages from all accounts"""
-    _ = yield g_conductor.sync()
+    _ = yield g_conductor.sync(options)
 
 @defer.inlineCallbacks
 def sync_incoming(result, parser, options):
     """Synchronize all incoming messages from all accounts"""
-    _ = yield g_conductor.sync(incoming=True, outgoing=False)
+    _ = yield g_conductor.sync(options, incoming=True, outgoing=False)
 
 @defer.inlineCallbacks
 def sync_outgoing(result, parser, options):
     """Synchronize all outgoing messages from all accounts"""
-    _ = yield g_conductor.sync(incoming=False, outgoing=True)
+    _ = yield g_conductor.sync(options, incoming=False, outgoing=True)
 
 def process_backlog(result, parser, options):
     """Process all messages to see if any extensions need running"""
@@ -346,7 +346,7 @@ def main():
             g_pipeline = pipeline.Pipeline(model.get_doc_model(), options)
             _ = yield g_pipeline.initialize()
         if g_conductor is None:
-            g_conductor = yield get_conductor(g_pipeline, options)
+            g_conductor = yield get_conductor(g_pipeline)
 
     d.addCallback(setup_pipeline)
 

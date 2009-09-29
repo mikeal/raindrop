@@ -9,7 +9,7 @@ import tempfile
 from urllib import quote
 
 import twisted.python.log
-from twisted.internet import defer, threads
+from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 
 from ..proc import base
@@ -73,10 +73,11 @@ class TwistySkype(object):
     # XXX - should be managed by our caller once these 'protocols' become
     # regular extensions.
     rd_extension_id = 'proto.skype'
-    def __init__(self, account, conductor):
+    def __init__(self, account, conductor, options):
         self.account = account
         self.doc_model = account.doc_model # this is a little confused...
         self.conductor = conductor
+        self.options = options
         self.skype = Skype4Py.Skype()
 
     def get_rdkey_for_chat(self, chat):
@@ -140,7 +141,7 @@ class TwistySkype(object):
             for (name, typ), (ok, val) in zip(CHAT_PROPS, results):
                 if ok:
                     props['skype_'+name.lower()] = simple_convert(val, typ)
-            max_age = self.conductor.options.max_age
+            max_age = self.options.max_age
             if max_age and props['skype_activity_timestamp'] < time.time() - max_age:
                 logger.debug("chat is too old - ignoring")
                 continue
@@ -191,7 +192,7 @@ class TwistySkype(object):
                     len(remaining), msg_desc)
         logger.debug("we've already seen %d %s items from this chat",
                      len(seen_msgs), msg_desc)
-        return self.conductor.coop.coiterate(
+        return task.coiterate(
                     self.gen_items(chat_props, remaining, msgs_by_id, need_chat))
 
     def gen_items(self, chat_props, todo, msgs_by_id, need_chat):
@@ -260,8 +261,8 @@ class TwistySkype(object):
 
 
 class SkypeAccount(base.AccountBase):
-  def startSync(self, conductor):
-    return TwistySkype(self, conductor).attach()
+  def startSync(self, conductor, options):
+    return TwistySkype(self, conductor, options).attach()
 
   def get_identities(self):
     return [('skype', self.details['username'])]

@@ -170,17 +170,15 @@ class TestCaseWithTestDB(TestCaseWithDB):
         acct['id'] = 'test'
         return config
 
-    def get_conductor(self, options=None):
-        if options is None:
-            options = self.pipeline.options
-        return sync.get_conductor(self.pipeline, options)
+    def get_conductor(self):
+        return sync.get_conductor(self.pipeline)
 
     @defer.inlineCallbacks
     def deferMakeAnotherTestMessage(self, _):
         # We need to reach into the impl to trick the test protocol
         test_proto.test_num_test_docs += 1
         c = yield self.get_conductor()
-        _ = yield c.sync()
+        _ = yield c.sync(self.pipeline.options)
 
 
 class TestCaseWithCorpus(TestCaseWithDB):

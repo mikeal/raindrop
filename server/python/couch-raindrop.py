@@ -51,7 +51,7 @@ from zope.interface import implements
 from twisted.internet import interfaces
 
 from raindrop import pipeline, model, opts, config, proto
-from raindrop.sync import get_conductor
+import raindrop.sync
 
 logger = logging.getLogger('raindrop')
 
@@ -102,13 +102,33 @@ def options_from_request(req):
     options, _ = parser.parse_args(argv)
     return options
 
-
+_pipeline = None
 @defer.inlineCallbacks
 def _get_pipeline(req):
-    opts = options_from_request(req)
-    pl = pipeline.Pipeline(model.get_doc_model(), opts)
-    _ = yield pl.initialize()
-    defer.returnValue(pl)
+    global _pipeline
+    if _pipeline is None:
+        opts = options_from_request(req)
+        _pipeline = pipeline.Pipeline(model.get_doc_model(), opts)
+        _ = yield _pipeline.initialize()
+    defer.returnValue(_pipeline)
+
+
+_conductor = None
+@defer.inlineCallbacks
+def _get_conductor(pl):
+    global _conductor
+    if _conductor is None:
+        _conductor = yield raindrop.sync.get_conductor(pl)
+    else:
+        assert pl is _conductor.pipeline
+    defer.returnValue(_conductor)
+
+
+@defer.inlineCallbacks
+def _init(req):
+    pl = yield _get_pipeline(req)
+    _ = yield _get_conductor(pl)
+
 
 def log_twisted_failure(failure, msg, *args):
     f = StringIO()
@@ -159,12 +179,12 @@ def status(req):
                                   "finished": finished_tasks}}
 
 
-def process(req):
+def process_backlog(req):
     """process the work queues..."""
     @defer.inlineCallbacks
     def _process(req):
         pl = yield _get_pipeline(req)
-        ret = yield pl.start()
+        ret = yield pl.start_backlog()
         defer.returnValue(ret)
 
     return _start_async("process", _process, req)
@@ -174,11 +194,11 @@ def sync_messages(req):
     """Synchronize all messages from all accounts"""
     @defer.inlineCallbacks
     def _sync_messages(req):
-        conductor = get_conductor()
         pl = yield _get_pipeline(req)
-        conductor.options = pl.options # *sob*
+        conductor = yield _get_conductor(pl)
+        opts = options_from_request(req)
         num = None
-        _ = yield conductor.sync(pl)
+        _ = yield conductor.sync(opts)
 
     return _start_async("sync-messages", _sync_messages, req)
 
@@ -192,6 +212,8 @@ def dispatch(req):
     except KeyError:
         raise RequestFailed(404, command=cmdname)
 
+    logger.info("processing request '%s'", cmdname)
+    logger.debug("request info: %s", req)
     return command(req)
 
 # returns a deferred...
@@ -301,9 +323,12 @@ def main():
     config.init_config()
     proto.init_protocols()
 
+    logger.info("raindrops keep falling on my couch...")
     # create an initial deferred to perform tasks which must occur before we
     # can start.  The final callback added will fire up the real servers.
     d = defer.Deferred()
+    # XXX - this is suspect - we need to better rationilize 'options' handling
+    d.addCallback(lambda _: _init({'query': {}}))
 
     def start_stdio(whateva):
         # using twisted's stdio is just way too hard on windows - just use a
@@ -320,8 +345,13 @@ def main():
         pass
 
     def error(failure):
-        log_twisted_failure(failure, "unhandled top-level error?")
-#        reactor.stop()
+        # XXX - this is wrong - couch wants a "better" response with some
+        # real errors - but at least this "works" in so far as couch reports
+        # the incorrect output and continues on correctly...
+        log_twisted_failure(failure, "unhandled top-level error")
+        resp = {"error": failure.getErrorMessage() + "\n" + failure.getTraceback()}
+        sys.stdout.write(json.dumps(resp) + "\n")
+        sys.stdout.flush()
 
     d.addCallbacks(done, error)
     

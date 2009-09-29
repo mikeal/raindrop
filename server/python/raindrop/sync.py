@@ -19,8 +19,8 @@ source_schemas = ['rd.msg.outgoing.simple',
 
 
 @defer.inlineCallbacks
-def get_conductor(pipeline, options):
-  conductor = SyncConductor(pipeline, options)
+def get_conductor(pipeline):
+  conductor = SyncConductor(pipeline)
   _ = yield conductor.initialize()
   defer.returnValue(conductor)
 
@@ -29,9 +29,8 @@ def get_conductor(pipeline, options):
 # This 'conducts' synchronization, the work queues and the interactions with
 # the extensions and database.
 class SyncConductor(object):
-  def __init__(self, pipeline, options):
+  def __init__(self, pipeline):
     self.pipeline = pipeline
-    self.options = options
     # apparently it is now considered 'good form' to pass reactors around, so
     # a future of multiple reactors is possible.
     # We capture it here, and all the things we 'conduct' use this reactor
@@ -40,6 +39,7 @@ class SyncConductor(object):
     self.doc_model = get_doc_model()
 
     self.accounts_syncing = []
+    self.accounts_listening = set()
     self.outgoing_handlers = None
     self.all_accounts = None
 
@@ -58,8 +58,13 @@ class SyncConductor(object):
       self.reactor.callLater(0, self._do_sync_outgoing)
       return [], False
 
-    inc = self.pipeline.incoming_processor 
-    if inc is not None:
+    # we start listening on all accounts - this needs to be optional
+    # or explicitly triggered?
+    for accts in self.outgoing_handlers.itervalues():
+      for acct in accts:
+        self.accounts_listening.add(acct)
+    inc = self.pipeline.incoming_processor
+    if self.accounts_listening and inc is not None:
       inc.add_processor(new_processor, source_schemas, 'outgoing')
 
   @defer.inlineCallbacks
@@ -91,26 +96,38 @@ class SyncConductor(object):
           logger.error("account %(id)r has no protocol specified - ignoring",
                        account_details)
           continue
-      if not self.options.protocols or account_proto in self.options.protocols:
-        if account_proto in proto.protocols:
-          account = proto.protocols[account_proto](self.doc_model, account_details)
-          logger.debug('loaded %s account: %s', account_proto,
-                       account_details.get('name', '(un-named)'))
-          self.all_accounts.append(account)
-          # Can it handle any 'outgoing' schemas?
-          out_schemas = account.rd_outgoing_schemas
-          for sid in (out_schemas or []):
-            existing = self.outgoing_handlers.setdefault(sid, [])
-            existing.append(account)
-        else:
-          logger.error("Don't know what to do with account protocol: %s",
-                       account_proto)
+      if account_proto in proto.protocols:
+        account = proto.protocols[account_proto](self.doc_model, account_details)
+        logger.debug('loaded %s account: %s', account_proto,
+                     account_details.get('name', '(un-named)'))
+        self.all_accounts.append(account)
+        # Can it handle any 'outgoing' schemas?
+        out_schemas = account.rd_outgoing_schemas
+        for sid in (out_schemas or []):
+          existing = self.outgoing_handlers.setdefault(sid, [])
+          existing.append(account)
       else:
-          logger.info("Skipping account - protocol '%s' is disabled",
-                      account_proto)
+        logger.error("Don't know what to do with account protocol: %s",
+                     account_proto)
+
+  def _get_specified_accounts(self, options):
+    assert self.all_accounts # no accounts loaded?
+    ret = []
+    for acct in self.all_accounts:
+      proto = acct.details['proto']
+      if not options.protocols or proto in options.protocols:
+        ret.append(acct)
+      else:
+          logger.info("Skipping account %r - protocol '%s' is disabled",
+                      acct.details['id'], proto)
+    return ret
 
   @defer.inlineCallbacks
   def _process_outgoing_row(self, row):
+    if not self.outgoing_handlers:
+      logger.warn("ignoring outgoing row - no handlers")
+      return
+
     val = row['value']
     # push it through the pipeline.
     new_items = [(row['id'], val['_rev'], val['rd_schema_id'], None)]
@@ -131,11 +148,12 @@ class SyncConductor(object):
     # passed one for a different account - it just ignores it, so we continue
     # the rest of the accounts until one says "yes, it is mine!")
     for sender in senders:
-      d = sender.startSend(self, src_doc, out_doc)
-      if d is not None:
-        # This sender accepted the item...
-        _ = yield d
-        break
+      if sender in self.accounts_listening:
+        d = sender.startSend(self, src_doc, out_doc)
+        if d is not None:
+          # This sender accepted the item...
+          _ = yield d
+          break
 
   @defer.inlineCallbacks
   def _do_sync_outgoing(self):
@@ -156,7 +174,7 @@ class SyncConductor(object):
     defer.returnValue(dl)
 
   @defer.inlineCallbacks
-  def sync(self, incoming=True, outgoing=True):
+  def sync(self, options, incoming=True, outgoing=True):
     dl = []
     if outgoing:
       # start looking for outgoing schemas to sync...
@@ -164,7 +182,8 @@ class SyncConductor(object):
 
     if incoming:
       # start synching all 'incoming' accounts.
-      for account in self.all_accounts:
+      accts = self._get_specified_accounts(options)
+      for account in accts:
         if account in self.accounts_syncing:
           logger.info("skipping acct %(id) - already synching...",
                       account.details)
@@ -173,19 +192,19 @@ class SyncConductor(object):
         logger.info('Starting sync of %s account: %s',
                     account.details['proto'],
                     account.details.get('name', '(un-named)'))
-        def_done = account.startSync(self)
+        def_done = account.startSync(self, options)
         if def_done is not None:
           self.accounts_syncing.append(account)
-          def_done.addBoth(self._cb_sync_finished, account)
+          def_done.addBoth(self._cb_sync_finished, account, options)
           dl.append(def_done)
 
     # wait for each of the deferreds to finish.
     _ = yield defer.DeferredList(dl)
 
-  def _cb_sync_finished(self, result, account):
+  def _cb_sync_finished(self, result, account, options):
     if isinstance(result, Failure):
       logger.error("Account %s failed with an error: %s", account, result)
-      if self.options.stop_on_error:
+      if options.stop_on_error:
         logger.info("--stop-on-error specified - re-throwing error")
         result.raiseException()
     else:
