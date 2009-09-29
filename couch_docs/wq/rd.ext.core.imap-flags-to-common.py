@@ -31,7 +31,7 @@ def handler(doc):
     keys = []
     for rdkey in rdkeys:
         keys.append(['rd.core.content', 'key-schema_id', [rdkey, 'rd.msg.rfc822']])
-    result = open_view(keys=keys, reduce=False, include_docs=True)
+    result = open_view(keys=keys, reduce=False)
     for row in result['rows']:
         existing_rdkeys.add(tuple(row['value']['rd_key']))
 
