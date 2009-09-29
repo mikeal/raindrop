@@ -8,18 +8,19 @@ import logging
 from optparse import Option
 
 max_age_mults = {
+    'sec': 1,
     'minute': 60*60,
     'day': 60*60*24,
     'week': 60*60*24*7,
     'year': 60*60*24*365,
 }
-class MaxAgeOption(Option):
+class NumSecondsOption(Option):
     def check_value(self, opt, value):
         max_age_strings = '|'.join(max_age_mults.keys())
-        max_age_re = re.compile("(\d)*\W*(" + max_age_strings + ")s?")
+        max_age_re = re.compile("(\d*)\W*(" + max_age_strings + ")s?")
         match = max_age_re.match(value)
         if match is None:
-            raise ValueError("Invalid syntax for --max-age - try, eg, '4days'")
+            raise ValueError("Invalid syntax for time option - try, eg, '4days'")
         val, name = match.groups()
         mult = max_age_mults[name.lower()]
         try:
@@ -83,9 +84,12 @@ def get_request_options():
     yield Option("", "--no-process", action="store_true",
                 help="Don't process the work-queue.")
 
-    yield MaxAgeOption("", "--max-age", type="int",
+    yield NumSecondsOption("", "--max-age", type="int",
                 help="Maximum age of an item to fetch.  eg, '30 seconds', "
                      "'2weeks'.")
+
+    yield NumSecondsOption("", "--repeat-after", type="int",
+                help="Time to wait after completion before repeating the sync")
 
 class LevelColorFormatter(logging.Formatter):
     RESET = '\x1b[0m'

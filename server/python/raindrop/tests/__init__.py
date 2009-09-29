@@ -54,6 +54,7 @@ class FakeOptions:
     protocols = None
     exts = None
     no_process = False
+    repeat_after = 0
 
 class TestCase(unittest.TestCase):
     pass

@@ -3,6 +3,7 @@ import logging
 from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
 import twisted.web.error
+import twisted.internet.error
 import paisley
 
 from . import proto as proto
@@ -42,6 +43,8 @@ class SyncConductor(object):
     self.accounts_listening = set()
     self.outgoing_handlers = None
     self.all_accounts = None
+    self.calllaters_waiting = {} # keyed by ID, value is a IDelayedCall
+    self.deferred = None
 
   def _ohNoes(self, failure, *args, **kwargs):
     logger.error('OH NOES! failure! %s', failure)
@@ -187,43 +190,74 @@ class SyncConductor(object):
                      Failure().getTraceback())
     defer.returnValue(dl)
 
-  @defer.inlineCallbacks
   def sync(self, options, incoming=True, outgoing=True):
     dl = []
     if outgoing:
-      # start looking for outgoing schemas to sync...
-      dl.extend((yield self._do_sync_outgoing()))
-
+      dl.append(self.sync_outgoing(options))
     if incoming:
-      # start synching all 'incoming' accounts.
-      accts = self._get_specified_accounts(options)
-      for account in accts:
-        if account in self.accounts_syncing:
-          logger.info("skipping acct %(id)s - already synching...",
-                      account.details)
-          continue
-        # start synching
-        logger.info('Starting sync of %s account: %s',
-                    account.details['proto'],
-                    account.details.get('name', '(un-named)'))
-        def_done = account.startSync(self, options)
-        if def_done is not None:
-          self.accounts_syncing.append(account)
-          def_done.addBoth(self._cb_sync_finished, account, options)
-          dl.append(def_done)
+      dl.append(self.sync_incoming(options))
+    return defer.DeferredList(dl)
 
-    # wait for each of the deferreds to finish.
-    _ = yield defer.DeferredList(dl)
+  @defer.inlineCallbacks
+  def sync_outgoing(self, options):
+      # start looking for outgoing schemas to sync...
+      dl = (yield self._do_sync_outgoing())
+      _ = yield defer.DeferredList(dl)
+
+  def sync_incoming(self, options):
+    if self.deferred is None:
+      self.deferred = defer.Deferred()
+    # start synching all 'incoming' accounts.
+    accts = self._get_specified_accounts(options)
+    for account in accts:
+      if account in self.accounts_syncing:
+        logger.info("skipping acct %(id)s - already synching...",
+                    account.details)
+        continue
+      # cancel an old 'callLater' if one is scheduled.
+      try:
+        self.calllaters_waiting.pop(account.details['id']).cancel()
+      except (KeyError, twisted.internet.error.AlreadyCalled):
+        # either not in the map, or is in the map but we are being called
+        # because of it firing.  Note the 'pop' works even if we are
+        # already called.
+        pass
+      # start synching
+      logger.info('Starting sync of %s account: %s',
+                  account.details['proto'],
+                  account.details.get('name', '(un-named)'))
+      def_done = account.startSync(self, options)
+      if def_done is not None:
+        self.accounts_syncing.append(account)
+        def_done.addBoth(self._cb_sync_finished, account, options)
+
+    # return a deferred that fires once everything is completely done.
+    ret = self.deferred
+    self._check_if_finished()
+    return ret
 
   def _cb_sync_finished(self, result, account, options):
+    acct_id = account.details['id']
     if isinstance(result, Failure):
       logger.error("Account %s failed with an error: %s", account, result)
       if options.stop_on_error:
         logger.info("--stop-on-error specified - re-throwing error")
         result.raiseException()
     else:
-      logger.debug("Account %s finished successfully", account)
+      logger.debug("Account %r finished successfully", acct_id)
+      if options.repeat_after:
+        logger.info("account %r finished - rescheduling for %d seconds",
+                    acct_id, options.repeat_after)
+        cl = self.reactor.callLater(options.repeat_after, self.sync, options)
+        self.calllaters_waiting[acct_id] = cl
+
     assert account in self.accounts_syncing, (account, self.accounts_syncing)
     self.accounts_syncing.remove(account)
-    if not self.accounts_syncing:
+    self._check_if_finished()
+
+  def _check_if_finished(self):
+    if not self.accounts_syncing and not self.calllaters_waiting:
       logger.info("all incoming accounts have finished synchronizing")
+      d = self.deferred
+      self.deferred = None
+      d.callback(None)
