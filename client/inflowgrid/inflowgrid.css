@@ -133,7 +133,8 @@ body {
 }
 
 .rdwStory,
-.inflowgridStoryTwitterTimeLine {
+.inflowgridStoryTwitterTimeLine,
+.inflowgridStoryMailingList {
   width: 300px;
   height:211px;
   margin: 0 10px 20px 10px;
