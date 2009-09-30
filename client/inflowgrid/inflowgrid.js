@@ -12,38 +12,30 @@ dojo.require("rd.engine");
 dojo.require("rd.conversation");
 
 dojo.mixin(inflowgrid, {
-  isComposeVisible: false,
+  isComposeVisible: true,
 
   showQuickCompose: function() {
     //Place the div really high and slide it in.
     if (!this.isComposeVisible) {
       var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
-      //Force expanded view.
-      qc.onFocusTextArea();
+      dojo.removeClass(qc.domNode, "invisible");
 
       var position = dojo.position(qc.domNode);
+      var navNode = dojo.byId("nav");
       qc.domNode.style.top = (-1 * position.h) + "px";
       this.isComposeVisible = true;
-      dojo.fx.slideTo({
-        node: qc.domNode,
-        left: 0,
-        top: 0,
-        units: "px"
-      }).play();
+      dojo.anim("nav", { top: 0 });
     }
   },
 
   hideQuickCompose: function() {
     if (this.isComposeVisible) {
       var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
-      var position = dojo.position(qc.domNode);
+      var navPosition = dojo.marginBox(dojo.byId("nav"));
+      var navHeaderPosition = dojo.marginBox(dojo.byId("navHeader"));
+
       this.isComposeVisible = false;
-      dojo.fx.slideTo({
-        node: qc.domNode,
-        left: 0,
-        top: -1 * position.h,
-        units: "px"
-      }).play();
+      dojo.anim("nav", { top: (-1 * (navPosition.h - navHeaderPosition.h)) });
     }
   }
 });
@@ -56,6 +48,8 @@ dojo.mixin(inflowgrid, {
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
+    inflowgrid.hideQuickCompose();
+
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
     if (fragId) {

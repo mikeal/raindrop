@@ -78,23 +78,23 @@ body {
   z-index: 100;
 }
 
-.navHeader {
+#navHeader {
   font-family: droid-serif, georgia, times, serif;
   width: 940px;
   margin: 16px 10px 9px 10px;
 }
 
-.navHeader select {
+#navHeader select {
   font-family: droid-serif, georgia, times, serif;
   width: 120px;
   margin: 0 7px 0 0;
 }
 
-.navHeader ul {
+#navHeader ul {
   list-style-type: none;
 }
 
-.navHeader li {
+#navHeader li {
   display: inline;
   margin-right: 7px;
 }
@@ -375,10 +375,7 @@ a.subject {
 }
 
 .QuickCompose {
-  position: absolute;
-  top: -300px;
   background-color: black;
-  z-index: 500;
   color: white;
 }
 
@@ -390,3 +387,10 @@ a.subject {
   color: white;
 }
 
+.invisible {
+  visibility: hidden;
+}
+
+.QuickCompose {
+  height: 140px;
+}
