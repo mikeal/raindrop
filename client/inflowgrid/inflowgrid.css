@@ -373,3 +373,20 @@ a.subject {
   display: block;
   margin: 7px 0 0 0;
 }
+
+.QuickCompose {
+  position: absolute;
+  top: -300px;
+  background-color: black;
+  z-index: 500;
+  color: white;
+}
+
+.QuickCompose .actions {
+  display: block;
+}
+
+.QuickCompose .actions a {
+  color: white;
+}
+

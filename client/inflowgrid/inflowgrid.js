@@ -3,7 +3,7 @@ dojo.provide("inflowgrid");
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
-dojo.require("rdw.QuickCompose");
+dojo.require("inflowgrid.QuickCompose");
 dojo.require("rdw.Search");
 dojo.require("inflowgrid.Stories");
 dojo.require("inflowgrid.Organizer");
@@ -11,8 +11,44 @@ dojo.require("inflowgrid.Organizer");
 dojo.require("rd.engine");
 dojo.require("rd.conversation");
 
+dojo.mixin(inflowgrid, {
+  isComposeVisible: false,
 
-(function(){
+  showQuickCompose: function() {
+    //Place the div really high and slide it in.
+    if (!this.isComposeVisible) {
+      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      //Force expanded view.
+      qc.onFocusTextArea();
+
+      var position = dojo.position(qc.domNode);
+      qc.domNode.style.top = (-1 * position.h) + "px";
+      this.isComposeVisible = true;
+      dojo.fx.slideTo({
+        node: qc.domNode,
+        left: 0,
+        top: 0,
+        units: "px"
+      }).play();
+    }
+  },
+
+  hideQuickCompose: function() {
+    if (this.isComposeVisible) {
+      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      var position = dojo.position(qc.domNode);
+      this.isComposeVisible = false;
+      dojo.fx.slideTo({
+        node: qc.domNode,
+        left: 0,
+        top: -1 * position.h,
+        units: "px"
+      }).play();
+    }
+  }
+});
+
+;(function(){
   //Set the window name, so extender can target it.
   //TODO: need to make this more generic, to work across raindrop apps.
   window.name = "raindrop";
@@ -35,6 +71,12 @@ dojo.require("rd.conversation");
         rd.pub("rd-protocol-home");
       }
     });
+
+    //Listen for quick compose calls    
+    dojo.query(".quickComposeLaunch").onclick(function(evt) {
+      inflowgrid.showQuickCompose();
+      dojo.stopEvent(evt);
+    })
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;
