@@ -10,6 +10,9 @@
   <script data-appname="inflowgrid" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
+    //Re-route the pathing to the CSS since some widgets auto include their own CSS.
+    dojo.registerModulePath("rdw.css", rd.dbPath + "inflowgrid/inflowgrid/css");
+
     rd.require("inflowgrid");
   </script>  
 </head>
