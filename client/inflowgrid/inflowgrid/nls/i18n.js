@@ -1,5 +1,5 @@
 ({
-  add: "Add",
+  add: "Add:",
   annoying: "annoying",
   annoyingTitle: "Click here to hide messages from this person.",
   archive: "archive",
@@ -35,5 +35,5 @@
   storyDeleted: "Story Deleted: ${title}",
   whoKnown: "Is this ${name}?",
   whoTitle: "Associate this identity with a contact.",
-  whoUnknown: "&#9654; who is this?" 
+  whoUnknown: "who is this?" 
 })

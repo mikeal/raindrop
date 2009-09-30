@@ -67,7 +67,7 @@ body {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
   font-size: 11px;
   line-height: 14px;
-  background-image: url("i/baseline.png");
+  /*background-image: url("i/baseline.png");*/
 }
 
 #nav {
@@ -162,9 +162,11 @@ body {
   border-top: 1px solid #1a1a1a;
   font-weight: bold;
   color: #FF5959;
+  max-height: 14px;
+  overflow: hidden;
 }
 
-.subject a {
+a.subject {
   color: #FF5959;
 }
 
@@ -190,7 +192,12 @@ body {
   text-align: right;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
+  font-size: 10px;
   display: none;
+}
+
+.actions a {
+  margin-left: 7px;
 }
 
 .rdwMessage {
@@ -212,6 +219,11 @@ body {
   text-align: right;
 }
 
+.timestamp .messageType {
+  float: left;
+  font-style: normal;
+}
+
 .rdwMessage:first-child .timestamp {
   display: block;
 }
@@ -221,22 +233,143 @@ body {
 }
 
 .active .timestamp,
-.timestamp.active, 
-.timestamp.reply.active {
+.timestamp.active,
+.active .tweetTitle,
+.tweetTitle.active,
+.active .MailingListTitle,
+.MailingListTitle.active  {
   background-color: yellow;
 }
 
 /* widgets */
 
-.rdwStoryTwitterTimeLine .tweetList {
-  -moz-border-radius: 0px !important;
-  width: 300px !important;
-  margin: 0 10px !important;
-  padding: 7px !important;
-  font-weight: normal;
-  font-size: 11px;
+.tweetList,
+.mailingList {
+  padding: 7px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
 }
 
-.rdwStoryTwitterTimeLine .tweetList .subject {
-  border-top: none;
+.tweetList {
+  background-color: #C4F3FF;
+}
+
+.mailingList {
+  background-color: #FFDEDE;
+}
+
+.tweetList .actions a:first-child {
+  display: none;
+}
+
+.tweetList a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.tweetTitle {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.tweetTitle,
+.MailingListTitle {
+  font-family: droid-serif, georgia, times, serif;
+  display: block;
+  font-size: 10px;
+}
+
+.tweetList .subject {
+  display: none;
+}
+
+.tweetList .rdwMessage {
+  margin-top: 6px;
+  padding-bottom: 1px;
+}
+
+.rdwContactSelectorContainer {
+  width: 100%;
+  height: 450px;
+  overflow-x: hidden;
+  background-color: yellow;
+  border: 1px solid #1a1a1a;
+  -moz-box-shadow: 0 0 10px #888888;
+  -webkit-box-shadow: 0 0 10px #888888;
+  box-shadow: 0 0 10px #888888;
+}
+
+.rdwContactSelectorContainer .add {
+  padding: 3.5px;
+}
+
+.rdwContactSelectorContainer a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.rdwContactSelectorContainer a:hover {
+  text-decoration: underline;
+}
+
+.rdwContactSelectorContainer ul {
+  list-style-type: none;
+}
+
+.rdwContactSelectorContainer li {
+  padding: 3.5px;
+}
+
+.rdwContactSelectorContainer img {
+  display: none;
+}
+
+/* full story */
+
+.rdwStoryFullStory {
+  width: 460px !important;
+}
+
+.rdwStoryFullStory .rdwMessage .timestamp {
+  display: block;
+  margin: 14px 0 0 0;
+}
+
+.rdwStoryFullStory .rdwMessage .actions {
+  display: block;
+  margin: 0 0 14px 0;
+}
+
+
+
+.rdwStoryFullStory .from {
+  border-top: 1px solid #1A1A1A;
+  width: 100%;
+  display: block;
+  color: #FF5959;
+  padding-top: 6px;
+}
+
+.rdwStoryFullStory .fullMessageTitle {
+  display: inline-block;
+  font-weight: bold;
+  color:#FF5959;
+  max-width: 300px;
+}
+
+.rdwStoryFullStory .toolBox {
+  display: inline;
+  float: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  font-size: 10px;
+}
+
+.rdwStoryFullStory .toolBox a {
+  margin: 0 0 0 7px;
+}
+
+.rdwStoryFullStory .content {
+  display: block;
+  margin: 7px 0 0 0;
 }
