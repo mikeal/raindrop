@@ -45,7 +45,21 @@ if 'RAINDROP_LOG_LEVELS' in os.environ:
                 continue
         l = logging.getLogger(name)
         l.setLevel(level)
-    
+
+
+class TestLogHandler(logging.Handler):
+    def __init__(self, *args, **kw):
+        logging.Handler.__init__(self, *args, **kw)
+        self.ok_filters = []
+        self.records = []
+
+    def emit(self, record):
+        for f in self.ok_filters:
+            if f(record):
+                break
+        else:
+            # no filters said OK
+            self.records.append(record)
 
 class FakeOptions:
     # XXX - get options from raindrop.opts...
@@ -55,15 +69,37 @@ class FakeOptions:
     exts = None
     no_process = False
     repeat_after = 0
+    folders = []
 
 class TestCase(unittest.TestCase):
-    pass
+    def setUp(self):
+        self.log_handler = TestLogHandler()
+        # by default, WARNING or higher messages cause a test failure...
+        filter = lambda record: record.levelno < logging.WARNING
+        self.log_handler.ok_filters.append(filter)
+        l = logging.getLogger('raindrop')
+        l.addHandler(self.log_handler)
+        # this env-var means the developer wants to see the logs as it runs.
+        if 'RAINDROP_LOG_LEVELS' not in os.environ:
+            l.propagate = False
+        return unittest.TestCase.setUp(self)
+
+    def tearDown(self):
+        l = logging.getLogger('raindrop')
+        l.removeHandler(self.log_handler)
+        parent_handler = l.parent.handlers[0]
+        frecords = [parent_handler.format(r) for r in self.log_handler.records
+                    if r.levelno >= logging.WARNING]
+        if frecords:
+            self.fail("unexpected log errors\n" + '\n'.join(frecords))
+        return unittest.TestCase.tearDown(self)
 
 class TestCaseWithDB(TestCase):
     @defer.inlineCallbacks
     def tearDown(self):
         if self.pipeline is not None:
             _ = yield self.pipeline.finalize()
+        _ = yield TestCase.tearDown(self)
 
     @defer.inlineCallbacks
     def ensure_pipeline_complete(self):
@@ -142,15 +178,16 @@ class TestCaseWithTestDB(TestCaseWithDB):
     """A test case that is setup to work with a temp database pre-populated
     with 'test protocol' raw messages.
     """
+    @defer.inlineCallbacks
     def setUp(self):
+        _ = yield TestCaseWithDB.setUp(self)
         raindrop.config.CONFIG = None
         self.config = self.make_config()
         opts = self.get_options()
         self.doc_model = get_doc_model()
         self.pipeline = Pipeline(self.doc_model, opts)
-        return self.prepare_test_db(self.config
-            ).addCallback(lambda _: self.pipeline.initialize()
-            )
+        _ = yield self.prepare_test_db(self.config)
+        _ = yield self.pipeline.initialize()
 
     def get_options(self):
         return FakeOptions()

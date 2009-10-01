@@ -112,6 +112,14 @@ class TestPipelineSync(TestPipeline):
 
 class TestErrors(TestPipelineBase):
     extensions = ['rd.test.core.test_converter']
+
+    @defer.inlineCallbacks
+    def setUp(self):
+        _ = yield super(TestErrors, self).setUp()
+        # We expect the following warning records when running this test.
+        f = lambda record: "exceptions.RuntimeError: This is a test failure" in record.getMessage()
+        self.log_handler.ok_filters.append(f)
+
     def test_error_stub(self):
         # Test that when a converter fails an appropriate error record is
         # written
