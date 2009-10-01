@@ -73,10 +73,11 @@ dojo.declare("settings.Account", [dijit._Widget, dijit._Templated], {
     if (userName) {
       this.doc.password = password;
       this.doc.name = userName;
+      this.doc.id = this.doc.name + "-" + this.doc.kind;
       this.doc.username = userName + this.kindDocProps._userNameSuffix;
       this.doc.rd_key = [
         "raindrop-account",
-        "account!" + this.doc.name + "-" + this.doc.kind
+        "account!" + this.doc.id
       ];
 
       this.doc.identities = [

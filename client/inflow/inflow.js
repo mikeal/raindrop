@@ -80,6 +80,8 @@ inflow = {
       this.accountsDialog.destroy();
       this.accountsDialog = null;
     }
+
+    rd.engine.syncNow();
   },
 
   onKeyPress: function(evt) {

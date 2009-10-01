@@ -1,18 +1,46 @@
-dojo.provide("inflow");
+dojo.provide("inflowgrid");
 
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
-dojo.require("rdw.QuickCompose");
+dojo.require("inflowgrid.QuickCompose");
 dojo.require("rdw.Search");
-dojo.require("inflow.Stories");
-dojo.require("inflow.Organizer");
+dojo.require("inflowgrid.Stories");
+dojo.require("inflowgrid.Organizer");
 
 dojo.require("rd.engine");
 dojo.require("rd.conversation");
 
+dojo.mixin(inflowgrid, {
+  isComposeVisible: true,
 
-(function(){
+  showQuickCompose: function() {
+    //Place the div really high and slide it in.
+    if (!this.isComposeVisible) {
+      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      dojo.removeClass(qc.domNode, "invisible");
+
+      var position = dojo.position(qc.domNode);
+      var navNode = dojo.byId("nav");
+      qc.domNode.style.top = (-1 * position.h) + "px";
+      this.isComposeVisible = true;
+      dojo.anim("nav", { top: 0 });
+    }
+  },
+
+  hideQuickCompose: function() {
+    if (this.isComposeVisible) {
+      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      var navPosition = dojo.marginBox(dojo.byId("nav"));
+      var navHeaderPosition = dojo.marginBox(dojo.byId("navHeader"));
+
+      this.isComposeVisible = false;
+      dojo.anim("nav", { top: (-1 * (navPosition.h - navHeaderPosition.h)) });
+    }
+  }
+});
+
+;(function(){
   //Set the window name, so extender can target it.
   //TODO: need to make this more generic, to work across raindrop apps.
   window.name = "raindrop";
@@ -20,6 +48,8 @@ dojo.require("rd.conversation");
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
+    inflowgrid.hideQuickCompose();
+
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
     if (fragId) {
@@ -35,6 +65,12 @@ dojo.require("rd.conversation");
         rd.pub("rd-protocol-home");
       }
     });
+
+    //Listen for quick compose calls    
+    dojo.query(".quickComposeLaunch").onclick(function(evt) {
+      inflowgrid.showQuickCompose();
+      dojo.stopEvent(evt);
+    })
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

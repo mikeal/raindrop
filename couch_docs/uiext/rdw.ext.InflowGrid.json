@@ -1,0 +1,12 @@
+{
+  "schemas" : {
+    "rd.ext.uiext" : {
+      "exts": {
+        "rdw._Base": "rdw.ext.InflowGrid",
+        "inflowgrid.Organizer": "rdw.ext.InflowGrid",
+        "inflowgrid.Stories": "rdw.ext.InflowGrid"
+      }
+    }
+  }
+}
+

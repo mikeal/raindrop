@@ -1,0 +1,35 @@
+<div class="QuickCompose">
+<div class="QuickComposeTwo">
+  <div class="photo you"><img dojoAttachPoint="pictureNode" class="photo you" src="${userPicUrl}" /></div>
+  <div class="compose">
+    <div class="info you">       <!--<span dojoAttachPoint="nameNode" class="name you"></span>-->
+      <!--From: <span dojoAttachPoint="addressNode" class="medium you"></span>-->
+    </div>
+    <form dojoAttachEvent="onsubmit: onSubmit">
+      <div>
+        <div class="to" dojoAttachPoint="toNode">
+        <div style="display:inline-block; display:-moz-inline-box;">
+          <div style="display:inline-block; margin-right:20px;">
+          <label for="subject">From:</label>
+          <span dojoAttachPoint="addressNode" class="mediumYou"></span>
+          </label></div><div style="display:inline-block;">
+          <label for="to">To:</label>
+          <div class="input"><input type="text" name="to" class="toInput" dojoAttachPoint="toInputNode"/></div></div>
+        </div>
+        <div dojoAttachPoint="countNode" class="characterCount">&nbsp;</div>
+        </div>
+        <div class="subject" dojoAttachPoint="subjectNode">
+          <label for="subject">Subject:</label>
+          <div class="inputSubject"><input type="text" name="subject" class="subjectInput" dojoAttachPoint="subjectInputNode"/></div>
+        </div>
+      </div>
+      <textarea dojoAttachEvent="onfocus: onFocusTextArea, onclick: onFocusTextArea" dojoAttachPoint="textAreaNode">Type something...</textarea>
+      <div class="actions" dojoAttachPoint="actionsNode">
+        <a class="close" href="#close" dojoAttachEvent="onclick: onCloseClick">close</a>
+        <input class="send" type="submit" value="${sendButtonText}"/>
+      </div>
+    </form>
+    <div class="status" dojoAttachPoint="statusNode"></div>
+  </div>
+</div>
+</div>

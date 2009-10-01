@@ -1,9 +1,9 @@
-dojo.provide("inflow.Story");
+dojo.provide("inflowgrid.Story");
 
 dojo.require("rdw.Story");
-dojo.require("inflow.Message");
+dojo.require("inflowgrid.Message");
 
-dojo.declare("inflow.Story", [rdw.Story], {
+dojo.declare("inflowgrid.Story", [rdw.Story], {
   templateString: '<div class="rdwStory" dojoAttachEvent="onclick: onClick"> \
                     <div class="messages" dojoAttachPoint="containerNode"></div> \
                     <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
@@ -12,6 +12,6 @@ dojo.declare("inflow.Story", [rdw.Story], {
 
   //The name of the constructor function (module) that should be used
   //to show individual messages.
-  messageCtorName: "inflow.Message"
+  messageCtorName: "inflowgrid.Message"
 
 });

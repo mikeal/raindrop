@@ -16,13 +16,15 @@ dojo.require("rd.store");
 dojo.require("rdw.MailingListSummary");
 
 //Tell the inflow to change to message view for mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "inflow", {
-  add: {
-    storyTopics: [
-      "rd-protocol-mailingList"
-    ]
-  }
-});
+if (rd.appName == "inflow") {
+  rd.applyExtension("rdw.ext.MailingList", "inflow", {
+    add: {
+      storyTopics: [
+        "rd-protocol-mailingList"
+      ]
+    }
+  });
+}
 
 //Allow a "mailingList" method on the rd.conversation data API.
 rd.applyExtension("rdw.ext.MailingList", "rd.conversation", {

@@ -21,6 +21,9 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //Optional messageBag that this compose is related to.
   messageBag: null,
 
+  //Sets up styles and states to show the QuickCompose as expanded.
+  startExpanded: false,
+
   //The types of account services that QuickCompose supports for sending out messages.
   //You can modify this prototype property to add new values, or change the
   //values on instantiation. Note that changing on instantion means assigning
@@ -159,6 +162,10 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         this.updateFields(senderDisplay);
       }
     });
+    
+    if (this.startExpanded) {
+      this.onFocusTextArea();
+    }
   },
 
   destroy: function() {
