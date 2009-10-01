@@ -20,6 +20,12 @@ TRACE_IMAP = False
 NUM_QUERYERS = 3
 NUM_FETCHERS = 3
 
+# magic numbers.
+NUM_CONNECT_RETRIES = 4
+RETRY_BACKOFF = 8
+MAX_BACKOFF = 600
+DEFAULT_TIMEOUT = 60
+
 
 def log_exception(msg, *args):
   # inlineCallbacks don't work well with the logging module's handling of
@@ -62,6 +68,7 @@ def check_envelope_ok(env):
   return True
 
 class ImapClient(imap4.IMAP4Client):
+  timeout = DEFAULT_TIMEOUT
   def _defaultHandler(self, tag, rest):
     # XXX - worm around a bug related to MismatchedQuoting exceptions.
     # Probably: http://twistedmatrix.com/trac/ticket/1443
@@ -84,15 +91,20 @@ class ImapClient(imap4.IMAP4Client):
     return self._doAuthenticate()
 
   def _doAuthenticate(self):
-    def return_self(_):
-      return self.deferred.callback(self)
     if self.account.details.get('crypto') == 'TLS':
       d = self.startTLS(self.factory.ctx)
       d.addCallback(self._doLogin)
     else:
       d = self._doLogin()
-    d.addCallback(return_self)
-    return d
+    def done(result):
+      td, self.deferred = self.deferred, None
+      if isinstance(result, Failure):
+        # throw the connection away - we will (probably) retry...
+        self.transport.loseConnection()
+        td.errback(result)
+      else:
+        td.callback(self)
+    return d.addBoth(done)
 
   def _doLogin(self, *args, **kwargs):
     return self.login(self.account.details['username'],
@@ -271,6 +283,7 @@ class ImapProvider(object):
 
   @defer.inlineCallbacks
   def _checkQuickRecent(self, conn, folder_path, max_to_fetch):
+    logger.debug("_checkQuickRecent for %r", folder_path)
     _ = yield conn.select(folder_path)
     nitems = yield conn.search("((OR UNSEEN (OR RECENT FLAGGED))"
                                " UNDELETED SMALLER 50000)", uid=True)
@@ -705,61 +718,91 @@ class ImapUpdater:
       logger.debug("successfully adjusted flags for %(rd_key)r", src_doc)
     client.logout()
 
+
+def failure_to_status(failure):
+  exc = failure.value
+  if isinstance(exc, error.ConnectionRefusedError):
+    why = brat.UNREACHABLE
+  elif isinstance(exc, imap4.IMAP4Exception):
+    # XXX - better detection is needed!
+    why = brat.PASSWORD
+  elif isinstance(exc, error.TimeoutError):
+    why = brat.TIMEOUT
+  else:
+    why = brat.UNKNOWN
+  return {'what': brat.SERVER,
+          'state': brat.BAD,
+          'why': why,
+          'message': failure.getErrorMessage()}
+
 def get_connection(account, conductor):
-    factory = ImapClientFactory(account, conductor)
-    return factory.connect()
-  
+    ready = defer.Deferred()
+    _do_get_connection(account, conductor, ready, NUM_CONNECT_RETRIES, RETRY_BACKOFF)
+    return ready
+
+
+@defer.inlineCallbacks  
+def _do_get_connection(account, conductor, ready, retries_left, backoff):
+    this_ready = defer.Deferred()
+    factory = ImapClientFactory(account, conductor, this_ready)
+    factory.connect()
+    try:
+      conn = yield this_ready
+      # yay - report we are good and tell the real callback we have it.
+      account.reportStatus(brat.EVERYTHING, brat.GOOD)
+      ready.callback(conn)
+    except Exception, exc:
+      fail = Failure()
+      logger.debug("first chance connection error handling: %s\n%s",
+                   fail.getErrorMessage(), fail.getBriefTraceback())
+      retries_left -= 1
+      if retries_left <= 0:
+        ready.errback(fail)
+      else:
+        status = failure_to_status(fail)
+        account.reportStatus(**status)
+        logger.warning('Failed to connect, will retry after %s secs: %s',
+                       backoff, fail.getErrorMessage())
+        next_backoff = min(backoff * 2, MAX_BACKOFF) # magic number
+        conductor.reactor.callLater(backoff,
+                                    _do_get_connection,
+                                    account, conductor, ready,
+                                    retries_left, next_backoff)
+
 
 class ImapClientFactory(protocol.ClientFactory):
   protocol = ImapClient
-
-  def __init__(self, account, conductor):
+  def __init__(self, account, conductor, def_ready):
     # base-class has no __init__
     self.account = account
     self.conductor = conductor
     self.doc_model = account.doc_model # this is a little confused...
-
+    # The deferred triggered after connection and the greeting/auth handshake
+    self.def_ready = def_ready
     self.ctx = ssl.ClientContextFactory()
-    self.backoff = 8 # magic number
-    self.retries_left = 4
 
   def buildProtocol(self, addr):
     p = self.protocol(self.ctx)
     p.factory = self
     p.account = self.account
     p.doc_model = self.account.doc_model
-    p.deferred = self.deferred # this isn't going to work in reconnect scenarios
+    p.deferred = self.def_ready
     return p
+
+  def clientConnectionFailed(self, connector, reason):
+    d, self.def_ready = self.def_ready, None
+    d.errback(reason)
 
   def connect(self):
     details = self.account.details
     logger.debug('attempting to connect to %s:%d (ssl: %s)',
                  details['host'], details['port'], details['ssl'])
     reactor = self.conductor.reactor
-    self.deferred = defer.Deferred()
     if details.get('ssl'):
-      reactor.connectSSL(details['host'], details['port'], self, self.ctx)
+      ret = reactor.connectSSL(details['host'], details['port'], self, self.ctx)
     else:
-      reactor.connectTCP(details['host'], details['port'], self)
-    return self.deferred
-
-  def clientConnectionFailed(self, connector, reason):
-    self.account.reportStatus(brat.SERVER, brat.BAD, brat.UNREACHABLE,
-                              brat.TEMPORARY)
-    # It occurs that some "account manager" should be reported of the error,
-    # and *it* asks us to retry later?  eg, how do I ask 'ignore backoff -
-    # try again *now*"?
-    self.maybeRetry(reason, self.connect)
-
-  def maybeRetry(self, reason, func, *args):
-    self.retries_left -= 1
-    if not self.retries_left:
-      reason.raiseException()
-    logger.warning('Failed to connect, will retry after %d secs: %s',
-                   self.backoff, reason.getErrorMessage())
-    # XXX - check reason for errors which can be retried.
-    self.conductor.reactor.callLater(self.backoff, func, *args)
-    self.backoff = min(self.backoff * 2, 600) # magic number
+      ret = reactor.connectTCP(details['host'], details['port'], self)
+    return ret
 
 
 class IMAPAccount(base.AccountBase):
@@ -783,44 +826,88 @@ class IMAPAccount(base.AccountBase):
     prov = ImapProvider(self, conductor, options)
 
     @defer.inlineCallbacks
-    def consume_connection_queue(q):
+    def consume_connection_queue(q, def_done, retries_left=None, backoff=None):
+      if retries_left is None: retries_left = NUM_CONNECT_RETRIES
+      if backoff is None: backoff = RETRY_BACKOFF
+      try:
+        _ = yield _do_consume_connection_queue(q, def_done, retries_left, backoff)
+      except Exception:
+        # We only get here when all retries etc have failed and a queue has
+        # given up for good.
+        log_exception("failed to process a queue")
+        def_done.errback(Failure())
+
+    @defer.inlineCallbacks
+    def _do_consume_connection_queue(q, def_done, retries_left, backoff):
       """Processes the query queue."""
       conn = None
-      while True:
-        result = yield q.get()
-        if result is None:
-          logger.debug('queue processor stopping')
-          q.put(None) # for anyone else processing the queue...
-          break
-        # else a real item to process.
-        if conn is None:
-          # getting the initial connection has its own retry semantics...
-          conn = yield get_connection(self, conductor)
-
-        try:
-          func, xargs = result
-          args = (conn,) + xargs
-          _ = yield func(*args)
-        except imap4.IMAP4Exception, exc:
-          # put the item back in the queue for later
-          q.put(result)
-          # then queue a 'retry' of the queue.
-          logger.debug("handling connection error: %s", exc)
-          conn.transport.loseConnection()
-          conn.factory.maybeRetry(Failure(), consume_connection_queue, q)
-          return
-        except:
-          if not conductor.reactor.running:
+      try:
+        while True:
+          result = yield q.get()
+          if result is None:
+            logger.debug('queue processor stopping')
+            q.put(None) # tell other consumers to stop
+            def_done.callback(None)
             break
-          log_exception('failed to process an IMAP query request')
-      if conn is not None:
-        _ = yield conn.close()
+          # else a real item to process.
+          if conn is None:
+            # getting the initial connection has its own retry semantics, so
+            # if it failed we throw a new exception which avoids re-retrying...
+            try:
+              conn = yield get_connection(self, conductor)
+            except:
+              # can't get a connection - must re-add the item to the queue
+              # then re-throw the error back out so this queue stops.
+              q.put(result)
+              raise
+          try:
+            func, xargs = result
+            args = (conn,) + xargs
+            _ = yield func(*args)
+          except imap4.IMAP4Exception, exc:
+            # put the item back in the queue for later or for another successful
+            # connection.
+            q.put(result)
+  
+            retries_left -= 1
+            if retries_left <= 0:
+              # We are going to give up on this entire connection...
+              raise
+            fail = Failure()
+            status = failure_to_status(fail)
+            self.reportStatus(**status)
+            logger.warning('Failed to process queue, will retry after %s secs: %s',
+                           backoff, fail.getErrorMessage())
+            next_backoff = min(backoff * 2, MAX_BACKOFF) # magic number
+            conductor.reactor.callLater(backoff,
+                                        consume_connection_queue,
+                                        q, def_done, retries_left, next_backoff)
+            return
+          except:
+            if not conductor.reactor.running:
+              break
+            # some other bizarre error - just skip this batch and continue
+            log_exception('failed to process an IMAP query request')
+          # if we got this far we successfully processed an item - report that.
+          self.reportStatus(brat.EVERYTHING, brat.GOOD)
+      finally:
+        if conn is not None:
+          # should be no need to ever 'close' - we can re-select new mailboxes
+          # or just disconnect with logout...
+          try:
+            _ = yield conn.logout()
+          except:
+            log_exception('failed to logout from the connection')
+          # and we are done.
+          conn.transport.loseConnection()
 
     @defer.inlineCallbacks
     def start_queryers(n):
       ds = []
       for i in range(n):
-        ds.append(consume_connection_queue(prov.query_queue))
+        d = defer.Deferred()
+        consume_connection_queue(prov.query_queue, d)
+        ds.append(d)
       _ = yield defer.DeferredList(ds)
       # queryers done - post to the fetch queue telling it everything is done.
       acid = self.details.get('id','')
@@ -832,7 +919,9 @@ class IMAPAccount(base.AccountBase):
     def start_fetchers(n):
       ds = []
       for i in range(n):
-        ds.append(consume_connection_queue(prov.fetch_queue))
+        d = defer.Deferred()
+        consume_connection_queue(prov.fetch_queue, d)
+        ds.append(d)
       _ = yield defer.DeferredList(ds)
       # fetchers done - write the cache docs last.
       if prov.updated_folder_infos:
