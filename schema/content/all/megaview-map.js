@@ -6,8 +6,7 @@
 
 function(doc) {
   if (doc.rd_schema_id
-    && !doc.rd_megaview_ignore_doc
-    && doc.rd_schema_id.indexOf("ui") != 0) { // ui extensions should be ok here?
+    && !doc.rd_megaview_ignore_doc) {
     // every row we emit for this doc uses an identical 'value'.
     var row_val = {'_rev': doc._rev,
                    'rd_key' : doc.rd_key,
