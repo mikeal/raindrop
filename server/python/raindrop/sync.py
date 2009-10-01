@@ -71,7 +71,7 @@ class SyncConductor(object):
       inc.add_processor(new_processor, source_schemas, 'outgoing')
 
   def get_status_ob(self):
-    acct_infos = []
+    acct_infos = {}
     for acct in self.all_accounts:
       if acct in self.accounts_syncing:
         state = 'synchronizing'
@@ -80,8 +80,10 @@ class SyncConductor(object):
       else:
         state = 'idle'
 
-      acct_infos.append({'id': acct.details['id'],
-                         'status': state})
+      acct_infos[acct.details['id']] = {
+                         'state': state,
+                         'status': acct.status,
+                         }
     return {'accounts' : acct_infos}
 
   @defer.inlineCallbacks
