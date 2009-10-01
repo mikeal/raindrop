@@ -21,6 +21,7 @@ class Rat(object):
   ACCOUNT = 'account'
 
   UNREACHABLE = 'unreachable'
+  TIMEOUT = 'timeout'
   PASSWORD = 'password'
   MAINTENANCE = 'maintenance'
   BUSY = 'busy'
@@ -79,9 +80,10 @@ class AccountBase(Rat):
   def __init__(self, doc_model, details):
     self.doc_model = doc_model
     self.details = details
+    self.status = {}
 
   def reportStatus(self, what, state, why=Rat.UNKNOWN,
-                   expectedDuration=Rat.UNKNOWN):
+                   duration=Rat.UNKNOWN, message=None):
     '''
     Report status relating to this account.
 
@@ -95,7 +97,13 @@ class AccountBase(Rat):
     (for example, last.fm will sometimes refuse submission requests)
     '''
     logger.debug("ReportStatus: %s %s (why=%s, duration=%s)",
-                 what, state, why, expectedDuration)
+                 what, state, why, duration)
+    self.status = {'what': what,
+                   'state': state,
+                   'why': why,
+                   'duration': duration,
+                   'message': message,
+    }
 
   def startSync(self, conductor, options):
     """Check for incoming messages, or do nothing if this account doesn't
