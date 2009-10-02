@@ -673,6 +673,9 @@ class ImapProvider(object):
       if date < time.time() - self.options.max_age:
         logger.log(1, 'skipping message - too old')
         return False
+    if not msg_info['ENVELOPE'][-1]:
+      logger.debug("msg has no message ID - skipping: %r", msg_info)
+      return False
     return True
 
 
@@ -855,11 +858,14 @@ class IMAPAccount(base.AccountBase):
             # if it failed we throw a new exception which avoids re-retrying...
             try:
               conn = yield get_connection(self, conductor)
+              assert conn.tags is not None, "got disconnected connection??"
             except:
               # can't get a connection - must re-add the item to the queue
               # then re-throw the error back out so this queue stops.
               q.put(result)
               raise
+          # conn.tags get reset on unexpected connection loss causing grief...
+          assert conn.tags is not None, "lost connection??"
           try:
             func, xargs = result
             args = (conn,) + xargs
@@ -896,9 +902,14 @@ class IMAPAccount(base.AccountBase):
           # or just disconnect with logout...
           try:
             _ = yield conn.logout()
-          except:
+          except error.ConnectionLost:
+            # *sometimes* we get a connection lost exception trying this.
+            # Is it possible gmail just aborts the connection?
+            logger.debug("ignoring ConnectionLost exception when logging out")
+          except Exception:
             log_exception('failed to logout from the connection')
-          # and we are done.
+          # and we are done (we've probably already lost the connection whe
+          # doing the logout, but better safe than sorry...)
           conn.transport.loseConnection()
 
     @defer.inlineCallbacks
