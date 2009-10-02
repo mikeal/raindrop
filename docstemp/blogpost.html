@@ -1,0 +1,119 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" lang="en"><head>
+
+
+
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>Mozilla Labs Raindrop | Open messaging for the open web</title>
+<link rel="stylesheet" type="text/css" media="all"
+      href="principles_files/screen.css">
+	<style type="text/css">
+		h1 {
+                        color: black;
+			font-size: larger;
+			font-weight: bold;
+                }		
+
+               p {
+                 color: #333333;
+                 font:16px/1.4 "Droid Sans","trebuchet ms",sans-serif
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+		
+<div class="sidebar"></div>
+			
+<div class="header"></div>
+			
+<div id="menu">
+			
+				<span class="menuItem"><a href="index.html">Home</a></span>
+				<span class="menuItem"><a href="about.html">About</a></span>
+				<span class="menuItem"><a href="principles.html">Guiding Principles</a></span>
+				<span class="menuItem"><a href="faq.html">FAQ</a></span>
+				<span class="menuItem"><a href="demos.html">Demos</a></span>
+				<span class="menuItem"><a href="getInvolved.html">Get Involved</a></span>
+				<span class="menuItem"><a href="download.html">Download</a></span>
+			
+			</div>
+			
+		<div class="whiteBg">
+<h2>
+Motivation
+</h2>
+
+<p>
+Messaging on the Internet currently primarily consists of well-established standards that predate the web, such as email; new web-only systems that are quite limited in scope, such as twitter, or proprietary systems which only allow limited innovation from "the outside", like Facebook.  We believe that messaging on the open web can combine the best of email and twitter, desktop, mobile and web interactions, and be a thriving source of useful, fun communications software.
+</p>
+
+<p>
+Today, we're introducing a Mozilla Labs experiment called Raindrop to explore this space.   We're trying to avoid a "clean room" design of the interface from traditional messaging clients.  We didn't come all this way into the future to re-implement the horse and buggy; we deserve flying cars.  Many of today's products clutch to the notion of individual messages and from there quickly begin lose to sight of what the real goals should be. Instead of lists of messages, our approach is about conversations and relationships.
+</p>
+
+		  
+<h2>The Product</h2>
+
+<p>
+Over time, Raindrop hopes to be a product that excels at helping users manage their digital relationships.  It will provide smart assistance organizing, prioritizing, and handling incoming information. Elegance and simplicity are key design goals, achieved in part by focussing the core on a limited number of important use cases.  Raindrop will excel at allowing users to explicitly choose what parts of their data they wish to mashup with the Web and its services as well as which parts they wish to keep entirely private.
+</pr>
+
+<h1>
+[PRODUCT INTRO SCREENCAST]
+</h1>
+
+<h2>
+The Development Platform
+</h2>
+
+<p>
+While Raindrop's product-side has strong opinions about design, it also recognizes that design is an iterative process, and that it's important for users to be able to customize their experience.   To this end, Raindrop will offer developers a platform to extend and develop Raindrop built around the open web that supports easy, quick iteration using Bespin.   It will provide developers with a set of front-end widgets and back-end libraries that support important high-level concepts such as people, conversations, relationships, mailing lists, and todos.
+</p>
+
+<p>
+From a technical perspective, Raindrop's platform is split into two pieces.  The back end contains a message store currently based on CouchDB, message fetching, sending, and processing logic written in Python, and REST APIs for use by front-end applications.  We intend to support multiple front ends of varying types, but our primary front-end is built using pure HTML, CSS, and JavaScript, and is viewable from any modern browser (Firefox or Webkit-based).   One advantage of this architecture is that the front-end can be used from anywhere with a web-browser, and the back end can run in differing modes.  For users whose priority is complete control over their own data and offline use, the server components can be run on the computer from which it's accessed.  Users whose priority is ease of use can choose to have their message store live on a computer run by an ISP on their behalf.
+</p>
+
+<h1>
+[DEV EXPERIENCE SCREENCAST]
+</h1>
+
+<h2>
+Raindrop 0.1
+</h2>
+
+<p>
+Today, we're releasing Raindrop 0.1.  While we have a vision and working code, many things are in the midst of being implemented, and it's not yet ready for everyday use.  We're releasing 0.1 now because we want feedback on that vision, and because we'd like to invite the larger community of developers, designers, and users to join us in working on the prototype.
+</p>
+
+<p>
+We expect Raindrop to evolve quickly and organically, incorporating feedback that we get along the way.  Important upcoming product feature work is likely to include features to help users triage high-volume inflows quickly, along with a mobile client.  On the platform side, a bundled extension to allow users to contribute their usage data to the designers and developers, similar to Test Pilot, is a high priority, as is offering a server-side CommonJS environment so that writing backend extensions is accessible to a larger group of developers.  We also do not yet have a security model, and would welcome assistance in discussing and prototyping that.
+</p>
+
+<h1>
+[LINK TO DOWNLOAD]
+</h1>
+
+<h2>
+How to Participate
+</h2>
+
+<p>
+In our experience, different kinds of discussions tend to use different language, have different norms, and involve different sets of people.  One of the things that we're experimenting with as we prototype Raindrop is separating some of these discussions apart, in the hopes of keeping them more focussed.  We've set up several places for participation of various sorts:
+<p>
+
+<ul>
+  <li>The raindrop-general community at GetSatisfaction centers around general discussion, support, and enhancement ideas</li>
+  <li>The raindrop-core Google Group is for developers to discuss issues related to the core code</li>
+  <li>The raindrop-design Google Group is for interaction and graphic design work</li>
+</ul>
+
+<p>
+Each of these has an identically named Jabber chat room for more immediate discussion set up on chat.mozillamessaging.com that can be accessed from any Jabber.  We'll also be using the <tt>#raindrop</tt> hashtag on twitter.
+</p>
+
+</body>
