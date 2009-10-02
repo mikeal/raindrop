@@ -20,11 +20,14 @@ TRACE_IMAP = False
 NUM_QUERYERS = 3
 NUM_FETCHERS = 3
 
-# magic numbers.
+# magic numbers.  Some should probably come from the account info...
 NUM_CONNECT_RETRIES = 4
 RETRY_BACKOFF = 8
 MAX_BACKOFF = 600
 DEFAULT_TIMEOUT = 60
+# we fetch this many bytes or this many messages, whichever we hit first.
+MAX_BYTES_PER_FETCH = 500000
+MAX_MESSAGES_PER_FETCH = 30
 
 
 def log_exception(msg, *args):
@@ -618,14 +621,25 @@ class ImapProvider(object):
     # fetch most-recent (highest UID) first...
     left = sorted(by_uid.keys(), reverse=True)
     while left:
-      # do 10 at a time...
-      this = left[:10]
-      left = left[10:]
+      # do as many as we can each time while staying inside our MAX_*
+      # constraints...
+      nbytes = 0
+      this = []
+      while left and len(this) < MAX_MESSAGES_PER_FETCH and nbytes < MAX_BYTES_PER_FETCH:
+        look = left.pop(0)
+        this.append(look)
+        try:
+          this_bytes = int(by_uid[look]['RFC822.SIZE'])
+        except (KeyError, ValueError):
+          logger.info("invalid message size in`%r", by_uid[look])
+          this_bytes = 100000 # whateva...
+        nbytes += this_bytes
+      logger.debug("starting fetch of %d items from %r (%d bytes)",
+                   len(this), folder_path, nbytes)
       to_fetch = ",".join(str(v) for v in this)
       # We need to use fetchSpecific so we can 'peek' (ie, not reset the
       # \\Seen flag) - note that gmail does *not* reset the \\Seen flag on
       # a fetchMessages, but rfc-compliant servers do...
-      logger.debug("starting fetch of %d items from %r", len(this), folder_path)
       results = yield conn.fetchSpecific(to_fetch, uid=True, peek=True)
       logger.debug("fetch from %r got %d", folder_path, len(results))
       #results = yield conn.fetchMessage(to_fetch, uid=True)
@@ -709,7 +723,7 @@ class ImapUpdater:
         pass
       else:
         client.removeFlags(dest_doc['uid'], flags_rem, uid=1)
-    except IMAP4Exception, exc:
+    except imap4.IMAP4Exception, exc:
       logger.error("Failed to update flags: %s", fun, exc)
       # XXX - we need to differentiate between a 'fatal' error, such as
       # when the message has been deleted, or a transient error which can be
@@ -854,7 +868,9 @@ class IMAPAccount(base.AccountBase):
             break
           seeder, func, xargs = result
           # else a real item to process.
-          if conn is None:
+          if conn is None or conn.tags is None:
+            if conn is not None:
+              logger.warn('unexpected IMAP connection failure - reconnecting')
             # getting the initial connection has its own retry semantics
             try:
               conn = yield get_connection(self, conductor)
@@ -867,13 +883,18 @@ class IMAPAccount(base.AccountBase):
               else:
                 q.put(result) # retry - if we wind up failing later, big deal...
               raise
-          # conn.tags get reset on unexpected connection loss causing grief...
-          assert conn.tags is not None, "lost connection??"
           try:
             args = (conn,) + xargs
             _ = yield func(*args)
             # if we got this far we successfully processed an item - report that.
             self.reportStatus(brat.EVERYTHING, brat.GOOD)
+            # It is possible the server disconnected *after* sending a
+            # response - handle it here so we get a more specific log message.
+            if conn.tags is None:
+              logger.warn("unexpected connection failure after calling %r", func)
+              logger.debug("arguments were %s", xargs)
+              self.reportStatus(brat.SERVER, brat.BAD)
+              conn = None
           except imap4.IMAP4Exception, exc:
             # put the item back in the queue for later or for another successful
             # connection.
@@ -909,10 +930,6 @@ class IMAPAccount(base.AccountBase):
             if seeder:
               q.put(None)
               raise
-            # If it was an error that caused us to lose the connection, try
-            # and reestablish it.
-            if conn.tags is None:
-              conn = None
       finally:
         # checking conn.tags is the only reliable way I can see to detect
         # premature disconnection inside twisted etc...

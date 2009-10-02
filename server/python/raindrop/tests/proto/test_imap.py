@@ -4,7 +4,7 @@ import raindrop.proto.imap
 from raindrop.tests import TestCaseWithTestDB, FakeOptions
 from raindrop.proc.base import Rat
 
-from twisted.internet import defer
+from twisted.internet import defer, reactor
 from twisted.mail import imap4
 
 from twisted import cred
@@ -152,8 +152,9 @@ class SimpleServer(imap4.IMAP4Server):
             raise cred.error.UnauthorizedLogin()
 
         if username == self._username and password == self._password:
-
-            if getattr(self.testcase, 'is_diconnect_test', False):
+            # lose the connection now - it is the *next* request from the
+            # client which is likely to fail.
+            if getattr(self.testcase, 'is_disconnect_early_test', False):
                 self.transport.loseConnection()
 
             return imap4.IAccount, self.theAccount, lambda: None
@@ -173,10 +174,21 @@ class SimpleServer(imap4.IMAP4Server):
     unauth_LOGIN = (do_LOGIN, imap4.IMAP4Server.arg_astring, imap4.IMAP4Server.arg_astring)
 
     def _parseMbox(self, mbox):
+        # losing the connection now can be interesting - the client may just
+        # conclude there are no folders.
+        if getattr(self.testcase, 'is_disconnect_after_mbox_test', False):
+            reactor.callLater(0, self.transport.loseConnection)
         if self.testcase.num_transient_list_errors:
             self.testcase.num_transient_list_errors -= 1
             raise TestIMAPException("something transient")
         return imap4.IMAP4Server._parseMbox(self, mbox)
+
+    def _listWork(self, tag, ref, mbox, sub, cmdName):
+        if getattr(self.testcase, 'is_disconnect_after_list_test', False):
+            reactor.callLater(0, self.transport.loseConnection)
+        return imap4.IMAP4Server._listWork(self, tag, ref, mbox, sub, cmdName)
+
+    auth_LIST = (_listWork, imap4.IMAP4Server.arg_astring, imap4.IMAP4Server.arg_astring, 0, 'LIST')
 
 
 
@@ -268,16 +280,38 @@ class TestSimpleFailures(IMAP4TestBase):
         self.failUnlessEqual(status['why'], Rat.UNREACHABLE)
 
     @defer.inlineCallbacks
-    def test_disconnect(self):
+    def test_disconnect_early(self):
         self._observer._ignoreErrors(TestIMAPException,
                                      twisted.internet.error.ConnectionDone)
-        self.is_diconnect_test = True
+        self.is_disconnect_early_test = True
         cond = yield self.get_conductor()
         _ = yield cond.sync(self.pipeline.options)
         status = cond.get_status_ob()['accounts']['imap_test']['status']
         self.failUnlessEqual(status['state'], Rat.BAD)
         # don't have a specific 'why' state for this, so don't bother
         # testing is - 'state'==bad is good enough...
+
+    @defer.inlineCallbacks
+    def test_disconnect_late(self):
+        self._observer._ignoreErrors(TestIMAPException,
+                                     twisted.internet.error.ConnectionDone)
+        self.is_disconnect_after_mbox_test = True
+        cond = yield self.get_conductor()
+        _ = yield cond.sync(self.pipeline.options)
+        status = cond.get_status_ob()['accounts']['imap_test']['status']
+        self.failUnlessEqual(status['state'], Rat.BAD)
+        # don't have a specific 'why' state for this, so don't bother
+        # testing is - 'state'==bad is good enough...
+
+    @defer.inlineCallbacks
+    def test_disconnect_later(self):
+        self._observer._ignoreErrors(TestIMAPException,
+                                     twisted.internet.error.ConnectionDone)
+        self.is_disconnect_after_list_test = True
+        cond = yield self.get_conductor()
+        _ = yield cond.sync(self.pipeline.options)
+        status = cond.get_status_ob()['accounts']['imap_test']['status']
+        self.failUnlessEqual(status['state'], Rat.BAD)
 
     @defer.inlineCallbacks
     def test_timeout(self):
