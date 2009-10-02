@@ -201,7 +201,7 @@ class ImapProvider(object):
     by_uid = yield self._findMissingItems(folder_path, infos)
     if not by_uid:
       return
-    self.fetch_queue.put((self._processFolderBatch, (folder_path, by_uid)))
+    self.fetch_queue.put((False, self._processFolderBatch, (folder_path, by_uid)))
 
   @defer.inlineCallbacks
   def _reqList(self, conn, *args, **kwargs):
@@ -326,7 +326,7 @@ class ImapProvider(object):
     # treatment...
     for delim, name in all_names:
       if name not in caches:
-        self.query_queue.put((self._checkQuickRecent, (name, 20)))
+        self.query_queue.put((False, self._checkQuickRecent, (name, 20)))
 
     # We only update the cache of the folder once all items from that folder
     # have been written, so extensions only run once all items fetched.
@@ -334,7 +334,7 @@ class ImapProvider(object):
     self.updated_folder_infos = []
 
     for delim, name in all_names:
-      self.query_queue.put((self._updateFolderFromCache, (caches, delim, name)))
+      self.query_queue.put((False, self._updateFolderFromCache, (caches, delim, name)))
 
   @defer.inlineCallbacks
   def _updateFolderFromCache(self, conn, cache_docs, folder_delim, folder_name):
@@ -852,24 +852,28 @@ class IMAPAccount(base.AccountBase):
             q.put(None) # tell other consumers to stop
             def_done.callback(None)
             break
+          seeder, func, xargs = result
           # else a real item to process.
           if conn is None:
-            # getting the initial connection has its own retry semantics, so
-            # if it failed we throw a new exception which avoids re-retrying...
+            # getting the initial connection has its own retry semantics
             try:
               conn = yield get_connection(self, conductor)
               assert conn.tags is not None, "got disconnected connection??"
             except:
               # can't get a connection - must re-add the item to the queue
               # then re-throw the error back out so this queue stops.
-              q.put(result)
+              if seeder:
+                q.put(None) # give up and let all consumers stop.
+              else:
+                q.put(result) # retry - if we wind up failing later, big deal...
               raise
           # conn.tags get reset on unexpected connection loss causing grief...
           assert conn.tags is not None, "lost connection??"
           try:
-            func, xargs = result
             args = (conn,) + xargs
             _ = yield func(*args)
+            # if we got this far we successfully processed an item - report that.
+            self.reportStatus(brat.EVERYTHING, brat.GOOD)
           except imap4.IMAP4Exception, exc:
             # put the item back in the queue for later or for another successful
             # connection.
@@ -878,6 +882,9 @@ class IMAPAccount(base.AccountBase):
             retries_left -= 1
             if retries_left <= 0:
               # We are going to give up on this entire connection...
+              if seeder:
+                # If this is the queue seeder, we must post a stop request.
+                q.put(None)
               raise
             fail = Failure()
             status = failure_to_status(fail)
@@ -889,15 +896,27 @@ class IMAPAccount(base.AccountBase):
                                         consume_connection_queue,
                                         q, def_done, retries_left, next_backoff)
             return
-          except:
+          except Exception:
             if not conductor.reactor.running:
               break
             # some other bizarre error - just skip this batch and continue
+            self.reportStatus(**failure_to_status(Failure()))
             log_exception('failed to process an IMAP query request')
-          # if we got this far we successfully processed an item - report that.
-          self.reportStatus(brat.EVERYTHING, brat.GOOD)
+            # This was the queue seeding request; looping again to fetch a
+            # queue item is likely to hang (as nothing else is in there)
+            # There is no point doing a retry; this doesn't seem to be
+            # connection or server related; so post a stop request and bail.
+            if seeder:
+              q.put(None)
+              raise
+            # If it was an error that caused us to lose the connection, try
+            # and reestablish it.
+            if conn.tags is None:
+              conn = None
       finally:
-        if conn is not None:
+        # checking conn.tags is the only reliable way I can see to detect
+        # premature disconnection inside twisted etc...
+        if conn is not None and conn.tags is not None:
           # should be no need to ever 'close' - we can re-select new mailboxes
           # or just disconnect with logout...
           try:
@@ -950,8 +969,13 @@ class IMAPAccount(base.AccountBase):
 
     lc = task.LoopingCall(log_status)
     lc.start(10)
-    # put something in the fetch queue to fire things off...
-    prov.query_queue.put((start_producing, ()))
+    # put something in the fetch queue to fire things off, noting that
+    # this is the 'queue seeder' - it *must* succeed so it writes a None to
+    # the end of the queue so the queue stops.  The retry semantics of the
+    # queue mean that we can't simply post the None in the finally of the
+    # function - it may be called multiple times.  If the queue consumer
+    # gives up on a seeder function, it posts the None for us.
+    prov.query_queue.put((True, start_producing, ()))
 
     # fire off the producer and queue consumers.
     _ = yield defer.DeferredList([start_queryers(NUM_QUERYERS),

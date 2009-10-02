@@ -152,6 +152,10 @@ class SimpleServer(imap4.IMAP4Server):
             raise cred.error.UnauthorizedLogin()
 
         if username == self._username and password == self._password:
+
+            if getattr(self.testcase, 'is_diconnect_test', False):
+                self.transport.loseConnection()
+
             return imap4.IAccount, self.theAccount, lambda: None
         self.testcase.num_failed_logins += 1
         raise cred.error.UnauthorizedLogin()
@@ -262,6 +266,18 @@ class TestSimpleFailures(IMAP4TestBase):
         status = cond.get_status_ob()['accounts']['imap_test']['status']
         self.failUnlessEqual(status['state'], Rat.BAD)
         self.failUnlessEqual(status['why'], Rat.UNREACHABLE)
+
+    @defer.inlineCallbacks
+    def test_disconnect(self):
+        self._observer._ignoreErrors(TestIMAPException,
+                                     twisted.internet.error.ConnectionDone)
+        self.is_diconnect_test = True
+        cond = yield self.get_conductor()
+        _ = yield cond.sync(self.pipeline.options)
+        status = cond.get_status_ob()['accounts']['imap_test']['status']
+        self.failUnlessEqual(status['state'], Rat.BAD)
+        # don't have a specific 'why' state for this, so don't bother
+        # testing is - 'state'==bad is good enough...
 
     @defer.inlineCallbacks
     def test_timeout(self):
