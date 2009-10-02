@@ -24,7 +24,9 @@ NUM_FETCHERS = 3
 NUM_CONNECT_RETRIES = 4
 RETRY_BACKOFF = 8
 MAX_BACKOFF = 600
-DEFAULT_TIMEOUT = 60
+# timeouts should be rare - the server may be slow!  Errors are more likely
+# to be connection drops - so we leave this timeout fairly high...
+DEFAULT_TIMEOUT = 60*5
 # we fetch this many bytes or this many messages, whichever we hit first.
 MAX_BYTES_PER_FETCH = 500000
 MAX_MESSAGES_PER_FETCH = 30
@@ -89,6 +91,10 @@ class ImapClient(imap4.IMAP4Client):
       # *sob* - but it doesn't always do a great job at ignoring them - most
       # other handlers of imap4.IMAP4Exceptions are also handling this :(
 
+  def timeoutConnection(self):
+    logger.warn("IMAP connection timed out")
+    return imap4.IMAP4Client.timeoutConnection(self)
+
   def serverGreeting(self, caps):
     logger.debug("IMAP server greeting: capabilities are %s", caps)
     return self._doAuthenticate()
@@ -103,8 +109,10 @@ class ImapClient(imap4.IMAP4Client):
       td, self.deferred = self.deferred, None
       if isinstance(result, Failure):
         # throw the connection away - we will (probably) retry...
-        self.transport.loseConnection()
-        td.errback(result)
+        def fire_errback(_):
+          td.errback(result)
+        defer.maybeDeferred(self.transport.loseConnection
+                           ).addBoth(fire_errback)
       else:
         td.callback(self)
     return d.addBoth(done)
@@ -807,8 +815,14 @@ class ImapClientFactory(protocol.ClientFactory):
     return p
 
   def clientConnectionFailed(self, connector, reason):
+    logger.debug("clientConnectionFailed: %s", reason)
     d, self.def_ready = self.def_ready, None
     d.errback(reason)
+
+  def clientConnectionLost(self, connector, reason):
+    # this is called even for 'normal' and explicit disconnections; debug
+    # logging might help diagnose other problems though...
+    logger.debug("clientConnectionLost: %s", reason)
 
   def connect(self):
     details = self.account.details
@@ -946,7 +960,10 @@ class IMAPAccount(base.AccountBase):
             log_exception('failed to logout from the connection')
           # and we are done (we've probably already lost the connection whe
           # doing the logout, but better safe than sorry...)
-          conn.transport.loseConnection()
+          try:
+            _ = yield defer.maybeDeferred(conn.transport.loseConnection)
+          except Exception:
+            log_exception("failed to drop the connection")
 
     @defer.inlineCallbacks
     def start_queryers(n):
