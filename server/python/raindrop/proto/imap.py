@@ -962,7 +962,7 @@ class IMAPAccount(base.AccountBase):
       _ = yield prov._reqList(conn)
 
     def log_status():
-      nf = sum(len(i[1][1]) for i in prov.fetch_queue.pending if i is not None)
+      nf = sum(len(i[2][1]) for i in prov.fetch_queue.pending if i is not None)
       if nf:
         logger.info('%r fetch queue has %d messages',
                     self.details.get('id',''), nf)
