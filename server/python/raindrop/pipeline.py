@@ -440,7 +440,7 @@ class IncomingItemProcessor(object):
         self.def_process_done = defer.Deferred()
         try:
         # do it -  stop the _changes feed while we process...
-            self.feed_stopper()
+            _ = yield defer.maybeDeferred(self.feed_stopper)
             self.feed_stopper = None
             # process the feed.
             logger.debug("incoming queue starting at seq %d", self.current_seq)
