@@ -1,0 +1,54 @@
+Delivered-To: doesnotexist@gmail.com
+Received: by 10.100.152.11 with SMTP id z11cs102771and;
+        Wed, 13 May 2009 19:01:24 -0700 (PDT)
+Received: by 10.114.113.6 with SMTP id l6mr1469789wac.204.1242266475573;
+        Wed, 13 May 2009 19:01:15 -0700 (PDT)
+Return-Path: <wwwrun@example2.com>
+Received: from mail.example2.com (mail.example2.com [64.93.73.94])
+        by mx.google.com with ESMTP id v39si472145wah.31.2009.05.13.19.01.15;
+        Wed, 13 May 2009 19:01:15 -0700 (PDT)
+Received-SPF: neutral (google.com: 64.93.73.94 is neither permitted nor denied by best guess record for domain of wwwrun@example2.com) client-ip=64.93.73.94;
+Authentication-Results: mx.google.com; spf=neutral (google.com: 64.93.73.94 is neither permitted nor denied by best guess record for domain of wwwrun@example2.com) smtp.mail=wwwrun@example2.com
+Received: by mail.example2.com (Postfix)
+	id 41542159D13; Wed, 13 May 2009 22:01:32 -0400 (EDT)
+Delivered-To: doesnotexist@example.com
+Received: by mail.example2.com (Postfix, from userid 65534)
+	id 3CEBA159D0E; Wed, 13 May 2009 22:01:32 -0400 (EDT)
+X-Spam-Checker-Version: SpamAssassin 3.2.3 (2007-08-08) on
+	mailer.example2.com
+X-Spam-Level: 
+X-Spam-Status: No, score=-4.0 required=5.0 tests=ALL_TRUSTED,AWL,BAYES_00
+	autolearn=ham version=3.2.3
+Received: from example2.com (unknown [192.168.0.1])
+	by mail.example2.com (Postfix) with ESMTP id 2A824159D0E
+	for <doesnotexist@example.com>; Wed, 13 May 2009 22:01:30 -0400 (EDT)
+Received: by example2.com (Postfix, from userid 30)
+	id C33915681F2D; Wed, 13 May 2009 19:01:18 -0700 (PDT)
+To: doesnotexist@example.com
+Subject: Category subscription update for noone : Announcements
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8; format=flowed
+Content-Transfer-Encoding: 8Bit
+X-Mailer: Drupal
+Errors-To: noreply@example2.com
+Sender: noreply@example2.com
+Reply-To: noreply@example2.com
+From: noreply@example2.com
+Message-Id: <20090514020118.C33915681F2D@example2.com>
+Date: Wed, 13 May 2009 19:01:18 -0700 (PDT)
+
+Greetings, person.
+
+A category to which you have subscribed has been updated. http://bit.ly/HQFyP
+To view the thread, navigate to http://www.example.com/2009/01/01/upcoming-events-new-york-london
+
+--
+This is an automatic message from Test.
+To manage your subscriptions, browse to http://www.example.com/user/1/subscriptions
+Now to do something weird things.
+here is a link to a wikipedia URL with parentheses
+http://en.wikipedia.org/wiki/Sport_(disambiguation) Then something within parentheses (http://en.wikipedia.org/wiki/Sport_(magazine)), and then something that has a period on the end of it: http://python.org/about/index.html.
+
+> this URL should not be picked up: http://example.com/quoted ok?
+
+http://mozilla.com, These URLs should be picked up. Something with a comma in it, http://example.com/something/0,123,133.html, but do not get the last comma. And something on the end. http://bit.ly/HQFyP

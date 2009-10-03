@@ -1,0 +1,51 @@
+.rdwStoryGenericGroup {
+  font-size: small;
+  background-color: #FFF;
+  width: 49%;
+  padding: 12px 8px 0px 8px;
+  margin-bottom: 12px;
+  margin-right: 4px;
+  -moz-border-radius: 5px;
+  -moz-box-sizing: border-box;
+  -webkit-border-radius: 5px;
+  -webkit-box-sizing: border-box;
+  float:left;
+}  
+
+.rdwStoryGenericGroup .rdwMessage .topActions {
+  display: none;
+}
+
+.rdwStoryGenericGroup.active {
+  background-color: #FFB0B0;
+}
+
+.rdwStoryGenericGroup .title {
+  border-bottom:1px dotted #1A1A1A;
+  display:block;
+  font-weight:bold;
+  padding-bottom:2px;
+  background-image: url("i/icon_mail.png");
+  background-repeat: no-repeat;
+  background-position: right center;
+}
+
+.rdwStoryGenericGroup .rdwMessage .message {
+  margin: 0;
+  padding: 0;
+}
+
+.rdwStoryGenericGroup .rdwMessage .subject {
+  font-weight:normal;
+  font-family: Georgia, times, serif;
+  font-style: italic;
+}
+
+.rdwStoryGenericGroup.active .rdwMessage .subject {
+  background-color: #FFB0B0;
+}
+
+.rdwStoryGenericGroup .rdwMessage .process {
+  display: none;
+}
+

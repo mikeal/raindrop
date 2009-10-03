@@ -78,8 +78,8 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             self.failUnlessEqual(len(result['rows']), 1, addy)
 
     @defer.inlineCallbacks
-    def test_body_quoted_hyperlinks(self):
-        ndocs = yield self.load_corpus("hand-rolled", "rd-msg-body-quoted-hyperlinks")
+    def test_quoted_hyperlinks(self):
+        ndocs = yield self.load_corpus("hand-rolled", "quoted-hyperlinks")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
         _ = yield self.ensure_pipeline_complete()
 
@@ -102,3 +102,18 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                                      'http://python.org/about/index.html',
                                      'http://mozilla.com',
                                      'http://example.com/something/0,123,133.html']))
+
+    @defer.inlineCallbacks
+    def test_recip_target_notification(self):
+        ndocs = yield self.load_corpus("hand-rolled", "recip-target-notification")
+        self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
+        _ = yield self.ensure_pipeline_complete()
+
+        # load the hyperlinks document and compare the results.
+        key = ["rd.msg.recip-target", "target", "notification"]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+
+        # Make sure we got one result.
+        self.failUnlessEqual(len(result['rows']), 1)
+

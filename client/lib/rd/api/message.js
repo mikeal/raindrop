@@ -50,6 +50,10 @@ rd.api.message = {
             // we need to aggregate them - tags is a good example.  For
             // now just make noise...
             if (bag[schemaId]) {
+              //TODO: Hack to favor notification schemas over direct ones.
+              if (schemaId == "rd.msg.recip-target" && row.doc.target == "notification") {
+                bag[schemaId] = row.doc;
+              }
               console.warn("message", doc.rd_key, "has multiple", schemaId, "schemas");
             }
             // for now it gets clobbered if it exists...
@@ -63,10 +67,10 @@ rd.api.message = {
           if (!nextDoc || rdKey[1] != nextDoc.rd_key[1]) {
             //Have a final bag. Make sure it is not a ghost by checking
             //for a body.
-            if (bag["rd.msg.body"]) {              
+            var from = bag["rd.msg.body"] && bag["rd.msg.body"].from;
+            if (from) {              
               //Hold on to the from names to check if they are known later
               //TODO: this should probably be a back end extension.
-              var from = bag["rd.msg.body"].from;
               var fromId = from.join(",");
               var fromList = fromMap[fromId];
               if (!fromList) {
@@ -74,9 +78,12 @@ rd.api.message = {
                 fromIds.push(from);
               }
               fromList.push(bag);
+            }
 
+            if (bag["rd.msg.body"]) {
               messageResults.push(bag);
             }
+
             //Reset the bag.
             bag = {};
           }
@@ -174,11 +181,15 @@ rd.api.message = {
     for (var i = 0, msgBag; msgBag = ids[i]; i++) {
       var seen = msgBag["rd.msg.seen"];
       if (!seen) {
-        var body = msgBag["rd.msg.body"];
+        //Choose the first schema to get the rd_ values.
+        for (var prop in msgBag) {
+          var rdDoc = msgBag[prop];
+          break;
+        }
         seen = api.newDoc({
-          rd_key: body.rd_key,
+          rd_key: rdDoc.rd_key,
           rd_schema_id: "rd.msg.seen",
-          rd_source: body.rd_source,
+          rd_source: rdDoc.rd_source,
           outgoing_state: "outgoing",
           seen: false
         });
@@ -241,11 +252,18 @@ rd.api.message = {
     for (var i = 0, msgBag; msgBag = ids[i]; i++) {
       var schema = msgBag[schemaId];
       if (!schema) {
-        var body = msgBag["rd.msg.body"];
+        var rdDoc = msgBag["rd.msg.body"];
+        if (!rdDoc) {
+          //Choose the first schema to get the rd_ values.
+          for (var prop in msgBag) {
+            rdDoc = msgBag[prop];
+            break;
+          }
+        }
         schema = api.newDoc({
-          rd_key: body.rd_key,
+          rd_key: rdDoc.rd_key,
           rd_schema_id: schemaId,
-          rd_source: body.rd_source,
+          rd_source: rdDoc.rd_source,
           outgoing_state: "outgoing"
         });
 

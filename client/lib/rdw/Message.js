@@ -35,7 +35,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var msgBag = this.messageBag;
     var msgDoc = msgBag['rd.msg.body'];
 
-    this.fromId = msgDoc.from[1] || "";
+    this.fromId = (msgDoc.from && msgDoc.from[1]) || "";
     this.fromName = msgDoc.from_display || this.fromId;
     this.subject = rd.hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
 
@@ -83,8 +83,11 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (!this.known) {
       //This identity is unknown. Try to make a suggestion for
       //who it might be.
-      var from = this.messageBag['rd.msg.body'].from[1];
-      rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
+      var body = this.messageBag['rd.msg.body'];
+      var from = body.from && body.from[1];
+      if (from) {
+        rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
+      }
     }
   },
 
@@ -149,6 +152,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var idtys = contact.identities;
     if (idtys && idtys.length) {
       var from = this.messageBag["rd.msg.body"] && this.messageBag["rd.msg.body"].from;
+      if (!from) {
+        return;
+      }
       for (var i = 0, idty; idty = idtys[i]; i++) {
         var id = idty.rd_key[1];
         if (id[1] == from[1] && id[0] == from[0]) {

@@ -1,0 +1,59 @@
+Delivered-To: doesnotexist@gmail.com
+Received: by 10.231.17.132 with SMTP id s4cs322966iba;
+        Fri, 2 Oct 2009 09:46:43 -0700 (PDT)
+Received: by 10.101.27.20 with SMTP id e20mr2965648anj.137.1254502003118;
+        Fri, 02 Oct 2009 09:46:43 -0700 (PDT)
+Return-Path: <notification+ykbgxxan@facebookmail.com>
+Received: from mx-out.facebook.com (outmail003.snc1.tfbnw.net [69.63.178.162])
+        by mx.google.com with ESMTP id 17si4528667iwn.38.2009.10.02.09.46.41;
+        Fri, 02 Oct 2009 09:46:42 -0700 (PDT)
+Received-SPF: pass (google.com: domain of notification+ykbgxxan@facebookmail.com designates 69.63.178.162 as permitted sender) client-ip=69.63.178.162;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of notification+ykbgxxan@facebookmail.com designates 69.63.178.162 as permitted sender) smtp.mail=notification+ykbgxxan@facebookmail.com; dkim=pass header.i=@facebookmail.com
+Return-Path: <notification+ykbgxxan@facebookmail.com>
+DKIM-Signature: v=1; a=rsa-sha1; d=facebookmail.com; s=q1-2009b; c=relaxed/relaxed;
+	q=dns/txt; i=@facebookmail.com; t=1254501679;
+	h=From:Subject:Date:To:MIME-Version:Content-Type;
+	bh=7DNsSuoUIg04NO4i0Y58maQgQJg=;
+	b=Nxtv687BtUPoh1JbfMNw6HhsLzc8W3mIjEpACm32y0NvleN/IYuBr0QtEgr+HHrH
+	w/EXAUB1DqfFSNDc2pwX6Q==;
+Received: from [10.18.255.139] ([10.18.255.139:35218])
+	by mta006.snc1.facebook.com (envelope-from <notification+ykbgxxan@facebookmail.com>)
+	(ecelerity 2.2.2.37 r(28805/28844)) with ECSTREAM
+	id 80/52-06702-F2D26CA4; Fri, 02 Oct 2009 09:41:19 -0700
+X-Facebook: from zuckmail ([NzUuNjIuMjQzLjE1MQ==]) 
+	by www.facebook.com with HTTP (ZuckMail);
+Date: Fri, 2 Oct 2009 09:41:19 -0700
+To: Some One <doesnotexist@gmail.com>
+From: Facebook <notification+ykbgxxan@facebookmail.com>
+Reply-to: noreply <noreply@facebookmail.com>
+Subject: Foo Bar sent you a message on Facebook...
+Message-ID: <91b4d83543ddf0eec49ee43bb0677b5b@www.facebook.com>
+X-Priority: 3
+X-Mailer: ZuckMail [version 1.00]
+X-Facebook-Notify: msg; from=1434672627; t=1122148689949; mailid=1302a5dG5e67f28eG56e3bbG0
+Errors-To: notification+ykbgxxan@facebookmail.com
+X-FACEBOOK-PRIORITY: 0
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
+
+Foo Bar sent you a message.
+
+Subject: How are you?
+
+"How are you doing?"
+
+To reply to this message, follow the link below:
+http://www.facebook.com/n/?inbox/readmessage.php&t=3D1122148689949&mid=3D1=
+302a5dG5e67f28eG56e3bbG0
+
+___
+Find people from your Gmail address book on Facebook! Go to: =
+http://www.facebook.com/find-friends/?ref=3Demail
+
+This message was intended for doesnotexist@gmail.com. Want to control which =
+emails you receive from Facebook? Go to:
+http://www.facebook.com/editaccount.php?notifications=3D1&mid=3D1302a5dG5e=
+67f28eG56e3bbG0
+Facebook's offices are located at 1601 S. California Ave., Palo Alto, CA =
+94304.
