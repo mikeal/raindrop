@@ -45,6 +45,10 @@ dojo.declare("settings.Account", [dijit._Widget, dijit._Templated], {
       this.doc = this.generateDoc(this.doc);
     }
 
+    if (!this.doc.password) {
+      this.doc.password = "";
+    }
+
     //Choose the right template. For now, just always use simple account.
     this.templateString = this.simpleAccount;
   },
