@@ -142,6 +142,24 @@ class TestCaseWithDB(TestCase):
         def _nuked_ok(d):
             pass
 
+        @defer.inlineCallbacks
+        def del_non_test_accounts(result):
+            # 'insert_default_docs' may have created an account (eg RSS) which
+            # may get in the way of testing; nuke any which aren't in our
+            # config.
+            got = yield db.openView(dbinfo['name'],
+                                    'raindrop!content!all', 'megaview',
+                                    key=['rd.core.content', 'schema_id', 'rd.account'],
+                                    include_docs=True, reduce=False)
+            wanted_ids = set(acct['id']
+                             for acct in config.accounts.itervalues())
+            to_del = [{'_id': r['doc']['_id'],
+                       '_rev': r['doc']['_rev'],
+                       '_deleted': True,
+                       }
+                      for r in got['rows'] if r['doc']['id'] not in wanted_ids]
+            _ = yield db.updateDocuments(dbinfo['name'], to_del)
+
         return db.deleteDB(dbinfo['name']
                 ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
@@ -152,6 +170,7 @@ class TestCaseWithDB(TestCase):
                 #).addCallback(bootstrap.update_apps
                 ).addCallback(bootstrap.insert_default_docs, FakeOptions()
                 ).addCallback(bootstrap.install_views, FakeOptions()
+                ).addCallback(del_non_test_accounts
                 )
 
     def failUnlessView(self, did, vid, expect, **kw):
