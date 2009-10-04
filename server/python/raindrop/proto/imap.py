@@ -906,7 +906,7 @@ class IMAPAccount(base.AccountBase):
             # response - handle it here so we get a more specific log message.
             if conn.tags is None:
               logger.warn("unexpected connection failure after calling %r", func)
-              logger.debug("arguments were %s", xargs)
+              logger.log(1, "arguments were %s", xargs)
               self.reportStatus(brat.SERVER, brat.BAD)
               conn = None
           except imap4.IMAP4Exception, exc:
