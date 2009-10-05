@@ -35,12 +35,16 @@ def get_ext_env(doc_model, context, src_doc, ext):
         return doc_model.get_doc_id_for_schema_item(ni)
 
     def emit_related_identities(identity_ids, def_contact_props):
+        logger.debug("emit_related_identities for %r with %d ids",
+                     ext.id, len(identity_ids))
         for item in items_from_related_identities(doc_model,
                                              identity_ids,
                                              def_contact_props,
                                              ext.id):
             item['rd_source'] = [src_doc['_id'], src_doc['_rev']]
             new_items.append(item)
+        logger.debug("emit_related_identities for %r - now %d items",
+                     ext.id, len(new_items))
 
     def open_schema_attachment(src, attachment, **kw):
         "A function to abstract document storage requirements away..."
@@ -122,22 +126,19 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
     # any identities not associated with a contact will be updated
     # to have a contact (either one we find with for different ID)
     # or a new one we create.
-    dl = []
+    # XXX - can we safely do this in parallel?
+    results = []
     for iid, rel in idrels:
         # the identity itself.
         rdkey = ['identity', iid]
-        dl.append(
-            doc_model.open_schemas(rdkey, 'rd.identity.contacts'))
-    results = threads.blockingCallFromThread(reactor,
-                    defer.DeferredList, dl)
+        this = threads.blockingCallFromThread(reactor,
+                    doc_model.open_schemas, rdkey, 'rd.identity.contacts')
+        results.append(this)
+
     assert len(results)==len(idrels), (results, idrels)
 
-    # check for errors...
-    for (ok, result) in results:
-        if not ok:
-            result.raiseException()
     # scan the list looking for an existing contact for any of the ids.
-    for schemas in [r[1] for r in results]:
+    for schemas in results:
         if schemas:
             contacts = schemas[0].get('contacts', [])
             if contacts:
@@ -166,7 +167,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
     # which we know exist. We've also got the 'contacts' schemas for
     # those identities - which may or may not exist, and even if they do,
     # may not refer to this contact.  So fix all that...
-    for (_, schemas), (iid, rel) in zip(results, idrels):
+    for schemas, (iid, rel) in zip(results, idrels):
         # identity ID is a tuple/list of exactly 2 elts.
         assert isinstance(iid, (tuple, list)) and len(iid)==2, repr(iid)
         new_rel = (contact_id, rel)
