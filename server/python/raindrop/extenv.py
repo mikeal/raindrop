@@ -35,8 +35,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
         return doc_model.get_doc_id_for_schema_item(ni)
 
     def emit_related_identities(identity_ids, def_contact_props):
-        logger.debug("emit_related_identities for %r with %d ids",
-                     ext.id, len(identity_ids))
+        logger.debug("emit_related_identities for %r", ext.id)
         for item in items_from_related_identities(doc_model,
                                              identity_ids,
                                              def_contact_props,
