@@ -2,12 +2,20 @@ import re
 import urllib2
 import xml.parsers.expat
 
+yt_re = re.compile("http\:\/\/www.youtube.com\/watch\?v=(\w+)")
+
 # Creates 'rd.msg.body.youtubed' schemas for emails...
 def handler(doc):
-    body = doc['body']
-    matches = re.findall("http\:\/\/www.youtube.com\/watch\?v=(\w+)", body)
-    if len(matches) > 0:
-        for videoId in matches:
+    #Skip docs that do not have a links property.
+    if not 'links' in doc:
+        return
+
+    links = doc['links']
+    for link in links:
+        match = yt_re.search(link)
+        if match:
+            videoId = match.group(1)
+
             logger.debug("found the youtube video http://www.youtube.com/watch?v=%s ", videoId)
             youTubeDataURL = "http://gdata.youtube.com/feeds/api/videos/%s" % videoId
             try:
@@ -65,4 +73,3 @@ class YouTubeParser:
 
     def char_data(self, data):
         self._buff += data
-

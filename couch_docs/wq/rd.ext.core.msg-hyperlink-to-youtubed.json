@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body.quoted.hyperlinks"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Uses http://gdata.youtube.com/feeds/api/videos/ to create 'rd.msg.body.youtubed' schemas for messages..."
+    }
+  }
+}
