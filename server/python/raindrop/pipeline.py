@@ -1,6 +1,8 @@
 """ This is the raindrop pipeline; it moves messages from their most raw
 form to their most useful form.
 """
+import time
+
 from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 from twisted.internet import reactor
@@ -440,6 +442,7 @@ class IncomingItemProcessor(object):
         self.def_process_done = defer.Deferred()
         try:
         # do it -  stop the _changes feed while we process...
+            start = time.clock()
             _ = yield defer.maybeDeferred(self.feed_stopper)
             self.feed_stopper = None
             # process the feed.
@@ -454,7 +457,9 @@ class IncomingItemProcessor(object):
                     ds.append(runner.process_queue(iter.make_iter()))
                 _ = yield defer.DeferredList(ds)
                 self.current_seq = iter.current_seq
-            logger.debug("incoming queue complete at seq %d", self.current_seq)
+            took = time.clock() - start
+            logger.debug("incoming queue complete at seq %d (%0.2f secs)",
+                         self.current_seq, took)
             # start listening for new changes
             assert self.feed_stopper is None
             self.feed_stopper = yield doc_model.db.feedContinuousChanges(
