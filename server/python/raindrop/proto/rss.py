@@ -11,7 +11,7 @@ from urlparse import urlparse
 logger = logging.getLogger(__name__)
 
 @defer.inlineCallbacks
-def maybe_update_doc(doc_model, doc, options):
+def maybe_update_doc(conductor, doc_model, doc, options):
     uri = doc['uri']
     parsed = urlparse(uri)
     # If we have existing content for the item, make a conditional request.
@@ -52,7 +52,7 @@ def maybe_update_doc(doc_model, doc, options):
     ct = doc['headers']['content-type'][0]
     a['response'] = {'content_type': ct,
                      'data': result}
-    _ = yield doc_model.update_documents([doc])
+    _ = yield conductor.pipeline.provide_documents([doc])
     logger.info('updated feed %r', uri)
 
 
@@ -71,7 +71,7 @@ class RSSAccount(base.AccountBase):
             if doc.get('disabled', False):
                 logger.debug('rss feed %(id)r is disabled - skipping', row)
                 continue
-            dl.append(maybe_update_doc(self.doc_model, doc, options))
+            dl.append(maybe_update_doc(conductor, self.doc_model, doc, options))
         _ = yield defer.DeferredList(dl)
 
     def get_identities(self):

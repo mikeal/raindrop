@@ -109,6 +109,16 @@ class Pipeline(object):
             _ = yield self.incoming_processor.ensure_done()
 
     @defer.inlineCallbacks
+    def provide_documents(self, docs):
+        """Another main entry-point for 'providers' - the new items are written,
+        then we block until the 'incoming processor' has got to the end (ie,
+        until all those new items are fully processed)
+        """
+        _ = yield self.doc_model.update_documents(docs)
+        if self.incoming_processor is not None:
+            _ = yield self.incoming_processor.ensure_done()
+
+    @defer.inlineCallbacks
     def get_extensions(self, spec_exts=None):
         if spec_exts is None:
             spec_exts = self.options.exts
