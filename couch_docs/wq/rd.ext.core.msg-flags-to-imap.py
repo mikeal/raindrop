@@ -25,12 +25,23 @@ def handler(doc):
         uid = loc_doc['uid']
         logger.debug("setting flags for %r: folder %r, uuid %s", rdkey, folder, uid)
 
+        if doc['rd_schema_id'] == 'rd.msg.seen':
+            new_flag = '\\Seen'
+            attr = 'seen'
+        elif doc['rd_schema_id'] == 'rd.msg.deleted':
+            new_flag = '\\Deleted'
+            attr = 'deleted'
+        elif doc['rd_schema_id'] == 'rd.msg.archived':
+            logger.info("todo: ignoring 'archived' IMAP flag")
+            continue
+        else:
+            raise RuntimeError(doc)
         items = {'account': loc_doc['source'][1],
                  'folder': folder,
                  'uid': uid,}
-        if doc['seen']:
-            items['flags_add']=['\\Seen']
+        if doc[attr]:
+            items['flags_add']=[new_flag]
         else:
-            items['flags_remove']=['\\Seen']
+            items['flags_remove']=[new_flag]
 
         emit_schema('rd.proto.outgoing.imap-flags', items)

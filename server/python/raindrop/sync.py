@@ -13,9 +13,14 @@ logger = logging.getLogger(__name__)
 
 from .model import get_doc_model
 
-# XXX - we need a registry of 'outgoing source docs'.
+# XXX - we need a registry of 'outgoing source docs'.  As all of these
+# are actually defined by extensions, we could have a flag on extensions to
+# indicate if they are doing outgoing work, then we could determine this list.
 source_schemas = ['rd.msg.outgoing.simple',
                   'rd.msg.seen',
+                  'rd.msg.deleted',
+# archived disabled until we know what to do with them.
+#                  'rd.msg.archived',
                   ]
 
 
@@ -153,7 +158,8 @@ class SyncConductor(object):
     out_id, out_rev, out_sch = yield self.pipeline.process_until(new_items,
                                                    self.outgoing_handlers)
     if out_id is None:
-      raise RuntimeError("the queues failed to create an outgoing schema")
+      logger.warn("doc %r didn't create any outgoing schema items", row['id'])
+      return
 
     logger.info('found outgoing message with schema %s', out_sch)
     # open the original source doc and the outgoing schema we just found.
