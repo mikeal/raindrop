@@ -785,6 +785,13 @@ class ExtensionProcessor(object):
                     if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
                         dirty = True
                         break
+                    # error rows are considered 'dirty'
+                    _, _, _, cur_schema = split_rc_docid(row['id'])
+                    if cur_schema == 'rd.core.error':
+                        logger.debug('document %r generated previous error '
+                                     'records - re-running', src_id)
+                        dirty = True
+                        break
             else:
                 dirty = True
             if not dirty and not force:
