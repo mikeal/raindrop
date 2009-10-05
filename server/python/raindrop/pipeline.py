@@ -158,7 +158,7 @@ class Pipeline(object):
         if self.incoming_processor is not None:
             logger.info("backlog processing done - waiting for incoming to finish")
             _ = yield self.incoming_processor.ensure_done()
-            nerr += sum([r.processor.num_errors for r in self.incoming_processor.runners])
+            nerr += sum([getattr(r.processor, "num_errors", 0) for r in self.incoming_processor.runners])
         defer.returnValue(nerr)
 
     @defer.inlineCallbacks
