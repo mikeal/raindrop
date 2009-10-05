@@ -13,6 +13,7 @@ from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 
 from ..proc import base
+brat = base.Rat
 
 import Skype4Py
 
@@ -92,6 +93,7 @@ class TwistySkype(object):
 
     def attach(self):
         logger.info("attaching to skype...")
+        self.account.reportStatus(brat.EVERYTHING, brat.AUTHORIZING)
         return threads.deferToThread(self.skype.Attach
                     ).addCallback(self.attached
                     )
@@ -101,6 +103,7 @@ class TwistySkype(object):
         def get_friends_and_me():
             return (self.skype.CurrentUser,) + self.skype.Friends
 
+        self.account.reportStatus(brat.EVERYTHING, brat.GOOD)
         logger.info("attached to skype - getting chats")
         _ = yield threads.deferToThread(get_friends_and_me
                     ).addCallback(self._cb_got_friends

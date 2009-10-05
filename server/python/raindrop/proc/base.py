@@ -28,6 +28,11 @@ class Rat(object):
   #: something is up with the crypto; this needs to be exploded
   CRYPTO = 'crypto'
 
+  #: 'authorizing' indicates that raindrop is doing auth, and depending on
+  # the protocol (eg Skype), may require user interaction with an external
+  # application.
+  AUTHORIZING = 'authorizing'
+
   #: good indicates that all-is-well
   GOOD = 'good'
   '''
