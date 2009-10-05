@@ -53,19 +53,39 @@
     </div>
     
     <div class="contentBoxRight">
-      <p class="title">&mdash; About Raindrop</p>
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer mi orci, suscipit sed fringilla eget, iaculis ut risus. Pellentesque ut eros eros,       non porta odio. Aliquam molestie mollis sollicitudin. Aenean laoreet rutrum posuere. Suspendisse malesuada fermentum elit quis faucibus. Cras a vestibulum justo. Curabitur lorem neque, auctor vel lobortis sit amet, ultricies et nisi. Curabitur elementum rhoncus purus, vitae fringilla nisl aliquam a. Phasellus scelerisque ultrices dolor nec feugiat. Fusce sed tempus mi. Nullam vel nisl laoreet mauris scelerisque porta sit amet eget urna. Mauris enim velit, malesuada et suscipit eget, scelerisque rutrum elit. Quisque ante nisl, interdum id volutpat vel, aliquam ut est. Curabitur quis consequat ipsum. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; 
+      <h3>&mdash; About Raindrop</h3>
+      <p>Raindrop wants you to get quick access to the conversations from people you care about, and to bubble up the
+      important things from your messages.</p>
     
-      <p class="title">&mdash; Extensions</p>
-      Maecenas a dui id purus consectetur ultricies. Nam elementum ante eu elit aliquam et vulputate elit iaculis. Maecenas sagittis turpis et magna lobortis interdum. Praesent nec neque et purus condimentum placerat a ac tortor. Cras euismod tempor fermentum. Nulla lobortis egestas commodo. Maecenas imperdiet pretium mi, ut mattis tellus mattis eget. Fusce congue eleifend elit, nec viverra risus convallis vitae. Proin massa tellus, elementum nec rutrum at, euismod in enim. Ut vitae molestie turpis.    
+      <h3>&mdash; Extensions</h3>
+      <p>Raindrop provides a core set of functionality to bubble up the important things for you, but each person is different,
+      and you may want to customize how people and messages are shown to you.</p>
+      
+      <p>Extensions allow you to do this by using
+      plain HTML, JavaScript and CSS to mix in design or behavior you prefer. This Extender gives you a quick way to
+      try out modifying things in the a Raindrop app.</p>
+      
+      <p>The Extender is still under development -- ideally it should allow you to specify CSS and an optional
+      HTML template for the extension. Right now, all the work has to be done in JavaScript.</p>
+      
+      <p>Click on one of the examples below to get started!</p>
     </div>
       
-      <p class="title">&mdash; run code</p>
-      Simple URL listing example:
+      <h3>&mdash; link index example</h3>
+      This extension uses the "rd.msg.body.quoted.hyperlinks" back-end schema document to show the list or URLs
+      that were found in the message. The back end extension that creates the "rd.msg.body.quoted.hyperlinks"
+      schema document already found the links in the message. This extension just displays that information as a
+      list of links as the bottom of each message.
       <div class="bespin" data-modulename="ext.linkIndex" data-targetname="rdw.Message" data-path="simpleExtension.js"></div>
 
-      <p class="title">&mdash; run code</p>
-      Flickr URL example:
+      <h3>&mdash; flickr URL example</h3>
+      <p>This extension builds on the above example. It uses the same "rd.msg.body.quoted.hyperlinks" schema document,
+      but only shows URLs from flickr. If a flickr URL is found, the flickr API is used to fetch information about the
+      image and show a thumbnail inline.</p>
+
+      <p><b>Only try this with messages you know have a flickr URL in them</b>. Otherwise, it will not look like the extension
+      did anything.</p>
+
       <div class="bespin" data-modulename="ext.flickrIndex" data-targetname="rdw.Message" data-path="flickrExtension.js"></div>
   </div>
 </div>

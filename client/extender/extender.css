@@ -124,13 +124,18 @@ a.menuQuery:hover {
 }
   
 
-p.title {
+h3 {
   font-variant: small-caps;
   font-weight: bold;
+  font-size: 12px;
   margin-bottom: 16px;
   margin-top: 32px;
   text-transform: lowercase;
   clear: both;
+}
+
+p {
+  margin-bottom: 5px;	
 }
 
 .contentBox {
