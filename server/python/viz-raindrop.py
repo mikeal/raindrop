@@ -8,19 +8,72 @@ import pygraphviz as pgv
 from raindrop import pipeline
 from raindrop.model import get_doc_model
 from raindrop.proc import base
+from raindrop.config import init_config
+
+from twisted.internet import reactor, defer
 
 
 import logging
 logging.basicConfig() # so we can see errors in the pipeline loader.
 
-pipeline.load_extensions(get_doc_model())
+@defer.inlineCallbacks
+def get_schemas_created_by(dm, ext_id):
+    results = yield dm.open_view(startkey=["rd.core.content", "ext_id-schema_id", [ext_id]],
+                                 endkey=["rd.core.content", "ext_id-schema_id", [ext_id, {}]],
+                                 reduce=False)
+    ret = set()
+    for row in results['rows']:
+        ret.add(row['value']['rd_schema_id'])
+    defer.returnValue(ret)
 
-G=pgv.AGraph()
-G.graph_attr['label']='raindrop message pipeline'
+@defer.inlineCallbacks
+def get_raw_sources(dm):
+    ret = {}
+    # query for all items with a null source.
+    results = yield dm.open_view(key=["rd.core.content", "source", None],
+                                 reduce=False)
+    for row in results['rows']:
+        sid = row['value']['rd_schema_id']
+        # worm around where imap abuses ext_id.
+        ext_id = row['value']['rd_ext'].split("~")[0]
+        ret.setdefault(ext_id, set()).add(sid)
+    defer.returnValue(ret)
+   
+@defer.inlineCallbacks
+def make_graph(dm, filename="pipeline.svg", prog="dot"):    
+    G=pgv.AGraph()
+    G.graph_attr['label']='raindrop message pipeline'
 
-for ext in pipeline.find_specified_extensions(base.ConverterBase):
-    for sid in ext.sources:
-        fname = ext.__class__.__module__.replace('.', '/') + '.py'
-        label = "%s (%s)" % (ext.__class__.__name__, fname)
-        G.add_edge(sid, ext.target_type, label=label)
-G.draw("pipeline.svg", prog="dot")
+    sources = yield get_raw_sources(dm)
+    for ext_id, schemas in sources.iteritems():
+        label = "%s" % (ext_id,)
+        for sid in schemas:
+            print ext_id, "is a source of", sid
+            G.add_edge(ext_id, sid, label=label)
+    
+    exts = yield pipeline.load_extensions(dm)    
+    for ext_id, ext in exts.iteritems():
+        for sid in ext.source_schemas:
+            label = "%s" % (ext_id,)
+            target_types = yield get_schemas_created_by(dm, ext_id)
+            for tt in target_types:
+                G.add_edge(sid, tt, label=label)
+    G.draw(filename, prog=prog)
+
+@defer.inlineCallbacks
+def go(_):
+    try:
+        _ = yield init_config()
+        dm = get_doc_model()
+        _ = yield make_graph(dm)
+    finally:
+        print "stopping"
+        reactor.stop()
+
+
+def main():
+    reactor.callWhenRunning(go, None)
+    reactor.run()
+
+if __name__=='__main__':
+    main()
