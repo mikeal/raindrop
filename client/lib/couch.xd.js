@@ -211,13 +211,10 @@ couch = {
           return _call("POST", this.uri + "_slow_view" + encodeOptions(options), options);
         },
         view: function(name, options, extensions) {
-          if (dojo.config.useApiStub) {
-            name = name.replace(/!/g, "/") + ".js";
-          }
           if (options.keys) {
             options = dojo.delegate(options || {});
             options.postData = dojo.toJson({keys: options.keys});            
-            return _call(dojo.config.useApiStub ? "GET" : "POST", this.uri + "_design/" + name + encodeOptions(options), options);
+            return _call("POST", this.uri + "_design/" + name + encodeOptions(options), options);
           } else {
             var beforeSuccess;
             if(extensions) {

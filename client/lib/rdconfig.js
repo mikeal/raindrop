@@ -64,13 +64,6 @@
 
   djConfig.rd.appName = appName;
 
-  //If using API stubs, then adjust couch path.
-  var query = location.search;
-  if (query && query.indexOf("apistub=1") != -1) {
-    djConfig.couchUrl += rd.dbPath + "apistub";
-    djConfig.useApiStub = true;
-  }
-  
   //Adjust djConfig.rd.exts to be structured differently.
   var exts = djConfig.rd.exts;
   if (exts) {
