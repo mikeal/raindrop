@@ -23,14 +23,15 @@ body {
 	h4 {font-family: 'DroidSans'; font-weight: normal; color: #555; font-size: 22px; letter-spacing: -0.2px; margin-left: 10px;}
 	
 	h5 {color: #1a1a1a; font-size: 32px; margin: 20px 0px;letter-spacing: -1px;}
-	
+
+/*
     h3 a:link, a:hover, a:active, a:focus, a:visited{color: #fff;}
 	h3 a:hover {color: #fff;}
+*/	
+	p, ul {font-size: 12px;}es
 	
-	p, ul {font-size: 12px;}
-	
-	a:link, a:hover, a:active, a:focus, a:visited {color: #1a1a1a; text-decoration: none;}
-	a:hover {color: #1a1a1a; text-decoration: none;}
+/*	a:link, a:hover, a:active, a:focus, a:visited {color: #1a1a1a; text-decoration: none;} 
+	a:hover {color: #1a1a1a; text-decoration: none;} */
 
 	
 	li {list-style-type: circle;}
