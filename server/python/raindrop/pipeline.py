@@ -197,13 +197,14 @@ class Pipeline(object):
         _ = yield self.doc_model._update_important_views()
 
     @defer.inlineCallbacks
-    def _reprocess_items(self, item_gen):
+    def _reprocess_items(self, item_gen_factory, *factory_args):
         self.options.force = True # evil!
         runners = [get_pqr_for_extension(self.doc_model, ext, self.options)
                    for ext in (yield self.get_extensions())]
-        result = yield defer.DeferredList([r.process_queue(item_gen)
-                                           for r in runners])
-        num = sum([ok for ok, num in result if ok])
+        result = yield defer.DeferredList(
+                    [r.process_queue(item_gen_factory(*factory_args))
+                     for r in runners])
+        num = sum([num for ok, num in result if ok])
         logger.info("reprocess made %d new docs", num)
 
     @defer.inlineCallbacks
@@ -216,15 +217,11 @@ class Pipeline(object):
         # first wave of extensions to re-run, which will trigger the next
         # etc.
         # However, if extensions are named, only those are reprocessed
-        # XXX - should do this in a loop with a limit to avoid chewing
-        # all mem...
         dm = self.doc_model
         def gen_em(this_result):
-            to_proc = [(row['id'], row['value']['_rev'])
-                       for row in this_result['rows']]
-            for i, (id, rev) in enumerate(to_proc):
-                if (i+1) % 500 == 0:
-                    logger.info("processed %d documents...", i)
+            to_proc = ((row['id'], row['value']['_rev'])
+                       for row in this_result['rows'])
+            for id, rev in to_proc:
                 yield id, rev, None, None
 
         if not self.options.exts and not self.options.keys:
@@ -234,7 +231,7 @@ class Pipeline(object):
                             reduce=False)
             logger.info("reprocess found %d source documents",
                         len(result['rows']))
-            _ = yield self._reprocess_items(gen_em(result))
+            _ = yield self._reprocess_items(gen_em, result)
         elif not self.options.exts and self.options.keys:
             # no extensions, but a key - find the 'source' for this key
             # then walk it though all extensions...
@@ -271,7 +268,7 @@ class Pipeline(object):
                                             reduce=False)
                 logger.info("reprocessing %s - %d docs", ext.id,
                             len(result['rows']))
-                _ = yield self._reprocess_items(gen_em(result))
+                _ = yield self._reprocess_items(gen_em, result)
 
 
     @defer.inlineCallbacks
@@ -294,7 +291,7 @@ class Pipeline(object):
                 src_id, src_rev = row['doc']['rd_source']
                 yield src_id, src_rev, None, None
 
-        _ = yield self._reprocess_items(gen_em())
+        _ = yield self._reprocess_items(gen_em)
 
     @defer.inlineCallbacks
     def process_until(self, src_infos, targets):
