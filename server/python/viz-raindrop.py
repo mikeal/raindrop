@@ -49,7 +49,7 @@ def make_graph(dm, filename="pipeline.svg", prog="dot"):
         label = "%s" % (ext_id,)
         for sid in schemas:
             print ext_id, "is a source of", sid
-            G.add_edge(ext_id, sid, label=label)
+            G.add_edge("the intertubez", sid, label=label)
     
     exts = yield pipeline.load_extensions(dm)    
     for ext_id, ext in exts.iteritems():
