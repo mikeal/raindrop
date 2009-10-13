@@ -1,96 +1,82 @@
 Late Breaking News/Known Problems
 =================================
 
-* Error handling is poor.  I'm trying to get a handle on the best way to
-  manage errors in a twisted environment before adding too much handling
-  which may end up inappropriate.
+* Integration with twisted logging is poor.
+
+* We are in the middle of moving from using the manually executed 
+ 'run-raindrop.py' script to the couchdb managed 'couch-raindrop.py'
+ script which is controlled by the front end.  If both processes are
+ running you can expect one to see regular conflict errors.
 
 Installation Steps
 ==================
 
-Install Python 2.6 or later (note that Python 3 is not yet supported).
+couchdb
+-------
 
-  - Mac -
-    sudo port install python26 python_select
-    sudo python_select python26
+Install couchdb, version 0.10 or later.  0.9 will not work.  See:
+  http://couchdb.apache.org/downloads.html for most platforms.
+  http://wiki.apache.org/couchdb/Windows_binary_installer for Windows.
 
-Install couchdb trunk (tested w/ r799680)  This currently means you need to
-google for instructions that work only on Linux - Windows doesn't work.  If
-you want to work on Windows you must install Couch on a Linux box and point
-your windows ~/.raindrop file at the server.
-
-  - Mac -
-    sudo port install subversion
-    svn co http://svn.apache.org/repos/asf/couchdb/trunk couchdb
-    ( will require deps, best to 'sudo port install couchdb-devel )
-
-Couchdb can be run without installing via a 'dev' install.
+When building couchdb from source, it can be run without installing via a 
+'dev' install:
   cd couchdb; ./bootstrap && ./configure && make && make dev
-
-Now from the same couchdb directory run the "run" command under the
-utils directory.
-
   ./utils/run
 
-Install twisted.
+raindrop
+--------
 
-  - Mac -
-    sudo port install py26-twisted
+Install Python 2.5 or 2.6 (note that Python 3 is not yet supported).
 
-Install Python setuptools.
+Execute the 'check-raindrop.py' script in the server/python directory.  
+This should check all dependencies and let you know what you are missing, 
+then check your couchdb for certain configuration requirements.
 
-  - Mac -
-    sudo port install py26-setuptools
+If you are brave, try executing 'check-raindrop.py --configure' (prefixing
+that command with 'sudo ' on some platforms).  This will attempt to 
+automatically install all dependencies necessary and configure couchdb.
 
-Install the couchdb-python bindings (0.5 or later)
-  easy_install couchdb 
+If you are less brave, run it without the --configure option, then manually
+resolve any dependency or configuration issues it reports, then repeat until
+no problems are found.
 
-  - Mac Ports -
-    easy_install-2.6 couchdb
+A summary of the dependencies are: setuptools, twisted, PyOpenSSL, Skype4Py, 
+python-twitter, simplejson, feedparser and paisley.
 
-Install 'paisley' from launchpad.
-  easy_install paisley
+Notes
+-----
 
-  - Mac Ports -
-    easy_install-2.6 paisley
-
-Perhaps install 'simplejson' (Myk: paisley requires it, but easy_install
-didn't auto-install it when I installed paisley):
-  easy_install simplejson
-
-  - Mac Ports -
-    easy_install-2.6 simplejson
-
-Either install raindrop:
-  cd raindrop/server/python
-  python setup.py develop
-*or* just add it to your PYTHONPATH
-  set PYTHONPATH=c:\src\path\to\raindrop\server\python
-
-install modules required for 'protocols' - note that these are technically
-optional - if the modules aren't installed a warning will be generated and
-the protocol will simply be disabled
-
-imap over SSL: PyOpenSSL (link?)
 Note for mac users: doing easy_install PyOpenSSL after May 1st, may install
 some badly. It may be a PyOppenSSL 0.9 issue. 0.8 is known to work. Try
 the latest code, but if that does not work, switch to 0.8.
 
+Running Raindrop
+================
 
-skype: Skype4Py (link?)
-  easy_install Skype4Py
+After check-raindrop.py reports everything is in order, simply execute 
+'run-raindrop.py'.  Without any arguments, the script will "bootstrap"
+the raindrop couchdb database, then open your browser showing the 'inflow'
+application where you will be prompted for gmail and twitter account 
+information.  Once this account window is closed, raindrop will automatically
+connect to gmail and/or twitter and fetch messages.  You currently need to
+periodically refresh your web-browser to see the new items.
 
-  - Mac Ports -
-    easy_install-2.6 Skype4Py
+If you need to perform additional configuration (eg, additional accounts,
+keeping your passwords locally rather than in the database, etc), see
+'Manually configure raindrop' below.
 
-twitter: python-twitter (link?)
-  easy_install python-twitter
+The 'run-raindrop' script is also capable of fetching messages and performing
+other operations - see 'Manually controlling raindrop' below.
 
-  - Mac Ports -
-    easy_install-2.6 python-twitter
+Manually configure raindrop
+---------------------------
 
-rss: feedparser - http://feedparser.org
-  easy_install feedparser
+These steps should become less necessary as time moves forward.  If you
+only want to use couchdb running on your localhost, and only want gmail and
+twitter accounts, then you can ignore this section and use the raindrop
+application to configure these accounts.
+
+But if you need more, read on...
 
 configure raindrop:
   * edit ~/.raindrop
@@ -107,8 +93,6 @@ configure raindrop:
         [account-gmail-username]
         proto=imap
         kind=gmail
-        host=imap.gmail.com
-        port=993
         username=username@gmail.com
         password=topsecret
         ssl=True
@@ -117,7 +101,7 @@ configure raindrop:
         [account-twitter-username]
         proto=twitter
         kind=twitter
-        username=username@gmail.com
+        username=username
         password=topsecret
 
   * Add imap accounts along the lines of
@@ -137,72 +121,37 @@ configure raindrop:
         username=username
         password=topsecret
 
-  * Add a 'test' account - for the 'test suite' - along the lines of:
-        [account-test]
-        proto=test
-        username=test # not used, but we die without it!
-        num_test_docs=1 # this defaults to 5 - but 1 is useful sometimes!
+Manually controlling raindrop
+-----------------------------
 
-** NOTE: if you edit this file, you must run 'run-raindrop.py install-accounts'
-to get the new data into the raindrop database (the accounts are automatically
-updated if the database is created, but we don't detect when the accounts
-change)
+The 'run-raindrop.py' script is capable of fetching messages, re-running 
+extensions, etc.  It is expected that over time, this functionality will be
+rolled into the couchdb controlled 'couch-raindrop.py' script.  As a result,
+some functionality is duplicated in these scripts.
 
+In particular, there is no protection against 'couch-raindrop.py' and 
+'run-raindrop.py' attempting to perform the same thing at the same time,
+which will cause many errors to be logged.  Before using the advanced
+features of run-raindrop, you should ensure couch-raindrop.py is not running
+by executing a command similar to:
 
-With the couchdb server running....
+% curl http://127.0.0.1:5984/raindrop/_raindrop/exit
 
-Setup the database and upload views and other content:
-
-  % run-raindrop.py
-
-you should see output similar to:
-
-  INFO:model:created new database
-  INFO:raindrop.bootstrap:Adding account 'test'
-  INFO:raindrop.bootstrap:client files are different - updating doc
-  INFO:raindrop.bootstrap:design doc '_design/raindrop!accounts!all' has changed - updating
-  ...
-  Nothing left to do - terminating.  
-
-
-Go to http://127.0.0.1:5984/_utils/index.html to check that the table(s) are 
-setup
-
-Test everything using the 'test suite' (one day it *will* be a test suite :)
-
-  % run-raindrop.py -p test sync-messages process
-
-  THEN repeat the above - sorry about that - the first run didn't quite
-  do everything it was supposed to.
-
-  % run-raindrop.py -p test sync-messages process
-
-  Note the '-p' says to only load the 'test' protocol; without it we
-  will attempt to load all protocols (eg, imap, skype, twitter, etc).
-  But further note that we don't attempt a protocol - even the 'test' 
-  protocol - until we have an account of that 'type' set up.
-
-  Add '-l debug' to the above command-line for debug log messages.  This
-  can get quite verbose; you can also say -l log.name=debug to set a specific
-  log to debug.
-
-  See --help for more.
-
-
-Get *real* messages:
-
-  % run-raindrop.py sync-messages
-  % run-raindrop.py process
-
-(reload http://127.0.0.1:5984/_utils/index.html to see stuff in the messages view)
-
-Finally, go to http://127.0.0.1:5984/raindrop/inflow/index.html to access
-the Inflow application and other available applications.
-
-You can edit any of the files in the 'schema' or 'client' directories, and
-when run-raindrop is next started, the changes to these files will be detected
-and they will be sent to the database.  We don't detect the changes while we
+When run-raindrop.py is executed, it always checks to see if the accounts
+and other documents required by raindrop (eg, the front-end applications)
+are up to date, then performs the requested operation, then terminates.  If 
+no operation is requested a web-browser pointing at raindrop will be opened.
+This means you can edit any of the files in the 'schema', 'client' or 
+'couch_doc' directories, then see those changes reflected in the front-end 
+when run-raindrop is next started.  We don't detect the changes while we
 are running though, only at startup.
+
+Get messages from all accounts:
+
+  % run-raindrop.py sync-messages --max-age=2days --folder=inbox
+
+Both --max-age and --folder are optional - see --help for details.  Reload the
+front-end applications to see the messages as they arrive.
 
 Unprocessing:
 
@@ -210,9 +159,8 @@ To delete all the intermediate messages in the DB, execute:
 
   % run-raindrop.py unprocess
 
-The next time you execute a 'process' command, all your messages will be
-processed from the start.
-
+The next time you execute a 'process-backlog' command, all your messages will 
+be reprocessed.
 
 Error handling:
 
@@ -229,3 +177,11 @@ same error unless the converter has been fixed to deal with the condition
 causing the error.  Alternatively, execute 'unprocess' to force reprocessing
 of all messages, not only those which previously caused an error.
 
+  See --help for more.
+
+Testing Raindrop
+----------------
+
+Test everything using the 'test suite' 
+
+  % ./test-raindrop.py
