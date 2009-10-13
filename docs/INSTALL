@@ -53,30 +53,15 @@ the latest code, but if that does not work, switch to 0.8.
 Running Raindrop
 ================
 
-After check-raindrop.py reports everything is in order, simply execute 
-'run-raindrop.py'.  Without any arguments, the script will "bootstrap"
-the raindrop couchdb database, then open your browser showing the 'inflow'
-application where you will be prompted for gmail and twitter account 
-information.  Once this account window is closed, raindrop will automatically
-connect to gmail and/or twitter and fetch messages.  You currently need to
-periodically refresh your web-browser to see the new items.
-
-If you need to perform additional configuration (eg, additional accounts,
-keeping your passwords locally rather than in the database, etc), see
-'Manually configure raindrop' below.
-
-The 'run-raindrop' script is also capable of fetching messages and performing
-other operations - see 'Manually controlling raindrop' below.
+After check-raindrop.py reports everything is in order, the next step is to
+set up the accounts to use with raindrop, then have raindrop fetch the messages:
 
 Manually configure raindrop
 ---------------------------
 
-These steps should become less necessary as time moves forward.  If you
-only want to use couchdb running on your localhost, and only want gmail and
-twitter accounts, then you can ignore this section and use the raindrop
-application to configure these accounts.
-
-But if you need more, read on...
+These steps should become less necessary as time moves forward (it will be
+possible in the future to do this work though a web interface), but for now, you
+need to set up the accounts you want to use in raindrop via a .raindrop file:
 
 configure raindrop:
   * edit ~/.raindrop
@@ -120,6 +105,23 @@ configure raindrop:
         kind=skype
         username=username
         password=topsecret
+
+Once you are done with .raindrop, then go to the command line, to the
+raindrop/server/python directory and run the following command:
+
+  % run-raindrop.py sync-messages --max-age=5days 
+
+It will take a few minutes for run-raindrop to complete. The above command
+gets the last 5 days of messages for each account configured above. Once the
+above command finishes, then open your favorite Firefox or WebKit-based
+browser and go to:
+
+http://127.0.0.1:5984/raindrop/inflow/index.html
+
+You should see some of your messages displayed.
+
+There are many issues with the UI and how messages are processed, but hopefully
+you now have a feel for how raindrop works.
 
 Manually controlling raindrop
 -----------------------------

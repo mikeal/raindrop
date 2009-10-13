@@ -372,11 +372,11 @@ def main():
         yield g_pipeline.finalize()
         if reactor.running:
             # If there we no args we fire up a browser at our 'inflow' app.
-            if not args:
-                print "no arguments specified - opening the inflow app in your browser"
-                cc = get_config().couches['local']
-                url = "http://%(host)s:%(port)s/%(name)s/inflow/index.html" % cc
-                webbrowser.open(url)
+            #if not args:
+            #    print "no arguments specified - opening the inflow app in your browser"
+            #    cc = get_config().couches['local']
+            #    url = "http://%(host)s:%(port)s/%(name)s/inflow/index.html" % cc
+            #    webbrowser.open(url)
             print "Apparently everything is finished - terminating."
             reactor.stop()
 

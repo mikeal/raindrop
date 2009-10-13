@@ -81,7 +81,8 @@ inflow = {
       this.accountsDialog = null;
     }
 
-    rd.engine.syncNow();
+    //TODO: enable server syncing once our story is better there.
+    //rd.engine.syncNow();
   },
 
   onKeyPress: function(evt) {
