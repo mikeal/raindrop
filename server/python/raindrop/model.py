@@ -10,7 +10,10 @@ from twisted.internet.task import coiterate
 from .config import get_config
 from .wetpaisley import CouchDB
 
-import json
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 logger = logging.getLogger('model')
 
