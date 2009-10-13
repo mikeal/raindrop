@@ -6,6 +6,7 @@ from __future__ import with_statement
 
 import sys
 import re
+import tempfile
 import zipfile
 import twisted.web.error
 from twisted.internet import defer
@@ -112,6 +113,9 @@ def install_client_files(whateva, options):
     '''
     d = get_db()
 
+    def _update_failed(failure, what):
+        logger.error("update of %s failed: %s", what, failure)
+
     def _opened_ok(doc):
         logger.debug("document '%(_id)s' already exists at revision %(_rev)s",
                     doc)
@@ -139,8 +143,8 @@ def install_client_files(whateva, options):
                 pass
         if not ct:
             ct = "application/octet-stream"
-            logger.warn("can't guess the content type for '%s' - using %r",
-                        path, ct)
+            logger.debug("can't guess the content type for '%s' - using %r",
+                         path, ct)
         data = f.read()
         fp.get_finger(couch_path).update(data)
         attachments[couch_path] = {
@@ -199,6 +203,7 @@ def install_client_files(whateva, options):
             dfd = d.openDoc(f)
             dfd.addCallbacks(_opened_ok, _open_not_exists)
             dfd.addCallback(_maybe_update_doc, f)
+            dfd.addErrback(_update_failed, f)
             dl.append(dfd)
 
     # Unpack dojo and install it if necessary. Only do the work if the
@@ -220,17 +225,17 @@ def install_client_files(whateva, options):
         new_prints = fp.get_prints()
         if options.force or design_doc.get('rd_fingerprints') != new_prints:
             logger.info("updating dojo...")
-            dojo_dir = os.path.join(client_dir, "dojo")
-
-            # unpack dojo
-            extract(zip_path, client_dir)
-
-            # insert attachments into couch doc
-            attachments = design_doc['_attachments'] = {}
-            _check_dir(dojo_dir, "", attachments, Fingerprinter())
-
-            # remove the unzipped dojo directory.
-            shutil.rmtree(dojo_dir)
+            dojo_top_dir = tempfile.mktemp('-raindrop-temp')
+            os.mkdir(dojo_top_dir)
+            dojo_dir = os.path.join(dojo_top_dir, "dojo")
+            try:
+                # unpack dojo
+                extract(zip_path, dojo_top_dir)
+                # insert attachments into couch doc
+                attachments = design_doc['_attachments'] = {}
+                _check_dir(dojo_dir, "", attachments, Fingerprinter())
+            finally:
+                shutil.rmtree(dojo_top_dir)
 
             # save couch doc
             design_doc['rd_fingerprints'] = new_prints
@@ -242,6 +247,7 @@ def install_client_files(whateva, options):
     dfd = d.openDoc("dojo")
     dfd.addCallbacks(_opened_ok, _open_not_exists)
     dfd.addCallback(_maybe_update_dojo)
+    dfd.addErrback(_update_failed, "dojo")
     dl.append(dfd)
 
     return defer.DeferredList(dl)
@@ -346,8 +352,8 @@ def insert_default_docs(whateva, options):
     for did, item, r in zip(dids, items, result['rows']):
         if 'error' in r or 'deleted' in r['value']:
             # need to create a new item...
-            logger.info("couch doc %r doesn't exist or is deleted - updating",
-                        did)
+            logger.debug("couch doc %r doesn't exist or is deleted - updating",
+                         did)
             updates.append(item)
         else:
             fp = item['items']['rd_fingerprints']
@@ -528,15 +534,6 @@ def check_accounts(whateva, config=None):
         _ = yield dm.create_schema_items([new_info])
 
 
-msg_no_erlang = """\
-This couch server is not configured for erlang view servers
-To enable erlang view servers, edit couch's local.ini and add the lines:
-
-[native_query_servers]
-erlang={couch_native_process, start_link, []}
-
-Then restart couch and re-run raindrop."""
-
 # Functions working with design documents holding views.
 @defer.inlineCallbacks
 def install_views(whateva, options):
@@ -555,7 +552,12 @@ def install_views(whateva, options):
         extra_langs = [('.erl', 'erlang')]
     else:
         # js is slower, so note that...
-        logger.info(msg_no_erlang)
+        # *sob* - but seems to have strange failures in couch 0.10, so
+        # for now don't log this.
+        #logger.info(
+        #    "This couch server is not configured for erlang view servers.\n"
+        #    "consider executing 'check-raindrop.py --configure' to enable them.")
+        pass
 
     docs = [d for d in generate_view_docs_from_filesystem(schema_src, extra_langs)]
     logger.debug("Found %d documents in '%s'", len(docs), schema_src)
