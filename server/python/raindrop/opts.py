@@ -119,10 +119,7 @@ def log_twisted(record):
 # possibly misplaced....
 def setup_logging(options):
     init_errors = []
-    filename=options.log_file
-    if not filename and not sys.stderr.isatty():
-        filename = os.path.join(tempfile.gettempdir(), "raindrop.log")
-    logging.basicConfig(filename=filename)
+    logging.basicConfig(filename=options.log_file)
     if options.use_color:
         handler = logging.root.handlers[0]
         color_formatter = LevelColorFormatter(handler.formatter._fmt,
