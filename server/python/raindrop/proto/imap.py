@@ -826,13 +826,24 @@ class ImapClientFactory(protocol.ClientFactory):
 
   def connect(self):
     details = self.account.details
-    logger.debug('attempting to connect to %s:%d (ssl: %s)',
-                 details['host'], details['port'], details['ssl'])
+    host = details.get('host')
+    is_gmail = details.get('kind')=='gmail'
+    if not host and is_gmail:
+      host = 'imap.gmail.com'
+    if not host:
+      raise ValueError, "this account has no 'host' configured"
+
+    ssl = details.get('ssl')
+    port = details.get('port')
+    if not port:
+      port = 993 if ssl else 143
+
+    logger.debug('attempting to connect to %s:%d (ssl: %s)', host, port, ssl)
     reactor = self.conductor.reactor
-    if details.get('ssl'):
-      ret = reactor.connectSSL(details['host'], details['port'], self, self.ctx)
+    if ssl:
+      ret = reactor.connectSSL(host, port, self, self.ctx)
     else:
-      ret = reactor.connectTCP(details['host'], details['port'], self)
+      ret = reactor.connectTCP(host, port, self)
     return ret
 
 
@@ -862,6 +873,9 @@ class IMAPAccount(base.AccountBase):
       if backoff is None: backoff = RETRY_BACKOFF
       try:
         _ = yield _do_consume_connection_queue(q, def_done, retries_left, backoff)
+      except GeneratorExit: # ahh, the joys of twisted and errors...
+        logger.info("connection queue terminating prematurely")
+        def_done.errback(Failure())
       except Exception:
         # We only get here when all retries etc have failed and a queue has
         # given up for good.
