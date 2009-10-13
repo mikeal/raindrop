@@ -45,7 +45,8 @@ def load_extensions(doc_model):
     for row in ret['rows']:
         doc = row['doc']
         ext_id = doc['rd_key'][1]
-        src = doc['code']
+        # some platforms get upset about \r\n, none get upset with \n.
+        src = doc['code'].replace("\r\n", "\n")
         ct = doc.get('content_type')
         if ct != "application/x-python":
             logger.error("Content-type of %r is not supported", ct)
