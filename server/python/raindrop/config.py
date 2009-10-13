@@ -3,7 +3,7 @@ import ConfigParser, logging, os, os.path
 __all__ = ['get_config']
 
 class Config(object):
-  COUCH_DEFAULTS = {'host': 'localhost', 'port': 5984, 'name': 'raindrop'}
+  COUCH_DEFAULTS = {'host': '127.0.0.1', 'port': 5984, 'name': 'raindrop'}
   def __init__(self, filename=None):
     self.parser = ConfigParser.SafeConfigParser()
 
