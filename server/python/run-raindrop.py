@@ -7,6 +7,7 @@ import sys
 import optparse
 import logging
 import datetime
+import webbrowser
 try:
     import json # standard module in python 2.6+
 except ImportError:
@@ -260,7 +261,8 @@ def main():
     start = datetime.datetime.now()
     all_args = {}
     for n, v in globals().iteritems():
-        if callable(v) and getattr(v, '__doc__', None):
+        # explicit check for functions so twisted classes don't match..
+        if type(v)==type(main) and getattr(v, '__doc__', None):
             all_args[n.replace('_', '-')] = v
 
     all_arg_names = sorted(all_args.keys())
@@ -369,6 +371,12 @@ def main():
     def done(whateva):
         yield g_pipeline.finalize()
         if reactor.running:
+            # If there we no args we fire up a browser at our 'inflow' app.
+            if not args:
+                print "no arguments specified - opening the inflow app in your browser"
+                cc = get_config().couches['local']
+                url = "http://%(host)s:%(port)s/%(name)s/inflow/index.html" % cc
+                webbrowser.open(url)
             print "Apparently everything is finished - terminating."
             reactor.stop()
 
