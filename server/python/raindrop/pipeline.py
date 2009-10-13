@@ -58,8 +58,8 @@ def load_extensions(doc_model):
         globs = {}
         try:
             exec co in globs
-        except:
-            logger.exception("Failed to execute %r", ext_id)
+        except Exception, exc:
+            logger.error("Failed to initialize extension %r: %s", ext_id, exc)
             continue
         handler = globs.get('handler')
         if handler is None or not callable(handler):
