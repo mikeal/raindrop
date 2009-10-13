@@ -1,11 +1,23 @@
+# The outgoing SMTP protocol for raindrop.
+from __future__ import with_statement
+
+import sys
 from cStringIO import StringIO
 
 from ..proc import base
 
 from twisted.internet import protocol, defer
-from twisted.mail import smtp
 from twisted.python.failure import Failure
 from twisted.internet.ssl import ClientContextFactory
+
+# importing twisted's smtp package generates warnings in 2.6...
+if sys.version_info > (2,6):
+    import warnings
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from twisted.mail import smtp
+from twisted.mail import smtp
+
 
 from OpenSSL.SSL import SSLv3_METHOD
 
