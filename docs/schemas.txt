@@ -19,16 +19,25 @@ MESSAGES:
 rd.msg.body
 -----------
 ** Notes **
-This is named 'body' in anticipation of splitting the envelope related
-fields into their own schema.
+This is named 'body' in anticipation of splitting the "envelope" 
+(ie, to, from, etc) related fields into their own schema - but that
+is yet to happen.
 
 ** Fields **
 from:  An identity ID (presumably initially an 'email' one, but other
 extensions may replace with something else.)
 
+subject: the subject of the message. 
 body: the body
 
-body_preview:
+body_preview: Short preview of the message.
+
+from: An identity ID
+from_display: display name for the identity ID
+
+to, cc: Lists of identity IDs
+to_display, cc_display: Lists of display names
+
 
 rd.msg.rfc822:
 --------------
