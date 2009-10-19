@@ -54,14 +54,16 @@ Running Raindrop
 ================
 
 After check-raindrop.py reports everything is in order, the next step is to
-set up the accounts to use with raindrop, then have raindrop fetch the messages:
+set up the accounts to use with raindrop, then have raindrop fetch the
+messages:
 
 Manually configure raindrop
 ---------------------------
 
 These steps should become less necessary as time moves forward (it will be
-possible in the future to do this work though a web interface), but for now, you
-need to set up the accounts you want to use in raindrop via a .raindrop file:
+possible in the future to do this work though a web interface), but for now,
+you need to set up the accounts you want to use in raindrop via a .raindrop
+file:
 
 configure raindrop:
   * edit ~/.raindrop
@@ -72,7 +74,8 @@ configure raindrop:
         host=hostname
         port=port
 
-  The "account-" prefix is important in the first [account-XXX] field
+  Add one new section per account; note the "account-" prefix is important
+  when defining accounts:
 
   * Add gmail accounts along the lines of
         [account-gmail-username]
@@ -100,7 +103,7 @@ configure raindrop:
         ssl=True
 
   * Add skype accounts along the lines of
-        [account-skype-clarkbw]
+        [account-skype-username]
         proto=skype
         kind=skype
         username=username
@@ -120,8 +123,8 @@ http://127.0.0.1:5984/raindrop/inflow/index.html
 
 You should see some of your messages displayed.
 
-There are many issues with the UI and how messages are processed, but hopefully
-you now have a feel for how raindrop works.
+There are many issues with the UI and how messages are processed, but
+hopefully you now have a feel for how raindrop works.
 
 Manually controlling raindrop
 -----------------------------
@@ -161,7 +164,7 @@ To delete all the intermediate messages in the DB, execute:
 
   % run-raindrop.py unprocess
 
-The next time you execute a 'process-backlog' command, all your messages will 
+The next time you execute a 'process-backlog' command, all your messages will
 be reprocessed.
 
 Error handling:
@@ -184,6 +187,6 @@ of all messages, not only those which previously caused an error.
 Testing Raindrop
 ----------------
 
-Test everything using the 'test suite' 
+Test everything using the test suite
 
   % ./test-raindrop.py
