@@ -9,7 +9,8 @@ from optparse import Option
 
 max_age_mults = {
     'sec': 1,
-    'minute': 60*60,
+    'minute': 60,
+    'hour': 60*60,
     'day': 60*60*24,
     'week': 60*60*24*7,
     'year': 60*60*24*365,
