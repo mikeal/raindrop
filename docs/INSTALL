@@ -6,10 +6,16 @@ Late Breaking News/Known Problems
 
 * Integration with twisted logging is poor.
 
-* We are in the middle of moving from using the manually executed 
- 'run-raindrop.py' script to the couchdb managed 'couch-raindrop.py'
- script which is controlled by the front end.  If both processes are
- running you can expect one to see regular conflict errors.
+* You may see errors like:
+    WARNING:raindrop.proto.imap:ignoring mismatched quoting error: "=?ISO-8859-1?...
+  This appears to be a bug in the IMAP protocol we are using, and the end
+  result is that such warnings will cause the entire folder containing the
+  message to be skipped.
+
+* You may see warnings regarding timeout or "too many connection" errors from
+  your IMAP server.  These errors can generally be ignored as raindrop should
+  recover correctly from such errors.
+
 
 Installation Steps
 ==================
@@ -64,7 +70,7 @@ Manually configure raindrop
 ---------------------------
 
 These steps should become less necessary as time moves forward (it will be
-possible in the future to do this work though a web interface), but for now,
+possible in the future to do this work through a web interface), but for now,
 you need to set up the accounts you want to use in raindrop via a .raindrop
 file:
 
@@ -112,19 +118,41 @@ configure raindrop:
         username=username
         password=topsecret
 
+Note the use of passwords in this file and that we recognize this is evil;
+please see http://wiki.mozilla.org/Raindrop/Security for our current thoughts
+on this.  Also note that although most account information is written to the
+couchdb, the passwords in this file never are included.
+
 Once you are done with .raindrop, then go to the command line, to the
 raindrop/server/python directory and run the following command:
 
   % run-raindrop.py sync-messages --max-age=5days 
 
 It will take a few minutes for run-raindrop to complete. The above command
-gets the last 5 days of messages for each account configured above. Once the
-above command finishes, then open your favorite Firefox or WebKit-based
-browser and go to:
+gets the last 5 days of messages for each account configured above. If you
+have a huge amount of mail and would like to restrict things even more, the
+--folder option may be of use - execute 'run-raindrop.py --help' for more
+details.
+
+Once the above command finishes (or even while it is running - the messages
+should start appearing fairly quickly), then open your favorite Firefox or
+WebKit-based browser and go to:
 
 http://127.0.0.1:5984/raindrop/inflow/index.html
 
-You should see some of your messages displayed.
+You should see some of your messages displayed.  If you are viewing messages
+while raindrop is still synchronizing, currently you must manually refresh the
+page to see these new items.
+
+Note that the raindrop back-end must be running for 'outgoing' actions (such
+as sending an SMTP message, adjusting the 'seen' state of an IMAP message) to
+be operated on.  If you execute:
+
+  % run-raindrop.py process-incoming
+
+The back-end will sit there waiting for new items to be written to the
+database and process them, including requests to send SMTP etc.  You must
+terminate this process with Ctrl+C.
 
 There are many issues with the UI and how messages are processed, but
 hopefully you now have a feel for how raindrop works.
@@ -133,17 +161,9 @@ Manually controlling raindrop
 -----------------------------
 
 The 'run-raindrop.py' script is capable of fetching messages, re-running 
-extensions, etc.  It is expected that over time, this functionality will be
-rolled into the couchdb controlled 'couch-raindrop.py' script.  As a result,
-some functionality is duplicated in these scripts.
-
-In particular, there is no protection against 'couch-raindrop.py' and 
-'run-raindrop.py' attempting to perform the same thing at the same time,
-which will cause many errors to be logged.  Before using the advanced
-features of run-raindrop, you should ensure couch-raindrop.py is not running
-by executing a command similar to:
-
-% curl http://127.0.0.1:5984/raindrop/_raindrop/exit
+extensions, etc.  Although we are moving this functionality to a couchdb
+external so it can be controlled by the front-end (see the couch-raindrop.py
+script), the techniques described below are still the current best-practices.
 
 When run-raindrop.py is executed, it always checks to see if the accounts
 and other documents required by raindrop (eg, the front-end applications)
