@@ -1,8 +1,8 @@
 {
   "schemas" : {
     "rd.raw.rss" : {
-        "uri" : "http://getsatisfaction.com/mozilla_messaging/products/mozilla_thunderbird.rss"
+        "uri" : "http://getsatisfaction.com/mozilla_messaging/products/mozilla_raindrop.rss?sort=recently_created"
     }
   },
-  "rd_key": ["rss-feed", "http://getsatisfaction.com/mozilla_messaging/products/mozilla_thunderbird.rss"]
+  "rd_key": ["rss-feed", "http://getsatisfaction.com/mozilla_messaging/products/mozilla_raindrop.rss?sort=recently_created"]
 }
