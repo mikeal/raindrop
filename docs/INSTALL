@@ -49,6 +49,7 @@ couchdb
 Install couchdb, version 0.10 or later.  0.9 will not work.  See:
   http://couchdb.apache.org/downloads.html for most platforms.
   http://wiki.apache.org/couchdb/Windows_binary_installer for Windows.
+  http://janl.github.com/couchdbx for a pre-built binary for Macs.
 
 When building couchdb from source, it can be run without installing via a 
 'dev' install:
