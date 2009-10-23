@@ -3,12 +3,16 @@ from __future__ import with_statement
 
 import os
 import glob
-import json
 import base64
 from email import message_from_string
 from twisted.trial import unittest
 from twisted.internet import defer
 from twisted.web.error import Error
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
 
 import raindrop.config
 from raindrop.model import get_db, fab_db, get_doc_model
