@@ -55,7 +55,7 @@ def handler(doc):
           position = matches.end()
         else:
           #No match, so quote must be to the end of the string.
-          position = text.length - 1
+          position = len(text)
 
         ret.append({
             "text": text[startIndex:position],
