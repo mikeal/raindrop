@@ -27,7 +27,10 @@ IMAP_SERVER_PORT=6579
 class SimpleMailbox:
     implements(imap4.IMailboxInfo, imap4.IMailbox, imap4.ICloseableMailbox)
 
-    flags = ('\\Flag1', 'Flag2', '\\AnotherSysFlag', 'LastFlag')
+    flags = ('\\Flag1', 'Flag2', '\\AnotherSysFlag',
+             # XXX - twisted gets upset with unicode here...
+             u'FlagWithExtended\xa9har'.encode('imap4-utf-7'),
+             'LastFlag')
     capabilities = ['testing']
     messages = []
     mUID = 0
@@ -361,7 +364,7 @@ class TestSimpleEmpty(IMAP4TestBase):
         self.failUnlessEqual(self.num_transient_list_errors, 0)
 
 class TestSimpleMailboxes(IMAP4TestBase):
-    mailboxes = ["foo/bar"]
+    mailboxes = ["foo/bar", u"extended \xa9har"]
     @defer.inlineCallbacks
     def test_simple(self):
         cond = yield self.get_conductor()
