@@ -141,8 +141,8 @@ class ImapClient(imap4.IMAP4Client):
     return d.addBoth(done)
 
   def _doLogin(self, *args, **kwargs):
-    return self.login(self.account.details['username'],
-                      self.account.details['password'])
+    return self.login(self.account.details['username'].encode('imap4-utf-7'),
+                      self.account.details['password'].encode('imap4-utf-7'))
 
   def xlist(self, reference, wildcard):
     # like 'list', but does XLIST.  Caller is expected to have checked the
@@ -256,6 +256,7 @@ class ImapProvider(object):
     folders_use = []
     # First pass - filter folders we don't care about.
     for flags, delim, name in result:
+      name = name.decode('imap4-utf-7') # twisted gives back the encoded str.
       ok = True
       for flag in (r'\Noselect', r'\AllMail', r'\Trash', r'\Spam'):
         if flag in flags:

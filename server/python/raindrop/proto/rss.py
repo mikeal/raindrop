@@ -35,16 +35,17 @@ logger = logging.getLogger(__name__)
 
 @defer.inlineCallbacks
 def maybe_update_doc(conductor, doc_model, doc, options):
-    uri = doc['uri']
+    uri = doc['uri'].encode("utf-8")
     parsed = urlparse(uri)
     # If we have existing content for the item, make a conditional request.
     req_headers = {}
     if not options.force and 'headers' in doc:
         doc_headers = doc['headers']
         if 'date-modified' in doc_headers:
-            req_headers['If-Modified-Since'] = doc_headers['date-modified'][0]
+            req_headers['If-Modified-Since'] = \
+                    doc_headers['date-modified'][0].encode('utf-8')
         if 'etag' in doc_headers:
-            req_headers['If-None-Match'] = doc_headers['etag'][0]
+            req_headers['If-None-Match'] = doc_headers['etag'][0].encode('utf-8')
 
     # Issue the request.
     if parsed.scheme == 'http':
