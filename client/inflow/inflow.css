@@ -22,18 +22,19 @@
  * */
 
 @import url("/raindrop/dojo/dijit/themes/dijit.css");
-@import url("/raindrop/lib/rdw/css/Loading.css");
-@import url("/raindrop/lib/rdw/css/Notify.css");
-@import url("/raindrop/lib/rdw/css/QuickCompose.css");
-@import url("/raindrop/lib/rdw/css/Account.css");
-@import url("/raindrop/lib/rdw/css/Summary.css");
-@import url("/raindrop/lib/rdw/css/Search.css");
-@import url("/raindrop/lib/rdw/css/Stories.css");
-@import url("/raindrop/lib/rdw/css/ContactList.css");
-@import url("/raindrop/lib/rdw/css/Organizer.css");
+@import url("css/Loading.css");
+@import url("css/Notify.css");
+@import url("css/QuickCompose.css");
+@import url("css/Account.css");
+@import url("css/Search.css");
+@import url("css/Stories.css");
+@import url("css/ContactList.css");
+@import url("css/Organizer.css");
 
 * {
-  font:100%/normal Droid-sans,arial,verdana,geneva,sans-serif;
+  border: 0px;
+  margin: 0px;
+  padding: 0px;
 }
 
 body {
@@ -44,6 +45,10 @@ body {
 
 a img{
   border: none;
+}
+
+.invisible {
+  visibility: hidden;
 }
 
 /* @font-face typography */
@@ -99,122 +104,133 @@ a img{
 
 /* end @font-face typography */
 
-.rdwLoading {
-  position: absolute;
-  right: 10px;
-  top: 10px;
-  overflow:hidden;
-  display: inline-block;
-  text-indent: -40em;
-  width: 32px;
-  height: 32px;
-  background-image: url("i/ajax-loader.gif");
-  background-color:transparent;
+
+body {
+  color: #1a1a1a;
+  font-family: Droid-sans, Helvetica, Arial, Sans-serif;
+  font-size: 11px;
+  line-height: 14px;
+  /*background-image: url("i/baseline.png");*/
 }
 
-.QuickCompose {
-  margin: 0 0.75em 8px 0.75em;
+#nav {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  background-image: url("i/bg.png");
+  z-index: 100;
+}
+
+#navHeader {
+  font-family: droid-serif, georgia, times, serif;
+  width: 940px;
+  margin: 16px 10px 9px 10px;
+}
+
+#navHeader a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+#navHeader a:hover {
+  text-decoration: underline;
+}
+
+#navHeader select {
+  font-family: droid-serif, georgia, times, serif;
+  width: 120px;
+  margin: 0 7px 0 0;
+}
+
+#navHeader ul {
+  list-style-type: none;
+}
+
+#navHeader li {
+  display: inline;
+  margin-right: 7px;
+}
+
+#logo {
+  position: fixed;
+  height: 16px;
+  width: 16px;
+  background-image: url("i/logo.png");
+  z-index: 101;
+  top: 15px;
+  right: 10px;
 }
 
 #content {
-  position: relative;
-  display: table;
-  min-width: 25em;
-  max-width: 55em;
-  background-color: #e6e6e6;
+  margin: 0 0 5px 5px;
 }
 
-#newcompose {
-  position: fixed;
-  height: 50px;
-  width: 50px;
-  background-image: url("i/logo.png");
-  z-index: 1;
-  top: 25px;
-  right: 25px;
+#stories {
+  margin-top: 64px;
+  width: 600px;
 }
 
-#keyboardHelp {
-  width: 800px;
-  background-color: #FFB0B0;
-  background-image: url("i/keyboard/keyboard.png");
-  background-repeat: no-repeat;
-  -moz-border-radius: 5px;
-  -moz-box-shadow: 0 0 10px #666666;
-  -webkit-border-radius: 5px;
-  -webkit-box-shadow: 0 0 10px #666666;
-  padding: 8px;
-  display:none;
-  position: fixed;
-  left: 50%;
-  margin-left: -408px;
-  z-index: 100;
-  top: 25%;
+#widgets {
+  margin-top: 64px;
 }
 
-.keyboardColumn {
-  width: 225px;
+.rdwStoryMailingList,
+.rdwStoryTwitterTimeLine,
+.rdwStoryGenericGroup {
+  width: 300px;
+  height:211px;
+  margin: 0 10px 20px 10px;
   float: left;
-  font-size: small;
+}
+
+.rdwStory a {
   color: #1a1a1a;
-  display:inline;
-  margin-top: 191px;
-}
-
-.keyboardColumn .a {
-  font-weight: normal;
-  display: inline;
-  font-family: Droid-serif, Georgia, Times, serif;
-  font-style: italic;
-}
-
-.keyboardColumn .b {
-  font-weight: bold;
-  display: inline;
-}
-
-#column1 {
-  display: table-cell;
-  max-width: 40em;
-  width: 40em;
-  padding-bottom: 24px;
-}
-
-#mainList {
-  margin: 0 0.75em 8px 0.75em;
-}
-
-#column2 {
-  display: table-cell;
-  width: 15em;
-  min-height: 40ex;
-  vertical-align: top;
-  padding-bottom: 800px;
-  padding-top: 86px;
-}
-
-.miniOrganizer {
-  position: fixed;
-  top: 25px;
-  display:block;
-  margin-left: 8px;
-  font-family: Droid-serif, Georgia, Times, serif;
-  font-size: x-small;
-  color: #1a1a1a;
-  margin-bottom: 4px;
-  font-style: italic;
-}
-
-.miniOrganizer a {
-  color: #888888;
   text-decoration: none;
-  font-family: Droid-serif, Georgia, Times, serif;
-  font-style: italic;
-  display: block;
 }
 
-.miniOrganizer a:hover {
+.rdwStoryTwitterTimeLine,
+.MailingListTitle {
+  padding: 7px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.rdwStoryTwitterTimeLine {
+  background-color: #C4F3FF;
+}
+
+.rdwStoryMailingList {
+  background-color: #FFDEDE;
+}
+
+.rdwStoryTwitterTimeLine .actions a:first-child {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine a {
   color: #1a1a1a;
+  text-decoration: none;
+}
+
+.tweetTitle {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.tweetTitle,
+.MailingListTitle {
+  font-family: droid-serif, georgia, times, serif;
+  display: block;
+  font-size: 10px;
+}
+
+.rdwStoryTwitterTimeLine .subject {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine .rdwMessage {
+  margin-top: 6px;
+  padding-bottom: 1px;
 }
 
 #footer {
@@ -253,3 +269,166 @@ a img{
   background-color: #FFF !important;
   outline: none;
 }
+
+/* START hacking away at inputs in quickcompose :( */
+.dijitTextBox, .dijitComboBox, .dijitSpinner {
+  border: 1px solid #1a1a1a;
+  background-color: #1a1a1a;
+  vertical-align: middle;
+  width: 220px !important;
+  display: block !important;
+  padding: 3.5px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.dijitTextBox input, 
+.dijitComboBox input, 
+.dijitSpinner input {
+  color: white !important;
+}
+
+.dijitButtonNode {
+  border: none !important;
+  background-image: url("i/dropdown.png");
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+.dijitArrowButton {
+  padding: 0 2px;
+}
+
+.dijitMenu {
+  -moz-box-shadow: 0 0 10px #888888;
+  -webkit-box-shadow: 0 0 10px #888888;
+  background-color:yellow;
+  border:1px solid black;
+}
+
+.dijitMenuItem {
+  color: #1a1a1a;
+  padding: 3.5px !important;
+}
+
+.dijitMenuItem:hover {
+  text-decoration: underline;
+}
+
+.dijitMenuItem li {
+  background-color: transparent !important;
+}
+
+.dijitMenuItem li:hover,
+.dijitReset li:hover {
+  background-color: transparent !important;
+}
+/* END hacking away at inputs in quickcompose :( */
+
+
+/* START hbox/vbox normalization from http://alex.dojotoolkit.org/2009/08/css-3-progress/ */
+/* hbox and vbox classes */
+ 
+.hbox {
+	display: -webkit-box;
+	-webkit-box-orient: horizontal;
+	-webkit-box-align: stretch;
+ 
+	display: -moz-box;
+	-moz-box-orient: horizontal;
+	-moz-box-align: stretch;
+ 
+	display: box;
+	box-orient: horizontal;
+	box-align: stretch;
+}
+ 
+.hbox > * {
+	-webkit-box-flex: 0;
+	-moz-box-flex: 0;
+	box-flex: 0;
+	display: block;
+}
+ 
+.vbox {
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-box-align: stretch;
+ 
+	display: -moz-box;
+	-moz-box-orient: vertical;
+	-moz-box-align: stretch;
+ 
+	display: box;
+	box-orient: vertical;
+	box-align: stretch;
+}
+ 
+.vbox > * {
+	-webkit-box-flex: 0;
+	-moz-box-flex: 0;
+	box-flex: 0;
+	display: block;
+}
+ 
+.spacer {
+	-webkit-box-flex: 1;
+	-moz-box-flex: 1;
+	box-flex: 1;
+}
+ 
+.reverse {
+	-webkit-box-direction: reverse;
+	-moz-box-direction: reverse;
+	box-direction: reverse;
+}
+ 
+.boxFlex0 {
+	-webkit-box-flex: 0;
+	-moz-box-flex: 0;
+	box-flex: 0;
+}
+ 
+.boxFlex1, .boxFlex {
+	-webkit-box-flex: 1;
+	-moz-box-flex: 1;
+	box-flex: 1;
+}
+ 
+.boxFlex2 {
+	-webkit-box-flex: 2;
+	-moz-box-flex: 2;
+	box-flex: 2;
+}
+ 
+.boxGroup1 {
+	-webkit-box-flex-group: 1;
+	-moz-box-flex-group: 1;
+	box-flex-group: 1;
+}
+ 
+.boxGroup2 {
+	-webkit-box-flex-group: 2;
+	-moz-box-flex-group: 2;
+	box-flex-group: 2;
+}
+ 
+.start {
+	-webkit-box-pack: start;
+	-moz-box-pack: start;
+	box-pack: start;
+}
+ 
+.end {
+	-webkit-box-pack: end;
+	-moz-box-pack: end;
+	box-pack: end;
+}
+ 
+.center {
+	-webkit-box-pack: center;
+	-moz-box-pack: center;
+	box-pack: center;
+}
+/* END hbox/vbox normalization from http://alex.dojotoolkit.org/2009/08/css-3-progress/ */

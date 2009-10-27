@@ -26,8 +26,6 @@ dojo.provide("rdw.ReplyForward");
 dojo.require("dijit.form.Textarea");
 dojo.require("rdw.QuickCompose");
 
-rd.addStyle("rdw.css.ReplyForward");
-
 dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   //Valid replyTypes: "reply" and "forward"
   replyType: "reply",

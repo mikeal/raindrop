@@ -1,0 +1,139 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Raindrop.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Messaging, Inc..
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * */
+
+.fullMessageTitle {
+  font-size: normal;
+  font-weight: bold;
+  font-variant: small-caps;
+  text-transform: lowercase;
+  line-height: 18px;
+  margin-right: 180px;
+  padding: 6px 0px 6px 30px;
+  min-height: 18px;
+  background-repeat: no-repeat;
+}
+
+[target="broadcast"] .fullMessageTitle {
+  background-image: url("../i/menu/icon_broadcasts.png");
+  background-position: 5px 10px;
+}
+
+[target="from"] .fullMessageTitle {
+  background-image: url("../i/icon_direct_message.png");
+}
+
+[target="direct"] .fullMessageTitle {
+  background-image: url("../i/icon_direct_message.png");
+}
+
+[target="group"] .fullMessageTitle {
+  background-image: url("../i/icon_group_message.png");
+}
+
+.rdwStoryFullMessage.rdwMessage .actions {
+  visibility: inherit;
+}
+
+.rdwStoryFullMessage .additionalTime {
+  visibility: visible;
+}
+
+.rdwStory:hover .rdwStoryFullMessage .additionalTime {
+  visibility: visible;
+}
+
+.rdwStoryFullMessage.rdwMessage .message {
+  margin-left: 8px;
+}
+
+.rdwStoryFullMessage.rdwMessage .actions {
+  text-align: left;
+}
+
+.rdwStoryFullMessage.rdwMessage .actions a {
+  color: #1a1a1a;
+  height: 16px;
+  padding: 0 0 0 20px;
+  margin: 8px 10px 0 0;
+  line-height: 16px;
+}
+
+.rdwStoryFullMessage.rdwMessage .actions .reply {
+  background-image: url("../i/reply.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  display: inline-block;
+}
+
+.rdwStoryFullMessage.rdwMessage .actions .fwd {
+  background-image: url("../i/forward.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
+.toolBox {
+  font-size: x-small;
+  text-align: right;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.toolBox a {
+  color: #1a1a1a;
+  height: 16px;
+  padding: 0 0 0 20px;
+  margin: 8px 0 0 10px;
+  line-height: 16px;
+  font-family: Droid-serif, Georgia, times, serif;
+  font-style: italic;
+  text-decoration: none;
+}
+
+.toolBox a:hover {
+  text-decoration: underline;
+}
+
+.toolBox .archive {
+  background-image: url("../i/archive.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
+}
+
+.toolBox .spam {
+  background-image: url("../i/spam.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
+}
+
+.toolBox .delete {
+  background-image: url("../i/delete.png");
+  background-repeat: no-repeat;
+  background-position: left center;
+  height: 16px;
+  display: inline-block;
+}

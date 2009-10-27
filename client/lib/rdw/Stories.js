@@ -93,8 +93,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   },
 
   templateString: '<div class="rdwStories" dojoAttachEvent="onclick: onClick, onkeypress: onKeyPress">'
-                + '  <ol dojoAttachPoint="listNode"></ol>'
-                + '  <ol dojoAttachPoint="convoNode"></ol>'
+                + '  <div dojoAttachPoint="listNode"></div>'
+                + '  <div dojoAttachPoint="convoNode"></div>'
+                + '  <div dojoAttachPoint="widgetNode"></div>'
                 + '</div>',
 
   postMixInProperties: function() {

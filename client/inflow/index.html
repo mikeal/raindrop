@@ -37,50 +37,26 @@
   </script>  
 </head>
 <body>
-  <div id="content">
-    
-    <div id="keyboardHelp">
-      <div class="keyboardColumn" style="width:68px; margin-right: 8px;">
-      <img src="i/keyboard/prompt.png">
-      </div>
-      <div class="keyboardColumn">
-      <div class="b">Up:</div> Previous conversation<br>
-      <div class="b">Down:</div> Next conversation<br>
-      <div class="b">Right:</div> Conversation Reader<br>
-      <div class="b">Left:</div> Back to inflow<br>
-      </div>
-      <div class="keyboardColumn">
-      <div class="b">A:</div> Archive<br>
-      <div class="b">D:</div> Delete<br>
-      <div class="b">R:</div> Reply<br>
-      <div class="b">F:</div> Forward<br>
-      </div>
-    </div>
-    
-  <div id="newcompose"><div rdType="rdw.Loading"></div></div>
-    <div id="column1">
-      <div rdType="rdw.QuickCompose"></div>
-      <div id="mainList">
-        <div id="summary" rdType="rdw.Summary"></div>
-        <div id="contactList" rdType="rdw.ContactList"></div>
-        <div id="stories" rdType="rdw.Stories"></div>
-      </div>
-    </div>
-    <div id="column2">
-      <div class="miniOrganizer" style="display:none;">
-        Quick menu<br><br>
-        <a href="#">&mdash;Home</a>
-        <a href="#">&mdash;Direct messages</a>
-        <a href="#">&mdash;Group conversations</a>
-        <a href="#">&mdash;Sent messages</a>
-        <a href="#">&mdash;Contacts</a>
-      </div>
+  <div id="nav">
+     <div rdType="rdw.QuickCompose" class="invisible" startExpanded="true"></div>
+     <div id="navHeader">
+      <ul>
+        <li>Inflow</li>
+        <li><a class="quickComposeLaunch" href="#rd:quick-compose">Compose</a></li>
+        <li><div rdType="rdw.Organizer"></div></li>
+      </ul>
+      <!--<div rdType="rdw.Search"></div>-->
       <div rdType="rdw.Notify"></div>
-      <div id="account" rdType="rdw.Account"></div>
-      <div rdType="rdw.Search"></div>
-      <div rdType="rdw.Organizer"></div>
-    </div> 
+      </div>
+      <div id="logo"><div rdType="rdw.Loading"></div>
+    </div>
   </div>
+
+  <div id="content" class="hbox">
+    <div id="stories" rdType="rdw.Stories" class="start"></div>
+    <div id="widgets" rdType="rdw.Widgets" class="boxFlex"></div>
+  </div>
+
   <div id="footer">RAINDROP&trade; 
   <br><a style="color: white" target="_blank" href="/raindrop/extender/index.html">Extend</a></div>
 </body>

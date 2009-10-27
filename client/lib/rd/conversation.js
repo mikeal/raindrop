@@ -124,8 +124,7 @@ dojo._mixin(rd.conversation, {
 
     var directDfd = new dojo.Deferred();
     var groupDfd = new dojo.Deferred();
-    var broadcastDfd = new dojo.Deferred();
-    var dfdList = new dojo.DeferredList([directDfd, groupDfd, broadcastDfd]);
+    var dfdList = new dojo.DeferredList([directDfd, groupDfd]);
     var allRecips = [];
 
     //Direct messages
@@ -164,25 +163,6 @@ dojo._mixin(rd.conversation, {
     })
     .error(function(err) {
        groupDfd.errback(err);
-    });
-
-    //Broadcast messages
-    rd.api().megaview({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
-      descending: true,
-      reduce: false,
-      include_docs: true,
-      limit: limit
-    })
-    .ok(function(results) {
-      if (results && results.rows && results.rows.length) {
-        allRecips = allRecips.concat(results.rows);
-      }
-      broadcastDfd.callback(results);
-    })
-    .error(function(err) {
-       broadcastDfd.errback(err);
     });
 
     //Action to do once all deferreds complete.

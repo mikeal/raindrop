@@ -1,0 +1,71 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Raindrop.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Messaging, Inc..
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * */
+
+@import url(FullMessage.css);
+
+
+.rdwStoryFullStory {
+  width: 460px !important;
+}
+
+.rdwStoryFullStory .rdwMessage .timestamp {
+  display: block;
+  margin: 14px 0 0 0;
+}
+
+.rdwStoryFullStory .rdwMessage .actions {
+  display: block;
+  margin: 0 0 14px 0;
+}
+
+.rdwStoryFullStory .from {
+  border-top: 1px solid #1A1A1A;
+  width: 100%;
+  display: block;
+  color: #FF5959;
+  padding-top: 6px;
+}
+
+.rdwStoryFullStory .fullMessageTitle {
+  display: inline-block;
+  font-weight: bold;
+  color:#FF5959;
+  max-width: 300px;
+}
+
+.rdwStoryFullStory .toolBox {
+  display: inline;
+  float: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  font-size: 10px;
+}
+
+.rdwStoryFullStory .toolBox a {
+  margin: 0 0 0 7px;
+}
+
+.rdwStoryFullStory .content {
+  display: block;
+  margin: 7px 0 0 0;
+}

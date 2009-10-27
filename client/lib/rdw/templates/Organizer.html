@@ -1,11 +1,10 @@
-<div class="Organizer">
-  <ol dojoAttachPoint="listNode">
-    <li type="home" class="dojoDndItem"><a href="#rd:home">${i18n.home}</a></li>
-    <!--Not ready for prime time-->
-    <!--<li type="starred" class="dojoDndItem"><a href="#rd:starred">${i18n.starred}</a></li>-->
-    <li type="direct" class="dojoDndItem"><a title="${i18n.directTitle}" href="#rd:direct">${i18n.directName}</a></li>
-    <li type="group" class="dojoDndItem"><a title="${i18n.groupTitle}" href="#rd:group">${i18n.groupName}</a></li>
-    <li type="sent" class="dojoDndItem"><a href="#rd:sent">${i18n.sent}</a></li>
-    <li type="contacts" class="dojoDndItem"><a href="#rd:contacts">${i18n.contacts}</a></li>
-  </ol>
+<div class="rdwOrganizer">
+  <select dojoAttachPoint="listNode">
+    <option value="">Navigation</option>
+    <option value="rd:home">${i18n.home}</option>
+    <option value="rd:direct">${i18n.directName}</option>
+    <option value="rd:group">${i18n.groupName}</option>
+    <option value="rd:sent">${i18n.sent}</option>
+    <option value="rd:contacts">${i18n.contacts}</option>
+  </select>
 </div>

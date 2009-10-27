@@ -43,11 +43,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //set it per instance.
   messageBag: {},
 
-  normalTemplate: dojo.cache("rdw.templates", "Message.html"),
-  unknownUserTemplate: dojo.cache("rdw.templates", "MessageUnknown.html"),
-
-  blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
-  unknownImgUrl: dojo.moduleUrl("rdw.resources", "unknown.png"),
+  templateString: dojo.cache("rdw.templates", "Message.html"),
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method
@@ -73,20 +69,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.utcTime = fTime["utc"];
     this.friendlyTime = fTime["friendly"];
     this.additionalTime = fTime["additional"];
-    
-    this.userPicUrl = this.blankImgUrl;
-    //If the fromId has an @ in it, try to use a gravatar for it.
-    if (this.fromId && this.fromId.indexOf("@") != -1) {
-      this.userPicUrl = rdw.gravatar.get(this.fromId);
-    }
 
     //Determine if the sender is known and switch templates if necessary.
     this.known = !!msgBag["rd.msg.ui.known"];
-    if (this.known) {
-      this.templateString = this.normalTemplate;
-    } else {
-      this.templateString = this.unknownUserTemplate;
-    }
     
     //Set up the link for the full conversation view action
     var convoId = msgBag
@@ -106,6 +91,8 @@ dojo.declare("rdw.Message", [rdw._Base], {
     if (!this.known) {
       //This identity is unknown. Try to make a suggestion for
       //who it might be.
+      dojo.addClass(this.domNode, "unknown");
+
       var body = this.messageBag['rd.msg.body'];
       var from = body.from && body.from[1];
       if (from) {

@@ -21,26 +21,55 @@
  * Contributor(s):
  * */
 
-dojo.provide("inflowgrid");
+dojo.provide("inflow");
+
+dojo.require("dijit.Dialog");
 
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
-dojo.require("inflowgrid.QuickCompose");
+dojo.require("inflow.QuickCompose");
 dojo.require("rdw.Search");
-dojo.require("inflowgrid.Stories");
-dojo.require("inflowgrid.Organizer");
+dojo.require("inflow.Stories");
+dojo.require("inflow.Organizer");
 
 dojo.require("rd.engine");
 dojo.require("rd.conversation");
 
-dojo.mixin(inflowgrid, {
+dojo.mixin(inflow, {
+  addAccountUrl: "/raindrop/settings/index.html",
+
+  showAccounts: function() {
+    //summary: shows the account setup in an iframe.
+    dojo["require"]("dijit.Dialog");
+    dojo.addOnLoad(this, function() {
+      this.accountsDialog = new dijit.Dialog({
+        "class": "inflowAddAccountFrame"  
+      }, dojo.create("div", null, dojo.body()));
+
+      this.accountsDialog.containerNode.innerHTML = '<iframe src="' + this.addAccountUrl + '"></iframe>';
+      this.accountsDialog.show();
+    });
+  },
+
+  onAccountFrameMessage: function(evt) {
+    //summary: a postMessage endpoint for messages from the account frame.
+    if (evt.data == "settings-done") {
+      this.accountsDialog.hide();
+      this.accountsDialog.destroy();
+      this.accountsDialog = null;
+    }
+
+    //TODO: enable server syncing once our story is better there.
+    //rd.engine.syncNow();
+  },
+
   isComposeVisible: true,
 
   showQuickCompose: function() {
     //Place the div really high and slide it in.
     if (!this.isComposeVisible) {
-      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      var qc = dijit.registry.byClass("inflow.QuickCompose").toArray()[0];
       dojo.removeClass(qc.domNode, "invisible");
 
       var position = dojo.position(qc.domNode);
@@ -53,7 +82,7 @@ dojo.mixin(inflowgrid, {
 
   hideQuickCompose: function() {
     if (this.isComposeVisible) {
-      var qc = dijit.registry.byClass("inflowgrid.QuickCompose").toArray()[0];
+      var qc = dijit.registry.byClass("inflow.QuickCompose").toArray()[0];
       var navPosition = dojo.marginBox(dojo.byId("nav"));
       var navHeaderPosition = dojo.marginBox(dojo.byId("navHeader"));
 
@@ -68,10 +97,13 @@ dojo.mixin(inflowgrid, {
   //TODO: need to make this more generic, to work across raindrop apps.
   window.name = "raindrop";
 
+  //Listen to no accounts/show account settings subscriptions
+  rd.sub("rd.api.me.noAccounts", inflow, "showAccounts");
+  rd.sub("rd-protocol-account-settings", inflow, "showAccounts");
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
-    inflowgrid.hideQuickCompose();
+    inflow.hideQuickCompose();
 
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
@@ -89,11 +121,17 @@ dojo.mixin(inflowgrid, {
       }
     });
 
-    //Listen for quick compose calls    
+    //Listen for completion for the addAccount frame.
+    window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
+
+    //Listen for quick compose open calls    
     dojo.query(".quickComposeLaunch").onclick(function(evt) {
-      inflowgrid.showQuickCompose();
+      inflow.showQuickCompose();
       dojo.stopEvent(evt);
     })
+
+    //Listen for quick compose close calls.
+    rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

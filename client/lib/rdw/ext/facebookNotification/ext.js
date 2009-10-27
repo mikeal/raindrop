@@ -23,11 +23,11 @@
 
 dojo.provide("rdw.ext.facebookNotification.ext");
 
-dojo.require("rdw.Stories");
+dojo.require("rdw.Widgets");
 dojo.require("rdw.ext.facebookNotification.Group");
 
-//Modify rdw.Stories to allow showing mailing lists.
-rd.applyExtension("rdw.ext.facebookNotification.ext", "rdw.Stories", {
+//Modify rdw.Widgets to allow showing mailing lists.
+rd.applyExtension("rdw.ext.facebookNotification.ext", "rdw.Widgets", {
   addToPrototype: {
     homeGroups: [
       "rdw.ext.facebookNotification.Group"

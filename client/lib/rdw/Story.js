@@ -56,12 +56,12 @@ dojo.declare("rdw.Story", [rdw._Base], {
   //for these actions.
   replyWidget: "rdw.ReplyForward",
   forwardWidget: "rdw.ReplyForward",
-  
-  templateString: '<li class="rdwStory" dojoAttachEvent="onclick: onClick"> \
+
+  templateString: '<div class="rdwStory" dojoAttachEvent="onclick: onClick"> \
                     <div class="messages" dojoAttachPoint="containerNode"></div> \
                     <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
                     </div> \
-                  </li>',
+                  </div>',
 
   moreMessagesTemplate: '<a class="moreMessages" href="#${url}">&#9654; ${message}</a>',
 

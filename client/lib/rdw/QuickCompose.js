@@ -39,8 +39,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //The widget to use for person selector for the To value.
   toSelector: "rdw.DataSelector",
 
-  blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
-
   //Optional messageBag that this compose is related to.
   messageBag: null,
 
@@ -65,8 +63,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     //summary: dijit lifecycle method.
     this.inherited("postMixInProperties", arguments);
 
-    this.userPicUrl = this.blankImgUrl;
-    
     this.yourName = "Your Name";
     this.yourAddress = "you@example.com";
     
@@ -110,9 +106,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       //Use the first contact available.
       this.contact = (contacts && contacts[0]);
       if (this.contact) {
-        if (this.contact.image) {
-          this.pictureNode.src = this.contact.image;
-        }
         if (this.contact.name) {
           rd.escapeHtml(this.contact.name, this.nameNode, "only");
         }
@@ -215,6 +208,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
     }
   },
 
+  onCloseClick: function(evt) {
+    rd.pub("rd-QuickCompose-closed", this);
+    dojo.stopEvent(evt);
+  },
+
   onSubmit: function(evt) {
     //summary: focus the text area if send is pressed w/ nothing to send
     var body = dojo.trim(this.textAreaNode.value);
@@ -264,11 +262,6 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         this.updateStatus("&#10007; Unsupported message service");
       }
     }
-    dojo.stopEvent(evt);
-  },
-
-  onCloseClick: function(evt) {
-    dojo.removeClass(this.domNode, "expanded");
     dojo.stopEvent(evt);
   },
 

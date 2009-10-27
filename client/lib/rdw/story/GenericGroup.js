@@ -25,15 +25,13 @@ dojo.provide("rdw.story.GenericGroup");
 
 dojo.require("rdw.Story");
 
-rd.addStyle("rdw.story.css.GenericGroup");
-
 /**
  * Groups some broadcast/general group messages into one "story"
  */
 dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
-  templateString: '<li class="rdwStoryGenericGroup"> \
+  templateString: '<div class="rdwStoryGenericGroup"> \
                     <div class="genericGroup" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="title"></span></div> \
-                  </li>',
+                  </div>',
 
   /**
    * The name of the module to use for showing individual messages.

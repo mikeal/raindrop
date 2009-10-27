@@ -37,6 +37,8 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
   templatePath: dojo.moduleUrl("rdw.templates", "Organizer.html"),
 
+  listContainerHtml: '<select class="${listClass}></select>',
+
   //The order in which to call list operations
   //push new items to this array and define matching function
   //on Organizer to extend Organizer listing.
@@ -47,9 +49,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
-
-    this.dndSource = new dojo.dnd.Source(this.listNode);
-
 
     //Listen for different links already in the template, for current
     //selection changes.
@@ -69,22 +68,17 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
       }
 
       //Create a TitlePane that will hold some items, initially hidden.
-      var pane = new dijit.TitlePane({}, dojo.place('<div>', this.domNode));
-      pane.domNode.style.display = "none";
+      var paneNode = dojo.place(rd.template(this.listContainerHtml, {
+        listClass: funcName
+      }), this.domNode);
       
-      //Create an empty ul inside the pane that is a drag source.
-      var node = dojo.place('<ol></ol>', pane.containerNode);
-      if (!pane._supportingWidgets) {
-        pane._supportingWidgets = [];
+      //Bizarre, webkit is making a DocumentFragment for the place call?
+      if (paneNode.style) {
+        paneNode.style.display = "none";
       }
 
-      pane.listNodeDndSource = new dojo.dnd.Source(node);
-      pane._supportingWidgets.push(pane.listNodeDndSource);
-
-      pane.listNode = node;
-
       //Remember this TitlePane and call method that populates it.
-      this.listToPane[funcName] = pane;
+      this.listToPane[funcName] = paneNode;
       this[funcName]();
     }
   },
@@ -92,17 +86,13 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
   addItems: function(/*String*/type, /*String*/title, /*DOMNode or DocumentFragment*/items) {
     //summary: called by list functions to add items to the DOM.
     
-    var pane = this.listToPane[type];
-    pane.attr("title", title);
+    var paneNode = this.listToPane[type];
+    dojo.place('<option>' + title + '</option>', paneNode);
 
-    var dndNodes = items;
-    if (dndNodes.nodeType == 11) {
-      dndNodes = dndNodes.childNodes;
+    dojo.place(items, paneNode);
+    if (paneNode.style) {
+      paneNode.style.display = "";
     }
-    pane.listNodeDndSource.insertNodes(false, dndNodes);
-
-    dojo.place(items, pane.listNode);
-    pane.domNode.style.display = "";
   },
 
   listLocation: function() {
@@ -110,7 +100,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     rd.tag.locations(dojo.hitch(this, function(locations) {
       var html = "";
       for (var i = 0, loc; loc = locations[i]; i++) {
-        html += dojo.string.substitute('<li type="locationTag:${id}" class="locationTag dojoDndItem"><a href="#rd:locationTag:${id}">${name}</a></li>', {
+        html += dojo.string.substitute('<option value="rd:locationTag:${id}">${name}</option>', {
           id: loc.toString(),
           name: loc.join("/")
         });
@@ -163,8 +153,6 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
   destroy: function() {
     //summary: dijit lifecycle method
-    this.dndSource.destroy();
-    delete this.dndSource;
     this.inherited("destroy", arguments);
   }
 });

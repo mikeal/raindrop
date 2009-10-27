@@ -23,64 +23,21 @@
 
 dojo.provide("inflow");
 
-dojo.require("dojox.fx.scroll");
+dojo.require("dijit.Dialog");
 
 dojo.require("rd.onHashChange");
 dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
-dojo.require("rdw.Account");
-dojo.require("rdw.Summary");
-dojo.require("rdw.ContactList");
 dojo.require("rdw.Stories");
+dojo.require("rdw.Widgets");
 dojo.require("rdw.Organizer");
 
 dojo.require("rd.engine");
 dojo.require("rd.conversation");
 
-//Main controller for the inflow app. Handles message routing
-//and converting it to UI display.
-
-inflow = {
-  //Topics that change the view to the contact view.
-  contactTopics: [
-    "rd-protocol-contacts"
-  ],
-
-  //Topics that change the view to the story view.
-  storyTopics: [
-    "rd-protocol-home",
-    "rd-protocol-direct",
-    "rd-protocol-contact",
-    "rd-protocol-group",
-    "rd-protocol-sent",
-    "rd-protocol-locationTag",
-    "rd-protocol-conversation"
-  ],
-
-  showStories: function() {
-    //summary: shows the Stories widget and hides the ContactList widget.
-    if (this.showState != "stories") {
-      //Using class lookups since extender refreshes can change DOM IDs.
-      this._firstWidgetNode("rdw.Stories").style.display = "";
-      this._firstWidgetNode("rdw.ContactList").style.display = "none";
-      this.showState = "stories";
-    }
-    
-    //Scroll to top of the 
-  },
-
-  showContacts: function() {
-    //summary: shows the ContactList widget and hides the Stories widget.
-    if (this.showState != "contacts") {
-      //Using class lookups since extender refreshes can change DOM IDs.
-      this._firstWidgetNode("rdw.Stories").style.display = "none";
-      this._firstWidgetNode("rdw.ContactList").style.display = "";
-      this.showState = "contacts";
-    }
-  },
-
+dojo.mixin(inflow, {
   addAccountUrl: "/raindrop/settings/index.html",
 
   showAccounts: function() {
@@ -108,57 +65,35 @@ inflow = {
     //rd.engine.syncNow();
   },
 
-  onKeyPress: function(evt) {
-    //Show help on key of question mark.
-    if (this.keyboardNavShowing) {
-      dojo.byId("keyboardHelp").style.display = "none";
-      this.keyboardNavShowing = false;
-    } else if (evt && evt.charCode == 63) {
-      dojo.byId("keyboardHelp").style.display = "block";
-      this.keyboardNavShowing = true;
+  isComposeVisible: true,
+
+  showQuickCompose: function() {
+    //Place the div really high and slide it in.
+    if (!this.isComposeVisible) {
+      var qc = dijit.registry.byClass("rdw.QuickCompose").toArray()[0];
+      dojo.removeClass(qc.domNode, "invisible");
+
+      var position = dojo.position(qc.domNode);
+      var navNode = dojo.byId("nav");
+      qc.domNode.style.top = (-1 * position.h) + "px";
+      this.isComposeVisible = true;
+      dojo.anim("nav", { top: 0 });
     }
   },
-  
-  onFirstStoryItemSelected: function() {
-    //summary: when the first story item is selected in the stories
-    //widget, scroll the page up above the summary widget.
-    if (this.firstItemAnim) {
-      this.firstItemAnim.stop();
+
+  hideQuickCompose: function() {
+    if (this.isComposeVisible) {
+      var qc = dijit.registry.byClass("rdw.QuickCompose").toArray()[0];
+      var navPosition = dojo.marginBox(dojo.byId("nav"));
+      var navHeaderPosition = dojo.marginBox(dojo.byId("navHeader"));
+
+      this.isComposeVisible = false;
+      dojo.anim("nav", { top: (-1 * (navPosition.h - navHeaderPosition.h)) });
     }
-
-    console.log("onFirstStoryItemSelected");
-
-    //get position of summary.
-    //Using class lookups since extender refreshes can change DOM IDs.
-    var position = dojo.position(this._firstWidgetNode("rdw.Summary"), true);
-
-    //animate the scroll.
-    this.firstItemAnim = dojox.fx.smoothScroll({
-      win: dojo.global,
-      target: { x: 0, y: position.y - 5},
-      easing: this.animEasing,
-      duration: 400,
-      onEnd: dojo.hitch(this, function() {
-        delete this.firstItemAnim;
-      })
-    });
-    this.firstItemAnim.play();
-  },
-
-  animEasing: function(/* Decimal? */n){
-    //summary: easing function for animations. This is a copy of
-    //dojo.fx.easing.expoOut
-    return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
-  },
-
-  _firstWidgetNode: function(/*String*/widgetClass) {
-    //summary: gets the DOM node for the first instance
-    //of a widget with widgetClass.
-    return dijit.registry.byClass(widgetClass).toArray()[0].domNode;
   }
-};
+});
 
-(function(){
+;(function(){
   //Set the window name, so extender can target it.
   //TODO: need to make this more generic, to work across raindrop apps.
   window.name = "raindrop";
@@ -169,13 +104,7 @@ inflow = {
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
-    //Subscribe to topics from organizer that can change the display.
-    for (var i = 0, topic; topic = inflow.contactTopics[i]; i++) {
-      rd.sub(topic, inflow, "showContacts");
-    }
-    for (i = 0; topic = inflow.storyTopics[i]; i++) {
-      rd.sub(topic, inflow, "showStories");
-    }
+    inflow.hideQuickCompose();
 
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
@@ -193,15 +122,17 @@ inflow = {
       }
     });
 
-    //Listen for first story selection in stories so can scroll summary into view.
-    rd.sub("rdw.Stories.firstItemSelected", inflow, "onFirstStoryItemSelected");
-
     //Listen for completion for the addAccount frame.
     window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
 
+    //Listen for quick compose open calls    
+    dojo.query(".quickComposeLaunch").onclick(function(evt) {
+      inflow.showQuickCompose();
+      dojo.stopEvent(evt);
+    })
 
-    //Listen for ? to show the help, also to start keyboard nav
-    dojo.connect(dojo.doc, "onkeypress", inflow, "onKeyPress");
+    //Listen for quick compose close calls.
+    rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

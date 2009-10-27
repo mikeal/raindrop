@@ -1,0 +1,115 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Raindrop.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Messaging, Inc..
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * */
+
+@import url("ContactSelector.css");
+
+.rdwMessage {
+  outline: none;
+}
+
+.rdwMessage .identity {
+  display: none;
+}
+
+.rdwMessage.unknown .identity {
+  display: inline;
+}
+
+.rdwMessage .subject {
+  display: block;
+  padding: 6px 0 0 0;
+  border-top: 1px solid #1a1a1a;
+  font-weight: bold;
+  color: #FF5959;
+  max-height: 14px;
+  overflow: hidden;
+}
+
+.rdwMessage a.subject {
+  color: #FF5959;
+}
+
+.rdwMessage .header {
+  display: inline;
+}
+
+.rdwMessage .from {
+  display: inline;
+  font-weight: bold;
+}
+
+.rdwMessage .messageContent {
+  display: inline;
+}
+
+.rdwMessage .reply .subject {
+  display: none;
+}
+
+.rdwMessage .actions {
+  margin: 7px 0 0 0;
+  text-align: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  font-size: 10px;
+  display: none;
+}
+
+.rdwMessage .actions a {
+  margin-left: 7px;
+}
+
+.rdwMessage:last-child .actions {
+  display: block;
+}
+
+.rdwMessage.reply {
+  padding: 7px 0 0 14px;
+  background-image: url("../i/arrow.png");
+  background-repeat: no-repeat;
+}
+
+.rdwMessage .timestamp {
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  font-size: 10px;
+  text-align: right;
+}
+
+.rdwMessage .timestamp .messageType {
+  float: left;
+  font-style: normal;
+}
+
+.rdwMessage:first-child .timestamp {
+  display: block;
+}
+
+.rdwMessage .timestamp {
+  display: none;
+}
+
+.rdwMessage .active .timestamp,
+.rdwMessage .timestamp.active {
+  background-color: yellow;
+}

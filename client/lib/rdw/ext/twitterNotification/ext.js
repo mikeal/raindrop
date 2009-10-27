@@ -23,11 +23,11 @@
 
 dojo.provide("rdw.ext.twitterNotification.ext");
 
-dojo.require("rdw.Stories");
+dojo.require("rdw.Widgets");
 dojo.require("rdw.ext.twitterNotification.Group");
 
-//Modify rdw.Stories to allow showing mailing lists.
-rd.applyExtension("rdw.ext.twitterNotification.ext", "rdw.Stories", {
+//Modify rdw.Widgets to allow showing mailing lists.
+rd.applyExtension("rdw.ext.twitterNotification.ext", "rdw.Widgets", {
   addToPrototype: {
     homeGroups: [
       "rdw.ext.twitterNotification.Group"

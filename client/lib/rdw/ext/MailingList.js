@@ -32,22 +32,11 @@ dojo.require("rd.MegaviewStore");
 dojo.require("rdw.DataSelector");
 dojo.require("rdw.Organizer");
 dojo.require("rdw.Summary");
-dojo.require("rdw.Stories");
+dojo.require("rdw.Widgets");
 
 dojo.require("rd.tag");
 dojo.require("rd.store");
 dojo.require("rdw.MailingListSummary");
-
-//Tell the inflow to change to message view for mailing lists.
-if (rd.appName == "inflow") {
-  rd.applyExtension("rdw.ext.MailingList", "inflow", {
-    add: {
-      storyTopics: [
-        "rd-protocol-mailingList"
-      ]
-    }
-  });
-}
 
 //Allow a "mailingList" method on the rd.conversation data API.
 rd.applyExtension("rdw.ext.MailingList", "rd.conversation", {
@@ -148,13 +137,13 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
       rd.tag.lists(dojo.hitch(this, function(ids) {
         var html = "";
         for (var i = 0, id; id = ids[i]; i++) {
-          html += dojo.string.substitute('<li type="mailingList:${id}" class="mailingList dojoDndItem"><a title="${id}" href="#rd:mailingList:${id}" >${name}</a></li>', {
+          html += dojo.string.substitute('<option value="rd:mailingList:${id}">${name}</option>', {
             id: id,
             //TODO: use the mailing list doc's "name" property if available.
             name: id.split(".")[0]
           });
         }
-  
+
         if (html) {
           this.addItems("listMailingList", "Mailing Lists", dojo._toDom(html));
 
@@ -183,8 +172,8 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Summary", {
   }
 });
 
-//Modify rdw.Stories to allow showing mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Stories", {
+//Modify rdw.Widgets to allow showing mailing lists.
+rd.applyExtension("rdw.ext.MailingList", "rdw.Widgets", {
   addToPrototype: {
     topics: {
       "rd-protocol-mailingList": "mailingList"

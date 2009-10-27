@@ -25,15 +25,13 @@ dojo.provide("rdw.story.MailingList");
 
 dojo.require("rdw.Story");
 
-rd.addStyle("rdw.story.css.MailingList");
-
 /**
  * Groups twitter broadcast messages into one "story"
  */
 dojo.declare("rdw.story.MailingList", [rdw.Story], {
-  templateString: '<li class="rdwStoryMailingList"> \
+  templateString: '<div class="rdwStoryMailingList"> \
                     <div class="mailingList" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="MailingListTitle"></span></div> \
-                  </li>',
+                  </div>',
 
   /**
    * The name of the module to use for showing individual messages.

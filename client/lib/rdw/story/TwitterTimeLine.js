@@ -25,15 +25,13 @@ dojo.provide("rdw.story.TwitterTimeLine");
 
 dojo.require("rdw.Story");
 
-rd.addStyle("rdw.story.css.TwitterTimeLine");
-
 /**
  * Groups twitter broadcast messages into one "story"
  */
 dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
-  templateString: '<li class="rdwStoryTwitterTimeLine"> \
+  templateString: '<div class="rdwStoryTwitterTimeLine"> \
                     <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Fresh tweets!</div></div> \
-                   </li>',
+                   </div>',
 
   /**
    * The limit of tweets to use.
