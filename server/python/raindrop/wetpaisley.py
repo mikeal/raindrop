@@ -34,13 +34,11 @@ from twisted.internet.task import coiterate
 from twisted.web.client import HTTPClientFactory, HTTPPageGetter
 from twisted.web import http
 
-
-
 try:
-    import simplejson as json
-except ImportError:
     import json # Python 2.6
     sys.modules['simplejson'] = json # for paisley on 2.6...
+except ImportError:
+    import simplejson as json
 
 import paisley
 
@@ -50,7 +48,7 @@ def _encode_options(options):
     for name, value in options.items():
         if name in ('key', 'startkey', 'endkey', 'include_docs') \
                 or not isinstance(value, basestring):
-            value = json.dumps(value, allow_nan=False, ensure_ascii=False)
+            value = json.dumps(value, allow_nan=False)
         retval[name] = value
     return retval
 
@@ -66,6 +64,8 @@ class CouchDB(paisley.CouchDB):
         """
         C{getPage}-like.
         """
+        if isinstance(uri, unicode): # XXX - is this the best place for this?
+            uri = uri.encode("utf-8")
         url = self.url_template % (uri,)
         kwargs["headers"] = headers = {"Accept": "application/json"}
         if self.username:
@@ -79,8 +79,8 @@ class CouchDB(paisley.CouchDB):
     def postob(self, uri, ob):
         # This seems to not use keep-alives etc where using twisted.web
         # directly does?
-        body = json.dumps(ob, allow_nan=False,
-                          ensure_ascii=False).encode('utf-8')
+        body = json.dumps(ob, allow_nan=False)
+        assert isinstance(body, str), body # must be ready to send on the wire
         return self.post(uri, body)
 
     #def openView(self, *args, **kwargs):
@@ -91,16 +91,14 @@ class CouchDB(paisley.CouchDB):
     def openView(self, dbName, docId, viewId, **kwargs):
         #uri = "/%s/_view/%s/%s" % (dbName, docId, viewId)
         uri = "/%s/_design/%s/_view/%s" % (dbName, docId, viewId)
+        uri = uri.encode('utf-8')
 
         opts = kwargs.copy()
         if 'keys' in opts:
             requester = self.post
             body_ob = {'keys': opts.pop('keys')}
-            # json.dumps() will return unicode if unicode passed in, which
-            # twisted gets upset with.
-            body = json.dumps(body_ob, allow_nan=False, ensure_ascii=False)
-            if isinstance(body, unicode):
-                body = body.encode('utf-8')
+            body = json.dumps(body_ob, allow_nan=False)
+            assert isinstance(body, str), body
             xtra = (body,)
         else:
             requester = self.get
@@ -163,7 +161,7 @@ class CouchDB(paisley.CouchDB):
         kwargs["headers"] = {"Accept": "application/json",
                              "Content-Type": content_type,
                              }
-        factory = HTTPClientFactory(url, **kwargs)
+        factory = HTTPClientFactory(url.encode('utf-8'), **kwargs)
         from twisted.internet import reactor
         reactor.connectTCP(self.host, self.port, factory)
         d = factory.deferred
@@ -312,7 +310,7 @@ class CouchDB(paisley.CouchDB):
         if 'keys' in opts:
             requester = self.post
             body_ob = {'keys': opts.pop('keys')}
-            body = json.dumps(body_ob, allow_nan=False, ensure_ascii=False)
+            body = json.dumps(body_ob, allow_nan=False)
             xtra = (body,)
         else:
             requester = self.get
