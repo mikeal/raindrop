@@ -90,7 +90,7 @@ if sys.version_info < (2,6) and sys.platform=="win32":
          "an openssl binary package for Python 2.5")
 
 def check_deps():
-    xtra = "" if not options.configure else \
+    xtra = "" if options.configure else \
            "\n(re-running this script with --configure may be able to install this for you)"
     try:
         import setuptools
