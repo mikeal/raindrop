@@ -56,6 +56,9 @@
   spamTitle: "Click here to mark this email as spam.\nFurther messages from this person will be hidden.",
   starred: "Starred",
   storyDeleted: "Story Deleted: ${title}",
+  "targetLabel-group": "Group message",
+  "targetLabel-direct": "Direct message",
+  "targetLabel-notification": "Notification",
   whoKnown: "Is this ${name}?",
   whoTitle: "Associate this identity with a contact.",
   whoUnknown: "who is this?" 

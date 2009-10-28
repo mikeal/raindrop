@@ -1,25 +1,13 @@
 <div class="rdwMessage ${type}" tabindex="${tabIndex}" dojoAttachEvent="onclick: onClick">
   <div class="message">
     <div class="content">
-      <div class="timestamp" title="${utcTime}">
-        <span class="messageType">Message Type</span>
-        <span class="friendly">${friendlyTime}</span>
-      </div>
-      <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a>   
+      <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a>
       <div class="header">
         <span class="from">
           <a href="#${expandLink}" class="from" title="${i18n.expand}">${fromName}</a>
           </span>
       </div>
       <div class="messageContent">${message}</div>
-    </div>
-    <div class="attachments"></div>
-    <div class="actions" dojoAttachPoint="actionsNode">
-      <a href="#${expandLink}" class="expand" title="${i18n.expand}">${i18n.expand}</a>
-      <a href="#archive" class="archive" title="${i18n.archive}">${i18n.archive}</a>
-      <a href="#delete" class="delete" title="${i18n.deleted}">${i18n.deleted}</a>
-      <a class="reply" href="#reply" dojoattachpoint="replyNode">${i18n.reply}</a>
-      <a class="identity" title="${i18n.whoTitle}" href="#know" dojoAttachPoint="whoNode" ></a>
     </div>
   </div>
 </div>

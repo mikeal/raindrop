@@ -30,6 +30,9 @@ dojo.require("rdw.Story");
  */
 dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
   templateString: '<div class="rdwStoryGenericGroup"> \
+                    <div class="timestamp" dojoAttachPoint="timestampNode"> \
+                      <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
+                    </div> \
                     <div class="genericGroup" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="title"></span></div> \
                   </div>',
 

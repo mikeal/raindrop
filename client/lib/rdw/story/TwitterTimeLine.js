@@ -30,6 +30,9 @@ dojo.require("rdw.Story");
  */
 dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   templateString: '<div class="rdwStoryTwitterTimeLine"> \
+                    <div class="timestamp" dojoAttachPoint="timestampNode"> \
+                    <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
+                    </div> \
                     <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Fresh tweets!</div></div> \
                    </div>',
 

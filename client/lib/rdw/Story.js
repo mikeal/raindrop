@@ -22,6 +22,9 @@
  * */
 
 dojo.provide("rdw.Story");
+
+dojo.require("rd.friendly");
+
 dojo.require("rdw._Base");
 dojo.require("rdw.Message");
 
@@ -57,11 +60,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
   replyWidget: "rdw.ReplyForward",
   forwardWidget: "rdw.ReplyForward",
 
-  templateString: '<div class="rdwStory" dojoAttachEvent="onclick: onClick"> \
-                    <div class="messages" dojoAttachPoint="containerNode"></div> \
-                    <div class="toolAction" dojoAttachPoint="toolDisplayNode"> \
-                    </div> \
-                  </div>',
+  templateString: dojo.cache("rdw.templates", "Story.html"),
 
   moreMessagesTemplate: '<a class="moreMessages" href="#${url}">&#9654; ${message}</a>',
 
@@ -75,13 +74,6 @@ dojo.declare("rdw.Story", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
-    if (this.msgs.length > 0) {
-      var messageBag = this.msgs[0];
-      var target = (messageBag['rd.msg.recip-target'] && messageBag['rd.msg.recip-target']['target']) || "";
-      if (target) {
-        this.domNode.setAttribute("target", target);
-      }
-    }
     if (this.displayOnCreate) {
       this.display();
     }
@@ -165,6 +157,58 @@ dojo.declare("rdw.Story", [rdw._Base], {
     } else {
       dojo.removeClass(this.domNode, "deleted");
     }
+
+    //Set the header info.
+    //First the message type
+    var target = (msg['rd.msg.recip-target'] && msg['rd.msg.recip-target']['target']) || "";
+    target = target && this.i18n["targetLabel-" + target];
+    if (target) {
+      rd.escapeHtml(target, this.typeNode, "only");
+    }
+
+    //The timestamp, use the most recent message for this.
+    var timestamp = this.msgs[this.msgs.length - 1]['rd.msg.body'].timestamp;
+
+    /* XXX this timestamp needs a lot more thought to show the right kind of 
+       time info and we probably also want to some standard the hCard formatting */
+    var fTime = rd.friendly.timestamp(timestamp);
+    dojo.attr(this.timestampNode, "title", fTime["utc"]);
+    rd.escapeHtml(fTime["friendly"], this.friendlyNode, "only");
+
+    //Set up the link for the full conversation view action, and set the subject.
+    var convoId = msg
+                && msg["rd.msg.conversation"]
+                && msg["rd.msg.conversation"].conversation_id;
+    if (convoId) {
+      convoId = "#rd:conversation:" + convoId;
+      if (this.subjectNode) {
+        dojo.attr(this.subjectNode, "href", convoId);
+      }
+      if (this.expandNode) {
+        dojo.attr(this.expandNode, "href", convoId);
+      }
+    }
+    if (this.subjectNode) {
+      rd.escapeHtml(rd.hyperlink.add(rd.escapeHtml(msg.subject || "")), this.subjectNode, "only");
+    }
+
+
+    //Determine if the sender is known and switch templates if necessary.
+    var known = !!msg["rd.msg.ui.known"];
+
+    //Set the actions for the story.
+    if (!known) {
+      //This identity is unknown. Try to make a suggestion for
+      //who it might be.
+      dojo.addClass(this.domNode, "unknown");
+
+      var body = msg['rd.msg.body'];
+      var from = body.from && body.from[1];
+      if (from) {
+        rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
+      }
+    }
+
 
     //Create the messages, first by loading the module responsible for showing
     //them.

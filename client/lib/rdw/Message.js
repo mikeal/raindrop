@@ -25,8 +25,6 @@ dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
 dojo.require("rd.contact");
-dojo.require("rdw.gravatar");
-dojo.require("rdw.contactDropDown");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
 dojo.require("rd.api");
@@ -61,44 +59,19 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //TODO: make message transforms extensionized.
     this.message = rd.hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
 
-    this.time = msgDoc.timestamp;
-
-    /* XXX this timestamp needs a lot more thought to show the right kind of 
-       time info and we probably also want to some standard the hCard formatting */
-    var fTime = rd.friendly.timestamp(msgDoc.timestamp);
-    this.utcTime = fTime["utc"];
-    this.friendlyTime = fTime["friendly"];
-    this.additionalTime = fTime["additional"];
-
-    //Determine if the sender is known and switch templates if necessary.
-    this.known = !!msgBag["rd.msg.ui.known"];
-    
-    //Set up the link for the full conversation view action
+    //Set up the link for the full conversation view action, and set the subject.
     var convoId = msgBag
                 && msgBag["rd.msg.conversation"]
                 && msgBag["rd.msg.conversation"].conversation_id;
     if (convoId) {
       this.expandLink = "rd:conversation:" + convoId;
+      convoId = "#rd:conversation:" + convoId;
     }
   },
 
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
-
-    this.subscribe("rd-contact-updated", "onContactUpdated");
-
-    if (!this.known) {
-      //This identity is unknown. Try to make a suggestion for
-      //who it might be.
-      dojo.addClass(this.domNode, "unknown");
-
-      var body = this.messageBag['rd.msg.body'];
-      var from = body.from && body.from[1];
-      if (from) {
-        rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
-      }
-    }
   },
 
   onClick: function(evt) {
@@ -107,10 +80,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
     var target = evt.target;
     var href = target.href;
     if (href && (href = href.split("#")[1])) {
-      if (href == "know") {
-        rdw.contactDropDown.open(evt.target, this, this.fromName, this.matches);
-        evt.preventDefault();
-      } else if (href == "quote") {
+      if (href == "quote") {
         if (dojo.hasClass(target, "collapsed")) {
           rd.escapeHtml(this.i18n.hideQuotedText, target, "only");
           dojo.query(target).next(".quote").style({
@@ -125,57 +95,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
           dojo.addClass(target, "collapsed");          
         }
         dojo.stopEvent(evt);
-      }
-    }
-  },
-
-  onContactSelected: function(/*Object*/contact) {
-    //summary: handles a contact selection from the rdw.contactDropDown.
-    rdw.contactDropDown.close();
-
-    //Create the email identity record, then attach it to the contact.
-    rd.api().createEmailIdentity({
-      messageBag: this.messageBag
-    })
-    .ok(this, function(identity) {
-      //identity created, now attach it to the contact.
-      rd.contact.addIdentity(
-        contact,
-        identity,
-        dojo.hitch(this, function() {
-        }),
-        dojo.hitch(this, function(error) {
-          //error. TODO: make this better, inline.
-          alert(error);
-        })
-      );
-    })
-    .error(this, function(error) {
-      //error. TODO: make this better, inline.
-      alert(error);
-    });
-  },
-
-  onContactUpdated: function(/*Object*/contact) {
-    //summary: called when a contact is updated (more likely a new contact or
-    //old contact associated with an identity)
-    var idtys = contact.identities;
-    if (idtys && idtys.length) {
-      var from = this.messageBag["rd.msg.body"] && this.messageBag["rd.msg.body"].from;
-      if (!from) {
-        return;
-      }
-      for (var i = 0, idty; idty = idtys[i]; i++) {
-        var id = idty.rd_key[1];
-        if (id[1] == from[1] && id[0] == from[0]) {
-          //update this Message object's UI to show the new state.
-          //TODO: this may cause problems if some container holds
-          //on to this widget, since we will be changing the instance.
-          this.messageBag["rd.msg.ui.known"] = {
-            rd_schema_id: "rd.msg.ui.known"
-          };
-          rd._updateInstance(this, dojo.getObject(this.declaredClass));
-        }
       }
     }
   },
