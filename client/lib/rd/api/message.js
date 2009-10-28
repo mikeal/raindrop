@@ -73,10 +73,6 @@ rd.api.message = {
             // we need to aggregate them - tags is a good example.  For
             // now just make noise...
             if (bag[schemaId]) {
-              //TODO: Hack to favor notification schemas over direct ones.
-              if (schemaId == "rd.msg.recip-target" && row.doc.target == "notification") {
-                bag[schemaId] = row.doc;
-              }
               console.warn("message", doc.rd_key, "has multiple", schemaId, "schemas");
             }
             // for now it gets clobbered if it exists...
