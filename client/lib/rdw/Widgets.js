@@ -427,7 +427,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     //to the document's DOM yet. Override for more custom behavior/subclasses.
     return new (dojo.getObject(this.storyCtorName))({
       msgs: msgs,
-      unreadReplyLimit: 2,
+      unreadReplyLimit: 1,
       displayOnCreate: false,
       allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Story

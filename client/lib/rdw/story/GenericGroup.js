@@ -43,7 +43,7 @@ dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
    * In this context, it is treated as number of threads to show that have unread
    * messages.
    */
-  unreadReplyLimit: 2,
+  unreadReplyLimit: 1,
 
   /**
    * A style to add to any messages that are replies, but this grouping

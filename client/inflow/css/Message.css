@@ -37,12 +37,10 @@
 
 .rdwMessage .subject {
   display: block;
-  padding: 6px 0 0 0;
-  border-top: 1px solid #1a1a1a;
+  padding: 7px 0;
   font-weight: bold;
   color: #FF5959;
-  max-height: 14px;
-  overflow: hidden;
+  font-size: 12px;
 }
 
 .rdwMessage a.subject {
@@ -54,12 +52,10 @@
 }
 
 .rdwMessage .from {
-  display: inline;
   font-weight: bold;
 }
 
 .rdwMessage .messageContent {
-  display: inline;
 }
 
 .rdwMessage .reply .subject {
@@ -68,7 +64,6 @@
 
 .rdwMessage .actions {
   margin: 7px 0 0 0;
-  text-align: right;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
@@ -76,7 +71,13 @@
 }
 
 .rdwMessage .actions a {
-  margin-left: 7px;
+  padding: 0 4px 0 3px;
+  border-right: 1px solid #000;
+  color: #ff5959;
+}
+
+.rdwMessage .actions a:first-child {
+  padding: 0 4px 0 0;
 }
 
 .rdwMessage:last-child .actions {
@@ -87,6 +88,10 @@
   padding: 7px 0 0 14px;
   background-image: url("../i/arrow.png");
   background-repeat: no-repeat;
+}
+
+.rdwMessage.reply .subject {
+  display: none;
 }
 
 .rdwMessage .timestamp {

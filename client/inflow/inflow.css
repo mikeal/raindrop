@@ -162,75 +162,16 @@ body {
 }
 
 #content {
-  margin: 0 0 5px 5px;
 }
 
 #stories {
-  margin-top: 64px;
-  width: 600px;
-}
-
-#widgets {
-  margin-top: 64px;
-}
-
-.rdwStoryMailingList,
-.rdwStoryTwitterTimeLine,
-.rdwStoryGenericGroup {
-  width: 300px;
-  height:211px;
-  margin: 0 10px 20px 10px;
-  float: left;
+  margin: 64px 0 0 0;
+  width: 620px;
 }
 
 .rdwStory a {
   color: #1a1a1a;
   text-decoration: none;
-}
-
-.rdwStoryTwitterTimeLine,
-.MailingListTitle {
-  padding: 7px;
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-}
-
-.rdwStoryTwitterTimeLine {
-  background-color: #C4F3FF;
-}
-
-.rdwStoryMailingList {
-  background-color: #FFDEDE;
-}
-
-.rdwStoryTwitterTimeLine .actions a:first-child {
-  display: none;
-}
-
-.rdwStoryTwitterTimeLine a {
-  color: #1a1a1a;
-  text-decoration: none;
-}
-
-.tweetTitle {
-  border-bottom: 1px solid #1a1a1a;
-}
-
-.tweetTitle,
-.MailingListTitle {
-  font-family: droid-serif, georgia, times, serif;
-  display: block;
-  font-size: 10px;
-}
-
-.rdwStoryTwitterTimeLine .subject {
-  display: none;
-}
-
-.rdwStoryTwitterTimeLine .rdwMessage {
-  margin-top: 6px;
-  padding-bottom: 1px;
 }
 
 #footer {
@@ -432,3 +373,96 @@ body {
 	box-pack: center;
 }
 /* END hbox/vbox normalization from http://alex.dojotoolkit.org/2009/08/css-3-progress/ */
+
+/* Inflow > Message structure */
+
+#stories .rdwStory {
+  width: 620px;
+  background-color: #ffffd9;
+  margin: 10px 10px 20px 10px;
+  border-top: 1px solid #000;
+  -moz-box-shadow: 0 0 5px #ccc;
+  -webkit-box-shadow: 0 0 5px #ccc;
+}
+
+.messages {
+  width: 300px;
+  padding: 0 0 5px 5px;
+  -moz-box-sizing: border-box;
+}
+
+/* Widgets */
+
+#widgets {
+  margin-top: 64px;
+}
+
+.rdwStoryMailingList,
+.rdwStoryTwitterTimeLine,
+.rdwStoryGenericGroup {
+  width: 300px;
+  height:211px;
+  margin: 10px;
+  float: left;
+  padding: 5px;
+  -moz-box-shadow: 0 0 5px #ccc;
+  -webkit-box-shadow: 0 0 5px #ccc;
+}
+
+
+.rdwStoryTwitterTimeLine,
+.rdwStoryMailingList {
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.rdwStoryTwitterTimeLine {
+  background-color: #C4F3FF;
+}
+
+.rdwStoryMailingList {
+  background-color: #FFDEDE;
+}
+
+.rdwStoryMailingList .subject {
+  padding: 7px 0 0 0;
+  font-size: 11px;
+}  
+
+.rdwStoryMailingList .subject a {
+  text-decoration: none;
+}  
+
+.rdwStoryMailingList .topActions {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine .actions a:first-child {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+.tweetTitle {
+  border-bottom: 1px solid #1a1a1a;
+}
+
+.tweetTitle,
+.MailingListTitle {
+  font-family: droid-serif, georgia, times, serif;
+  display: block;
+  font-size: 10px;
+}
+
+.rdwStoryTwitterTimeLine .subject {
+  display: none;
+}
+
+.rdwStoryTwitterTimeLine .rdwMessage {
+  margin-top: 6px;
+  padding-bottom: 1px;
+}

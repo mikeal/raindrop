@@ -36,7 +36,7 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   /**
    * The limit of tweets to use.
    */
-  unreadReplyLimit: 2,
+  unreadReplyLimit: 1,
 
   /**
    * Do not format messages greater than the first one as replies
