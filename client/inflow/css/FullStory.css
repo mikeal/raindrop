@@ -25,7 +25,9 @@
 
 
 .rdwStoryFullStory {
-  width: 460px !important;
+  background-color: white !important;
+  -moz-box-shadow: none !important;
+  -webkit-box-shadow: none !important;
 }
 
 .rdwStoryFullStory .rdwMessage .timestamp {
@@ -39,18 +41,16 @@
 }
 
 .rdwStoryFullStory .from {
-  border-top: 1px solid #1A1A1A;
-  width: 100%;
+  font-size: 13px;
   display: block;
   color: #FF5959;
-  padding-top: 6px;
 }
 
 .rdwStoryFullStory .fullMessageTitle {
   display: inline-block;
   font-weight: bold;
   color:#FF5959;
-  max-width: 300px;
+  padding: 0 0 20px 0;
 }
 
 .rdwStoryFullStory .toolBox {

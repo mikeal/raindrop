@@ -33,7 +33,7 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
                     <div class="timestamp" dojoAttachPoint="timestampNode"> \
                     <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
                     </div> \
-                    <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Fresh tweets!</div></div> \
+                    <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Twitter</div></div> \
                    </div>',
 
   /**

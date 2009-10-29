@@ -22,15 +22,8 @@
  * */
 
 .fullMessageTitle {
-  font-size: normal;
+  font-size: 18px;
   font-weight: bold;
-  font-variant: small-caps;
-  text-transform: lowercase;
-  line-height: 18px;
-  margin-right: 180px;
-  padding: 6px 0px 6px 30px;
-  min-height: 18px;
-  background-repeat: no-repeat;
 }
 
 [target="broadcast"] .fullMessageTitle {
@@ -63,7 +56,7 @@
 }
 
 .rdwStoryFullMessage.rdwMessage .message {
-  margin-left: 8px;
+
 }
 
 .rdwStoryFullMessage.rdwMessage .actions {
@@ -78,17 +71,51 @@
   line-height: 16px;
 }
 
-.rdwStoryFullMessage.rdwMessage .actions .reply {
-  background-image: url("../i/reply.png");
-  background-repeat: no-repeat;
-  background-position: left center;
-  display: inline-block;
+#stories a.quoteToggle {
+  display: block;
 }
 
-.rdwStoryFullMessage.rdwMessage .actions .fwd {
-  background-image: url("../i/forward.png");
-  background-repeat: no-repeat;
-  background-position: left center;
+#stories .rdwStory.rdwStoryFullStory {
+  border: none;
+}
+
+#stories .rdwStory.rdwStoryFullStory .messages {
+  padding:0;
+  width: 620px;
+}
+
+#stories .rdwStory.rdwStoryFullStory .header {
+  padding:0;
+  display: inline-block;
+  float: right;
+}
+
+#stories .rdwStory.rdwStoryFullStory .messageHeader {
+  padding: 14px 0 0 0;
+}
+
+#stories .rdwStory.rdwStoryFullStory .messageHeader .medium {
+  opacity: 0.5;
+}
+  
+
+#stories .rdwStory.rdwStoryFullStory .header .timestamp {
+  margin: 0;
+  padding: 0;
+}
+
+#stories .rdwStory.rdwStoryFullStory .header .timestamp .friendly {
+  display: none;
+}
+  
+
+.rdwStoryFullMessage.rdwMessage {
+  background-color: #ffffd9;
+  border-top: 1px solid #000;
+  margin: 0 0 20px 0;
+  padding: 1px 5px 5px 5px;
+  -moz-box-shadow: 0 0 5px #ccc;
+  -webkit-box-shadow: 0 0 5px #ccc;
 }
 
 .toolBox {

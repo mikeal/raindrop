@@ -37,10 +37,10 @@
 
 .rdwMessage .subject {
   display: block;
-  padding: 7px 0;
+  margin: 14px 0 7px 0;
   font-weight: bold;
   color: #FF5959;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .rdwMessage a.subject {
@@ -62,26 +62,35 @@
   display: none;
 }
 
-.rdwMessage .actions {
+#stories .rdwStory .actions {
   margin: 7px 0 0 0;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
-  display: none;
+  padding: 0 5px 7px 5px;
 }
 
-.rdwMessage .actions a {
-  padding: 0 4px 0 3px;
+#stories .rdwStory .actions a {
+  padding: 0 4px 0 2px;
   border-right: 1px solid #000;
   color: #ff5959;
 }
 
-.rdwMessage .actions a:first-child {
-  padding: 0 4px 0 0;
+#stories .rdwStory .actions a.reply {
+  font-family: Droid-sans, Helvetica, Arial, Sans-serif;
+  font-weight: bold;
+  font-style: normal;
+  float: right;
+  color: white;
+  background-color: black;
+  padding: 1px 3px;
+  border: none;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
 }
 
-.rdwMessage:last-child .actions {
-  display: block;
+#stories .rdwStory .actions a:first-child {
+  padding: 0 4px 0 0;
 }
 
 .rdwMessage.reply {
