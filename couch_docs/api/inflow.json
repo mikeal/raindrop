@@ -1,0 +1,11 @@
+{
+  "rd_key" : ["api", "inflow"],
+  "schemas" : {
+    "rd.ext.api" : {
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "endpoints" : [["inflow", "conversations"]],
+        "info": "Exposes the inflow REST API"
+    }
+  }
+}
