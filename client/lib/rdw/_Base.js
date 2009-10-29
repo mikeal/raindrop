@@ -77,13 +77,20 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
     }
   },
 
-  destroyAllSupporting: function() {
+  destroyAllSupporting: function(/*Object?*/skipTypes) {
     //summary: destroys all supporting widgets, and removes them
     //from the _supportingWidgets array.
-    if (this._supportingWidgets && this._supportingWidgets.length) {
+    
+    console.log("dAS, " + this.declaredClass, skipTypes);
+    var supporting = this._supportingWidgets;
+    skipTypes = skipTypes || {};
+    if (supporting && supporting.length) {
       var widget;
-      while((widget = this._supportingWidgets.shift())) {
-        widget.destroy();
+      for (var i = supporting.length - 1, widget; widget = supporting[i]; i--) {
+        if (!skipTypes[widget.declaredClass]) {
+          widget.destroy();
+          supporting.splice(i, 1);
+        } 
       }
     }
   }

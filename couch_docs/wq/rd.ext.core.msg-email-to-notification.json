@@ -4,7 +4,7 @@
         "source_schemas" : ["rd.msg.body"],
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
-        "info": "Creates 'rd.msg.recip-target' schemas with a value of 'notification' if the from field matches some known notification senders"
+        "info": "Creates 'rd.msg.notification' schemas if the from field matches some known notification senders"
     }
   }
 }
