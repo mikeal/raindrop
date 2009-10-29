@@ -172,8 +172,12 @@ dojo.declare("rdw.Story", [rdw._Base], {
     /* XXX this timestamp needs a lot more thought to show the right kind of 
        time info and we probably also want to some standard the hCard formatting */
     var fTime = rd.friendly.timestamp(timestamp);
-    dojo.attr(this.timestampNode, "title", fTime["utc"]);
-    rd.escapeHtml(fTime["friendly"], this.friendlyNode, "only");
+    if (this.timestampNode) {
+      dojo.attr(this.timestampNode, "title", fTime["utc"]);
+    }
+    if (this.friendlyNode) {
+      rd.escapeHtml(fTime["friendly"], this.friendlyNode, "only");
+    }
 
     //Set up the link for the full conversation view action, and set the subject.
     var convoId = msg

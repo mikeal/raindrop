@@ -30,6 +30,7 @@ dojo.require("rdw.Loading");
 dojo.require("rdw.Notify");
 dojo.require("rdw.QuickCompose");
 dojo.require("rdw.Search");
+dojo.require("rdw.Summary");
 dojo.require("rdw.Stories");
 dojo.require("rdw.Widgets");
 dojo.require("rdw.Organizer");

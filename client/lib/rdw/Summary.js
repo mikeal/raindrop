@@ -27,64 +27,18 @@ dojo.require("rdw._Base");
 dojo.require("rd.api");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
-  widgetsInTemplate: true,
-
   templateString: '<div class="rdwSummary"></div>',
-
-  //List of topics to listen to and modify contents based
-  //on those topics being published. Note that this is an object
-  //on the rdw.Summary prototype, so modifying it will affect
-  //all instances. Reassign the property to a new object to affect
-  //only one instance.
-  topics: {
-    "rd-protocol-home": "home",
-    "rd-protocol-contacts": "contacts",
-    "rd-protocol-contact": "contact",
-    "rd-protocol-direct": "direct",
-    "rd-protocol-group": "group",
-    "rd-protocol-locationTag": "locationTag",
-    "rd-protocol-starred": "starred",
-    "rd-protocol-sent": "sent"
-  },
-
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method before template is created.
-    this.inherited("postMixInProperties", arguments);
-
-    this._subs = [];
-  },
-
-  postCreate: function() {
-    //summary: dijit lifecycle method triggered after template is in the DOM
-    this.inherited("postCreate", arguments);
-
-    //Register for the interesting topics
-    var empty = {};
-    for (var prop in this.topics) {
-      if(!(prop in empty)) {
-        this._sub(prop, this.topics[prop]);
-      }
-    }
-  },
 
   clear: function() {
     //summary: clears the summary display.
+    this.destroySupportingWidgets();
+    this.domNode.className = "rdwSummary";
     this.domNode.innerHTML = "";
-  },
-
-  destroy: function() {
-    //summary: dijit lifecycle method.
-
-    //Clean up subscriptions.
-    for (var i = 0, sub; sub = this._subs[i]; i++) {
-      rd.unsub(sub);
-    }
-    this.inherited("destroy", arguments);
   },
 
   destroySupportingWidgets: function() {
     //summary: removes the supporting widgets
-    if (this._supportingWidgets.length) {
+    if (this._supportingWidgets && this._supportingWidgets.length) {
       var supporting;
       while((supporting = this._supportingWidgets.shift())) {
         supporting.destroy();
@@ -92,27 +46,19 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     }
   },
 
-  _sub: function(/*String*/topicName, /*String*/funcName) {
-    //summary: subscribes to the topicName and dispatches to funcName,
-    //saving off the info in case a refresh is needed.
-    this._subs.push(rd.sub(topicName, dojo.hitch(this, function() {
-      this.destroySupportingWidgets();
-      this.clear();
-      this[funcName].apply(this, arguments);
-    })));
-  },
-
   //**************************************************
   //start topic subscription endpoints
   //**************************************************
   home: function() {
     //summary: responds to rd-protocol-home topic.
-    
+    rd.escapeHtml("Inflow", this.domNode, "only");
   },
 
-  contacts: function() {
-    //summary: responds to rd-protocol-contacts topic.
-    
+  conversation: function(/*Array*/ conversations) {
+    //summary: responds to showing a full conversation.
+    var title = conversations[0]["rd.msg.body"].subject || "";
+    rd.escapeHtml(title, this.domNode, "only");
+    dojo.addClass(this.domNode, "conversation");
   },
 
   contact: function(/*String*/contactId) {

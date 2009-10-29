@@ -26,6 +26,7 @@ dojo.provide("rdw.Stories");
 dojo.require("rdw._Base");
 dojo.require("rdw.Story");
 dojo.require("rdw.story.FullStory");
+dojo.require("rdw.Summary");
 dojo.require("rd.api");
 
 dojo.require("dojo.fx");
@@ -93,10 +94,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
   },
 
   templateString: '<div class="rdwStories" dojoAttachEvent="onclick: onClick, onkeypress: onKeyPress">'
+                + '  <div dojoType="rdw.Summary" dojoAttachPoint="summaryWidget"></div>'
                 + '  <div dojoAttachPoint="listNode"></div>'
                 + '  <div dojoAttachPoint="convoNode"></div>'
-                + '  <div dojoAttachPoint="widgetNode"></div>'
                 + '</div>',
+  widgetsInTemplate: true,
 
   postMixInProperties: function() {
     //summary: dijit lifecycle method before template is generated.
@@ -125,6 +127,10 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     //See if there was a last known state of displayed messages and
     //show them.
     this.checkUpdateInfo();
+  },
+
+  destroyIgnore: {
+    "rdw.Summary": 1
   },
 
   //elements to ignore for click selection.
@@ -347,6 +353,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         };
       }
 
+      //Clear out the summary widget
+      this.summaryWidget.clear();
+
       //If this is a back request or an action that is just a transition
       //action (no new data to fetch), and there are conversations to show,
       //just do the transition back.
@@ -396,7 +405,7 @@ dojo.declare("rdw.Stories", [rdw._Base], {
         msgs: this.oneConversation
       }, dojo.create("div", null, this.convoNode));
     } else {
-      this.destroyAllSupporting();
+      this.destroyAllSupporting(this.destroyIgnore);
 
       //Showing summaries of a few conversations.
       this.conversations = conversations;
@@ -727,11 +736,11 @@ dojo.declare("rdw.Stories", [rdw._Base], {
           var mod = dojo.getObject(module);
           this.homeGroupModules.push(mod);
         }
-        this.destroyAllSupporting();
+        this.destroyAllSupporting(this.destroyIgnore);
         this._renderHome();
       }));
     } else {
-      this.destroyAllSupporting();
+      this.destroyAllSupporting(this.destroyIgnore);
       this._renderHome();
     }
   },
@@ -794,6 +803,9 @@ dojo.declare("rdw.Stories", [rdw._Base], {
       this.listNode.appendChild(frag);
 
       console.log("_renderHome widgets injected into the dom");
+
+      //Update the summary area.
+      this.summaryWidget.home();
 
       this.configureFirstActiveItem();
       this.transition("summary");
@@ -888,7 +900,15 @@ dojo.declare("rdw.Stories", [rdw._Base], {
     rd.api().conversation({
       ids: [convoId]
     })
-    .ok(dojo.hitch(this, "updateConversations", "conversation"));
+    .ok(this, function(conversations) {
+      //Show the conversation.     
+      this.updateConversations("conversation", conversations);
+
+      //Update the summary.
+      if (this.summaryWidget.conversation) {
+        this.summaryWidget.conversation(conversations[0]);
+      }
+    });
   },
 
   archive: function(/*Object*/storyWidget, /*Array*/messageBags) {

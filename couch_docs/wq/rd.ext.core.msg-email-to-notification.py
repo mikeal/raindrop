@@ -24,10 +24,10 @@
 # Emit rd.msg.recip-target schemas for emails.
 import re
 
-re_list = [
-    re.compile('\@postmaster\.twitter\.com'),
-    re.compile('notification[^@]*@facebookmail.com')
-]
+re_list = {
+    "twitter": re.compile('\@postmaster\.twitter\.com'),
+    "facebook": re.compile('notification[^@]*@facebookmail.com')
+}
 
 def handler(src_doc):
     frm = src_doc.get('from')
@@ -40,15 +40,15 @@ def handler(src_doc):
 
     #Compare from ids with regexps that match a notification sender.
     if sender:
-        qualifies = False
-        for regex in re_list:
-            if regex.search(sender):
-                qualifies = True
+        type = None
+        for key in re_list:
+            if re_list[key].search(sender):
+                type = key
                 break
 
-    if qualifies:
-        items = {'target' : 'notification',
+    if type:
+        items = {'type' : type,
                  'timestamp': src_doc['timestamp'],
-                 'target-timestamp': ['notification', src_doc['timestamp']],
+                 'type-timestamp': [type, src_doc['timestamp']],
                  }
-        emit_schema('rd.msg.recip-target', items)
+        emit_schema('rd.msg.notification', items)

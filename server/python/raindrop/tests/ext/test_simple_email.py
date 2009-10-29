@@ -123,16 +123,18 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                                      'http://example.com/something/0,123,133.html']))
 
     @defer.inlineCallbacks
-    def test_recip_target_notification(self):
-        ndocs = yield self.load_corpus("hand-rolled", "recip-target-notification")
+    def test_notification(self):
+        ndocs = yield self.load_corpus("hand-rolled", "notification")
         self.failUnlessEqual(ndocs, 1) # failed to load any corpus docs???
         _ = yield self.ensure_pipeline_complete()
 
         # load the hyperlinks document and compare the results.
-        key = ["rd.msg.recip-target", "target", "notification"]
+        key = ["rd.core.content", "schema_id", "rd.msg.notification"]
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
 
         # Make sure we got one result.
-        self.failUnlessEqual(len(result['rows']), 1)
+        rows = result['rows']
+        self.failUnlessEqual(len(rows), 1)
+        self.failUnlessEqual(rows[0]['doc']['type'], "facebook");
 
