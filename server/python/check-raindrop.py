@@ -148,46 +148,42 @@ def is_local_host(host):
     return host == "127.0.0.1"
 
 
-def check_couch_external(couch_url, configure):
+def check_couch_external(couch_url, ext_name, ext_cmd, http_path, configure):
     if sys.version_info < (2,6):
         import simplejson as json
     else:
         import json
     cfg_url = couch_url + '_config/external'
-    # check the config of couch - we need one special [external]
-    tpl = '%s "%s/couch-raindrop.py" --log-level=info "--log-file=%s/raindrop.log"'
-    my_dir = os.path.abspath(os.path.dirname(__file__))
-    cmd = tpl % (sys.executable, my_dir, tempfile.gettempdir())
     if configure:
         note("configuring couchdb.")
         # need to PUT...
-        r = PutRequest(cfg_url + "/raindrop",
-                       data=json.dumps(cmd))
+        r = PutRequest(cfg_url + "/" + ext_name,
+                       data=json.dumps(ext_cmd))
         json.load(urllib2.urlopen(r))
     else:
         # not configuring - check.
         info = json.load(urllib2.urlopen(cfg_url))
-        if 'raindrop' not in info:
+        if ext_name not in info:
             msg = "couchdb needs a configuration variable set in a .ini file\n" \
                   "The following line must be created in an '[external]' section:\n" \
-                  "raindrop=" + cmd + \
+                  + ext_name + "=" + ext_cmd + \
                   "\n(or try re-executing this script with --configure)"
             fail(msg)
     # and one httpd handler.
     cfg_url = couch_url + '_config/httpd_db_handlers'
-    val = '{couch_httpd_external, handle_external_req, <<"raindrop">>}'
+    val = '{couch_httpd_external, handle_external_req, <<"%s">>}' % ext_name
     if configure:
         # need to PUT...
-        r = PutRequest(cfg_url + "/_raindrop",
+        r = PutRequest(cfg_url + "/" + http_path,
                        data=json.dumps(val))
         json.load(urllib2.urlopen(r))
     else:
         # not configuring - check.
         info = json.load(urllib2.urlopen(cfg_url))
-        if '_raindrop' not in info:
+        if http_path not in info:
             msg = "couchdb needs a configuration variable set in a .ini file\n" \
                   "The following line must be created in a '[httpd_db_handlers]' section:\n" \
-                  "_raindrop=" + val + \
+                  + http_path + "=" + val + \
                   "\n(or try re-executing this script with --configure)"
             fail(msg)
 
@@ -221,7 +217,20 @@ def check_couch():
              "(couch needs to be configured with a local file-system path)")
         configure = False
 
-    # the couch external.
+    # check the config of couch - we need [external]s etc.
+
+    # the couch-raindrop external..
+    tpl = '%s "%s/couch-raindrop.py" --log-level=info "--log-file=%s/raindrop.log"'
+    my_dir = os.path.abspath(os.path.dirname(__file__))
+    cmd = tpl % (sys.executable, my_dir, tempfile.gettempdir())
+    #check_couch_external(url, "raindrop", cmd, "_raindrop", configure)
+
+    # the api external
+    tpl = '%s "%s/raindrop-apirunner.py"' # simpler - no args, no logging etc
+    my_dir = os.path.abspath(os.path.dirname(__file__))
+    cmd = tpl % (sys.executable, my_dir)
+    check_couch_external(url, "raindrop-api", cmd, "_api", configure)
+
     # XXX - we currently don't take advantage of that...
     #check_couch_external(url, configure)
     # TODO: native erlang views - when they work :(

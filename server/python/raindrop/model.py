@@ -59,6 +59,7 @@ megaview_schemas_expandable_values = {
     'rd.identity.contacts' : ['contacts'],
     'rd.msg.body' : ['to', 'to_display', 'cc', 'cc_display'],
     'rd.account' : ['identities'],
+    'rd.ext.api' : ['endpoints'],
 }
 # Ditto - info which should come from the schema-defn itself - a list of
 # schemas that don't need values emitted, just the keys etc.
