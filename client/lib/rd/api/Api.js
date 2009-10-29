@@ -340,6 +340,20 @@ rd.api.extend({
     return this.xhr(args);
   },
 
+  rest: function(ep, args, callback, errback) {
+    args = dojo.delegate(args);
+    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
+    args.url += "_api/" + ep;
+    args.contentType = " ";
+    return this.xhr(args)
+        .ok(function(results) {
+            callback(results);
+        })
+        .error(function(results) {
+            errback(results);
+        });
+  },
+
   doc: function(args) {
     args = dojo.delegate(args);
     args.url = this.args.dbPath || rd.dbPath || "/raindrop/";

@@ -27,6 +27,12 @@ dojo.require("rd.store");
 dojo.require("rd.contact");
 dojo.require("rd.api");
 
+// XXX - the old implementation remains in-place and the default while we
+// check we haven't broken anything......
+// Set this to false after ensuring the API 'external' is configured
+// (check-raindrop.py will check/configure this for you)
+var use_client_apis = true;
+
 rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
   //summary: retrieve the conversation for a given conversation ID or conversation IDs. Either one
   //conversation ID string or an array of string conversation IDs can be passed. Couch documents
@@ -119,6 +125,15 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
 
 dojo._mixin(rd.conversation, {
   home: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    if (use_client_apis)
+      this._inline_home(limit, callback, errback);
+    else {
+      rd.api().rest('inflow/conversations/home', {limit: limit}, callback, errback);
+    }
+  },
+
+  _inline_home: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
+    // XXX - old - see above - now implemented in an API.
     //summary: returns the number of conversations based on the limit. Favors
     //direct and group messages vs broadcast messages.
 
@@ -215,7 +230,6 @@ dojo._mixin(rd.conversation, {
   
                 return aBody.timestamp > bBody.timestamp ? -1 : 1;
               });
-              
               callback(convos);
             },
             errback);
@@ -278,33 +292,48 @@ dojo._mixin(rd.conversation, {
     //summary: gets the most recent direct messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    this._query({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
-      limit: limit      
-    }, callback, errback);   
+    if (use_client_apis) {
+      this._query({
+        startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
+        endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
+        limit: limit      
+      }, callback, errback);
+    }
+    else {
+      rd.api().rest('inflow/conversations/direct', {limit: limit}, callback, errback);
+    }
   },
 
   group: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent group messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    this._query({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
-      limit: limit      
-    }, callback, errback);
+    if (use_client_apis) {
+      this._query({
+        startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
+        endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
+        limit: limit      
+      }, callback, errback);
+    } else {
+      rd.api().rest('inflow/conversations/group', {limit: limit},
+                    callback, errback);
+    }
   },
 
   broadcast: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent broadcast messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    this._query({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
-      limit: limit      
-    }, callback, errback);
+    if (use_client_apis) {
+      this._query({
+        startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
+        endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
+        limit: limit      
+      }, callback, errback);
+    } else {
+      rd.api().rest('inflow/conversations/broadcast', {limit: limit},
+                    callback, errback);
+    }
   },
 
   location: function(/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
@@ -380,12 +409,17 @@ dojo._mixin(rd.conversation, {
 
     // XXX - this could be optimized as we again re-fetch these messages when
     // fetching all in the convo.
-    this._query({
-      startkey: ["rd.msg.body", "timestamp", {}],
-      endkey: ["rd.msg.body", "timestamp"],
-      limit: limit,
-      skip: skip
-    }, callback, errback);
+    if (use_client_apis) {
+      this._query({
+        startkey: ["rd.msg.body", "timestamp", {}],
+        endkey: ["rd.msg.body", "timestamp"],
+        limit: limit,
+        skip: skip
+      }, callback, errback);
+    } else {
+      rd.api().rest('inflow/conversations/latest', {limit: limit, skip: skip},
+                    callback, errback);
+    }
   },
 
   contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
