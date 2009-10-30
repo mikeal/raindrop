@@ -260,7 +260,17 @@ class ConversationAPI(API):
         for row in result['rows']:
             conv_set.add(row['doc']['conversation_id'])
         conv_ids = list(conv_set)
-        return make_response(conv_ids)
+
+        log("HELLO WORLD")
+
+        log("_query '%s' ", conv_ids)
+
+
+        # now fetch the conversation objects.
+        convos = self._fetch_conversations(db, conv_ids)
+        # sort based on timestamp on latest message in convo.
+        convos.sort(key=lambda c: c[-1]["rd.msg.body"]["timestamp"], reverse=True)
+        return make_response(convos)
 
     # The 'simpler' end-points based around self._query()
     def direct(self, req):
