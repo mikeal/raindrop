@@ -52,13 +52,15 @@ def handler(doc):
     preview_body = preview_body[:140] + (preview_body[140:] and '...') # cute trick
     ret['body_preview'] = preview_body
     ret['body'] = body_text
+    timestamp = doc['updated_parsed']
+    ret['timestamp'] = timestamp
 
     emit_schema('rd.msg.body', ret)
     # and also emit a recipient-target - it probably should be its own
     # extension, but really it is too trivial to bother with...
     rt = {
         'target' : 'broadcast',
-        'timestamp': doc['updated_parsed'],
-        'target-timestamp': ['broadcast', doc['updated_parsed']],
+        'timestamp': timestamp,
+        'target-timestamp': ['broadcast', timestamp],
     }
     emit_schema('rd.msg.recip-target', rt)
