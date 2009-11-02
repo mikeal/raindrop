@@ -31,7 +31,7 @@ dojo.require("rd.api");
 // check we haven't broken anything......
 // Set this to false after ensuring the API 'external' is configured
 // (check-raindrop.py will check/configure this for you)
-var use_client_apis = true;
+var use_client_apis = false;
 
 rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
   //summary: retrieve the conversation for a given conversation ID or conversation IDs. Either one

@@ -80,8 +80,6 @@ dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
   destroyAllSupporting: function(/*Object?*/skipTypes) {
     //summary: destroys all supporting widgets, and removes them
     //from the _supportingWidgets array.
-    
-    console.log("dAS, " + this.declaredClass, skipTypes);
     var supporting = this._supportingWidgets;
     skipTypes = skipTypes || {};
     if (supporting && supporting.length) {

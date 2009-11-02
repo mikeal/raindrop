@@ -261,11 +261,6 @@ class ConversationAPI(API):
             conv_set.add(row['doc']['conversation_id'])
         conv_ids = list(conv_set)
 
-        log("HELLO WORLD")
-
-        log("_query '%s' ", conv_ids)
-
-
         # now fetch the conversation objects.
         convos = self._fetch_conversations(db, conv_ids)
         # sort based on timestamp on latest message in convo.

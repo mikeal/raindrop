@@ -35,8 +35,7 @@ dojo.declare("rdw.ext.feedNotification.Group", [rdw.story.GenericGroup], {
    * pulls the feed ID out of the messageBag's rss-entry schema.
    */
   getFeedId: function(messageBag) {
-    var feedId = messageBag["rd.raw.rss-entry"];
-    return feedId && feedId.channel && feedId.channel.headers && feedId.channel.headers["content-location"];
+    return messageBag["rd.msg.rss-feed"] && messageBag["rd.msg.rss-feed"].feed_id;
   },
 
   /**
@@ -59,11 +58,7 @@ dojo.declare("rdw.ext.feedNotification.Group", [rdw.story.GenericGroup], {
 
     //Set the title of the feed.
     if (messageBag) {
-      var title = messageBag["rd.raw.rss-entry"];
-      title = title && title.channel && title.channel.feed && title.channel.feed.title;
-      if (title) {
-        this.groupTitle = title;
-      }
+      this.groupTitle = messageBag["rd.msg.rss-feed"].title || "";
     }
   }
 });

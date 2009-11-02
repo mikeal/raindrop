@@ -62,8 +62,8 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
    */
   canHandle: function(messageBag) {
     var recip = messageBag["rd.msg.recip-target"];
-    var tweetRaw = messageBag["rd.msg.tweet.raw"];
-    return messageBag["rd.msg.tweet.raw"] && recip && recip.target == "broadcast";
+    var keyType = messageBag["rd.msg.body"].rd_key[0];
+    return keyType == "tweet" && recip && recip.target == "broadcast";
   },
 
   /**
