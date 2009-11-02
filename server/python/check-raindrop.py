@@ -48,6 +48,7 @@ import warnings
 import optparse
 import urllib2
 import tempfile
+from distutils.version import StrictVersion
 
 options = None # will be set to the optparse options object.
 
@@ -82,12 +83,27 @@ deps = [
     # ack - no 0.6 actually exists and 0.5 is missing a key feature we need.
     ('python-twitter', '>=0.6,==0.6-devel', False),
 ]
-if sys.version_info < (2,6):
-    deps.append(('simplejson', '', True))
 
 if sys.version_info < (2,6) and sys.platform=="win32":
     warn("Python 2.6 is recommended on Windows; you may have trouble finding\n"
          "an openssl binary package for Python 2.5")
+
+
+def check_import(pkg, version):
+    try:
+        __import__(pkg)
+        if not version:
+            return True
+        req = StrictVersion(version)
+        try:
+            got = StrictVersion(pkg.__version__)
+        except ValueError:
+            # a version string we can't handle (eg, with '-devel' in it!)
+            return False
+        return got >= req
+    except ImportError:
+        return False
+
 
 def check_deps():
     xtra = "" if options.configure else \
@@ -119,7 +135,20 @@ def check_deps():
         full = name + ver_spec
         try:
             require(full)
+            found = True
         except DistributionNotFound, why:
+            found = False
+        except VersionConflict, why:
+            ui("module '%s' has version conflict: %s", full, why)
+            found = True # we found we haven't got what we want :)
+        if not found:
+            # On some systems, setuptools fails to locate the package.  This
+            # is particularly true for twisted - so we have a check if we
+            # can just import it (we stick with checking setuptools first as
+            # check_import fails to handle '-dev' versions supplied by
+            # python-twitter)
+            found = check_import(name, ver_spec)
+        if not found:
             if options.configure:
                 note("module '%s' is missing - attempting easy-install", full)
                 try:
@@ -130,8 +159,6 @@ def check_deps():
                     ui("failed to easy_install '%s' - %s%s", full, why, xtra)
             else:
                 ui("module '%s' is missing%s", full, xtra)
-        except VersionConflict, why:
-            ui("module '%s' has version conflict: %s", full, why)
 
     # twisted on windows needs pywin32 which isn't currently available via
     # setuptools
