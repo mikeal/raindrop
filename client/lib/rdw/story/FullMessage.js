@@ -39,14 +39,5 @@ dojo.declare("rdw.story.FullMessage", [rdw.Message], {
     //Collapse quote regions in the text and hyperlink things.
     //TODO: make message transforms extensionized.
     this.message = this.formatQuotedBody();
-
-    this.time = msgDoc.timestamp;
-
-    /* XXX this timestamp needs a lot more thought to show the right kind of 
-       time info and we probably also want to some standard the hCard formatting */
-    var fTime = rd.friendly.timestamp(msgDoc.timestamp);
-    this.utcTime = fTime["utc"];
-    this.friendlyTime = fTime["friendly"];
-    this.additionalTime = fTime["additional"];
   }
 });

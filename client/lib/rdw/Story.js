@@ -166,19 +166,6 @@ dojo.declare("rdw.Story", [rdw._Base], {
       rd.escapeHtml(target, this.typeNode, "only");
     }
 
-    //The timestamp, use the most recent message for this.
-    var timestamp = this.msgs[this.msgs.length - 1]['rd.msg.body'].timestamp;
-
-    /* XXX this timestamp needs a lot more thought to show the right kind of 
-       time info and we probably also want to some standard the hCard formatting */
-    var fTime = rd.friendly.timestamp(timestamp);
-    if (this.timestampNode) {
-      dojo.attr(this.timestampNode, "title", fTime["utc"]);
-    }
-    if (this.friendlyNode) {
-      rd.escapeHtml(fTime["friendly"], this.friendlyNode, "only");
-    }
-
     //Set up the link for the full conversation view action, and set the subject.
     var convoId = msg
                 && msg["rd.msg.conversation"]

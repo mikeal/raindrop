@@ -302,55 +302,5 @@ dojo._mixin(rd.conversation, {
       });
     })
     .error(errback);
-  },
-
-  _query: function(/*Object*/args, /*Function*/callback, /*Function*/errback) {
-    //summary: handles fetching the conversations for the messages in the
-    //json returned from a timestamp-related query.
-
-    //Combine args with standard args for the megaview call.
-    var mvArgs = dojo._mixin({
-      reduce: false,
-      startkey: ["rd.msg.body", "timestamp", {}],
-      endkey: ["rd.msg.body", "timestamp"],
-      descending: true,
-      success: dojo.hitch(this, function(json) {
-        // The json has the rd_key for messages in timestamp order;
-        // now we need to fetch the 'rd.msg.conversation' schema to fetch the
-        // convo ID.
-        var keys = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          keys.push(['rd.core.content', 'key-schema_id', [row.value.rd_key, 'rd.msg.conversation']]);
-        }
-        rd.store.megaview({
-          keys: keys,
-          reduce: false,
-          include_docs: true,
-          success: dojo.hitch(this, function(json) {
-            // XXX - how to do sets better in js?????
-            // And can't we just avoid 'reduce=false' and let the the reduce
-            // function make them unique?
-            var convSet = {}
-            for (var i = 0, row; row = json.rows[i]; i++) {
-              convSet[row.doc.conversation_id] = row.doc.conversation_id;
-            }
-            var convIds = [];
-            for (var cid in convSet) {
-              convIds.push(convSet[cid]);
-            }
-            this(convIds, callback, errback);
-          })
-        });
-      }),
-      error: errback
-    }, args);
-
-    //If no descending preference is made, default to true,
-    //to get most recent items first.
-    if (!"descending" in mvArgs) {
-      mvArgs.descending = true;
-    }
-
-    rd.store.megaview(mvArgs);
   }
 });

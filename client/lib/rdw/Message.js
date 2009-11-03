@@ -59,6 +59,15 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //TODO: make message transforms extensionized.
     this.message = rd.hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
 
+    this.time = msgDoc.timestamp;
+
+    /* XXX this timestamp needs a lot more thought to show the right kind of 
+       time info and we probably also want to some standard the hCard formatting */
+    var fTime = rd.friendly.timestamp(msgDoc.timestamp);
+    this.utcTime = fTime["utc"];
+    this.friendlyTime = fTime["friendly"];
+    this.additionalTime = fTime["additional"];
+
     //Set up the link for the full conversation view action, and set the subject.
     var convoId = msgBag
                 && msgBag["rd.msg.conversation"]
