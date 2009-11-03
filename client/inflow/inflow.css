@@ -407,6 +407,7 @@ body {
 
 #stories .rdwStory .header .type {
   display: inline-block;
+  float: right;
 }
 
 #stories .rdwStory .header .timestamp {
@@ -417,7 +418,7 @@ body {
 
 
 #stories .rdwStory .messages {
-  width: 300px;
+  width: 610px;
   padding: 0 0 5px 5px;
   -moz-box-sizing: border-box;
 }
@@ -471,10 +472,11 @@ body {
 }
 
 .rdwStoryGenericGroup .timestamp .friendly {
-  display: block;
-  width: 100%;
+  display: inline-block;
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
+  float: right;
+  font-style: italic;
 }
 
 .rdwStoryTwitterTimeLine {
@@ -515,10 +517,17 @@ body {
 }
 
 .tweetTitle,
-.MailingListTitle {
+.MailingListTitle,
+.rdwStoryGenericGroup .title {
   font-family: droid-serif, georgia, times, serif;
-  display: block;
+  display: inline-block;
   font-size: 10px;
+}
+
+.rdwStoryGenericGroup .title {
+  max-height: 14px;
+  overflow: hidden;
+  max-width: 240px;
 }
 
 .rdwStoryTwitterTimeLine .subject {
