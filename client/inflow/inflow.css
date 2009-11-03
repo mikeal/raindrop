@@ -142,11 +142,13 @@ body {
 
 #navHeader ul {
   list-style-type: none;
+  display: inline;
 }
 
 #navHeader li {
   display: inline;
   margin-right: 7px;
+  float: left;
 }
 
 #logo {
@@ -168,17 +170,31 @@ body {
 }
 
 .rdwStory a {
-  color: #1a1a1a;
+  color: #ff5959;
   text-decoration: none;
+}
+
+#stories .rdwSummary {
+  margin: 0 10px;
+  font-size: 13px;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+}
+
+
+#stories .rdwSummary.conversation {
+  font-family: droid-sans, helvetica, arial, sans;
+  font-style: normal;
+  font-weight: bold;
+  color: #ff5959;
+  min-height: 16px;
 }
 
 #footer {
   display: block;
-  background-color: #333;
   padding: 12px;
-  font-size: x-small;
-  color: #FFF;
-  font-weight:bold;
+  font-size: 10px;
+  color: #000;
 }
 
 #footer a {
@@ -413,7 +429,7 @@ body {
 /* Widgets */
 
 #widgets {
-  margin-top: 64px;
+  margin-top: 80px;
 }
 
 #widgets .messageContent a {
@@ -439,7 +455,8 @@ body {
 
 
 .rdwStoryTwitterTimeLine,
-.rdwStoryMailingList {
+.rdwStoryMailingList,
+.rdwStoryGenericGroup {
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
@@ -453,6 +470,13 @@ body {
   font-style: italic;
 }
 
+.rdwStoryGenericGroup .timestamp .friendly {
+  display: block;
+  width: 100%;
+  font-family: droid-serif, georgia, times, serif;
+  font-size: 10px;
+}
+
 .rdwStoryTwitterTimeLine {
   background-color: #C4F3FF;
 }
@@ -461,16 +485,23 @@ body {
   background-color: #FFDEDE;
 }
 
-.rdwStoryMailingList .subject {
+.rdwStoryGenericGroup {
+  background-color: #E9FFE0; 
+} 
+
+.rdwStoryMailingList .subject,
+.rdwStoryGenericGroup .subject {
   margin: 6px 0 0 0;
   font-size: 11.5px;
 }  
 
-.rdwStoryMailingList .subject a {
+.rdwStoryMailingList .subject a,
+.rdwStoryGenericGroup .subject a {
   text-decoration: none;
 }  
 
-.rdwStoryMailingList .topActions {
+.rdwStoryMailingList .topActions,
+.rdwStoryGenericGroup .topActions {
   display: none;
 }
 

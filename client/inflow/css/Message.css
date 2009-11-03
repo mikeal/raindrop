@@ -55,6 +55,10 @@
   font-weight: bold;
 }
 
+.rdwMessage .from a {
+  color: #000;
+}
+
 .rdwMessage .messageContent {
 }
 
@@ -76,7 +80,8 @@
   color: #ff5959;
 }
 
-#stories .rdwStory .actions a.reply {
+#stories .rdwStory .actions a.reply,
+#stories .rdwStory .actions a.fwd {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
   font-weight: bold;
   font-style: normal;

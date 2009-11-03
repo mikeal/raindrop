@@ -22,7 +22,7 @@
  * */
 
 .fullMessageTitle {
-  font-size: 18px;
+  font-size: 13px;
   font-weight: bold;
 }
 
@@ -71,8 +71,11 @@
   line-height: 16px;
 }
 
-#stories a.quoteToggle {
-  display: block;
+#stories a.quoteToggle,
+#stories .quote {
+  opacity: 0.5;
+  display: table;
+  margin-bottom: 8px;
 }
 
 #stories .rdwStory.rdwStoryFullStory {
@@ -107,13 +110,57 @@
 #stories .rdwStory.rdwStoryFullStory .header .timestamp .friendly {
   display: none;
 }
-  
+
+#stories .rdwSummary .actions,
+#stories .rdwSummary.conversation .actions {
+  display: inline-block;
+  float: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-size: 10px;
+  font-weight: normal;
+  font-style: italic;
+  line-height: 18px;
+}
+
+#stories .rdwSummary .actions a,
+#stories .rdwSummary.conversation .actions a {
+  color: #ff5959;
+  border-right:1px solid #000000;
+  padding:0 4px 0 3px;
+  text-decoration: none;
+}
+
+#stories .rdwSummary .actions a:last-child,
+#stories .rdwSummary.conversation .actions a:last-child {
+  border-right: none;
+  padding:0 0 0 3px;
+}
+
+
+#stories .rdwStory.rdwStoryFullStory .messages .actions {
+  padding: 0;
+  display: inline-block;
+  width: 100%;
+}
+
+#stories .rdwStory.rdwStoryFullStory .actions a:first-child {
+  padding: 1px 3px;
+  margin: 0;
+}
+
+#stories .rdwStory.rdwStoryFullStory .actions a.reply {
+  margin: 0;
+}
+
+#stories .rdwStory.rdwStoryFullStory .actions a.fwd {
+  margin: 0 4px 0 0;
+}   
 
 .rdwStoryFullMessage.rdwMessage {
   background-color: #ffffd9;
   border-top: 1px solid #000;
   margin: 0 0 20px 0;
-  padding: 1px 5px 5px 5px;
+  padding: 1px 5px 1px 5px;
   -moz-box-shadow: 0 0 5px #ccc;
   -webkit-box-shadow: 0 0 5px #ccc;
 }
