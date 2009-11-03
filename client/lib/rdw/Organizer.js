@@ -37,7 +37,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
 
   templatePath: dojo.moduleUrl("rdw.templates", "Organizer.html"),
 
-  listContainerHtml: '<select class="${listClass}></select>',
+  listContainerHtml: '<select class="${listClass}" onchange="if (this.value) window.location = \'#\' + this.value"></select>',
 
   //The order in which to call list operations
   //push new items to this array and define matching function
@@ -87,7 +87,7 @@ dojo.declare("rdw.Organizer", [rdw._Base], {
     //summary: called by list functions to add items to the DOM.
     
     var paneNode = this.listToPane[type];
-    dojo.place('<option>' + title + '</option>', paneNode);
+    dojo.place('<option value="">' + title + '</option>', paneNode);
 
     dojo.place(items, paneNode);
     if (paneNode.style) {

@@ -27,12 +27,6 @@ dojo.require("rd.store");
 dojo.require("rd.contact");
 dojo.require("rd.api");
 
-// XXX - the old implementation remains in-place and the default while we
-// check we haven't broken anything......
-// Set this to false after ensuring the API 'external' is configured
-// (check-raindrop.py will check/configure this for you)
-var use_client_apis = false;
-
 rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
   //summary: retrieve the conversation for a given conversation ID or conversation IDs. Either one
   //conversation ID string or an array of string conversation IDs can be passed. Couch documents
@@ -125,130 +119,7 @@ rd.conversation = function(/*String|Array*/ids, /*Function*/callback, /*Function
 
 dojo._mixin(rd.conversation, {
   home: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    if (use_client_apis)
-      this._inline_home(limit, callback, errback);
-    else {
-      rd.api().rest('inflow/conversations/home', {limit: limit}, callback, errback);
-    }
-  },
-
-  _inline_home: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    // XXX - old - see above - now implemented in an API.
-    //summary: returns the number of conversations based on the limit. Favors
-    //direct and group messages vs broadcast messages.
-
-    var directDfd = new dojo.Deferred();
-    var groupDfd = new dojo.Deferred();
-    var dfdList = new dojo.DeferredList([directDfd, groupDfd]);
-    var allRecips = [];
-
-    //Direct messages
-    rd.api().megaview({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
-      descending: true,
-      reduce: false,
-      include_docs: true,
-      limit: limit
-    })
-    .ok(function(results) {
-      if (results && results.rows && results.rows.length) {
-        allRecips = allRecips.concat(results.rows);
-      }
-      directDfd.callback(results);
-    })
-    .error(function(err) {
-       directDfd.errback(err);
-    });
-
-    //Group messages
-    rd.api().megaview({
-      startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
-      endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
-      descending: true,
-      reduce: false,
-      include_docs: true,
-      limit: limit
-    })
-    .ok(function(results) {
-      if (results && results.rows && results.rows.length) {
-        allRecips = allRecips.concat(results.rows);
-      }
-      groupDfd.callback(results);
-    })
-    .error(function(err) {
-       groupDfd.errback(err);
-    });
-
-    //Action to do once all deferreds complete.
-    dfdList.addCallback(this, function() {
-      //Convert the allRecips to docs.
-      allRecips = dojo.map(allRecips, function(item) {
-        return item.doc;
-      });
-
-      //Filter out the items that are not "fresh".
-      rd.api().fresh({
-        ids: allRecips
-      })
-      .ok(this, function(fresh) {
-        //sort the allRecips by timestamp
-        allRecips = fresh;
-
-        allRecips.sort(function(a, b) {
-          return a.timestamp > b.timestamp ? -1 : 1;
-        });
-  
-        // The json has the rd_key for messages in timestamp order;
-        // now we need to fetch the 'rd.msg.conversation' schema to fetch the
-        // convo ID.
-        var keys = [];
-        for (var i = 0, doc; doc = allRecips[i]; i++) {
-          keys.push(['rd.core.content', 'key-schema_id', [doc.rd_key, 'rd.msg.conversation']]);
-        }
-        rd.store.megaview({
-          keys: keys,
-          reduce: false,
-          include_docs: true,
-          success: dojo.hitch(this, function(json) {
-            // XXX - how to do sets better in js?????
-            // And can't we just avoid 'reduce=false' and let the the reduce
-            // function make them unique?
-            var convSet = {}
-            for (var i = 0, row; row = json.rows[i]; i++) {
-              convSet[row.doc.conversation_id] = row.doc.conversation_id;
-            }
-            var convIds = [];
-            for (var cid in convSet) {
-              convIds.push(convSet[cid]);
-            }
-            this(convIds, function(convos) {
-              convos.sort(function(a, b) {
-                //Look at last message in each convo.
-                var aBody = a[a.length - 1]["rd.msg.body"] || {};
-                var bBody = b[b.length - 1]["rd.msg.body"] || {};
-  
-                return aBody.timestamp > bBody.timestamp ? -1 : 1;
-              });
-              callback(convos);
-            },
-            errback);
-          })
-        });
-      })
-      .error(this, function(err) {
-        if (errback) {
-          errback(err);
-        }
-      });
-    });
-
-    //Error dispatching.
-    dfdList.addErrback(function(err){
-      if (errback) {
-        errback(err);
-      }
-    });
+    rd.api().rest('inflow/conversations/home', {limit: limit}, callback, errback);
   },
 
   messageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
@@ -292,48 +163,23 @@ dojo._mixin(rd.conversation, {
     //summary: gets the most recent direct messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    if (use_client_apis) {
-      this._query({
-        startkey: ["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
-        endkey: ["rd.msg.recip-target", "target-timestamp", ["direct"]],
-        limit: limit      
-      }, callback, errback);
-    }
-    else {
-      rd.api().rest('inflow/conversations/direct', {limit: limit}, callback, errback);
-    }
+    rd.api().rest('inflow/conversations/direct', {limit: limit}, callback, errback);
   },
 
   group: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent group messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    if (use_client_apis) {
-      this._query({
-        startkey: ["rd.msg.recip-target", "target-timestamp", ["group", {}]],
-        endkey: ["rd.msg.recip-target", "target-timestamp", ["group"]],
-        limit: limit      
-      }, callback, errback);
-    } else {
-      rd.api().rest('inflow/conversations/group', {limit: limit},
+    rd.api().rest('inflow/conversations/group', {limit: limit},
                     callback, errback);
-    }
   },
 
   broadcast: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary: gets the most recent broadcast messages up to limit, then pulls
     //the conversations associated with those messages. Conversation with
     //the most recent message will be first.
-    if (use_client_apis) {
-      this._query({
-        startkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
-        endkey: ["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
-        limit: limit      
-      }, callback, errback);
-    } else {
-      rd.api().rest('inflow/conversations/broadcast', {limit: limit},
+    rd.api().rest('inflow/conversations/broadcast', {limit: limit},
                     callback, errback);
-    }
   },
 
   location: function(/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
@@ -354,10 +200,6 @@ dojo._mixin(rd.conversation, {
         this.messageKey(keys, callback, errback);
       })
     });
-  },
-
-  starred: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    /* Not yet implemented */
   },
 
   sent: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
@@ -400,26 +242,6 @@ dojo._mixin(rd.conversation, {
         }
       }));
     });
-  },
-
-  latest: function(/*Number*/limit, /*Number*/skip, /*Function*/callback, /*Function*/errback) {
-    //summary: gets the most recent messages up to limit, then
-    //pulls the conversations associated with those messages. Conversation with
-    //the most recent message will be first.
-
-    // XXX - this could be optimized as we again re-fetch these messages when
-    // fetching all in the convo.
-    if (use_client_apis) {
-      this._query({
-        startkey: ["rd.msg.body", "timestamp", {}],
-        endkey: ["rd.msg.body", "timestamp"],
-        limit: limit,
-        skip: skip
-      }, callback, errback);
-    } else {
-      rd.api().rest('inflow/conversations/latest', {limit: limit, skip: skip},
-                    callback, errback);
-    }
   },
 
   contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {

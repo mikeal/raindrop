@@ -286,12 +286,6 @@ class ConversationAPI(API):
                            endkey=["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
                            )
 
-    def latest(self, req):
-        return self._query(req,
-                           startkey=["rd.msg.body", "timestamp", {}],
-                           endkey=["rd.msg.body", "timestamp"],
-                          )
-
 # A mapping of the 'classes' we expose.  Each value is a class instance, and
 # all 'public' methods (ie, those without leading underscores) on the instance
 # are able to be called.

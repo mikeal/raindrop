@@ -32,6 +32,7 @@ dojo.require("rd.MegaviewStore");
 dojo.require("rdw.DataSelector");
 dojo.require("rdw.Organizer");
 dojo.require("rdw.Summary");
+dojo.require("rdw.Stories");
 dojo.require("rdw.Widgets");
 
 dojo.require("rd.tag");
@@ -172,19 +173,25 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Summary", {
   }
 });
 
-//Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Widgets", {
+//Modify rdw.Stories to allow loading mailing lists.
+rd.applyExtension("rdw.ext.MailingList", "rdw.Stories", {
   addToPrototype: {
     topics: {
       "rd-protocol-mailingList": "mailingList"
     },
-    homeGroups: [
-      "rdw.story.MailingList"
-    ],
 
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
       rd.conversation.mailingList(listId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
     }
+  }
+});
+
+//Modify rdw.Widgets to allow showing mailing lists.
+rd.applyExtension("rdw.ext.MailingList", "rdw.Widgets", {
+  addToPrototype: {
+    homeGroups: [
+      "rdw.story.MailingList"
+    ]
   }
 });
