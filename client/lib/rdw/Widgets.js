@@ -25,6 +25,7 @@ dojo.provide("rdw.Widgets");
 
 dojo.require("rdw._Base");
 dojo.require("rd.api");
+dojo.require("rdw.Story");
 
 dojo.declare("rdw.Widgets", [rdw._Base], {
   //Array of conversations to show.
@@ -44,6 +45,9 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   homeGroups: [
     "rdw.story.TwitterTimeLine"
   ],
+
+  //Widget used for default story objects, when no home group is applicable.
+  storyCtorName: "rdw.Story",
 
   templateString: '<div class="rdwWidgets"></div>',
 
