@@ -132,6 +132,9 @@ class SyncConductor(object):
     for row in result['rows']:
       account_details = row['doc']
       acct_id = account_details['id']
+      if not account_details.get('enabled', True):
+        logger.info("account %r is disabled", acct_id)
+        continue
       try:
         account_details['password'] = config_accts[acct_id]['password']
       except KeyError:
