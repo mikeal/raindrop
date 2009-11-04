@@ -125,38 +125,7 @@ dojo._mixin(rd.conversation, {
   messageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
     //summary: gets conversations based on message IDs passed in. ids can be one string
     //message document ID or an array of string message document IDs.
-
-    //Find out if this is just one ID.
-    var isOne = typeof ids == "string";
-    if (isOne) {
-      ids = [ids];
-    }
-    // XXX - this is duplicated below in byTimeStamp...
-    var keys = [];
-    for (var i = 0; i< ids.length; i++) {
-      keys.push(['rd.core.content', 'key-schema_id', [ids[i], 'rd.msg.conversation']]);
-    }
-    rd.store.megaview({
-      keys: keys,
-      reduce: false,
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        // XXX - how to do sets better in js?????
-        // And can't we just avoid 'reduce=false' and let the the reduce
-        // function make them unique?
-        var convSet = {}
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          convSet[row.doc.conversation_id] = row.doc.conversation_id;
-        }
-        var convIds = [];
-        for (var cid in convSet) {
-          convIds.push(convSet[cid]);
-        }
-        //Now load conversations based on those IDs.
-        this(isOne ? convIds[0] : convIds, callback, errback);
-      }),
-      error: errback
-    });    
+    rd.api().rest('inflow/conversations/with_messages', {keys: ids}, callback, errback);
   },
 
   direct: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
@@ -204,103 +173,14 @@ dojo._mixin(rd.conversation, {
 
   sent: function(/*Number*/limit, /*Function*/callback, /*Function*/errback) {
     //summary get all conversations sent by the user according to their account
-    //identities and related contacts
-/*
-    rd.api().me().conversation({
-      identity: "from"
-      limit: 
-      
-    }).ok(callback).error(errback);
-*/
-    rd.api().me()
-    .ok(this, function(idtys) {
-      //Remap the services that count, from uses "email", not "imap"
-      var allowedServices = {
-        twitter: "twitter",
-        email: "imap"
-      };
-
-      //Build up a list of identity IDs for yourself
-      var senders = [];
-      for (var i = 0, idty; idty = idtys[i]; i++) {
-        var id = idty.rd_key[1];
-        if (id[0] in allowedServices) {
-          //Add to list of senders we are willing to handle
-          senders.push([allowedServices[id[0]], id[1]]);
-        }
-      }
-
-      //Lookup the array of contacts by the array of identities
-      rd.contact.byIdentity(senders, dojo.hitch(this, function(contacts){
-        if (!contacts) {
-          callback([]);
-        } else {
-          var contact_ids = rd.map(contacts, function(contact) {
-            return contact.rd_key[1];
-          });
-          this.contact(contact_ids, callback, errback);
-        }
-      }));
-    });
+    //identities
+    return rd.api().rest("inflow/conversations/identities")
   },
 
   contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
     //a given contact.
-
-    //Get the list of identities for the user.
-    rd.api().contact({
-      ids: typeof contactId == "string" ? [contactId] : contactId
-    })
-    .ok(this, function(contact) {
-      //Use megaview to select all messages based on the identity
-      //IDs.
-      var identities = contact.identities;
-      if (dojo.isArray(contact)) {
-        identities = [];
-        for (var i = 0, c; c = contact[i]; i++) {
-          identities = identities.concat(c.identities);
-        }
-      }
-
-      var keys = rd.map(identities, function(identity) {
-        return ["rd.msg.body", "from", identity.rd_key[1]];
-      });
-      if (!keys) {
-        console.error("seem to have no identities for this contact??");
-        return;
-      }
-
-      rd.store.megaview({
-        reduce: false,
-        keys: keys,
-        success: dojo.hitch(this, function(json) {
-          //Get the list of message IDs.
-          if(!json.rows.length) {
-            console.log("no messages from this contact");
-            return;
-          }
-          var messageKeys = [];
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            messageKeys.push(row.value.rd_key);
-          }
-          if(!messageKeys.length) {
-            return;
-          }
-
-          //Load the conversations based on these message IDs.
-          rd.conversation.messageKey(messageKeys, function(conversations) {
-            //Sort the conversations.
-            conversations.sort(function(a, b) {
-              return a[0]['rd.msg.body'].timestamp > b[0]['rd.msg.body'].timestamp ? -1 : 1;
-            });
-
-            callback(conversations);
-          }, errback);         
-        }),
-        error: errback     
-      });
-    })
-    .error(errback);
+    return rd.api().rest('inflow/conversations/contact', {id: contactId},
+                         callback, errback);
   }
 });
