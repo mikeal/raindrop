@@ -46,15 +46,15 @@ from raindrop import config
 # the most important being the 'CouchDB' class.
 # Below are some utilities all Python implemented API functions have available
 # in their globals
-api_globals={'json': 'json'}
+api_globals={'json': json}
 
 # This is a port of some of the couch.js class.
 class CouchDB:
-    def __init__(self, name):
+    def __init__(self, name, host=None, port=None):
         self.name = name;
         self.uri = "/" + quote(name) + "/"
-        # share and reuse once connection.
-        self.connection = httplib.HTTPConnection('127.0.0.1', 5984)
+        # share and reuse one connection.
+        self.connection = httplib.HTTPConnection(host or '127.0.0.1', port or 5984)
 
     def maybeThrowError(self, resp):
         if resp.status >= 400:
@@ -116,6 +116,12 @@ api_globals['hashable_key'] = hashable_key
 
 # -- raindrop specific APIs
 class RDCouchDB(CouchDB):
+    def __init__(self, req):
+        name = req['path'][0] # first elt of path is db name
+        host = req.get('peer') # later couchdb versions include this...
+        port = None # XXX - get the 'port' from the request too (but it isn't provided now!)
+        CouchDB.__init__(self, name, host, port)
+
     def megaview(self, **kw):
         # The javascript impl has a painful separation of the 'keys' param
         # from other params - hide that.
