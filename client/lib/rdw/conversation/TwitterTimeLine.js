@@ -21,15 +21,15 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.story.TwitterTimeLine");
+dojo.provide("rdw.conversation.TwitterTimeLine");
 
-dojo.require("rdw.Story");
+dojo.require("rdw.Conversation");
 
 /**
- * Groups twitter broadcast messages into one "story"
+ * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
-  templateString: '<div class="rdwStoryTwitterTimeLine"> \
+dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
+  templateString: '<div class="rdwConversationTwitterTimeLine"> \
                     <div class="timestamp" dojoAttachPoint="timestampNode"> \
                     <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
                     </div> \
@@ -47,7 +47,7 @@ dojo.declare("rdw.story.TwitterTimeLine", [rdw.Story], {
   replyStyle: "",
 
   /**
-   * sorting to use for messages. Unlike rdw.Story, the twitter timeline
+   * sorting to use for messages. Unlike rdw.Conversation, the twitter timeline
    * should show most recent tweet first. This method should not use
    * the "this" variable.
    */

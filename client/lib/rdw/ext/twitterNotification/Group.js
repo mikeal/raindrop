@@ -23,9 +23,9 @@
 
 dojo.provide("rdw.ext.twitterNotification.Group");
 
-dojo.require("rdw.story.GenericGroup");
+dojo.require("rdw.conversation.GenericGroup");
 
-dojo.declare("rdw.ext.twitterNotification.Group", [rdw.story.GenericGroup], {
+dojo.declare("rdw.ext.twitterNotification.Group", [rdw.conversation.GenericGroup], {
   matchRegExp: /\@postmaster\.twitter\.com/,
 
   /**

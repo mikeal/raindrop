@@ -25,7 +25,7 @@ dojo.provide("rdw.Widgets");
 
 dojo.require("rdw._Base");
 dojo.require("rd.api");
-dojo.require("rdw.Story");
+dojo.require("rdw.Conversation");
 
 dojo.declare("rdw.Widgets", [rdw._Base], {
   //Array of conversations to show.
@@ -43,11 +43,11 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
   //for each entry in this array.
   homeGroups: [
-    "rdw.story.TwitterTimeLine"
+    "rdw.conversation.TwitterTimeLine"
   ],
 
-  //Widget used for default story objects, when no home group is applicable.
-  storyCtorName: "rdw.Story",
+  //Widget used for default conversation objects, when no home group is applicable.
+  conversationCtorName: "rdw.Conversation",
 
   templateString: '<div class="rdwWidgets"></div>',
 
@@ -93,10 +93,10 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     } else {
       if (!this.switchNode) {
         this.switchNode = dojo.create("div", {
-          "class": "rdwStoriesSwipe"
+          "class": "rdwConversationsSwipe"
         }, dojo.body());
       }
-      this.switchNode.className = "rdwStoriesSwipe " + viewType;
+      this.switchNode.className = "rdwConversationsSwipe " + viewType;
 
       //Do the transition in a timeout, to give the DOM a chance to render,
       //so DOM rendering work is not happening while the transition is going.
@@ -147,7 +147,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
           });
   
           if (viewType == "conversation") {
-            //Pick a vertical position that is at the top of the Stories widget,
+            //Pick a vertical position that is at the top of the Conversations widget,
             //if current scroll position is less.
             var scrollHeight = dojo.global.scrollY;
             var position = dojo.position(this.domNode, true).y;
@@ -238,7 +238,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     console.log("onTransitionEnd");
 
     //Hide the swipe indicator
-    this.switchNode.className = "rdwStoriesSwipe";
+    this.switchNode.className = "rdwConversationsSwipe";
 
     if (this.viewType == "summary") {
       if (this.summaryActiveNode) {
@@ -283,7 +283,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
           skipAnimation: true,
           _fake: true
         });
-        rd.pub("rdw.Stories.firstItemSelected");
+        rd.pub("rdw.Conversations.firstItemSelected");
       }), 500);
     });
   },
@@ -308,11 +308,11 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     this.inherited("destroy", arguments);
   },
 
-  removeStory: function(/*Object*/storyWidget, /*Function?*/onEndCallback) {
-    //summary: removes a story from this widget.
-    var node = storyWidget.domNode;
+  removeConversation: function(/*Object*/convoWidget, /*Function?*/onEndCallback) {
+    //summary: removes a conversation from this widget.
+    var node = convoWidget.domNode;
 
-    //Find next story to highlight.  
+    //Find next conversation to highlight.  
     var nextNode = dojo.query(node).next()[0];
     if (nextNode) {
       var nodes = dojo.query('[tabindex="0"]', nextNode);
@@ -323,8 +323,8 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     node.style.overflow = "hidden";
     dojo.anim(node, { height: 0}, 800, this.removeAnimEasing, dojo.hitch(this, function() {
       //Then destroy it.
-      this.removeSupporting(storyWidget);
-      storyWidget.destroy();
+      this.removeSupporting(convoWidget);
+      convoWidget.destroy();
 
       //select next node. Use a timeout for smoothness.
       setTimeout(dojo.hitch(this, function() {
@@ -344,7 +344,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     //reset stored state.
     this.conversations = [];
     //Indicate this is a collection of home conversations.
-    this.conversations._rdwStoriesType = "home";
+    this.conversations._rdwConversationsType = "home";
     this._groups = [];
 
     if (!this.homeGroupModules) {
@@ -401,9 +401,9 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
           }
 
           //If any messsages not handled by a group in a conversation
-          //are left over, create a regular story for them.
+          //are left over, create a regular conversation for them.
           if (leftOver.length) {
-            var widget = this.createHomeStory(leftOver);
+            var widget = this.createHomeConversation(leftOver);
             this._groups.push(widget);
             this.addSupporting(widget);
           }
@@ -424,17 +424,17 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     }));
   },
 
-  createHomeStory: function(/*Array*/msgs) {
-    //summary: creates a Story widget for the Home view. The Story widget
+  createHomeConversation: function(/*Array*/msgs) {
+    //summary: creates a Conversation widget for the Home view. The Conversation widget
     //should not display itself immediately since prioritization of the home
     //widgets still needs to be done. Similarly, it should not try to attach
     //to the document's DOM yet. Override for more custom behavior/subclasses.
-    return new (dojo.getObject(this.storyCtorName))({
+    return new (dojo.getObject(this.conversationCtorName))({
       msgs: msgs,
       unreadReplyLimit: 1,
       displayOnCreate: false,
       allowReplyMessageFocus: false
-    }, dojo.create("div")); //rdw.Story
+    }, dojo.create("div")); //rdw.Conversation
   },
 
   _sortGroups: function() {

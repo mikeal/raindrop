@@ -66,7 +66,7 @@
   display: none;
 }
 
-#stories .rdwStory .actions {
+#conversations .rdwConversation .actions {
   margin: 7px 0 0 0;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
@@ -74,14 +74,14 @@
   padding: 0 5px 7px 5px;
 }
 
-#stories .rdwStory .actions a {
+#conversations .rdwConversation .actions a {
   padding: 0 4px 0 2px;
   border-right: 1px solid #000;
   color: #ff5959;
 }
 
-#stories .rdwStory .actions a.reply,
-#stories .rdwStory .actions a.fwd {
+#conversations .rdwConversation .actions a.reply,
+#conversations .rdwConversation .actions a.fwd {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
   font-weight: bold;
   font-style: normal;
@@ -94,7 +94,7 @@
   -webkit-border-radius: 5px;
 }
 
-#stories .rdwStory .actions a:first-child {
+#conversations .rdwConversation .actions a:first-child {
   padding: 0 4px 0 0;
 }
 

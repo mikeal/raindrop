@@ -21,46 +21,10 @@
  * Contributor(s):
  * */
 
-@import url("Story.css");
-@import url("FullStory.css");
+dojo.provide("rdw.conversation.GenericGroupMessage");
 
-.rdwStories {
-  overflow: hidden;
-  width: 100%;
-}
+dojo.require("rdw.Message");
 
-.rdwStories .scrollArea {
-  overflow: auto;
-  width: 8000px;
-}
-
-.rdwStories ol {
-  position: relative;
-  display: block;
-  float: left;
-  width: 100%;
-  list-style: none; 
-  margin: 0;
-  padding: 0;
-}
-
-.rdwStoriesSwipe {
-  position: fixed;
-  bottom: 150px;
-  left: 50%;
-  margin-left: -135px;
-  width: 270px;
-  height: 150px;
-  z-index: 1;
-  display: none;
-}
-
-.rdwStoriesSwipe.conversation {
-  background-image: url("../i/swipe_right.png");
-  display: block;
-}
-
-.rdwStoriesSwipe.summary {
-  background-image: url("../i/swipe_left.png");
-  display: block;
-}
+dojo.declare("rdw.conversation.GenericGroupMessage", [rdw.Message], {
+  templateString: dojo.cache("rdw.conversation.templates", "GenericGroupMessage.html")
+});

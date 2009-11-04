@@ -21,15 +21,15 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.Story");
+dojo.provide("rdw.Conversation");
 
 dojo.require("rd.friendly");
 
 dojo.require("rdw._Base");
 dojo.require("rdw.Message");
 
-dojo.declare("rdw.Story", [rdw._Base], {
-  //Holds the couch documents for this story.
+dojo.declare("rdw.Conversation", [rdw._Base], {
+  //Holds the couch documents for this conversation.
   //Warning: this is a prototype property: be sure to
   //set it per instance.
   msgs: [],
@@ -60,7 +60,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
   replyWidget: "rdw.ReplyForward",
   forwardWidget: "rdw.ReplyForward",
 
-  templateString: dojo.cache("rdw.templates", "Story.html"),
+  templateString: dojo.cache("rdw.templates", "Conversation.html"),
 
   moreMessagesTemplate: '<a class="moreMessages" href="#${url}">&#9654; ${message}</a>',
 
@@ -112,7 +112,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
         }));
         evt.preventDefault();
       } else if (href == "archive" || href == "delete" || href == "spam") {
-        rd.pub("rdw.Story." + href, this, this.msgs);
+        rd.pub("rdw.Conversation." + href, this, this.msgs);
         dojo.stopEvent(evt);
       }
     }
@@ -133,7 +133,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
   },
 
   display: function() {
-    //summary: displays the messages in the story.
+    //summary: displays the messages in the conversation.
 
     //Set the state as displayed, in case widgets are refreshed for extensions.
     this.displayOnCreate = true;
@@ -187,7 +187,7 @@ dojo.declare("rdw.Story", [rdw._Base], {
     //Determine if the sender is known and switch templates if necessary.
     var known = !!msg["rd.msg.ui.known"];
 
-    //Set the actions for the story.
+    //Set the actions for the conversation.
     if (!known) {
       //This identity is unknown. Try to make a suggestion for
       //who it might be.

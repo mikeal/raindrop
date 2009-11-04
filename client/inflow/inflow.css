@@ -27,7 +27,7 @@
 @import url("css/QuickCompose.css");
 @import url("css/Account.css");
 @import url("css/Search.css");
-@import url("css/Stories.css");
+@import url("css/Conversations.css");
 @import url("css/ContactList.css");
 @import url("css/Organizer.css");
 
@@ -164,17 +164,17 @@ body {
 #content {
 }
 
-#stories {
+#conversations {
   margin: 64px 0 0 0;
   width: 640px;
 }
 
-.rdwStory a {
+.rdwConversation a {
   color: #ff5959;
   text-decoration: none;
 }
 
-#stories .rdwSummary {
+#conversations .rdwSummary {
   margin: 0 10px;
   font-size: 13px;
   font-family: droid-serif, georgia, times, serif;
@@ -182,7 +182,7 @@ body {
 }
 
 
-#stories .rdwSummary.conversation {
+#conversations .rdwSummary.conversation {
   font-family: droid-sans, helvetica, arial, sans;
   font-style: normal;
   font-weight: bold;
@@ -390,7 +390,7 @@ body {
 
 /* Inflow > Message structure */
 
-#stories .rdwStory {
+#conversations .rdwConversation {
   width: 620px;
   background-color: #ffffd9;
   margin: 10px 10px 20px 10px;
@@ -399,31 +399,31 @@ body {
   -webkit-box-shadow: 0 0 5px #ccc;
 }
 
-#stories .rdwStory .header {
+#conversations .rdwConversation .header {
   padding: 1px 5px 0px 5px;
   font-family: Droid-serif, Georgia, Times, serif;
   font-size: 10px;
 }
 
-#stories .rdwStory .header .type {
+#conversations .rdwConversation .header .type {
   display: inline-block;
   float: right;
 }
 
-#stories .rdwStory .header .timestamp {
+#conversations .rdwConversation .header .timestamp {
   font-style: italic;
   float: right;
   display: inline;
 }
 
 
-#stories .rdwStory .messages {
+#conversations .rdwConversation .messages {
   width: 610px;
   padding: 0 0 5px 5px;
   -moz-box-sizing: border-box;
 }
 
-#stories .rdwStory .messageHeader {
+#conversations .rdwConversation .messageHeader {
   padding: 0;
 }
 
@@ -442,9 +442,9 @@ body {
   text-decoration: underline;
 }
 
-.rdwStoryMailingList,
-.rdwStoryTwitterTimeLine,
-.rdwStoryGenericGroup {
+.rdwConversationMailingList,
+.rdwConversationTwitterTimeLine,
+.rdwConversationGenericGroup {
   width: 300px;
   height:211px;
   margin: 10px;
@@ -455,23 +455,23 @@ body {
 }
 
 
-.rdwStoryTwitterTimeLine,
-.rdwStoryMailingList,
-.rdwStoryGenericGroup {
+.rdwConversationTwitterTimeLine,
+.rdwConversationMailingList,
+.rdwConversationGenericGroup {
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
 }
 
-.rdwStoryTwitterTimeLine .timestamp,
-.rdwStoryMailingList .timestamp {
+.rdwConversationTwitterTimeLine .timestamp,
+.rdwConversationMailingList .timestamp {
   float: right;
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
   font-style: italic;
 }
 
-.rdwStoryGenericGroup .timestamp .friendly {
+.rdwConversationGenericGroup .timestamp .friendly {
   display: inline-block;
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
@@ -479,62 +479,62 @@ body {
   font-style: italic;
 }
 
-.rdwStoryTwitterTimeLine {
+.rdwConversationTwitterTimeLine {
   background-color: #C4F3FF;
 }
 
-.rdwStoryMailingList {
+.rdwConversationMailingList {
   background-color: #FFDEDE;
 }
 
-.rdwStoryGenericGroup {
+.rdwConversationGenericGroup {
   background-color: #E9FFE0; 
 } 
 
-.rdwStoryMailingList .subject,
-.rdwStoryGenericGroup .subject {
+.rdwConversationMailingList .subject,
+.rdwConversationGenericGroup .subject {
   margin: 6px 0 0 0;
   font-size: 11.5px;
 }  
 
-.rdwStoryMailingList .subject a,
-.rdwStoryGenericGroup .subject a {
+.rdwConversationMailingList .subject a,
+.rdwConversationGenericGroup .subject a {
   text-decoration: none;
 }  
 
-.rdwStoryMailingList .topActions,
-.rdwStoryGenericGroup .topActions {
+.rdwConversationMailingList .topActions,
+.rdwConversationGenericGroup .topActions {
   display: none;
 }
 
-.rdwStoryTwitterTimeLine .actions a:first-child {
+.rdwConversationTwitterTimeLine .actions a:first-child {
   display: none;
 }
 
-.rdwStoryTwitterTimeLine a {
+.rdwConversationTwitterTimeLine a {
   color: #1a1a1a;
   text-decoration: none;
 }
 
 .tweetTitle,
 .MailingListTitle,
-.rdwStoryGenericGroup .title {
+.rdwConversationGenericGroup .title {
   font-family: droid-serif, georgia, times, serif;
   display: inline-block;
   font-size: 10px;
 }
 
-.rdwStoryGenericGroup .title {
+.rdwConversationGenericGroup .title {
   max-height: 14px;
   overflow: hidden;
   max-width: 240px;
 }
 
-.rdwStoryTwitterTimeLine .subject {
+.rdwConversationTwitterTimeLine .subject {
   display: none;
 }
 
-.rdwStoryTwitterTimeLine .rdwMessage {
+.rdwConversationTwitterTimeLine .rdwMessage {
   margin-top: 6px;
   padding-bottom: 1px;
 }

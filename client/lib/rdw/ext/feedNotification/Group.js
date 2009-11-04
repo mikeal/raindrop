@@ -23,9 +23,9 @@
 
 dojo.provide("rdw.ext.feedNotification.Group");
 
-dojo.require("rdw.story.GenericGroup");
+dojo.require("rdw.conversation.GenericGroup");
 
-dojo.declare("rdw.ext.feedNotification.Group", [rdw.story.GenericGroup], {
+dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], {
   /**
    * Holds on to the ID for the feed.
    */

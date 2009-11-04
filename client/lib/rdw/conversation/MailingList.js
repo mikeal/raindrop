@@ -21,25 +21,25 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.story.GenericGroup");
+dojo.provide("rdw.conversation.MailingList");
 
-dojo.require("rdw.Story");
+dojo.require("rdw.Conversation");
 
 /**
- * Groups some broadcast/general group messages into one "story"
+ * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
-  templateString: '<div class="rdwStoryGenericGroup"> \
+dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
+  templateString: '<div class="rdwConversationMailingList"> \
                     <div class="timestamp" dojoAttachPoint="timestampNode"> \
-                      <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
+                    <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
                     </div> \
-                    <div class="genericGroup" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="title"></span></div> \
+                    <div class="mailingList" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="MailingListTitle"></span></div> \
                   </div>',
 
   /**
    * The name of the module to use for showing individual messages.
    */
-  messageCtorName: "rdw.story.GenericGroupMessage",
+  messageCtorName: "rdw.conversation.MailingListMessage",
 
   /**
    * Limit to number of unread messages. If value is -1, then it means show all.
@@ -55,22 +55,17 @@ dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
   replyStyle: "",
 
   /**
-   * This value is used to show the title of the group in the HTML. Set
-   * this value before display() is called.
-   */
-  groupTitle: "",
-
-  /**
    * Djit lifecycle method, before template is created/injected in the DOM.
    */
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
+    this.convoIds = {};
     this.totalCount = 0;
   },
 
   /**
-   * sorting to use for messages. Unlike rdw.Story, this generic group
-   * should show most recent message first. This method should not use
+   * sorting to use for messages. Unlike rdw.Conversation, the twitter timeline
+   * should show most recent tweet first. This method should not use
    * the "this" variable.
    */
   msgSort: function (a,b) {
@@ -78,31 +73,40 @@ dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
   },
 
   /**
-   * Determines if GenericGroup can support this message. Subclasses should
-   * override this message.
+   * Determines if TwitterTimeLine can support this message.
    *
    * @param messageBag {object} the collection of message schemas for a message.
    */
   canHandle: function(messageBag) {
-    return false;
+    var listDoc = messageBag["rd.msg.email.mailing-list"];
+    
+    //If there is a listDoc and either there is no list ID associated (probably)
+    //a direct prototype check, not on an instance), or if an instance that
+    //already has a listId matches the listId in the listDoc.
+    return !!listDoc && (!this.listId || this.listId == listDoc.list_id);
   },
 
   /**
-   * Extends base class method for saving off list details. Subclasses should
-   * call this method and further subclass, but call this method to set up
-   * the counts correcty.
+   * Extends base class method for saving off list details.
    *
    * @param messageBag {object} the collection of message schemas for a message.
    */
   addMessage: function(messageBag) {
-    if (messageBag) {
-      this.msgs.push(messageBag);
-      this.totalCount += 1;
+    //Only add one message per conversation.
+    var convoId = messageBag["rd.msg.conversation"];
+    if (convoId) {
+      convoId = convoId.conversation_id;
     }
 
-    if (this._displayed) {
-      this.display();
+    if(convoId && !this.convoIds[convoId]) {
+      this.inherited("addMessage", arguments);
+      var listDoc = messageBag["rd.msg.email.mailing-list"];
+      this.listId = listDoc.list_id;
+      this.listName = listDoc.list_id;
+      this.convoIds[convoId] = 1;
     }
+    
+    this.totalCount += 1;
   },
 
   /**
@@ -119,6 +123,6 @@ dojo.declare("rdw.story.GenericGroup", [rdw.Story], {
     }), this.countNode, "only");
 
     //Update the title.
-    rd.escapeHtml(this.groupTitle, this.nameNode, "only");
+    rd.escapeHtml(this.listName, this.nameNode, "only");
   }
 });

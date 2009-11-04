@@ -21,18 +21,10 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.story.FullStory");
+dojo.provide("rdw.conversation.MailingListMessage");
 
-dojo.require("rdw.Story");
-dojo.require("rdw.story.FullMessage");
+dojo.require("rdw.Message");
 
-dojo.declare("rdw.story.FullStory", [rdw.Story], {
-  //The name of the constructor function (module) that should be used
-  //to show individual messages.
-  messageCtorName: "rdw.story.FullMessage",
-
-  //A style to add to any messages that are replies.
-  replyStyle: "",
-
-  templateString: dojo.cache("rdw.story.templates", "FullStory.html")
+dojo.declare("rdw.conversation.MailingListMessage", [rdw.Message], {
+  templateString: dojo.cache("rdw.conversation.templates", "MailingListMessage.html")
 });

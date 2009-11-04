@@ -31,7 +31,7 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
   replyType: "reply",
 
   //Owner widget that is showing this instance.
-  //Used to tell owner if we destory ourselves.
+  //Used to tell owner if we destroy ourselves.
   owner: null,
 
   postMixInProperties: function() {

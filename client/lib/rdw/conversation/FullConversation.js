@@ -21,23 +21,18 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.story.FullMessage");
+dojo.provide("rdw.conversation.FullConversation");
 
-dojo.require("rdw.Message");
+dojo.require("rdw.Conversation");
+dojo.require("rdw.conversation.FullMessage");
 
-dojo.declare("rdw.story.FullMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.story.templates", "FullMessage.html"),
+dojo.declare("rdw.conversation.FullConversation", [rdw.Conversation], {
+  //The name of the constructor function (module) that should be used
+  //to show individual messages.
+  messageCtorName: "rdw.conversation.FullMessage",
 
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postMixInProperties", arguments);
+  //A style to add to any messages that are replies.
+  replyStyle: "",
 
-    //Make sure to show the whole body.
-    var msgBag = this.messageBag;
-    var msgDoc = this.messageBag['rd.msg.body'];
-
-    //Collapse quote regions in the text and hyperlink things.
-    //TODO: make message transforms extensionized.
-    this.message = this.formatQuotedBody();
-  }
+  templateString: dojo.cache("rdw.conversation.templates", "FullConversation.html")
 });

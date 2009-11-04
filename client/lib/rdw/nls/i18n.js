@@ -55,7 +55,7 @@
   spam: "spam",
   spamTitle: "Click here to mark this email as spam.\nFurther messages from this person will be hidden.",
   starred: "Starred",
-  storyDeleted: "Story Deleted: ${title}",
+  conversationDeleted: "Conversation Deleted: ${title}",
   "targetLabel-group": "Group message",
   "targetLabel-direct": "Direct message",
   "targetLabel-notification": "Notification",

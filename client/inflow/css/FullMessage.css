@@ -43,27 +43,27 @@
   background-image: url("../i/icon_group_message.png");
 }
 
-.rdwStoryFullMessage.rdwMessage .actions {
+.rdwConversationFullMessage.rdwMessage .actions {
   visibility: inherit;
 }
 
-.rdwStoryFullMessage .additionalTime {
+.rdwConversationFullMessage .additionalTime {
   visibility: visible;
 }
 
-.rdwStory:hover .rdwStoryFullMessage .additionalTime {
+.rdwConversation:hover .rdwConversationFullMessage .additionalTime {
   visibility: visible;
 }
 
-.rdwStoryFullMessage.rdwMessage .message {
+.rdwConversationFullMessage.rdwMessage .message {
 
 }
 
-.rdwStoryFullMessage.rdwMessage .actions {
+.rdwConversationFullMessage.rdwMessage .actions {
   text-align: left;
 }
 
-.rdwStoryFullMessage.rdwMessage .actions a {
+.rdwConversationFullMessage.rdwMessage .actions a {
   color: #1a1a1a;
   height: 16px;
   padding: 0 0 0 20px;
@@ -71,48 +71,48 @@
   line-height: 16px;
 }
 
-#stories a.quoteToggle,
-#stories .quote {
+#conversations a.quoteToggle,
+#conversations .quote {
   opacity: 0.5;
   display: table;
   margin-bottom: 8px;
 }
 
-#stories .rdwStory.rdwStoryFullStory {
+#conversations .rdwConversation.rdwConversationFullConversation {
   border: none;
 }
 
-#stories .rdwStory.rdwStoryFullStory .messages {
+#conversations .rdwConversation.rdwConversationFullConversation .messages {
   padding:0;
   width: 620px;
 }
 
-#stories .rdwStory.rdwStoryFullStory .header {
+#conversations .rdwConversation.rdwConversationFullConversation .header {
   padding:0;
   display: inline-block;
   float: right;
 }
 
-#stories .rdwStory.rdwStoryFullStory .messageHeader {
+#conversations .rdwConversation.rdwConversationFullConversation .messageHeader {
   padding: 14px 0 0 0;
 }
 
-#stories .rdwStory.rdwStoryFullStory .messageHeader .medium {
+#conversations .rdwConversation.rdwConversationFullConversation .messageHeader .medium {
   opacity: 0.5;
 }
   
 
-#stories .rdwStory.rdwStoryFullStory .header .timestamp {
+#conversations .rdwConversation.rdwConversationFullConversation .header .timestamp {
   margin: 0;
   padding: 0;
 }
 
-#stories .rdwStory.rdwStoryFullStory .header .timestamp .friendly {
+#conversations .rdwConversation.rdwConversationFullConversation .header .timestamp .friendly {
   display: none;
 }
 
-#stories .rdwSummary .actions,
-#stories .rdwSummary.conversation .actions {
+#conversations .rdwSummary .actions,
+#conversations .rdwSummary.conversation .actions {
   display: inline-block;
   float: right;
   font-family: droid-serif, georgia, times, serif;
@@ -122,41 +122,41 @@
   line-height: 18px;
 }
 
-#stories .rdwSummary .actions a,
-#stories .rdwSummary.conversation .actions a {
+#conversations .rdwSummary .actions a,
+#conversations .rdwSummary.conversation .actions a {
   color: #ff5959;
   border-right:1px solid #000000;
   padding:0 4px 0 3px;
   text-decoration: none;
 }
 
-#stories .rdwSummary .actions a:last-child,
-#stories .rdwSummary.conversation .actions a:last-child {
+#conversations .rdwSummary .actions a:last-child,
+#conversations .rdwSummary.conversation .actions a:last-child {
   border-right: none;
   padding:0 0 0 3px;
 }
 
 
-#stories .rdwStory.rdwStoryFullStory .messages .actions {
+#conversations .rdwConversation.rdwConversationFullConversation .messages .actions {
   padding: 0;
   display: inline-block;
   width: 100%;
 }
 
-#stories .rdwStory.rdwStoryFullStory .actions a:first-child {
+#conversations .rdwConversation.rdwConversationFullConversation .actions a:first-child {
   padding: 1px 3px;
   margin: 0;
 }
 
-#stories .rdwStory.rdwStoryFullStory .actions a.reply {
+#conversations .rdwConversation.rdwConversationFullConversation .actions a.reply {
   margin: 0;
 }
 
-#stories .rdwStory.rdwStoryFullStory .actions a.fwd {
+#conversations .rdwConversation.rdwConversationFullConversation .actions a.fwd {
   margin: 0 4px 0 0;
 }   
 
-.rdwStoryFullMessage.rdwMessage {
+.rdwConversationFullMessage.rdwMessage {
   background-color: #ffffd9;
   border-top: 1px solid #000;
   margin: 0 0 20px 0;

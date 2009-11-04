@@ -8,7 +8,7 @@
         "rdw.DataSelector": "rdw.ext.MailingList",
         "rdw.Organizer": "rdw.ext.MailingList",
         "rdw.Summary": "rdw.ext.MailingList",
-        "rdw.Stories": "rdw.ext.MailingList"
+        "rdw.Conversations": "rdw.ext.MailingList"
       }
     }
   }

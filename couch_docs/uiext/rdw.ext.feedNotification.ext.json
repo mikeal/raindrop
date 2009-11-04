@@ -2,7 +2,7 @@
   "schemas" : {
     "rd.ext.uiext" : {
       "exts": {
-        "rdw.Stories": "rdw.ext.feedNotification.ext"
+        "rdw.Conversations": "rdw.ext.feedNotification.ext"
       }
     }
   }

@@ -166,13 +166,13 @@ dojo.declare("rdw.Notify", [rdw._Base], {
   },
   
   del: function(/*Array*/ msgs) {
-    //summary: A story was deleted.
+    //summary: A conversation was deleted.
     var title = msgs[0]["rd.msg.body"];
     if (title) {
       title = title.subject || "";
     }
 
-    this.showNotify(dojo.string.substitute(this.i18n.storyDeleted, {
+    this.showNotify(dojo.string.substitute(this.i18n.conversationDeleted, {
       title: title
     }));
   }

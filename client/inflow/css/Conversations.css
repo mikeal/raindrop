@@ -21,51 +21,46 @@
  * Contributor(s):
  * */
 
-@import url(FullMessage.css);
+@import url("Conversation.css");
+@import url("FullConversation.css");
 
-
-.rdwStoryFullStory {
-  background-color: white !important;
-  -moz-box-shadow: none !important;
-  -webkit-box-shadow: none !important;
+.rdwConversations {
+  overflow: hidden;
+  width: 100%;
 }
 
-.rdwStoryFullStory .rdwMessage .timestamp {
+.rdwConversations .scrollArea {
+  overflow: auto;
+  width: 8000px;
+}
+
+.rdwConversations ol {
+  position: relative;
   display: block;
-  margin: 14px 0 0 0;
+  float: left;
+  width: 100%;
+  list-style: none; 
+  margin: 0;
+  padding: 0;
 }
 
-.rdwStoryFullStory .rdwMessage .actions {
+.rdwConversationsSwipe {
+  position: fixed;
+  bottom: 150px;
+  left: 50%;
+  margin-left: -135px;
+  width: 270px;
+  height: 150px;
+  z-index: 1;
+  display: none;
+}
+
+.rdwConversationsSwipe.conversation {
+  background-image: url("../i/swipe_right.png");
   display: block;
-  margin: 0 0 14px 0;
 }
 
-.rdwStoryFullStory .from {
-  font-size: 13px;
+.rdwConversationsSwipe.summary {
+  background-image: url("../i/swipe_left.png");
   display: block;
-  color: #FF5959;
-}
-
-.rdwStoryFullStory .fullMessageTitle {
-  display: inline-block;
-  font-weight: bold;
-  color:#FF5959;
-  padding: 0 0 20px 0;
-}
-
-.rdwStoryFullStory .toolBox {
-  display: inline;
-  float: right;
-  font-family: droid-serif, georgia, times, serif;
-  font-style: italic;
-  font-size: 10px;
-}
-
-.rdwStoryFullStory .toolBox a {
-  margin: 0 0 0 7px;
-}
-
-.rdwStoryFullStory .content {
-  display: block;
-  margin: 7px 0 0 0;
 }

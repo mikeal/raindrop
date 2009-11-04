@@ -23,9 +23,9 @@
 
 dojo.provide("rdw.ext.facebookNotification.Group");
 
-dojo.require("rdw.story.GenericGroup");
+dojo.require("rdw.conversation.GenericGroup");
 
-dojo.declare("rdw.ext.facebookNotification.Group", [rdw.story.GenericGroup], {
+dojo.declare("rdw.ext.facebookNotification.Group", [rdw.conversation.GenericGroup], {
   matchRegExp: /notification[^@]*@facebookmail.com/,
 
   /**
