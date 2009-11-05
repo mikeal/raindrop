@@ -392,11 +392,18 @@ body {
 
 #conversations .rdwConversation {
   width: 620px;
-  background-color: #ffffd9;
   margin: 10px 10px 20px 10px;
   border-top: 1px solid #000;
   -moz-box-shadow: 0 0 5px #ccc;
   -webkit-box-shadow: 0 0 5px #ccc;
+}
+
+#conversations .rdwConversation.unread {
+  background-color: #ffffd9;
+}
+
+#conversations .rdwConversation.read {
+  background-color: #fff;
 }
 
 #conversations .rdwConversation .header {

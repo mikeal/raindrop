@@ -183,6 +183,8 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       rd.escapeHtml(rd.hyperlink.add(rd.escapeHtml(msg.subject || "")), this.subjectNode, "only");
     }
 
+    var seen = this.msgs.some(function(e, i, a) { return e["rd.msg.seen"].seen; });
+    dojo.addClass(this.domNode, (seen)? "read" : "unread");
 
     //Determine if the sender is known and switch templates if necessary.
     var known = !!msg["rd.msg.ui.known"];
