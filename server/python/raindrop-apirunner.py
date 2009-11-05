@@ -174,7 +174,8 @@ def get_api_handler(cfg, req):
     # path format is "db_name/external_name/app_name/class_name/method_name
     if len(req.get('path', [])) != 5:
         raise APILoadError("invalid api request format")
-    cache_key = tuple(req['path'][2:4])
+    dbname = req['path'][0]
+    cache_key = tuple(req['path'][:4])
     try:
         return _handlers[cache_key]
     except KeyError:
@@ -182,8 +183,9 @@ def get_api_handler(cfg, req):
         pass
 
     # Load the schemas which declare they implement this end-point
-    key = ['rd.ext.api', 'endpoints', cache_key]
-    path = "/%s/_design/raindrop!content!all/_view/megaview" % cfg['name']
+    apiid = req['path'][2:4] # the 'app' name and the 'class' name.
+    key = ['rd.ext.api', 'endpoints', apiid]
+    path = "/%s/_design/raindrop!content!all/_view/megaview" % dbname
     options = {'key': json.dumps(key),
                'reduce': 'false',
                'include_docs': 'true',
@@ -199,7 +201,7 @@ def get_api_handler(cfg, req):
     resp.close()
     rows = result['rows']
     if not rows:
-        raise APILoadError("No such API end-point %s", cache_key)
+        raise APILoadError("No such API end-point %s", apiid)
     if len(rows) != 1: # should only be one doc with this criteria!
         raise APILoadError("too many docs say they implement this api!")
     doc = rows[0]['doc']
