@@ -36,8 +36,8 @@
 }
 
 .rdwMessage .subject {
-  display: block;
-  margin: 1px 0 7px 0;
+  display: inline-block;
+  margin: 2px 0 7px 0;
   font-weight: bold;
   color: #FF5959;
   font-size: 13px;
@@ -45,6 +45,12 @@
 
 .rdwMessage a.subject {
   color: #FF5959;
+}
+
+.rdwMessage .message a.subject.highlight,
+.rdwMessage .message .subject.hightlight {
+  color: white;
+  background-color: #ff5959;
 }
 
 .rdwMessage .header {
@@ -72,6 +78,11 @@
   font-style: italic;
   font-size: 10px;
   padding: 0 5px 7px 5px;
+  visibility: hidden;
+}
+
+#conversations .rdwConversation:hover .actions {
+  visibility: visible;
 }
 
 #conversations .rdwConversation .actions a {
@@ -83,7 +94,6 @@
 #conversations .rdwConversation .actions a.reply,
 #conversations .rdwConversation .actions a.fwd {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
-  font-weight: bold;
   font-style: normal;
   float: right;
   color: white;
@@ -92,6 +102,7 @@
   border: none;
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
+  font-weight: bold;
 }
 
 #conversations .rdwConversation .actions a:first-child {
@@ -112,7 +123,8 @@
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
-  text-align: right;
+  display: inline;
+  color: #888;
 }
 
 .rdwMessage .timestamp .messageType {
@@ -121,11 +133,8 @@
 }
 
 .rdwMessage:first-child .timestamp {
-  display: block;
-}
-
-.rdwMessage .timestamp {
-  display: none;
+  display: inline-block;
+  color: #888888;
 }
 
 .rdwMessage .active .timestamp,

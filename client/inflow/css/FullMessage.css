@@ -73,9 +73,12 @@
 
 #conversations a.quoteToggle,
 #conversations .quote {
-  opacity: 0.5;
   display: table;
   margin-bottom: 8px;
+}
+
+#conversations .quote {
+  color: #888;
 }
 
 #conversations .rdwConversation.rdwConversationFullConversation {
@@ -94,17 +97,17 @@
 }
 
 #conversations .rdwConversation.rdwConversationFullConversation .messageHeader {
-  padding: 14px 0 0 0;
+  padding: 2px 0 0 0;
 }
 
 #conversations .rdwConversation.rdwConversationFullConversation .messageHeader .medium {
-  opacity: 0.5;
+  color: #888888;
 }
   
-
 #conversations .rdwConversation.rdwConversationFullConversation .header .timestamp {
   margin: 0;
-  padding: 0;
+  padding: 3px 0 0 0;
+  color: #000;
 }
 
 #conversations .rdwConversation.rdwConversationFullConversation .header .timestamp .friendly {
@@ -157,12 +160,12 @@
 }   
 
 .rdwConversationFullMessage.rdwMessage {
-  background-color: #ffffd9;
-  border-top: 1px solid #000;
+  background-color: #fff;
+  border: 1px solid #e6e6e6;
   margin: 0 0 20px 0;
   padding: 1px 5px 1px 5px;
-  -moz-box-shadow: 0 0 5px #ccc;
-  -webkit-box-shadow: 0 0 5px #ccc;
+  -moz-box-shadow: 3px 3px 0px #e6e6e6;
+  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
 }
 
 .toolBox {

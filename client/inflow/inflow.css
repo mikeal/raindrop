@@ -179,6 +179,11 @@ body {
   font-size: 13px;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
+  min-height: 16px;
+  background-image: url("i/new/rd_inflow_mail.png");
+  background-repeat: no-repeat;
+  padding-left: 16px;
+  background-position: left;
 }
 
 
@@ -187,7 +192,8 @@ body {
   font-style: normal;
   font-weight: bold;
   color: #ff5959;
-  min-height: 16px;
+  background-image: none;
+  padding-left: 0;
 }
 
 #footer {
@@ -393,17 +399,17 @@ body {
 #conversations .rdwConversation {
   width: 620px;
   margin: 10px 10px 20px 10px;
-  border-top: 1px solid #000;
-  -moz-box-shadow: 0 0 5px #ccc;
-  -webkit-box-shadow: 0 0 5px #ccc;
+  border: 1px solid #e6e6e6;
+  -moz-box-shadow: 3px 3px 0px #e6e6e6;
+  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
 }
 
 #conversations .rdwConversation.unread {
-  background-color: #ffffd9;
+  background-color: #fff;
 }
 
 #conversations .rdwConversation.read {
-  background-color: #fff;
+  background-color: #ffffd9;
 }
 
 #conversations .rdwConversation .header {
@@ -415,6 +421,11 @@ body {
 #conversations .rdwConversation .header .type {
   display: inline-block;
   float: right;
+  padding: 0 0 0 21px;
+  margin: 3px 0 0 0;
+  background-image: url("i/new/rd_inflow_directmessage.png");
+  background-repeat: no-repeat;
+  background-position: left;
 }
 
 #conversations .rdwConversation .header .timestamp {
@@ -453,12 +464,12 @@ body {
 .rdwConversationTwitterTimeLine,
 .rdwConversationGenericGroup {
   width: 300px;
-  height:211px;
   margin: 10px;
   float: left;
   padding: 5px;
-  -moz-box-shadow: 0 0 5px #ccc;
-  -webkit-box-shadow: 0 0 5px #ccc;
+  -moz-box-shadow: 3px 3px 0px #e6e6e6;
+  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
+  border: 1px solid #e6e6e6;
 }
 
 
@@ -472,10 +483,11 @@ body {
 
 .rdwConversationTwitterTimeLine .timestamp,
 .rdwConversationMailingList .timestamp {
-  float: right;
+  display: inline;
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
   font-style: italic;
+  color: #888;
 }
 
 .rdwConversationGenericGroup .timestamp .friendly {
@@ -531,10 +543,25 @@ body {
   font-size: 10px;
 }
 
+.tweetTitle {
+  padding: 0 0 0 22px;
+  background-image: url("i/new/rd_widget_twitter.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
+.MailingListTitle {
+  padding: 0 0 0 18px;
+  background-image: url("i/new/rd_widget_mailinglist.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
 .rdwConversationGenericGroup .title {
-  max-height: 14px;
-  overflow: hidden;
-  max-width: 240px;
+  padding: 0 0 0 16px;
+  background-image: url("i/new/rd_widget_rss.png");
+  background-repeat: no-repeat;
+  background-position: left;
 }
 
 .rdwConversationTwitterTimeLine .subject {
