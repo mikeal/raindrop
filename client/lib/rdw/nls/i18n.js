@@ -58,6 +58,8 @@
   conversationDeleted: "Conversation Deleted: ${title}",
   "targetLabel-group": "Group message",
   "targetLabel-direct": "Direct message",
+  "targetLabel-from": "From You",
+  "targetLabel-broadcast": "Broadcast",
   "targetLabel-notification": "Notification",
   whoKnown: "Is this ${name}?",
   whoTitle: "Associate this identity with a contact.",

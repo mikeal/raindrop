@@ -159,8 +159,12 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     }
 
     //Set the header info.
-    //First the message type
-    var target = (msg['rd.msg.recip-target'] && msg['rd.msg.recip-target']['target']) || "";
+
+    //Get the conversation type from the last message received
+    //If a person replies to a message you sent we don't want it to look like a
+    //"from you" message as much as it is a direct reply/conversation
+    //XXX this should probably know what the last message showing is
+    var target = (this.msgs[this.msgs.length - 1]['rd.msg.recip-target'] && this.msgs[this.msgs.length - 1]['rd.msg.recip-target']['target']) || "";
     target = target && this.i18n["targetLabel-" + target];
     if (target) {
       rd.escapeHtml(target, this.typeNode, "only");
