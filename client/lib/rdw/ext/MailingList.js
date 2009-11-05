@@ -190,7 +190,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Conversations", {
 //Modify rdw.Widgets to allow showing mailing lists.
 rd.applyExtension("rdw.ext.MailingList", "rdw.Widgets", {
   addToPrototype: {
-    homeGroups: [
+    convoModules: [
       "rdw.conversation.MailingList"
     ]
   }

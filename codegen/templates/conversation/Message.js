@@ -21,16 +21,23 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.twitterNotification.ext");
+dojo.provide("rdw.ext.EXTNAME.Message");
 
-dojo.require("rdw.Widgets");
-dojo.require("rdw.ext.twitterNotification.Group");
+dojo.require("rdw.Message");
 
-//Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.twitterNotification.ext", "rdw.Widgets", {
-  addToPrototype: {
-    convoModules: [
-      "rdw.ext.twitterNotification.Group"
-    ]
+dojo.declare("rdw.ext.EXTNAME.Message", [rdw.Message], {
+  templateString: dojo.cache("rdw.ext.EXTNAME", "Message.html"),
+
+  postMixInProperties: function() {
+    //summary: dijit lifecycle method
+    this.inherited("postMixInProperties", arguments);
+
+    //Set any properties you want to show in the template here.
+    //this.messageBag is the message object.
+    var msgBag = this.messageBag;
+
+    //With this.body set up, you can use ${body.subject} to print
+    //out the message subject.
+    this.body = this.messageBag['rd.msg.body'];
   }
 });

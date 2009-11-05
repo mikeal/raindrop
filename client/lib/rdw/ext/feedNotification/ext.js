@@ -29,7 +29,7 @@ dojo.require("rdw.ext.feedNotification.Group");
 //Modify rdw.Widgets to allow showing mailing lists.
 rd.applyExtension("rdw.ext.feedNotification.ext", "rdw.Widgets", {
   addToPrototype: {
-    homeGroups: [
+    convoModules: [
       "rdw.ext.feedNotification.Group"
     ]
   }

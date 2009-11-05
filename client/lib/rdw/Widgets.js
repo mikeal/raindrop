@@ -39,10 +39,10 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   //for the messages that match the criteria.
   messageLimit: 30,
 
-  //List of modules that may want to group messages in the home view.
+  //List of modules that can handle display of a conversation.
   //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
   //for each entry in this array.
-  homeGroups: [
+  convoModules: [
     "rdw.conversation.TwitterTimeLine"
   ],
 
@@ -347,17 +347,17 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     this.conversations._rdwConversationsType = "home";
     this._groups = [];
 
-    if (!this.homeGroupModules) {
-      for (var i = 0, module; module = this.homeGroups[i]; i++) {
+    if (!this.convoWidgets) {
+      for (var i = 0, module; module = this.convoModules[i]; i++) {
         dojo["require"](module);
       }
 
       dojo.addOnLoad(dojo.hitch(this, function(){
         console.log("finished loading group modules.");
-        this.homeGroupModules = [];
-        for (var i = 0, module; module = this.homeGroups[i]; i++) {
+        this.convoWidgets = [];
+        for (var i = 0, module; module = this.convoModules[i]; i++) {
           var mod = dojo.getObject(module);
-          this.homeGroupModules.push(mod);
+          this.convoWidgets.push(mod);
         }
         this.destroyAllSupporting();
         this._renderHome();
@@ -463,7 +463,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
   _getHomeGroup: function(/*Object*/msgBag) {
     //summary: determines if there is a home group that can handle the message.
-    for (var i = 0, module; module = this.homeGroupModules[i]; i++) {
+    for (var i = 0, module; module = this.convoWidgets[i]; i++) {
       if (module.prototype.canHandle(msgBag)) {
         return module;
       }

@@ -1,0 +1,9 @@
+{
+  "schemas" : {
+    "rd.ext.uiext" : {
+      "exts": {
+        "EXTENDEDNAME": "rdw.ext.EXTNAME.ext"
+      }
+    }
+  }
+}

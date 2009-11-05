@@ -29,7 +29,7 @@ dojo.require("rdw.ext.facebookNotification.Group");
 //Modify rdw.Widgets to allow showing mailing lists.
 rd.applyExtension("rdw.ext.facebookNotification.ext", "rdw.Widgets", {
   addToPrototype: {
-    homeGroups: [
+    convoModules: [
       "rdw.ext.facebookNotification.Group"
     ]
   }

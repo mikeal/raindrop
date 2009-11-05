@@ -21,16 +21,16 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.twitterNotification.ext");
+dojo.provide("rdw.ext.EXTNAME.ext");
 
-dojo.require("rdw.Widgets");
-dojo.require("rdw.ext.twitterNotification.Group");
+dojo.require("EXTENDEDNAME");
+dojo.require("rdw.ext.EXTNAME.Conversation");
 
-//Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.twitterNotification.ext", "rdw.Widgets", {
+//Modify EXTENDEDNAME to allow showing mailing lists.
+rd.applyExtension("rdw.ext.EXTNAME.ext", "EXTENDEDNAME", {
   addToPrototype: {
     convoModules: [
-      "rdw.ext.twitterNotification.Group"
+      "rdw.ext.EXTNAME.Conversation"
     ]
   }
 });
