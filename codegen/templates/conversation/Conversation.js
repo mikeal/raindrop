@@ -59,13 +59,10 @@ dojo.declare("rdw.ext.EXTNAME.Conversation", [rdw.Conversation], {
   /**
    * Extends base class method for saving off conversation ID
    *
-   * @param msg {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object
    */
-  addMessage: function(msg) {
-    this.inherited("addMessage", arguments);
-    var convoDoc = msg["rd.msg.conversation"];
-    if (convoDoc) {
-      this.convoId = convoDoc.conversation_id;
-    }
+  addConversation: function(conversation) {
+    this.inherited("addConversation", arguments);
+    this.convoId = conversation.id;
   }
 });

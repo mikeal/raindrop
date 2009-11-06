@@ -245,13 +245,12 @@ rd.api.identity = {
    *
    * @param {Object} args arguments to pass to the couch calls.
    * 
-   * @param {Object} imessageBag the collection of message docs that make up
-   * a message.
+   * @param {Object} msg the message object
    */
-  _createEmailIdentity: function(dfd, args, messageBag) {
+  _createEmailIdentity: function(dfd, args, msg) {
     //summary: creates an identity document for the given a mail message bag.
     //The callback will receive the identity document as the only argument.
-    var body = messageBag["rd.msg.body"];
+    var body = msg.schemas["rd.msg.body"];
     var from = body.from[1];
 
     //Generate the new document.
@@ -263,7 +262,7 @@ rd.api.identity = {
         ["email", from]
       ],
       rd_schema_id: "rd.identity",
-      rd_source: [messageBag["rd.msg.email"]._id]
+      rd_source: [msg.schemas["rd.msg.email"]._id]
     };
 
     //Insert the document.
@@ -360,14 +359,14 @@ rd.api.extend({
    * Returns an rd.identity doc to the ok callbacks.
    *
    * @param {Object} args options for the couchdb calls
-   * @param {Object} args.messageBag the collection of
+   * @param {Object} args.msg the msg object.
    */
   createEmailIdentity: function(args) {
-    if (args && args.messageBag) {
-      rd.api.identity._createEmailIdentity(this._deferred, args, args.messageBag);
+    if (args && args.msg) {
+      rd.api.identity._createEmailIdentity(this._deferred, args, args.msg);
     } else {
       this._deferred.errback(new Error("rd.api().identity.createEmailIdentity "
-                                       + "requires an args.messageBag argument."));
+                                       + "requires an args.msg argument."));
     }
     return this;
   }

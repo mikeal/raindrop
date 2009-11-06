@@ -37,8 +37,8 @@ rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
       });
 
       //Loop over the sources and add links for each kind.
-      for(var prop in this.messageBag) {
-        var schema = this.messageBag[prop];
+      for(var prop in this.msg) {
+        var schema = this.msg.schemas[prop];
         var sch_id = schema.rd_schema_id; // XXX - include schema in the link?
         id = schema._id;
         dojo.create("a", {

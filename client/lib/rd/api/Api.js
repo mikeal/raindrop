@@ -345,13 +345,18 @@ rd.api.extend({
     args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
     args.url += "_api/" + ep;
     args.contentType = " ";
-    return this.xhr(args)
-        .ok(function(results) {
-            callback(results);
-        })
-        .error(function(results) {
-            errback(results);
-        });
+    var ret = this.xhr(args);
+    if (callback) {
+      ret.ok(function(results) {
+          callback(results);
+      });
+    }
+    if (errback) {
+      ret.error(function(results) {
+          errback(results);
+      });
+    }
+    return ret;
   },
 
   doc: function(args) {

@@ -69,17 +69,17 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
    * the "this" variable.
    */
   msgSort: function (a,b) {
-    return a["rd.msg.body"].timestamp < b["rd.msg.body"].timestamp
+    return a.schemas["rd.msg.body"].timestamp < b.schemas["rd.msg.body"].timestamp
   },
 
   /**
-   * Determines if TwitterTimeLine can support this message.
+   * Determines if TwitterTimeLine can support this conversation.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object
    */
-  canHandle: function(messageBag) {
-    var listDoc = messageBag["rd.msg.email.mailing-list"];
-    
+  canHandle: function(conversation) {
+    var listDoc = conversation.messages[0].schemas["rd.msg.email.mailing-list"];
+
     //If there is a listDoc and either there is no list ID associated (probably)
     //a direct prototype check, not on an instance), or if an instance that
     //already has a listId matches the listId in the listDoc.
@@ -89,23 +89,19 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
   /**
    * Extends base class method for saving off list details.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object.
    */
-  addMessage: function(messageBag) {
+  addConversation: function(conversation) {
     //Only add one message per conversation.
-    var convoId = messageBag["rd.msg.conversation"];
-    if (convoId) {
-      convoId = convoId.conversation_id;
-    }
-
+    var convoId = conversation.id;
     if(convoId && !this.convoIds[convoId]) {
-      this.inherited("addMessage", arguments);
-      var listDoc = messageBag["rd.msg.email.mailing-list"];
+      this.inherited("addConversation", arguments);
+      var listDoc = conversation.messages[0].schemas["rd.msg.email.mailing-list"];
       this.listId = listDoc.list_id;
       this.listName = listDoc.list_id;
       this.convoIds[convoId] = 1;
     }
-    
+
     this.totalCount += 1;
   },
 

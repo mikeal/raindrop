@@ -32,33 +32,34 @@ dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], 
   feedId: "",
   
   /**
-   * pulls the feed ID out of the messageBag's rss-entry schema.
+   * pulls the feed ID out of the msg's rss-entry schema.
    */
-  getFeedId: function(messageBag) {
-    return messageBag["rd.msg.rss-feed"] && messageBag["rd.msg.rss-feed"].feed_id;
+  getFeedId: function(msg) {
+    return msg.schemas["rd.msg.rss-feed"] && msg.schemas["rd.msg.rss-feed"].feed_id;
   },
 
   /**
-   * Determines if message is supported.
+   * Determines if conversation is supported.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object
    */
-  canHandle: function(messageBag) {
-    var feedId = this.getFeedId(messageBag);
+  canHandle: function(conversation) {
+    var feedId = this.getFeedId(conversation.messages[0]);
     return (feedId && !this.feedId) || (this.feedId == feedId);
   },
 
-  addMessage: function(messageBag) {
-    this.inherited("addMessage", arguments);
+  addConversation: function(conversation) {
+    this.inherited("addConversation", arguments);
+    var msg = conversation.messages[0];
 
     //Save the feed ID so only accept entries from this feed.
     if (!this.feedId) {
-      this.feedId = this.getFeedId(messageBag);
+      this.feedId = this.getFeedId(msg);
     }
 
     //Set the title of the feed.
-    if (messageBag) {
-      this.groupTitle = messageBag["rd.msg.rss-feed"].title || "";
+    if (msg) {
+      this.groupTitle = msg.schemas["rd.msg.rss-feed"].title || "";
     }
   }
 });

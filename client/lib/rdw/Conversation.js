@@ -29,10 +29,8 @@ dojo.require("rdw._Base");
 dojo.require("rdw.Message");
 
 dojo.declare("rdw.Conversation", [rdw._Base], {
-  //Holds the couch documents for this conversation.
-  //Warning: this is a prototype property: be sure to
-  //set it per instance.
-  msgs: [],
+  //Holds the conversatino object fetched from the API.
+  conversation: null,
 
   //Flag for displaying the messages as soon as the
   //instance is created. If false, then the display()
@@ -68,7 +66,13 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     //summary: default message sorting is by timestamp, most
     //recent message is last. This method should not use
     //the "this" variable.
-    return a["rd.msg.body"].timestamp > b["rd.msg.body"].timestamp
+    return a.schemas["rd.msg.body"].timestamp > b.schemas["rd.msg.body"].timestamp
+  },
+
+  postMixInProperties: function() {
+    //summary: dijit lifecycle method
+    this.inherited("postMixInProperties", arguments);
+    this.msgs = this.conversation.messages;
   },
 
   postCreate: function() {
@@ -102,7 +106,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
           this.responseWidget = new module({
             owner: this,
             replyType: href,
-            messageBag: this.lastDisplayedMsg
+            msg: this.lastDisplayedMsg
           });
 
           this.addSupporting(this.responseWidget);
@@ -112,7 +116,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
         }));
         evt.preventDefault();
       } else if (href == "archive" || href == "delete" || href == "spam") {
-        rd.pub("rdw.Conversation." + href, this, this.msgs);
+        rd.pub("rdw.Conversation." + href, this, this.conversation);
         dojo.stopEvent(evt);
       }
     }
@@ -121,12 +125,17 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
   /**
    * Adds a message to this group.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation for this widget.
    */
-  addMessage: function(messageBag) {
-    if (messageBag) {
-      this.msgs.push(messageBag);
+  addConversation: function(conversation) {
+    if (conversation) {
+      this.conversation = conversation;
     }
+    var messages = conversation.messages;
+    if (messages && messages.length) {
+      this.msgs.push.apply(this, conversation.messages);
+    }
+
     if (this._displayed) {
       this.display();
     }
@@ -146,25 +155,24 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     this.msgs.sort(this.msgSort);
 
     //Set classes based on first message state.
-    var msg = this.msgs[0];
-    if (msg["rd.msg.archived"] && msg["rd.msg.archived"].archived) {
+    var schemas = this.msgs[0].schemas;
+    if (schemas["rd.msg.archived"] && schemas["rd.msg.archived"].archived) {
       dojo.addClass(this.domNode, "archived");
     } else {
       dojo.removeClass(this.domNode, "archived");
     }
-    if (msg["rd.msg.deleted"] && msg["rd.msg.deleted"].deleted) {
+    if (schemas["rd.msg.deleted"] && schemas["rd.msg.deleted"].deleted) {
       dojo.addClass(this.domNode, "deleted");
     } else {
       dojo.removeClass(this.domNode, "deleted");
     }
 
     //Set the header info.
-
     //Get the conversation type from the last message received
     //If a person replies to a message you sent we don't want it to look like a
     //"from you" message as much as it is a direct reply/conversation
     //XXX this should probably know what the last message showing is
-    var target = (this.msgs[this.msgs.length - 1]['rd.msg.recip-target'] && this.msgs[this.msgs.length - 1]['rd.msg.recip-target']['target']) || "";
+    var target = (this.msgs[this.msgs.length - 1].schemas['rd.msg.recip-target'] && this.msgs[this.msgs.length - 1].schemas['rd.msg.recip-target']['target']) || "";
     var targetName = target && this.i18n["targetLabel-" + target];
     if (targetName && this.typeNode) {
       rd.escapeHtml(targetName, this.typeNode, "only");
@@ -172,9 +180,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     }
 
     //Set up the link for the full conversation view action, and set the subject.
-    var convoId = msg
-                && msg["rd.msg.conversation"]
-                && msg["rd.msg.conversation"].conversation_id;
+    var convoId = this.conversation.id;
     if (convoId) {
       convoId = "#rd:conversation:" + convoId;
       if (this.subjectNode) {
@@ -185,14 +191,13 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       }
     }
     if (this.subjectNode) {
-      rd.escapeHtml(rd.hyperlink.add(rd.escapeHtml(msg.subject || "")), this.subjectNode, "only");
+      rd.escapeHtml(rd.hyperlink.add(rd.escapeHtml(this.conversation.subject || "")), this.subjectNode, "only");
     }
 
-    var seen = this.msgs.some(function(e, i, a) { return e["rd.msg.seen"] && e["rd.msg.seen"].seen; });
-    dojo.addClass(this.domNode, (seen)? "read" : "unread");
+    dojo.addClass(this.domNode, (this.conversation.unread != 0)? "read" : "unread");
 
     //Determine if the sender is known and switch templates if necessary.
-    var known = !!msg["rd.msg.ui.known"];
+    var known = !!schemas["rd.msg.ui.known"];
 
     //Set the actions for the conversation.
     if (!known) {
@@ -200,7 +205,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       //who it might be.
       dojo.addClass(this.domNode, "unknown");
 
-      var body = msg['rd.msg.body'];
+      var body = schemas['rd.msg.body'];
       var from = body.from && body.from[1];
       if (from) {
         rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
@@ -213,7 +218,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     dojo["require"](this.messageCtorName);
     dojo.addOnLoad(dojo.hitch(this, function() {
       //Set the limit to fetch. Always show the first message, that is why there is
-      //a -1 for the this.msgs.length branch.
+      //a -1 for the this.conversation.messages.length branch.
       var limit = this.msgs.length;
       var showUnreadReplies = this.unreadReplyLimit > -1;
       var msgLimit = showUnreadReplies ? this.unreadReplyLimit + 1 : limit;
@@ -224,7 +229,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       //Now figure out how many replies to show. Always show the first message.
       var toShow = [0];
       for (var i = 1, msg; (i < limit) && (msg = this.msgs[i]); i++) {
-        var seen = msg["rd.msg.seen"];
+        var seen = msg.schemas["rd.msg.seen"];
         if (!showUnreadReplies || (showUnreadReplies && toShow.length < msgLimit && (!seen || !seen.seen))) {
           toShow.push(i);
         }
@@ -234,7 +239,8 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       if (showUnreadReplies && toShow.length < msgLimit) {
         if (toShow.length == 1) {
           //All replies are read. Choose the last set of replies.
-          for (i = this.msgs.length - 1; i > 0 && i > this.msgs.length - msgLimit; i--) {
+          var len = this.msgs.length;
+          for (i = len - 1; i > 0 && i > len - msgLimit; i--) {
             toShow.splice(1, 0, i);
           }
         } else {
@@ -251,21 +257,21 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       for (var i = 0, index, msg; ((index = toShow[i]) > -1) && (msg = this.msgs[index]); i++) {
         this.lastDisplayedMsg = msg;
         this.addSupporting(new ctor({
-          messageBag: msg,
+          msg: msg,
           type: index == 0 ? "" : this.replyStyle,
           tabIndex: index == 0 || this.allowReplyMessageFocus ? 0 : -1
         }, dojo.create("div", null, this.containerNode)));
       }
 
       //If any left over messages, then show that info.
-      var notShownCount = this.msgs.length - toShow.length;
+      var notShownCount = len - toShow.length;
       if (notShownCount) {
         //Find last widget.
         var lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
         //Set up the link for the more action. Need the conversation ID.
-        var convoId = lastWidget.messageBag
-              && lastWidget.messageBag["rd.msg.conversation"]
-              && lastWidget.messageBag["rd.msg.conversation"].conversation_id;
+        var convoId = lastWidget.msg
+              && lastWidget.msg.schemas["rd.msg.conversation"]
+              && lastWidget.msg.schemas["rd.msg.conversation"].conversation_id;
 
         if (lastWidget && lastWidget.actionsNode) {
           var html = dojo.string.substitute(this.moreMessagesTemplate, {

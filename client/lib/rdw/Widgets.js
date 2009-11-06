@@ -40,7 +40,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   messageLimit: 30,
 
   //List of modules that can handle display of a conversation.
-  //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
+  //It is assumed that moduleName.prototype.canHandle(conversation) is defined
   //for each entry in this array.
   convoModules: [
     "rdw.conversation.TwitterTimeLine"
@@ -378,32 +378,33 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
       if (conversations && conversations.length) {
         this.conversations.push.apply(this.conversations, conversations);
 
+
+        var leftOver = [];
         for (var i = 0, convo; convo = conversations[i]; i++) {
-          var leftOver = [];
-          for (var j = 0, msgBag; msgBag = convo[j]; j++) {
-            //Feed the message to existing created groups.
-            if (!this._groupHandled(msgBag)) {
-              //Existing group could not handle it, see if there is a new group
-              //handler that can handle it.
-              var handler = this._getHomeGroup(msgBag);
-              if (handler) {
-                var widget = new handler({
-                  msgs: [msgBag],
-                  displayOnCreate: false
-                }, dojo.create("div"));
-                widget._isGroup = true;
-                this._groups.push(widget);
-                this.addSupporting(widget);
-              } else {
-                leftOver.push(msgBag);
-              }
+          //Feed the message to existing created groups.
+          if (!this._groupHandled(convo)) {
+            //Existing group could not handle it, see if there is a new group
+            //handler that can handle it.
+            var handler = this._getHomeGroup(convo);
+            if (handler) {
+              var widget = new handler({
+                conversation: convo,
+                displayOnCreate: false
+              }, dojo.create("div"));
+              widget._isGroup = true;
+              this._groups.push(widget);
+              this.addSupporting(widget);
+            } else {
+              leftOver.push(convo);
             }
           }
+        }
 
-          //If any messsages not handled by a group in a conversation
-          //are left over, create a regular conversation for them.
-          if (leftOver.length) {
-            var widget = this.createHomeConversation(leftOver);
+        //If any messsages not handled by a group in a conversation
+        //are left over, create a regular conversation for them.
+        if (leftOver.length) {
+          for (var i = 0, convo; convo = leftOver[i]; i++) {
+            var widget = this.createHomeConversation(convo);
             this._groups.push(widget);
             this.addSupporting(widget);
           }
@@ -424,13 +425,13 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     }));
   },
 
-  createHomeConversation: function(/*Array*/msgs) {
+  createHomeConversation: function(conversation) {
     //summary: creates a Conversation widget for the Home view. The Conversation widget
     //should not display itself immediately since prioritization of the home
     //widgets still needs to be done. Similarly, it should not try to attach
     //to the document's DOM yet. Override for more custom behavior/subclasses.
     return new (dojo.getObject(this.conversationCtorName))({
-      msgs: msgs,
+      conversation: conversation,
       unreadReplyLimit: 1,
       displayOnCreate: false,
       allowReplyMessageFocus: false
@@ -449,22 +450,22 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     this._groups = regular.concat(groupie);
   },
 
-  _groupHandled: function(/*Object*/msgBag) {
-    //summary: if a group in the groups array can handle the msgBag, give
+  _groupHandled: function(/*Object*/conversation) {
+    //summary: if a group in the groups array can handle the conversation, give
     //it to that group and return true.
     for (var i = 0, group; group = this._groups[i]; i++) {
-      if (group.canHandle && group.canHandle(msgBag)) {
-        group.addMessage(msgBag);
+      if (group.canHandle && group.canHandle(conversation)) {
+        group.addConversation(conversation);
         return true;
       }
     }
     return false;
   },
 
-  _getHomeGroup: function(/*Object*/msgBag) {
-    //summary: determines if there is a home group that can handle the message.
+  _getHomeGroup: function(/*Object*/conversation) {
+    //summary: determines if there is a home group that can handle the conversation.
     for (var i = 0, module; module = this.convoWidgets[i]; i++) {
-      if (module.prototype.canHandle(msgBag)) {
+      if (module.prototype.canHandle(conversation)) {
         return module;
       }
     }

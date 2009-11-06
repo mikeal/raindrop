@@ -39,8 +39,8 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
   //The widget to use for person selector for the To value.
   toSelector: "rdw.DataSelector",
 
-  //Optional messageBag that this compose is related to.
-  messageBag: null,
+  //Optional message that this compose is related to.
+  msg: null,
 
   //Sets up styles and states to show the QuickCompose as expanded.
   startExpanded: false,
@@ -110,11 +110,11 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
           rd.escapeHtml(this.contact.name, this.nameNode, "only");
         }
 
-        if (this.messageBag) {
+        if (this.msg) {
           //Sender is restricted, just show it.
           //First get the account to use for sending.
           //By seeing who the message was sent to.
-          var body = this.messageBag && this.messageBag["rd.msg.body"];
+          var body = this.msg && this.msg.schemas["rd.msg.body"];
           if (body && body.to) {
             for (var i = 0, to; to = body.to[i]; i++) {
               this.sender = accountsById[to[1]];
@@ -127,7 +127,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
 
           if (!this.sender) {
             //Make a good guess based on the from address.
-            var fromSvc = this.messageBag["rd.msg.body"].from[0];
+            var fromSvc = this.msg.schemas["rd.msg.body"].from[0];
             this.sender = dojo.delegate(accountsByType[fromSvc]);
             if (!this.sender.id && this.sender.rd_key) {
               this.sender.id = this.sender.rd_key[1][1];

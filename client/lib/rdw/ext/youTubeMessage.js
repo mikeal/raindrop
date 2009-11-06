@@ -35,7 +35,7 @@ a message.
 rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
   after: {
     postCreate: function() {
-      //summary: if messageBag has youtube data, add a
+      //summary: if msg has youtube data, add a
       //display item for the data.
       //TODO: could vary the display based on how the
       //message is displayed. I would expect rdw.Message
@@ -46,7 +46,7 @@ rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
       //NOTE: the "this" in this function is the instance of rdw.Message.
 
       //Check for a YouTube video
-      var yt = this.messageBag["rd.msg.body.youtubed"];
+      var yt = this.msg.schemas["rd.msg.body.youtubed"];
       if (!yt) {
         return;
       }
@@ -100,7 +100,7 @@ rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
   addToPrototype: {
     onYouTubeClick: function(evt) {
       //summary: handles clicking anywhere on the youtube attachment block
-      var yt = this.messageBag["rd.msg.body.youtubed"];
+      var yt = this.msg.schemas["rd.msg.body.youtubed"];
       if (!yt) {
         return;
       }

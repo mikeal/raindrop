@@ -54,9 +54,9 @@ dojo.declare("rdw.Summary", [rdw._Base], {
     rd.escapeHtml("Inflow", this.domNode, "only");
   },
 
-  conversation: function(/*Array*/ conversations) {
+  conversation: function(/*Object*/ conversation) {
     //summary: responds to showing a full conversation.
-    var title = conversations[0]["rd.msg.body"].subject || "";
+    var title = conversation.subject || "";
     var html = rd.escapeHtml(title) + '<div class="actions"><a href="#archive">archive</a><a href="#delete">delete</a></div>';
     this.domNode.innerHTML = html;
     dojo.addClass(this.domNode, "conversation");

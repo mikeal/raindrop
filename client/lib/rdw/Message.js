@@ -39,7 +39,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //Holds the aggregated message object.
   //Warning: this is a prototype property: be sure to
   //set it per instance.
-  messageBag: {},
+  msg: null,
 
   templateString: dojo.cache("rdw.templates", "Message.html"),
 
@@ -47,10 +47,10 @@ dojo.declare("rdw.Message", [rdw._Base], {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
 
-    //Set the properties for this widget based on messageBag
+    //Set the properties for this widget based on msg
     //properties.
-    var msgBag = this.messageBag;
-    var msgDoc = msgBag['rd.msg.body'];
+    var schemas = this.msg.schemas;
+    var msgDoc = schemas['rd.msg.body'];
 
     this.fromId = (msgDoc.from && msgDoc.from[1]) || "";
     this.fromName = msgDoc.from_display || this.fromId;
@@ -69,9 +69,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.additionalTime = fTime["additional"];
 
     //Set up the link for the full conversation view action, and set the subject.
-    var convoId = msgBag
-                && msgBag["rd.msg.conversation"]
-                && msgBag["rd.msg.conversation"].conversation_id;
+    var convoId = schemas
+                && schemas["rd.msg.conversation"]
+                && schemas["rd.msg.conversation"].conversation_id;
     if (convoId) {
       this.expandLink = "rd:conversation:" + convoId;
       convoId = "#rd:conversation:" + convoId;
@@ -111,11 +111,11 @@ dojo.declare("rdw.Message", [rdw._Base], {
   formatQuotedBody: function() {
     //Looks at the rd.msg.body.quoted schema for quoted blocks and formats them.
     //If no rd.msg.body.quoted exists, the message body will be used.
-    var quoted = this.messageBag["rd.msg.body.quoted"];
+    var quoted = this.msg.schemas["rd.msg.body.quoted"];
     
     //No quoted, fallback to body text.
     if (!quoted) {
-      var text = this.prepBodyPart(this.messageBag["rd.msg.body"].body);
+      var text = this.prepBodyPart(this.msg.schemas["rd.msg.body"].body);
     } else {
       var parts = quoted.parts || [];
       text = "";

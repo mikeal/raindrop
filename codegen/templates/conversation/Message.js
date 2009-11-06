@@ -33,11 +33,11 @@ dojo.declare("rdw.ext.EXTNAME.Message", [rdw.Message], {
     this.inherited("postMixInProperties", arguments);
 
     //Set any properties you want to show in the template here.
-    //this.messageBag is the message object.
-    var msgBag = this.messageBag;
+    //this.msg is the message object, with all the document schemas
+    //for a message at this.msg.schemas.
 
     //With this.body set up, you can use ${body.subject} to print
     //out the message subject.
-    this.body = this.messageBag['rd.msg.body'];
+    this.body = this.msg.schemas['rd.msg.body'];
   }
 });

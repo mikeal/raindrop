@@ -29,13 +29,14 @@ dojo.declare("rdw.ext.twitterNotification.Group", [rdw.conversation.GenericGroup
   matchRegExp: /\@postmaster\.twitter\.com/,
 
   /**
-   * Determines if message is supported.
+   * Determines if conversation is supported.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object
    */
-  canHandle: function(messageBag) {
-    var targetDoc = messageBag["rd.msg.recip-target"];
-    var bodyDoc = messageBag["rd.msg.body"];
+  canHandle: function(conversation) {
+    var msg = conversation.messages[0];
+    var targetDoc = msg.schemas["rd.msg.recip-target"];
+    var bodyDoc = msg.schemas["rd.msg.body"];
     var target = targetDoc && targetDoc.target;
 
     return target == "notification" && bodyDoc && bodyDoc.from && this.matchRegExp.test(bodyDoc.from[1] || "");

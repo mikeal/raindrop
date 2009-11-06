@@ -74,30 +74,32 @@ dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation], {
    * the "this" variable.
    */
   msgSort: function (a,b) {
-    return a["rd.msg.body"].timestamp < b["rd.msg.body"].timestamp
+    return a.schemas["rd.msg.body"].timestamp < b.schemas["rd.msg.body"].timestamp
   },
 
   /**
-   * Determines if GenericGroup can support this message. Subclasses should
-   * override this message.
+   * Determines if GenericGroup can support this conversation. Subclasses should
+   * override this method.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object.
    */
-  canHandle: function(messageBag) {
+  canHandle: function(conversation) {
     return false;
   },
 
   /**
    * Extends base class method for saving off list details. Subclasses should
    * call this method and further subclass, but call this method to set up
-   * the counts correcty.
+   * the counts correctly. This widget only cares about messages,
+   * not conversations.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} a conversation object.
    */
-  addMessage: function(messageBag) {
-    if (messageBag) {
-      this.msgs.push(messageBag);
-      this.totalCount += 1;
+  addConversation: function(conversation) {
+    var messages = conversation.messages;
+    if (messages && messages.length) {
+      this.msgs.push.apply(this.msgs, messages);
+      this.totalCount += messages.length;
     }
 
     if (this._displayed) {

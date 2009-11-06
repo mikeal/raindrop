@@ -182,6 +182,55 @@ class ConversationAPI(API):
                 }
         return message_results
 
+    def add_unique_ids(self, ids, ary, map):
+        # Takes some rd_key IDs that are arrays of two items and only adds
+        # them to ary if the value is not already in map.
+        for id in ids:
+            key = "|".join(id)
+            if (not key in map):
+                ary.append(id)
+
+    def _make_conversation(self, messages):
+        # Transforms an array of messages, where each message is collection
+        # of schema documents into an inflow API conversation object.
+        conv = {
+            'people': [],
+            'unread': 0,
+            'messages': []
+        }
+        people_map = {}
+        msg = messages[0]
+        conv['id'] = msg['rd.msg.conversation']['conversation_id']
+        if 'subject' in msg['rd.msg.body']:
+            conv['subject'] = msg['rd.msg.body']['subject']
+            
+        # Cycle through the messages to pull out some aggregate data
+        people = conv['people']
+
+        for schemas in messages:
+            #Is the message unread? If so, increase unread count
+            if not 'rd.msg.seen' in schemas or not 'seen' in schemas or not schemas['rd.msg.seen']['seen']:
+                conv['unread'] += 1
+
+            body = schemas['rd.msg.body']
+            # Get all the people on this thread
+            for field in ['from', 'to', 'cc', 'bcc']:
+                if field in body:
+                    names = field == 'from' and [body[field]] or body[field]
+                    self.add_unique_ids(names, people, people_map)
+
+            # For each schema doc, if it is an attachment, add it to the
+            # attachments list
+
+            for schema in schemas.itervalues():
+                if 'is_attachment' in schema:
+                    conv.setdefault('attachments', []).append(schema)
+
+            conv['messages'].append({
+                'schemas': schemas
+            })
+        return conv
+
     def _fetch_conversations(self, db, conv_ids):
         # Takes a list of conversation IDs and returns a list of sorted
         # 'conversations' - each conversation is itself a list of sorted
@@ -212,8 +261,24 @@ class ConversationAPI(API):
             convo.sort(key=lambda a: a['rd.msg.body']['timestamp'], reverse=True)
         # Now sort conversations so the conversation with a message that is
         # most
-        return sorted(conversations.itervalues(),
+        convos = sorted(conversations.itervalues(),
                       key=lambda c: c[-1]['rd.msg.body']['timestamp'], reverse=True)
+
+        # Transform the array of arrays into an array of conversation objects
+        convo_list = []
+        for messages in convos:
+            convo_list.append(self._make_conversation(messages))
+
+        return convo_list
+
+    # The 'single' end-point for getting a single conversation.
+    def by_id(self, req):
+        self.requires_get(req)
+        args = self.get_args(req, key="key")
+        db = RDCouchDB(req)
+        conv_id = args["key"]
+        log("conv_id: %s", conv_id)
+        return self._fetch_conversations(db, [conv_id]);
 
     # The 'home'end-point.
     def home(self, req):
@@ -248,7 +313,7 @@ class ConversationAPI(API):
         # now fetch the conversation objects.
         convos = self._fetch_conversations(db, conv_ids)
         # sort based on timestamp on latest message in convo.
-        convos.sort(key=lambda c: c[-1]["rd.msg.body"]["timestamp"], reverse=True)
+        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
         return convos
 
     # Fetch all conversations which have the specified messages in them.
@@ -354,7 +419,7 @@ class ConversationAPI(API):
         # now fetch the conversation objects.
         convos = self._fetch_conversations(db, conv_ids)
         # sort based on timestamp on latest message in convo.
-        convos.sort(key=lambda c: c[-1]["rd.msg.body"]["timestamp"], reverse=True)
+        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
         return convos
 
     # The 'simpler' end-points based around self._query()

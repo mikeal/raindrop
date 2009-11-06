@@ -52,17 +52,18 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
    * the "this" variable.
    */
   msgSort: function (a,b) {
-    return a["rd.msg.body"].timestamp < b["rd.msg.body"].timestamp
+    return a.schemas["rd.msg.body"].timestamp < b.schemas["rd.msg.body"].timestamp
   },
 
   /**
-   * Determines if TwitterTimeLine can support this message.
+   * Determines if TwitterTimeLine can support this conversation.
    *
-   * @param messageBag {object} the collection of message schemas for a message.
+   * @param conversation {object} the conversation API object.
    */
-  canHandle: function(messageBag) {
-    var recip = messageBag["rd.msg.recip-target"];
-    var keyType = messageBag["rd.msg.body"].rd_key[0];
+  canHandle: function(conversation) {
+    var msg = conversation.messages[0];
+    var recip = msg.schemas["rd.msg.recip-target"];
+    var keyType = msg.schemas["rd.msg.body"].rd_key[0];
     return keyType == "tweet" && recip && recip.target == "broadcast";
   },
 

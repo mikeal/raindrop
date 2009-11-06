@@ -59,7 +59,7 @@ dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
     //body appropriately here.
     this.inherited("updateFields", arguments);
 
-    var body = this.messageBag["rd.msg.body"];
+    var body = this.msg.schemas["rd.msg.body"];
 
     //Set To field
     this.defaultFromAddr = body.from[1];

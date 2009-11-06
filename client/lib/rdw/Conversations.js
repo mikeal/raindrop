@@ -78,7 +78,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
   },
 
   //List of modules that can handle display of a conversation.
-  //It is assumed that moduleName.prototype.canHandle(messageBag) is defined
+  //It is assumed that moduleName.prototype.canHandle(conversation) is defined
   //for each entry in this array.
   convoModules: [],
 
@@ -234,11 +234,11 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //Get the active, focused element and see if it is widget with a message
     var id = dojo.doc.activeElement.id;
     var widget = id && dijit.byId(id);
-    var messageBag = widget && widget.messageBag;
+    var msg = widget && widget.msg;
 
-    var convoId = messageBag
-                  && messageBag["rd.msg.conversation"]
-                  && messageBag["rd.msg.conversation"].conversation_id;
+    var convoId = msg
+                  && msg.schemas["rd.msg.conversation"]
+                  && msg.schemas["rd.msg.conversation"].conversation_id;
     if (convoId) {
       rd.setFragId("rd:conversation:" + convoId);
     }
@@ -400,7 +400,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       //Make new convoWidget.
       var ctor = dojo.getObject(this.fullConversationCtorName);
       this.convoWidget = new ctor({
-        msgs: this.oneConversation
+        conversation: this.oneConversation
       }, dojo.create("div", null, this.convoNode));
     } else {
       this.destroyAllSupporting(this.destroyIgnore);
@@ -414,7 +414,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       var frag = dojo.doc.createDocumentFragment();
       for (var i = 0, conv; conv = this.conversations[i]; i++) {
         this.addSupporting(new (dojo.getObject(this.conversationCtorName))({
-           msgs: conv
+           conversation: conv
          }, dojo.create("div", null, frag)));        
       }
 
@@ -753,32 +753,32 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       if (conversations && conversations.length) {
         this.conversations.push.apply(this.conversations, conversations);
 
+        var leftOver = [];
         for (var i = 0, convo; convo = conversations[i]; i++) {
-          var leftOver = [];
-          for (var j = 0, msgBag; msgBag = convo[j]; j++) {
-            //Feed the message to existing created groups.
-            if (!this._groupHandled(msgBag)) {
-              //Existing group could not handle it, see if there is a new group
-              //handler that can handle it.
-              var handler = this._getHomeGroup(msgBag);
-              if (handler) {
-                var widget = new handler({
-                  msgs: [msgBag],
-                  displayOnCreate: false
-                }, dojo.create("div"));
-                widget._isGroup = true;
-                this._groups.push(widget);
-                this.addSupporting(widget);
-              } else {
-                leftOver.push(msgBag);
-              }
+          //Feed the message to existing created groups.
+          if (!this._groupHandled(convo)) {
+            //Existing group could not handle it, see if there is a new group
+            //handler that can handle it.
+            var handler = this._getHomeGroup(convo);
+            if (handler) {
+              var widget = new handler({
+                conversation: convo,
+                displayOnCreate: false
+              }, dojo.create("div"));
+              widget._isGroup = true;
+              this._groups.push(widget);
+              this.addSupporting(widget);
+            } else {
+              leftOver.push(convo);
             }
           }
+        }
 
-          //If any messsages not handled by a group in a conversation
-          //are left over, create a regular conversation for them.
-          if (leftOver.length) {
-            var widget = this.createHomeConversation(leftOver);
+        //If any messsages not handled by a group in a conversation
+        //are left over, create a regular conversation for them.
+        if (leftOver.length) {
+          for (var i = 0, convo; convo = leftOver[i]; i++) {
+            var widget = this.createHomeConversation(convo);
             this._groups.push(widget);
             this.addSupporting(widget);
           }
@@ -810,13 +810,13 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     }));
   },
 
-  createHomeConversation: function(/*Array*/msgs) {
+  createHomeConversation: function(conversation) {
     //summary: creates a Conversation widget for the Home view. The Conversation widget
     //should not display itself immediately since prioritization of the home
     //widgets still needs to be done. Similarly, it should not try to attach
     //to the document's DOM yet. Override for more custom behavior/subclasses.
     return new (dojo.getObject(this.conversationCtorName))({
-      msgs: msgs,
+      conversation: conversation,
       unreadReplyLimit: 2,
       displayOnCreate: false,
       allowReplyMessageFocus: false
@@ -835,22 +835,22 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     this._groups = regular.concat(groupie);
   },
 
-  _groupHandled: function(/*Object*/msgBag) {
-    //summary: if a group in the groups array can handle the msgBag, give
+  _groupHandled: function(/*Object*/conversation) {
+    //summary: if a group in the groups array can handle the conversation give
     //it to that group and return true.
     for (var i = 0, group; group = this._groups[i]; i++) {
-      if (group.canHandle && group.canHandle(msgBag)) {
-        group.addMessage(msgBag);
+      if (group.canHandle && group.canHandle(conversation)) {
+        group.addConversation(conversation);
         return true;
       }
     }
     return false;
   },
 
-  _getHomeGroup: function(/*Object*/msgBag) {
-    //summary: determines if there is a home group that can handle the message.
+  _getHomeGroup: function(/*Object*/conversation) {
+    //summary: determines if there is a home group that can handle the conversation.
     for (var i = 0, module; module = this.convoWidgets[i]; i++) {
-      if (module.prototype.canHandle(msgBag)) {
+      if (module.prototype.canHandle(conversation)) {
         return module;
       }
     }
@@ -895,9 +895,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
 
   conversation: function(/*String*/convoId) {
     //summary: responds to requests to view a conversation.
-    rd.api().conversation({
-      ids: [convoId]
-    })
+    rd.api().rest('inflow/conversations/by_id', {key: '"' + convoId + '"'})
     .ok(this, function(conversations) {
       //Show the conversation.     
       this.updateConversations("conversation", conversations);
@@ -909,11 +907,11 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     });
   },
 
-  archive: function(/*Object*/convoWidget, /*Array*/messageBags) {
+  archive: function(/*Object*/convoWidget, /*Array*/msgs) {
     //summary: handles archiving a conversation and cleaning up visual state as
     //a result of the change.
     rd.api().archive({
-      ids: messageBags
+      ids: msgs
     })
     .ok(this, function() {
       if (this.viewType == "summary") {
@@ -936,11 +934,11 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     });
   },
 
-  del: function(/*Object*/convoWidget, /*Array*/messageBags) {
+  del: function(/*Object*/convoWidget, /*Array*/msgs) {
     //summary: handles deleting a conversation and cleaning up visual state as
     //a result of the change.
     rd.api().del({
-      ids: messageBags
+      ids: msgs
     })
     .ok(this, function() {
       if (this.viewType == "summary") {

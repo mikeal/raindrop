@@ -180,7 +180,7 @@ dojo._mixin(rd.conversation, {
   contact: function(/*String*/contactId, /*Function*/callback, /*Function*/errback) {
     //summary: updates display to show messages related to
     //a given contact.
-    return rd.api().rest('inflow/conversations/contact', {id: contactId},
+    return rd.api().rest('inflow/conversations/contact', {id: '"' + contactId + '"'},
                          callback, errback);
   }
 });

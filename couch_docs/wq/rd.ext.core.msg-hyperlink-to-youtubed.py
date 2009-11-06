@@ -59,6 +59,7 @@ def handler(doc):
             ytp.parse()
             ret = ytp.get_return()
             ret["video_id"] = videoId
+            ret["is_attachment"] = True
             emit_schema('rd.msg.body.youtubed', ret)
 
 

@@ -32,10 +32,6 @@ dojo.declare("rdw.conversation.FullMessage", [rdw.Message], {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
 
-    //Make sure to show the whole body.
-    var msgBag = this.messageBag;
-    var msgDoc = this.messageBag['rd.msg.body'];
-
     //Collapse quote regions in the text and hyperlink things.
     //TODO: make message transforms extensionized.
     this.message = this.formatQuotedBody();
