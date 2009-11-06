@@ -29,7 +29,14 @@ import itertools
 class API:
     # A base class - helpers for the implementation classes...
     def get_args(self, req, *req_args, **opt_args):
-        supplied = req['query']
+        supplied = {}
+        for name, val in req['query'].iteritems():
+            try:
+                val = json.loads(val)
+            except ValueError, why:
+                raise APIErrorResponse(400, "invalid json in param '%s': %s" % (name, why))
+            supplied[name] = val
+
         body = req.get('body')
         if body and body != 'undefined': # yes, couch 0.10 send the literal 'undefined'
             # If there was a body specified, it can also contain request
@@ -52,10 +59,10 @@ class API:
         for arg in req_args:
             if arg not in supplied:
                 raise APIErrorResponse(400, "required argument '%s' missing" % arg)
-            ret[arg] = json.loads(supplied[arg])
+            ret[arg] = supplied[arg]
         for arg, default in opt_args.iteritems():
             try:
-                val = json.loads(supplied[arg])
+                val = supplied[arg]
             except KeyError:
                 val = default
             ret[arg] = val
