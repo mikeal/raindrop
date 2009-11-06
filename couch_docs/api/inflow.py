@@ -52,9 +52,13 @@ class API:
         for arg in req_args:
             if arg not in supplied:
                 raise APIErrorResponse(400, "required argument '%s' missing" % arg)
-            ret[arg] = supplied[arg]
+            ret[arg] = json.loads(supplied[arg])
         for arg, default in opt_args.iteritems():
-            ret[arg] = supplied.get(arg, default)
+            try:
+                val = json.loads(supplied[arg])
+            except KeyError:
+                val = default
+            ret[arg] = val
         # now check there aren't extra unknown args
         for arg in supplied.iterkeys():
             if arg not in ret:
