@@ -38,7 +38,8 @@ dojo.require("dojox.date.posix");
       day_diff = Math.floor(diff / 86400);
       var dObj = { "friendly" : date.toLocaleDateString(), 
                    "additional" : date.toLocaleTimeString(),
-                   "utc" : date.toUTCString() };
+                   "utc" : date.toUTCString(),
+                   "locale" : date.toLocaleString() };
   
       /* some kind of error */
       if (day_diff < 0) {
