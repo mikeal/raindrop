@@ -182,14 +182,6 @@ class ConversationAPI(API):
                 }
         return message_results
 
-    def add_unique_ids(self, ids, ary, map):
-        # Takes some rd_key IDs that are arrays of two items and only adds
-        # them to ary if the value is not already in map.
-        for id in ids:
-            key = "|".join(id)
-            if (not key in map):
-                ary.append(id)
-
     def _make_conversation(self, messages):
         # Transforms an array of messages, where each message is collection
         # of schema documents into an inflow API conversation object.
@@ -198,15 +190,13 @@ class ConversationAPI(API):
             'unread': 0,
             'messages': []
         }
-        people_map = {}
+        people = set()
         msg = messages[0]
         conv['id'] = msg['rd.msg.conversation']['conversation_id']
         if 'subject' in msg['rd.msg.body']:
             conv['subject'] = msg['rd.msg.body']['subject']
-            
-        # Cycle through the messages to pull out some aggregate data
-        people = conv['people']
 
+        # Cycle through the messages to pull out some aggregate data            
         for schemas in messages:
             #Is the message unread? If so, increase unread count
             if not 'rd.msg.seen' in schemas or not 'seen' in schemas or not schemas['rd.msg.seen']['seen']:
@@ -217,7 +207,8 @@ class ConversationAPI(API):
             for field in ['from', 'to', 'cc', 'bcc']:
                 if field in body:
                     names = field == 'from' and [body[field]] or body[field]
-                    self.add_unique_ids(names, people, people_map)
+                    for name in names:
+                        people.add(hashable_key(name))
 
             # For each schema doc, if it is an attachment, add it to the
             # attachments list
@@ -229,6 +220,7 @@ class ConversationAPI(API):
             conv['messages'].append({
                 'schemas': schemas
             })
+        conv['people'] = list(people)
         return conv
 
     def _fetch_conversations(self, db, conv_ids):
@@ -380,7 +372,7 @@ class ConversationAPI(API):
         # Load the conversations based on these message IDs.
         result = self._with_messages(db, message_keys)
         # sort the result
-        result.sort(key=lambda c: c[0]['rd.msg.body']['timestamp'],
+        result.sort(key=lambda c: c['messages'][0]['schemas']['rd.msg.body']['timestamp'],
                     reverse=True)
         return result
 
@@ -487,9 +479,11 @@ def handler(request):
         resp = make_response(meth(request))
     except APIException, exc:
         resp = exc.err_response
+        log("error response: %s", resp)
     except Exception, exc:
         import traceback, StringIO
         s = StringIO.StringIO()
         traceback.print_exc(file=s)
         resp = make_response(s.getvalue(), 400)
+        log("exception response: %s", resp)
     return resp
