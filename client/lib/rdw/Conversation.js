@@ -196,23 +196,6 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
 
     dojo.addClass(this.domNode, (this.conversation.unread != 0)? "read" : "unread");
 
-    //Determine if the sender is known and switch templates if necessary.
-    var known = !!schemas["rd.msg.ui.known"];
-
-    //Set the actions for the conversation.
-    if (!known) {
-      //This identity is unknown. Try to make a suggestion for
-      //who it might be.
-      dojo.addClass(this.domNode, "unknown");
-
-      var body = schemas['rd.msg.body'];
-      var from = body.from && body.from[1];
-      if (from) {
-        rd.escapeHtml(this.i18n.whoUnknown, this.whoNode);
-      }
-    }
-
-
     //Create the messages, first by loading the module responsible for showing
     //them.
     dojo["require"](this.messageCtorName);

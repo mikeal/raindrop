@@ -69,6 +69,13 @@ dojo.declare("rdw.Message", [rdw._Base], {
     this.friendlyTime = fTime["friendly"];
     this.additionalTime = fTime["additional"];
 
+    //Determine if the sender is known and switch templates if necessary.
+    var known = !!schemas["rd.msg.ui.known"];
+    if (!known && this.fromNode) {
+      //This identity is unknown. Try to make a suggestion for who it might be.
+      dojo.addClass(this.fromNode, "unknown");
+    }
+
     //Set up the link for the full conversation view action, and set the subject.
     var convoId = schemas
                 && schemas["rd.msg.conversation"]

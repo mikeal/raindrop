@@ -1,8 +1,8 @@
 <div class="rdwMessage ${type}" tabindex="${tabIndex}" dojoAttachEvent="onclick: onClick">
   <div class="message">
     <div class="header">
-      <span class="from">
-        <a class="from">${fromName}</a>
+      <span class="author">
+        <a dojoAttachPoint="fromNode" href="javascript:void(0);" class="from fn nickname">${fromName}</a>
       </span>
       <span class="published">
         <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>

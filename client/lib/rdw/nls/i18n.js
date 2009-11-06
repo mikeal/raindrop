@@ -61,7 +61,5 @@
   "targetLabel-from": "From You",
   "targetLabel-broadcast": "Broadcast",
   "targetLabel-notification": "Notification",
-  whoKnown: "Is this ${name}?",
-  whoTitle: "Associate this identity with a contact.",
-  whoUnknown: "who is this?" 
+  whoKnown: "Is this ${name}?"
 })
