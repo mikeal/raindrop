@@ -21,134 +21,88 @@
  * Contributor(s):
  * */
 
-.fullMessageTitle {
-  font-size: 13px;
-  font-weight: bold;
+.rdwConversationFullMessage {
+  border: none;
+  border-top: 1px solid #e6e6e6;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  background-color: #fff;
 }
 
-[target="broadcast"] .fullMessageTitle {
-  background-image: url("../i/menu/icon_broadcasts.png");
-  background-position: 5px 10px;
+.rdwConversationFullMessage > .message {
+  padding: 14px 0;
 }
 
-[target="from"] .fullMessageTitle {
-  background-image: url("../i/icon_direct_message.png");
+.rdwConversationFullMessage > .message > .header {
+  display: table;
+  width: 100%;
 }
 
-[target="direct"] .fullMessageTitle {
-  background-image: url("../i/icon_direct_message.png");
+.rdwConversationFullMessage > .message > .header > .author {
+  display: table-cell;
 }
 
-[target="group"] .fullMessageTitle {
-  background-image: url("../i/icon_group_message.png");
-}
-
-.rdwConversationFullMessage.rdwMessage .actions {
-  visibility: inherit;
-}
-
-.rdwConversationFullMessage .published {
-  color: #222;
-}
-
-.rdwConversationFullMessage .published .friendly {
+.rdwConversationFullMessage > .message > .header > .author > .from {
   display: block;
 }
 
-.rdwConversationFullMessage .published .additional {
+.rdwConversationFullMessage > .message > .header > .author > .medium {
+  color: #888;
+}
+
+.rdwConversationFullMessage > .message > .header > .published {
+  display: table-cell;
+  text-align: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: normal;
+  font-size: 11px;
+}
+
+.rdwConversationFullMessage > .message > .header > .published > .value:not(:empty):before {
+  content: "";
+  display: none;
+}
+
+.rdwConversationFullMessage > .message > .header > .published > .friendly {
   display: block;
+  color: #444;
 }
 
-.rdwConversationFullMessage.rdwMessage .message {
-
+.rdwConversationFullMessage > .message > .header > .published > .additional {
+  display: block;
+  color: #888;
 }
 
-#conversations a.quoteToggle,
-#conversations .quote {
+.rdwConversationFullMessage > .message > .content {
+  margin: 14px 0 14px 7px;
+}
+
+.rdwConversationFullMessage > .message > .content > a.quoteToggle,
+.rdwConversationFullMessage > .message > .content > .quote {
   display: table;
   margin-bottom: 8px;
 }
 
-#conversations .quote {
+.rdwConversationFullMessage > .message > .content > .quote {
   color: #888;
 }
 
-#conversations .rdwConversation.rdwConversationFullConversation {
-  border: none;
+.rdwConversationFullMessage > .message > .actions {
+  display: none;
 }
 
-#conversations .rdwConversation.rdwConversationFullConversation .messages {
-  padding:0;
-  width: 620px;
-}
-
-#conversations .rdwConversation.rdwConversationFullConversation .header {
-  padding:0;
-  display: inline-block;
-  float: right;
-}
-
-#conversations .rdwConversation.rdwConversationFullConversation .messageHeader {
-  padding: 2px 0 0 0;
-}
-
-#conversations .rdwConversation.rdwConversationFullConversation .messageHeader .medium {
-  color: #888888;
-}
-
-#conversations .rdwSummary .actions,
-#conversations .rdwSummary.conversation .actions {
-  display: inline-block;
-  float: right;
-  font-family: droid-serif, georgia, times, serif;
-  font-size: 10px;
-  font-weight: normal;
-  font-style: italic;
-  line-height: 18px;
-}
-
-#conversations .rdwSummary .actions a,
-#conversations .rdwSummary.conversation .actions a {
-  color: #ff5959;
-  border-right:1px solid #000000;
-  padding:0 4px 0 3px;
-  text-decoration: none;
-}
-
-#conversations .rdwSummary .actions a:last-child,
-#conversations .rdwSummary.conversation .actions a:last-child {
-  border-right: none;
-  padding:0 0 0 3px;
-}
-
-
-#conversations .rdwConversation.rdwConversationFullConversation .messages .actions {
-  padding: 0;
-  display: inline-block;
-  width: 100%;
-}
-
-#conversations .rdwConversation.rdwConversationFullConversation .actions a:first-child {
+.rdwConversationFullMessage > .message > .actions a:first-child {
   padding: 1px 3px;
   margin: 0;
 }
 
-#conversations .rdwConversation.rdwConversationFullConversation .actions a.reply {
+.rdwConversationFullConversation  > .message > .actions a.reply {
   margin: 0;
 }
 
-#conversations .rdwConversation.rdwConversationFullConversation .actions a.fwd {
+.rdwConversationFullConversation > .message > .actions a.fwd {
   margin: 0 4px 0 0;
 }   
-
-.rdwConversationFullMessage.rdwMessage {
-  background-color: #fff;
-  border: 1px solid #e6e6e6;
-  margin: 0 0 20px 0;
-  padding: 1px 5px 1px 5px;
-  -moz-box-shadow: 3px 3px 0px #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
-}
 
 .toolBox {
   font-size: x-small;

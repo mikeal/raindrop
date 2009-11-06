@@ -41,3 +41,28 @@
   background-image: none;
   padding-left: 0;
 }
+
+.rdwSummary .actions,
+.rdwSummary.conversation .actions {
+  display: inline-block;
+  float: right;
+  font-family: droid-serif, georgia, times, serif;
+  font-size: 10px;
+  font-weight: normal;
+  font-style: italic;
+  line-height: 18px;
+}
+
+.rdwSummary .actions a,
+.rdwSummary.conversation .actions a {
+  color: #ff5959;
+  border-right:1px solid #000000;
+  padding:0 4px 0 3px;
+  text-decoration: none;
+}
+
+.rdwSummary .actions a:last-child,
+.rdwSummary.conversation .actions a:last-child {
+  border-right: none;
+  padding:0 0 0 3px;
+}

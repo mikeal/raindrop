@@ -1,28 +1,20 @@
 <div class="rdwMessage rdwConversationFullMessage ${type}" tabindex="0" dojoAttachEvent="onclick: onClick">
   <div class="message">
     <div class="header">
-      <!--<span class="messageType">Message Type</span>-->
+      <span class="author">
+        <a class="from" dojoAttachPoint="fromNameNode">${fromName}</a>
+        <span class="medium">${fromId}</span>
+      </span>
       <span class="published">
         <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
         <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
       </span>
     </div>  
-      
-    <div class="messageHeader">
-      <span>
-        <a target="_blank" class="from" dojoAttachPoint="fromNameNode">${fromName}</a>
-        </span>
-      <span class="medium">${fromId}</span>
-   </div>
-    
-    <div class="content">    
-      ${message}
-    </div>
+    <div class="content">${message}</div>
     <div class="attachments"></div>
     <div class="actions" dojoAttachPoint="actionsNode">
       <a class="reply" href="#reply">reply</a>
       <a class="fwd" href="#forward">forward</a>
     </div>
   </div>
-  <div class="shadow"></div>
 </div>
