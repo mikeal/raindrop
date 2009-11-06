@@ -245,6 +245,19 @@ def check_couch():
         configure = False
 
     # check the config of couch - we need [external]s etc.
+    # We need a larger default os process timeout.
+    timeout = "10000"
+    turl = "http://%(host)s:%(port)s/_config/couchdb/os_process_timeout" % couch
+    info = json.load(urllib2.urlopen(turl))
+    if info != timeout:
+        if configure:
+            # need to PUT...
+            r = PutRequest(turl, data=json.dumps(timeout))
+            json.load(urllib2.urlopen(r))
+        else:
+            warn("The couch os_process_timeout is %s, but %s is optimal."
+                 "Consider setting os_process_timeout=%s in the [couchdb] section",
+                 info, timeout, timeout)
 
     # the couch-raindrop external..
     tpl = '%s "%s/couch-raindrop.py" --log-level=info "--log-file=%s/raindrop.log"'
