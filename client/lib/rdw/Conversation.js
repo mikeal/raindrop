@@ -165,9 +165,10 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     //"from you" message as much as it is a direct reply/conversation
     //XXX this should probably know what the last message showing is
     var target = (this.msgs[this.msgs.length - 1]['rd.msg.recip-target'] && this.msgs[this.msgs.length - 1]['rd.msg.recip-target']['target']) || "";
-    target = target && this.i18n["targetLabel-" + target];
-    if (target) {
-      rd.escapeHtml(target, this.typeNode, "only");
+    var targetName = target && this.i18n["targetLabel-" + target];
+    if (targetName && this.typeNode) {
+      rd.escapeHtml(targetName, this.typeNode, "only");
+      dojo.addClass(this.typeNode, target);
     }
 
     //Set up the link for the full conversation view action, and set the subject.
