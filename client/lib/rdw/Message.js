@@ -65,6 +65,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
        time info and we probably also want to some standard the hCard formatting */
     var fTime = rd.friendly.timestamp(msgDoc.timestamp);
     this.utcTime = fTime["utc"];
+    this.localeTime = fTime["locale"];
     this.friendlyTime = fTime["friendly"];
     this.additionalTime = fTime["additional"];
 
