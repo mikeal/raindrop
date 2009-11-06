@@ -191,13 +191,12 @@ body {
 }
 
 #footer {
-  display: block;
   padding: 12px;
   font-size: 10px;
-  color: #000;
 }
 
 #footer a {
+  color: #000;
   text-decoration: none;
 }
 
