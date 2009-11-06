@@ -1,16 +1,14 @@
 <div class="rdwMessage ${type}" tabindex="${tabIndex}" dojoAttachEvent="onclick: onClick">
   <div class="message">
-    <div class="content">
-      <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a>
-      <div class="messageHeader">
-        <span class="from">
-          <a href="#${expandLink}" class="from" title="${i18n.expand}">${fromName} - </a>
-        </span>
-        <div class="timestamp" title="${utcTime}">
-          <span class="additionalTime">${additionalTime}</span>
-        </div>
-      </div>
-      <div class="messageContent">${message}</div>
+    <div class="header">
+      <span class="from">
+        <a class="from">${fromName}</a>
+      </span>
+      <span class="published">
+        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
+        <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
+      </span>
     </div>
+    <div class="content">${message}</div>
   </div>
 </div>

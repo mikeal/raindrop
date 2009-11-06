@@ -1,11 +1,11 @@
 <div class="rdwMessage rdwConversationFullMessage ${type}" tabindex="0" dojoAttachEvent="onclick: onClick">
   <div class="message">
     <div class="header">
-      <!--<span class="friendly">${friendlyTime}</span>-->
       <!--<span class="messageType">Message Type</span>-->
-      <div class="timestamp" title="${utcTime}">
-      <span class="additionalTime">${additionalTime}</span>
-      </div>
+      <span class="published">
+        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
+        <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
+      </span>
     </div>  
       
     <div class="messageHeader">

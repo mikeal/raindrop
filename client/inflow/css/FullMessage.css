@@ -47,28 +47,20 @@
   visibility: inherit;
 }
 
-.rdwConversationFullMessage .additionalTime {
-  visibility: visible;
+.rdwConversationFullMessage .published {
+  color: #222;
 }
 
-.rdwConversation:hover .rdwConversationFullMessage .additionalTime {
-  visibility: visible;
+.rdwConversationFullMessage .published .friendly {
+  display: block;
+}
+
+.rdwConversationFullMessage .published .additional {
+  display: block;
 }
 
 .rdwConversationFullMessage.rdwMessage .message {
 
-}
-
-.rdwConversationFullMessage.rdwMessage .actions {
-  text-align: left;
-}
-
-.rdwConversationFullMessage.rdwMessage .actions a {
-  color: #1a1a1a;
-  height: 16px;
-  padding: 0 0 0 20px;
-  margin: 8px 10px 0 0;
-  line-height: 16px;
 }
 
 #conversations a.quoteToggle,
@@ -102,16 +94,6 @@
 
 #conversations .rdwConversation.rdwConversationFullConversation .messageHeader .medium {
   color: #888888;
-}
-  
-#conversations .rdwConversation.rdwConversationFullConversation .header .timestamp {
-  margin: 0;
-  padding: 3px 0 0 0;
-  color: #000;
-}
-
-#conversations .rdwConversation.rdwConversationFullConversation .header .timestamp .friendly {
-  display: none;
 }
 
 #conversations .rdwSummary .actions,

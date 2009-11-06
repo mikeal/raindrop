@@ -108,7 +108,6 @@ body {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
   font-size: 11.5px;
   line-height: 16px;
-  /*background-image: url("i/baseline.png");*/
 }
 
 #nav {
@@ -167,11 +166,6 @@ body {
 #conversations {
   margin: 64px 0 0 0;
   width: 640px;
-}
-
-.rdwConversation a {
-  color: #ff5959;
-  text-decoration: none;
 }
 
 #conversations .rdwSummary {
@@ -396,53 +390,8 @@ body {
 
 /* Inflow > Message structure */
 
-#conversations .rdwConversation {
+#conversations .rdwConversations {
   width: 620px;
-  margin: 10px 10px 20px 10px;
-  border: 1px solid #e6e6e6;
-  -moz-box-shadow: 3px 3px 0px #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
-}
-
-#conversations .rdwConversation.unread {
-  background-color: #fff;
-}
-
-#conversations .rdwConversation.read {
-  background-color: #ffffd9;
-}
-
-#conversations .rdwConversation .header {
-  padding: 1px 5px 0px 5px;
-  font-family: Droid-serif, Georgia, Times, serif;
-  font-size: 10px;
-}
-
-#conversations .rdwConversation .header .type {
-  display: inline-block;
-  float: right;
-  padding: 0 0 0 21px;
-  margin: 3px 0 0 0;
-  background-image: url("i/new/rd_inflow_directmessage.png");
-  background-repeat: no-repeat;
-  background-position: left;
-}
-
-#conversations .rdwConversation .header .timestamp {
-  font-style: italic;
-  float: right;
-  display: inline;
-}
-
-
-#conversations .rdwConversation .messages {
-  width: 610px;
-  padding: 0 0 5px 5px;
-  -moz-box-sizing: border-box;
-}
-
-#conversations .rdwConversation .messageHeader {
-  padding: 0;
 }
 
 /* Widgets */

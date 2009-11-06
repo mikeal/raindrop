@@ -27,117 +27,44 @@
   outline: none;
 }
 
-.rdwMessage .identity {
-  display: none;
-}
+.rdwMessage > .message  > .header { }
 
-.rdwMessage.unknown .identity {
-  display: inline;
-}
-
-.rdwMessage .subject {
-  display: inline-block;
-  margin: 2px 0 7px 0;
+.rdwMessage > .message > .header > .from {
   font-weight: bold;
-  color: #FF5959;
-  font-size: 13px;
-}
-
-.rdwMessage a.subject {
-  color: #FF5959;
-}
-
-.rdwMessage .message a.subject.highlight,
-.rdwMessage .message .subject.hightlight {
-  color: white;
-  background-color: #ff5959;
-}
-
-.rdwMessage .header {
-  display: inline;
-}
-
-.rdwMessage .from {
-  font-weight: bold;
-}
-
-.rdwMessage .from a {
   color: #000;
 }
 
-.rdwMessage .messageContent {
+.rdwMessage > .message > .content { }
+
+/*Any links that appear appear in the message body */
+.rdwMessage > .message > .content a {
+  color: #ff5959;
+  text-decoration: none;
 }
 
-.rdwMessage .reply .subject {
-  display: none;
+.rdwMessage > .message > .header > .published > .value:not(:empty):before {
+  content: " - ";
 }
 
-#conversations .rdwConversation .actions {
-  margin: 7px 0 0 0;
+.rdwMessage > .message > .header > .published {
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
-  padding: 0 5px 7px 5px;
-  visibility: hidden;
+  color: #888;
 }
 
-#conversations .rdwConversation:hover .actions {
-  visibility: visible;
+.rdwMessage > .message > .header > .published > .additional {
+  display: none;
 }
 
-#conversations .rdwConversation .actions a {
-  padding: 0 4px 0 2px;
-  border-right: 1px solid #000;
-  color: #ff5959;
+.rdwMessage > .message > .header > .published:hover >.additional {
+  display: inline;
 }
 
-#conversations .rdwConversation .actions a.reply,
-#conversations .rdwConversation .actions a.fwd {
-  font-family: Droid-sans, Helvetica, Arial, Sans-serif;
-  font-style: normal;
-  float: right;
-  color: white;
-  background-color: black;
-  padding: 1px 3px;
-  border: none;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  font-weight: bold;
-}
-
-#conversations .rdwConversation .actions a:first-child {
-  padding: 0 4px 0 0;
-}
+/* ### REPLY ### */
 
 .rdwMessage.reply {
   padding: 7px 0 0 14px;
   background-image: url("../i/arrow.png");
   background-repeat: no-repeat;
-}
-
-.rdwMessage.reply .subject {
-  display: none;
-}
-
-.rdwMessage .timestamp {
-  font-family: droid-serif, georgia, times, serif;
-  font-style: italic;
-  font-size: 10px;
-  display: inline;
-  color: #888;
-}
-
-.rdwMessage .timestamp .messageType {
-  float: left;
-  font-style: normal;
-}
-
-.rdwMessage:first-child .timestamp {
-  display: inline-block;
-  color: #888888;
-}
-
-.rdwMessage .active .timestamp,
-.rdwMessage .timestamp.active {
-  background-color: yellow;
 }
