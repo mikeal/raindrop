@@ -22,9 +22,22 @@
  * */
 
 .rdwSummary {
-  font-size: x-small;
-  color: #1a1a1a;
-  margin: 12px 0 12px 0;
-  min-height: 13px;
-  display: block;
+  margin: 0 10px;
+  font-size: 13px;
+  font-family: droid-serif, georgia, times, serif;
+  font-style: italic;
+  min-height: 16px;
+  background-image: url("../i/new/rd_inflow_mail.png");
+  background-repeat: no-repeat;
+  padding-left: 16px;
+  background-position: left;
+}
+
+.rdwSummary.conversation {
+  font-family: droid-sans, helvetica, arial, sans;
+  font-style: normal;
+  font-weight: bold;
+  color: #ff5959;
+  background-image: none;
+  padding-left: 0;
 }

@@ -168,28 +168,6 @@ body {
   width: 640px;
 }
 
-#conversations .rdwSummary {
-  margin: 0 10px;
-  font-size: 13px;
-  font-family: droid-serif, georgia, times, serif;
-  font-style: italic;
-  min-height: 16px;
-  background-image: url("i/new/rd_inflow_mail.png");
-  background-repeat: no-repeat;
-  padding-left: 16px;
-  background-position: left;
-}
-
-
-#conversations .rdwSummary.conversation {
-  font-family: droid-sans, helvetica, arial, sans;
-  font-style: normal;
-  font-weight: bold;
-  color: #ff5959;
-  background-image: none;
-  padding-left: 0;
-}
-
 #footer {
   padding: 12px;
   font-size: 10px;
