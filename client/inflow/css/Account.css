@@ -58,3 +58,27 @@
   background-position: right center;
   background-repeat: no-repeat;
 }
+
+.inflowAddAccountFrame {
+  width: 500px;
+  height: 500px;
+  outline: none;
+}
+
+.inflowAddAccountFrame  .dijitDialogPaneContent {
+  overflow: hidden;
+  outline: none;
+ }
+
+.inflowAddAccountFrame iframe {
+  width: 500px;
+  height: 500px;
+  border: 0;
+  outline: none;
+}
+
+.inflowAddAccountFrame_underlay {
+  opacity: 0.9;
+  background-color: #FFF !important;
+  outline: none;
+}

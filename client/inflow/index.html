@@ -37,28 +37,19 @@
   </script>  
 </head>
 <body>
-  <div id="nav">
-     <div rdType="rdw.QuickCompose" class="invisible" startExpanded="true"></div>
-     <div id="navHeader">
-      <ul>
-        <li><a href="#rd:home">Inflow</a></li>
-        <li><a class="quickComposeLaunch" href="#rd:quick-compose">Compose</a></li>
-        <li><div rdType="rdw.Organizer"></div></li>
-      </ul>
-      <!--<div rdType="rdw.Search"></div>-->
-      <div rdType="rdw.Notify"></div>
-      </div>
-      <div id="logo"><div rdType="rdw.Loading"></div>
-    </div>
+  <div id="top">
+    <a href="#rd:home">Inflow</a>
+    <!--<div rdType="rdw.Search"></div>-->
+    <div rdType="rdw.Notify"></div>
+    <div id="logo"><div rdType="rdw.Loading"></div></div>
   </div>
 
   <div id="notices"></div>
 
-  <div id="summary" rdType="rdw.Summary"></div>
-
   <div id="content" class="hbox">
     <div id="conversations" rdType="rdw.Conversations" class="start"></div>
-    <div id="widgets" rdType="rdw.Widgets" class="boxFlex"></div>
+    <div id="widgets" rdType="rdw.Widgets" class="start"></div>
+    <div id="openSocial" class="boxFlex"></div>
   </div>
 
   <div id="footer"><a style="color: #000;" target="_blank" href="/raindrop/extender/index.html">extend</a></div>

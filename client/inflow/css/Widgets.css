@@ -1,0 +1,110 @@
+/* ***** BEGIN LICENSE BLOCK *****
+ * Version: MPL 1.1
+ *
+ * The contents of this file are subject to the Mozilla Public License Version
+ * 1.1 (the "License"); you may not use this file except in compliance with
+ * the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS" basis,
+ * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+ * for the specific language governing rights and limitations under the
+ * License.
+ *
+ * The Original Code is Raindrop.
+ *
+ * The Initial Developer of the Original Code is
+ * Mozilla Messaging, Inc..
+ * Portions created by the Initial Developer are Copyright (C) 2009
+ * the Initial Developer. All Rights Reserved.
+ *
+ * Contributor(s):
+ * */
+
+/* CSS for the various default Widgets we display */
+
+.WidgetBox {
+  width: 300px;
+  margin: 10px;
+  float: left;
+  padding: 5px;
+  -moz-box-shadow: 3px 3px 0px #e6e6e6;
+  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
+  border: 1px solid #e6e6e6;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.WidgetBox > .title {
+  font-family: droid-serif, georgia, times, serif;
+  display: inline-block;
+  font-size: 10px;
+}
+
+.WidgetBox .rdwMessage {
+  margin-top: 6px;
+  padding-bottom: 1px;
+}
+
+.WidgetBox .rdwMessage > .message > .header > .subject {
+  margin: 6px 0 0 0;
+  font-size: 11.5px;
+  color: #ff5959;
+  text-decoration: none;
+}
+
+.WidgetBox .rdwMessage > .message > .header > .subject:hover {
+  text-decoration: underline;
+}
+
+.WidgetBox .rdwMessage > .message > .header > .published {
+  font-family: droid-serif, georgia, times, serif;
+  font-size: 10px;
+  font-style: italic;
+  color: #888;
+}
+
+/* ### TWITTER ### */
+
+.rdwConversationTwitterTimeLine {
+  background-color: #C4F3FF;
+}
+
+.rdwConversationTwitterTimeLine > .title {
+  padding: 0 0 0 22px;
+  background-image: url("../i/new/rd_widget_twitter.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
+.rdwConversationTwitterTimeLine .rdwMessage > .message > .content a {
+  color: #1a1a1a;
+  text-decoration: none;
+}
+
+/* ### MAILING LIST ### */
+
+.rdwConversationMailingList {
+  background-color: #FFDEDE;
+}
+
+.rdwConversationMailingList > .title {
+  padding: 0 0 0 18px;
+  background-image: url("../i/new/rd_widget_mailinglist.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
+/* ### GENERIC GROUP ### */
+
+.rdwConversationGenericGroup {
+  background-color: #E9FFE0; 
+} 
+
+.rdwConversationGenericGroup > .title {
+  padding: 0 0 0 16px;
+  background-image: url("../i/new/rd_widget_rss.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}

@@ -1,13 +1,8 @@
-<div class="rdwMessage rdwConversationMailingListMessage ${type}" dojoAttachEvent="onclick: onClick">
-  <div class="topActions">
-    <a class="archive" href="#">${i18n.closeIcon}</a>
-  </div>
+<div class="rdwMessage rdwConversationMailingListMessage ${type}">
   <div class="message">
-    <div class="content">
-      <span class="subject">
-      <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a> 
-      </span>
-      <div class="messageContent">${message}</div>
+    <div class="header">
+      <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a>
     </div>
+    <div class="content">${message}</div>
   </div>
 </div>

@@ -113,7 +113,7 @@ dojo.mixin(inflow, {
 
   //Do onload work that shows the initial display.
   dojo.addOnLoad(function() {
-    inflow.hideQuickCompose();
+    //inflow.hideQuickCompose();
 
     //Trigger the first list of items to show. Favor a fragment ID on the URL.
     var fragId = location.href.split("#")[1];
@@ -135,13 +135,13 @@ dojo.mixin(inflow, {
     window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
 
     //Listen for quick compose open calls    
-    dojo.query(".quickComposeLaunch").onclick(function(evt) {
-      inflow.showQuickCompose();
-      dojo.stopEvent(evt);
-    })
+    //dojo.query(".quickComposeLaunch").onclick(function(evt) {
+    //  inflow.showQuickCompose();
+    //  dojo.stopEvent(evt);
+    //})
 
     //Listen for quick compose close calls.
-    rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
+    //rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
 
     //Start up the autosyncing if desired, time is in seconds.
     var autoSync = 0;

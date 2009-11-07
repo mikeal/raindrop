@@ -29,11 +29,9 @@ dojo.require("rdw.Conversation");
  * Groups twitter broadcast messages into one "conversation"
  */
 dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
-  templateString: '<div class="rdwConversationTwitterTimeLine"> \
-                    <div class="timestamp" dojoAttachPoint="timestampNode"> \
-                    <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
-                    </div> \
-                    <div class="tweetList" dojoAttachPoint="containerNode"><div class="tweetTitle">Twitter</div></div> \
+  templateString: '<div class="WidgetBox rdwConversationTwitterTimeLine"> \
+                    <div dojoAttachPoint="nameNode" class="title">Twitter</div> \
+                    <div class="tweetList" dojoAttachPoint="containerNode"></div> \
                    </div>',
 
   /**

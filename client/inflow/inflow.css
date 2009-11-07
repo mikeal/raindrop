@@ -30,6 +30,7 @@
 @import url("css/Conversations.css");
 @import url("css/ContactList.css");
 @import url("css/Organizer.css");
+@import url("css/Widgets.css");
 
 * {
   border: 0px;
@@ -38,7 +39,7 @@
 }
 
 body {
-  margin: 0px 0px 0px 0px;
+  margin: 0;
 }
 
 a img{
@@ -110,44 +111,19 @@ body {
   line-height: 16px;
 }
 
-#nav {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  background-image: url("i/bg.png");
-  z-index: 100;
-}
-
-#navHeader {
+#top {
   font-family: droid-serif, georgia, times, serif;
   width: 940px;
   margin: 16px 10px 9px 10px;
 }
 
-#navHeader a {
+#top a {
   color: #1a1a1a;
   text-decoration: none;
 }
 
-#navHeader a:hover {
+#top a:hover {
   text-decoration: underline;
-}
-
-#navHeader select {
-  font-family: droid-serif, georgia, times, serif;
-  width: 120px;
-  margin: 0 7px 0 0;
-}
-
-#navHeader ul {
-  list-style-type: none;
-  display: inline;
-}
-
-#navHeader li {
-  display: inline;
-  margin-right: 7px;
-  float: left;
 }
 
 #logo {
@@ -161,24 +137,44 @@ body {
 }
 
 #notices {
-  margin: 64px 0 10px 10px;
+  margin: 0px 0 10px 10px;
+  max-width: 940px;
 }
 
 #notices .notice {
-  
+  padding: 7px;
+  margin: 7px 0;
+  border: 1px solid #0066dd;
+  -moz-border-radius: 3.5px;
+  background-color: Highlight;
+  color: HighlightText;
+}
+
+#notices .notice a {
+  color: HighlightText;
 }
 
 #notices .notice button {
-  margin-left: 5px;
+  padding: 0 3px;
+  float: right;
+  font-weight: bold;
+  background-color: HighlightText;
+  -moz-border-radius: 3.5px;
+  color: Highlight;
+  text-transform: lowercase;
   cursor: pointer;
 }
-
 
 #content {
 }
 
 #conversations {
   width: 640px;
+}
+
+#widgets {
+  margin-top: 16px;
+  width: 300px;
 }
 
 #footer {
@@ -189,30 +185,6 @@ body {
 #footer a {
   color: #000;
   text-decoration: none;
-}
-
-.inflowAddAccountFrame {
-  width: 500px;
-  height: 500px;
-  outline: none;
-}
-
-.inflowAddAccountFrame  .dijitDialogPaneContent {
-  overflow: hidden;
-  outline: none;
- }
-
-.inflowAddAccountFrame iframe {
-  width: 500px;
-  height: 500px;
-  border: 0;
-  outline: none;
-}
-
-.inflowAddAccountFrame_underlay {
-  opacity: 0.9;
-  background-color: #FFF !important;
-  outline: none;
 }
 
 /* START hacking away at inputs in quickcompose :( */
@@ -377,137 +349,3 @@ body {
 	box-pack: center;
 }
 /* END hbox/vbox normalization from http://alex.dojotoolkit.org/2009/08/css-3-progress/ */
-
-/* Inflow > Message structure */
-
-#conversations .rdwConversations {
-  width: 620px;
-}
-
-/* Widgets */
-
-#widgets {
-  margin-top: 15px;
-}
-
-#widgets .messageContent a {
-  color: #ff5959;
-  text-decoration: none;
-}
-
-#widgets .messageContent a:hover {
-  text-decoration: underline;
-}
-
-.rdwConversationMailingList,
-.rdwConversationTwitterTimeLine,
-.rdwConversationGenericGroup {
-  width: 300px;
-  margin: 10px;
-  float: left;
-  padding: 5px;
-  -moz-box-shadow: 3px 3px 0px #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
-  border: 1px solid #e6e6e6;
-}
-
-
-.rdwConversationTwitterTimeLine,
-.rdwConversationMailingList,
-.rdwConversationGenericGroup {
-  -moz-box-sizing: border-box;
-  -webkit-box-sizing: border-box;
-  box-sizing: border-box;
-}
-
-.rdwConversationTwitterTimeLine .timestamp,
-.rdwConversationMailingList .timestamp {
-  display: inline;
-  font-family: droid-serif, georgia, times, serif;
-  font-size: 10px;
-  font-style: italic;
-  color: #888;
-}
-
-.rdwConversationGenericGroup .timestamp .friendly {
-  display: inline-block;
-  font-family: droid-serif, georgia, times, serif;
-  font-size: 10px;
-  float: right;
-  font-style: italic;
-}
-
-.rdwConversationTwitterTimeLine {
-  background-color: #C4F3FF;
-}
-
-.rdwConversationMailingList {
-  background-color: #FFDEDE;
-}
-
-.rdwConversationGenericGroup {
-  background-color: #E9FFE0; 
-} 
-
-.rdwConversationMailingList .subject,
-.rdwConversationGenericGroup .subject {
-  margin: 6px 0 0 0;
-  font-size: 11.5px;
-}  
-
-.rdwConversationMailingList .subject a,
-.rdwConversationGenericGroup .subject a {
-  text-decoration: none;
-}  
-
-.rdwConversationMailingList .topActions,
-.rdwConversationGenericGroup .topActions {
-  display: none;
-}
-
-.rdwConversationTwitterTimeLine .actions a:first-child {
-  display: none;
-}
-
-.rdwConversationTwitterTimeLine a {
-  color: #1a1a1a;
-  text-decoration: none;
-}
-
-.tweetTitle,
-.MailingListTitle,
-.rdwConversationGenericGroup .title {
-  font-family: droid-serif, georgia, times, serif;
-  display: inline-block;
-  font-size: 10px;
-}
-
-.tweetTitle {
-  padding: 0 0 0 22px;
-  background-image: url("i/new/rd_widget_twitter.png");
-  background-repeat: no-repeat;
-  background-position: left;
-}
-
-.MailingListTitle {
-  padding: 0 0 0 18px;
-  background-image: url("i/new/rd_widget_mailinglist.png");
-  background-repeat: no-repeat;
-  background-position: left;
-}
-
-.rdwConversationGenericGroup .title {
-  padding: 0 0 0 16px;
-  background-image: url("i/new/rd_widget_rss.png");
-  background-repeat: no-repeat;
-  background-position: left;
-}
-
-.rdwConversationTwitterTimeLine .subject {
-  display: none;
-}
-
-.rdwConversationTwitterTimeLine .rdwMessage {
-  margin-top: 6px;
-  padding-bottom: 1px;
-}

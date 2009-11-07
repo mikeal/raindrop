@@ -29,11 +29,9 @@ dojo.require("rdw.Conversation");
  * Groups some broadcast/general group messages into one "conversation"
  */
 dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation], {
-  templateString: '<div class="rdwConversationGenericGroup"> \
-                    <div class="timestamp" dojoAttachPoint="timestampNode"> \
-                      <span class="friendly" dojoAttachPoint="friendlyNode"></span> \
-                    </div> \
-                    <div class="genericGroup" dojoAttachPoint="containerNode"><span dojoAttachPoint="nameNode" class="title"></span></div> \
+  templateString: '<div class="WidgetBox rdwConversationGenericGroup"> \
+                    <div dojoAttachPoint="nameNode" class="title"></div> \
+                    <div class="genericGroup" dojoAttachPoint="containerNode"></div> \
                   </div>',
 
   /**
