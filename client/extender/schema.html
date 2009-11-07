@@ -125,8 +125,14 @@
           rd.place(html, this.tbodyNode, "only");
         }
 
-        //Show the complete exampe documents.
+        //Show the complete example documents.
         rd.escapeHtml(rd.toJson(this.docs, true), this.exampleNode, "only");
+
+        //Add hyperlinks for the IDs
+        var html = this.exampleNode.innerHTML;
+        this.exampleNode.innerHTML = html.replace(/"_id":\s+"([^"]+)"/g, function(match, id) {
+            return '"_id": <a href="http://127.0.0.1:5984/_utils/document.html?raindrop/' + encodeURIComponent(id) + '" target="_blank">' + id + '</a>';
+        });
       });
     },
   
