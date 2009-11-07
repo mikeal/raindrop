@@ -52,6 +52,7 @@
   font-size: 11.5px;
   color: #ff5959;
   text-decoration: none;
+  font-weight: bold;
 }
 
 .WidgetBox .rdwMessage > .message > .header > .subject:hover {
@@ -107,4 +108,6 @@
   background-image: url("../i/new/rd_widget_rss.png");
   background-repeat: no-repeat;
   background-position: left;
+  min-height: 16px;
+  display: block;
 }

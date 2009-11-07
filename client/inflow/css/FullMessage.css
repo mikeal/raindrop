@@ -22,28 +22,34 @@
  * */
 
 .rdwConversationFullMessage {
-  border: none;
-  border-top: 1px solid #e6e6e6;
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
+  border: 1px solid #e6e6e6;
+  -moz-box-shadow: 3px 3px 0 #e6e6e6;
+  -webkit-box-shadow: 3px 3px 0 #e6e6e6;
   background-color: #fff;
+  margin: 0 0 20px 0;
 }
 
 .rdwConversationFullMessage > .message {
-  padding: 14px 0;
+  padding: 1px 5px 5px 5px;
+  margin: 0;
 }
 
 .rdwConversationFullMessage > .message > .header {
   display: table;
   width: 100%;
+  margin: 0;
 }
 
 .rdwConversationFullMessage > .message > .header > .author {
-  display: table-cell;
+  display: inline-block;
+  margin: 0 0 8px 0;
 }
 
 .rdwConversationFullMessage > .message > .header > .author > .from {
-  display: block;
+  display: table;
+  font-size: 13px;
+  color: #ff5959;
+  margin: 3px 0 0 0;
 }
 
 .rdwConversationFullMessage > .message > .header > .author > .medium {
@@ -51,11 +57,12 @@
 }
 
 .rdwConversationFullMessage > .message > .header > .published {
-  display: table-cell;
-  text-align: right;
+  display: table;
+  float: right;
   font-family: droid-serif, georgia, times, serif;
   font-style: normal;
-  font-size: 11px;
+  font-size: 10px;
+  margin-top: 4px;
 }
 
 .rdwConversationFullMessage > .message > .header > .published > .value:not(:empty):before {
@@ -64,17 +71,17 @@
 }
 
 .rdwConversationFullMessage > .message > .header > .published > .friendly {
-  display: block;
-  color: #444;
+  display: inline;
+  color: #000;
 }
 
 .rdwConversationFullMessage > .message > .header > .published > .additional {
-  display: block;
-  color: #888;
+  display: inline;
+  color: #000;
 }
 
 .rdwConversationFullMessage > .message > .content {
-  margin: 14px 0 14px 7px;
+  margin: 0;
 }
 
 .rdwConversationFullMessage > .message > .content > a.quoteToggle,
@@ -88,21 +95,21 @@
 }
 
 .rdwConversationFullMessage > .message > .actions {
-  display: none;
+  visibility: hidden;
+  display: inline-block;
+  text-align: right;
+  width: 100%;  
 }
 
-.rdwConversationFullMessage > .message > .actions a:first-child {
-  padding: 1px 3px;
-  margin: 0;
-}
+.rdwConversationFullMessage > .message:hover > .actions {
+  visibility: visible;
+} 
 
-.rdwConversationFullConversation  > .message > .actions a.reply {
-  margin: 0;
+.rdwConversationFullMessage > .message > .actions a.reply {
+  margin-left: 4px;
 }
+  
 
-.rdwConversationFullConversation > .message > .actions a.fwd {
-  margin: 0 4px 0 0;
-}   
 
 .toolBox {
   font-size: x-small;

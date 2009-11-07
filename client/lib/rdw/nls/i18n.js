@@ -32,7 +32,7 @@
   directName: "Direct Messages",
   directTitle: "You and one other person are talking",
   expand: "open",
-  forward: "forward message",
+  forward: "forward",
   forwardSubjectPrefix: "Fwd: ",
   home: "Home",
   hideQuotedText: "- Hide quoted text",

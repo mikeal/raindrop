@@ -6,15 +6,15 @@
         <span class="medium">${fromId}</span>
       </span>
       <span class="published">
-        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
+        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr> - 
         <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
       </span>
     </div>  
     <div class="content">${message}</div>
     <div class="attachments"></div>
     <div class="actions" dojoAttachPoint="actionsNode">
-      <a class="reply" href="#reply">reply</a>
-      <a class="fwd" href="#forward">forward</a>
+      <a class="reply" href="#reply" dojoattachpoint="replyNode">${i18n.reply}</a>
+      <a class="fwd" href="#forward" dojoattachpoint="replyNode">${i18n.forward}</a>
     </div>
   </div>
 </div>

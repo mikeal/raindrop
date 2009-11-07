@@ -27,7 +27,9 @@
   outline: none;
 }
 
-.rdwMessage > .message  > .header { }
+.rdwMessage > .message  > .header { 
+  margin: 8px 0 0 0;
+}
 
 .rdwMessage > .message > .header > .author > .from {
   font-weight: bold;
@@ -41,6 +43,10 @@
 .rdwMessage > .message > .content a {
   color: #ff5959;
   text-decoration: none;
+}
+
+.rdwMessage > .message > .content a:hover {
+  text-decoration: underline;
 }
 
 .rdwMessage > .message > .header > .published > .value:not(:empty):before {
@@ -65,7 +71,8 @@
 /* ### REPLY ### */
 
 .rdwMessage.reply {
-  padding: 7px 0 0 14px;
+  padding: 0 0 0 14px;
+  background-position: 0 -6px;
   background-image: url("../i/arrow.png");
   background-repeat: no-repeat;
 }
