@@ -160,11 +160,24 @@ body {
   right: 10px;
 }
 
+#notices {
+  margin: 64px 0 10px 10px;
+}
+
+#notices .notice {
+  
+}
+
+#notices .notice button {
+  margin-left: 5px;
+  cursor: pointer;
+}
+
+
 #content {
 }
 
 #conversations {
-  margin: 64px 0 0 0;
   width: 640px;
 }
 
@@ -374,7 +387,7 @@ body {
 /* Widgets */
 
 #widgets {
-  margin-top: 80px;
+  margin-top: 15px;
 }
 
 #widgets .messageContent a {

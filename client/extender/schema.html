@@ -118,7 +118,7 @@
           }
           html += rd.template(this.propTemplate, {
             name: prop,
-            value: rd.escapeHtml(value + "")
+            value: prop == "_id" ? "<a href='http://127.0.0.1:5984/_utils/document.html?raindrop/" + encodeURIComponent(value) + "' target='_blank'>" + value + "</a>" : rd.escapeHtml(value + "")
           });
         }
         if (html) {

@@ -91,6 +91,14 @@ dojo.mixin(inflow, {
       this.isComposeVisible = false;
       dojo.anim("nav", { top: (-1 * (navPosition.h - navHeaderPosition.h)) });
     }
+  },
+  
+  addNotice: function(node) {
+    //Adds a notice to the notices area. Extensions can pass a DOM node
+    //to this method to have it show up in the notices area. The caller
+    //of this function is responsible for cleaning up the node. The node
+    //should have a class="notice" for styling concerns.
+    dojo.byId("notices").appendChild(node);
   }
 });
 

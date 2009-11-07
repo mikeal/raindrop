@@ -408,7 +408,12 @@ rd.api.extend({
   put: function(args) {
     var doc = this.newDoc(args.doc);
 
-    var docUrl = rd.dbPath + doc._id;
+    //Do not carry the db name along with the doc to put in the db.
+    if (doc.dbPath) {
+      delete doc.dbPath;
+    }
+
+    var docUrl = (this.args.dbPath || rd.dbPath) + doc._id;
     if (doc._rev) {
       docUrl += "?rev=" + doc._rev;
     }
