@@ -26,6 +26,7 @@ dojo.provide("rdw.ext.metrics");
 //Only require inflow if this is the inflow app.
 dojo.requireIf(rd.appName == "inflow", "inflow");
 dojo.require("rd.pref");
+dojo.require("rd.api.Api");
 
 rdw.ext.metrics = {
   //TODO: there is a chance we can miss some metrics if the metric trigger
