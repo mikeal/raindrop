@@ -30,7 +30,7 @@ dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], 
    * Holds on to the ID for the feed.
    */
   feedId: "",
-  
+
   /**
    * pulls the feed ID out of the msg's rss-entry schema.
    */
@@ -48,18 +48,26 @@ dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], 
     return (feedId && !this.feedId) || (this.feedId == feedId);
   },
 
-  addConversation: function(conversation) {
-    this.inherited("addConversation", arguments);
-    var msg = conversation.messages[0];
-
-    //Save the feed ID so only accept entries from this feed.
-    if (!this.feedId) {
-      this.feedId = this.getFeedId(msg);
+  postMixInProperties: function() {
+    this.inherited("postMixInProperties", arguments);
+    if (this.conversation) {
+      var msg = this.conversation.messages[0];
+      this.setTitle(msg);
+      if (!this.feedId) {
+        this.feedId = this.getFeedId(msg);
+      }
     }
+  },
 
-    //Set the title of the feed.
-    if (msg) {
-      this.groupTitle = msg.schemas["rd.msg.rss-feed"].title || "";
+  /**
+   * Sets the title given a message.
+   *
+   * @param {Object} msg the messsage object.
+   */
+  setTitle: function(msg) {
+    var schema = msg && msg.schemas["rd.msg.rss-feed"];
+    if (schema) {
+      this.groupTitle = schema.title || "";
     }
   }
 });
