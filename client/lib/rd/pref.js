@@ -23,6 +23,8 @@
 
 dojo.provide("rd.pref");
 
+dojo.require("rd.store");
+
 /**
  * Gets preferences for a preference ID.
  *
