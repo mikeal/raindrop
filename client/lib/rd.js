@@ -540,7 +540,10 @@ dojo._listener.getDispatcher = function(){
 	extFunc = extFunc && extFunc[prop];
 	if (extFunc && !rd._extDisabled[extKey]) {
 	  extFunc.targetReturn = ret;
-	  ret = extFunc.apply(this, arguments);
+	  var aftRet = extFunc.apply(this, arguments);
+	  if (typeof aftRet != "undefined") {
+	    ret = aftRet;
+	  }
 	  delete extFunc.targetReturn;
 	}
         return ret;	
