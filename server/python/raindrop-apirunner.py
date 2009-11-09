@@ -103,7 +103,7 @@ class CouchDB:
 api_globals['CouchDB'] = CouchDB
 
 def log(msg, *args):
-    print >> sys.stderr, (msg % args)
+    print json.dumps(["log", (msg % args)])
 
 api_globals['log'] = log
 
