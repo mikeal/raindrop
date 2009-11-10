@@ -26,7 +26,6 @@ dojo.provide("rd.contact");
 dojo.require("dojo.DeferredList");
 
 dojo.require("couch");
-dojo.require("rd.store");
 dojo.require("rd._api");
 dojo.require("rd.api");
 
@@ -184,13 +183,17 @@ dojo.mixin(rd.contact, {
         }
 
         //Insert the document.
-        rd.store.put(contactDoc, dojo.hitch(this, function(contact) {
+        var api = rd.api().put(contactDoc)
+        .ok(this, function(contact) {
           //Update our cache
           this._store.push(contact);
           this._store[uid] = contact;
           //Finish with creating the rd.identity.contacts record.
           this._makeRdIdentityContacts(identity, uid, callback, errback);
-        }), errback);
+        });
+        if (errback) {
+          api.error(errback);
+        }
       }));
     } else if (errback) {
       errback("Invalid contact object passed to rd.contact.addIdentity");
@@ -310,29 +313,29 @@ dojo.mixin(rd.contact, {
     } else {
       // open all contacts - note this also includes contacts without
       // associated identities...
-      rd.store.megaview({
+      rd.api().megaview({
         key: ["rd.core.content", "schema_id", "rd.contact"],
         include_docs: true,
-        reduce: false,
-        success: dojo.hitch(this, function(json) {
-          //Error out if no rows return.
-          if(!json.rows.length) {
-            this._error = new Error("no contacts");
-            this._onload();
-          } else {
-            for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-              this._store.push(doc);
-              // for contacts, rd_key is a tuple of ['contact', contact_id]
-              this._store[doc.rd_key[1]] = doc;
-            }
-  
-            this._loadIdtyMapping();
-          }
-        }),
-        error: dojo.hitch(this, function(err) {
-          this._error = err;
+        reduce: false
+      })
+      .ok(this, function(json) {
+        //Error out if no rows return.
+        if(!json.rows.length) {
+          this._error = new Error("no contacts");
           this._onload();
-        })      
+        } else {
+          for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+            this._store.push(doc);
+            // for contacts, rd_key is a tuple of ['contact', contact_id]
+            this._store[doc.rd_key[1]] = doc;
+          }
+
+          this._loadIdtyMapping();
+        }
+      })
+      .error(this, function(err) {
+        this._error = err;
+        this._onload();
       });
     }
   },
@@ -340,32 +343,32 @@ dojo.mixin(rd.contact, {
   _loadIdtyMapping: function() {
     //summary: loads the contact-identity mapping.
 
-    rd.store.megaview({
+    rd.api().megaview({
       startkey: ["rd.identity.contacts", "contacts"],
       endkey: ["rd.identity.contacts", "contacts", {}],
-      reduce: false,
-      success: dojo.hitch(this, function(json) {
-        //Error out if no rows return.
-        if(!json.rows.length) {
-          this._error = new Error("no contacts");
-          this._onload();
-        } else {
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            // check we really have an identity record...
-            this._mapIdtyToContact(row.value, row.key[2][0]);
-          }
-
-          if (this._listStatus == "needFetch") {
-            this._fetchAllIdentities();
-          } else {
-            this._onload();
-          }
-        }
-      }),
-      error: dojo.hitch(this, function(err) {
-        this._error = err;
+      reduce: false
+    })
+    .ok(this, function(json) {
+      //Error out if no rows return.
+      if(!json.rows.length) {
+        this._error = new Error("no contacts");
         this._onload();
-      })
+      } else {
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          // check we really have an identity record...
+          this._mapIdtyToContact(row.value, row.key[2][0]);
+        }
+
+        if (this._listStatus == "needFetch") {
+          this._fetchAllIdentities();
+        } else {
+          this._onload();
+        }
+      }
+    })
+    .error(this, function(err) {
+      this._error = err;
+      this._onload();
     });
   },
 
@@ -521,14 +524,18 @@ dojo.mixin(rd.contact, {
     };
 
     //Insert the document.
-    rd.store.put(idtyMap, dojo.hitch(this, function() {
+    var api = rd.api().put(idtyMap)
+    .ok(this, function() {
       //Update the data store.
       this._mapIdtyToContact(idtyMap, contactId);
       this._attachIdentity(identity);
 
       callback();
       rd.pub("rd-contact-updated", this._store[contactId]);
-    }), errback);
+    });
+    if (errback) {
+      api.error(errback);
+    }
   },
 
   _hasNameMatch: function(/*String*/from, /*Array*/names) {

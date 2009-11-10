@@ -23,7 +23,7 @@
 
 dojo.provide("rd.tag");
 
-dojo.require("rd.store");
+dojo.require("rd.api");
 
 rd.tag = {
   /**
@@ -79,18 +79,20 @@ rd.tag = {
    * @private
    */
   _fetchGroupedIds: function(startKey, endKey, callback, errback) {
-    rd.store.megaview({
+    var api = rd.api().megaview({
       startkey: startKey,
       endkey: endKey,
-      group: true,
-      success: dojo.hitch(this, function(json) {
-        var list = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          list.push(row.key[2]);
-        }
-        callback(list);
-      }),
-      error: errback
-    });    
+      group: true
+    })
+    .ok(this, function(json) {
+      var list = [];
+      for (var i = 0, row; row = json.rows[i]; i++) {
+        list.push(row.key[2]);
+      }
+      callback(list);
+    });
+    if (errback) {
+      api.error(errback);
+    }
   }
 }

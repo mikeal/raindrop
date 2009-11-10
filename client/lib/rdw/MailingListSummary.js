@@ -23,6 +23,7 @@
 
 dojo.provide("rdw.MailingListSummary");
 
+dojo.require("rd.api");
 dojo.require("rdw._Base");
 
 rd.addStyle("rdw.css.MailingListSummary");
@@ -146,19 +147,21 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
    * object as an argument, but that error object is not strictly defined.
    */
   _get: function(/*Function*/callback, /*Function*/errback) {
-    rd.store.megaview({
+    var api = rd.api().megaview({
       key: ['rd.mailing-list', 'id', this.id],
       reduce: false,
-      include_docs: true,
-      success: dojo.hitch(this, function(json) {
-        // ??? Should we pass the doc to the callback rather than assigning it
-        // to a property of this object here?
-        if (json.rows.length > 0)
-          this.doc = json.rows[0].doc;
-        callback();
-      }),
-      error: errback
+      include_docs: true
+    })
+    .ok(this, function(json) {
+      // ??? Should we pass the doc to the callback rather than assigning it
+      // to a property of this object here?
+      if (json.rows.length > 0)
+        this.doc = json.rows[0].doc;
+      callback();
     });
+    if (errback) {
+      api.error(errback);
+    }
   },
 
   /**

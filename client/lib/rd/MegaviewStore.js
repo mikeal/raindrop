@@ -24,7 +24,7 @@
 dojo.provide("rd.MegaviewStore");
 
 dojo.require("dojo.DeferredList");
-dojo.require("rd.store");
+dojo.require("rd.api");
 
 //This implements the dojo.data Read and Identity interfaces so it can
 //be used in widgets that consume dojo.data stores. The items in this
@@ -277,65 +277,65 @@ dojo.declare("rd.MegaviewStore", null, {
         ioPublish: false,
         identity: query,
         type: this.subType || "",
-        include_docs: true,
-        success: dojo.hitch(this, function(json) {
-          var items = [];
-          //TODO, just collect the contactIds if include_docs on a list view
-          //would give back the docs.
-          var idtys = [];
-          var ids = {}; //Make sure names are unique.
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            var name = row.value.rd_key[1][1];
-            if (!name || ids[name]) {
-              continue;
-            }
-            //emit the identity.
-            items.push({
-              id: name,
-              type: "identity",
-              name: name
-            });
-            idtys.push(row.value.rd_key[1]);
-            ids[name] = 1;
-          }
-          this._addItems(items);
-  
-          //Now request the contact records.
-          rd.contact.byIdentity(
-            idtys,
-            dojo.hitch(this, function(contacts) {
-              var items = [];
-              if (contacts) {
-                for (var i = 0, contact; contact = contacts[i]; i++) {
-                  if (!contact.name || !ids[contact.name]) {
-                    continue;
-                  }
-                  items.push({
-                    id: contact.rd_key[1],
-                    type: "contact",
-                    name: contact.name
-                  });
-                  ids[contact.name] = 1;
-                }
-                this._addItems(items);
-              }
-              dfd.callback();
-            }),
-            function(err) {
-              dfd.errback(err);
-            }
-          );
-        }),
-        error: function(err) {
-          dfd.errback(err);
-        }
+        include_docs: true
       };
   
       if (count && count != Infinity) {
         args.limit = count;
       }
   
-      rd.store.megaviewList("rdidentity", args);
+      args.listName = "rdidentity";
+      rd.api().megaviewList(args)
+      .ok(this, function(json) {
+        var items = [];
+        //TODO, just collect the contactIds if include_docs on a list view
+        //would give back the docs.
+        var idtys = [];
+        var ids = {}; //Make sure names are unique.
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          var name = row.value.rd_key[1][1];
+          if (!name || ids[name]) {
+            continue;
+          }
+          //emit the identity.
+          items.push({
+            id: name,
+            type: "identity",
+            name: name
+          });
+          idtys.push(row.value.rd_key[1]);
+          ids[name] = 1;
+        }
+        this._addItems(items);
+
+        //Now request the contact records.
+        rd.contact.byIdentity(
+          idtys,
+          dojo.hitch(this, function(contacts) {
+            var items = [];
+            if (contacts) {
+              for (var i = 0, contact; contact = contacts[i]; i++) {
+                if (!contact.name || !ids[contact.name]) {
+                  continue;
+                }
+                items.push({
+                  id: contact.rd_key[1],
+                  type: "contact",
+                  name: contact.name
+                });
+                ids[contact.name] = 1;
+              }
+              this._addItems(items);
+            }
+            dfd.callback();
+          }),
+          function(err) {
+            dfd.errback(err);
+          }
+        );
+      })
+      .error(dfd, errback);
+
     }));
 
     return dfd;   
@@ -350,33 +350,31 @@ dojo.declare("rd.MegaviewStore", null, {
       startkey: ["rd.contact", "name", query],
       endkey: ["rd.contact", "name", query + "\u9999"],
       reduce: false,
-      ioPublish: false,
-      success: dojo.hitch(this, function(json) {
-        var items = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          var name = row.key[2];
-          if (!name) {
-            continue;
-          }
-          items.push({
-            id: row.value.rd_key[1],
-            type: "contact",
-            name: name
-          });
-        }
-        this._addItems(items);
-        dfd.callback();
-      }),
-      error: function(err) {
-        dfd.errback(err);
-      }
+      ioPublish: false
     };
 
     if (count && count != Infinity) {
       args.limit = count;
     }
 
-    rd.store.megaview(args);
+    rd.api().megaview(args)
+    .ok(this, function(json) {
+      var items = [];
+      for (var i = 0, row; row = json.rows[i]; i++) {
+        var name = row.key[2];
+        if (!name) {
+          continue;
+        }
+        items.push({
+          id: row.value.rd_key[1],
+          type: "contact",
+          name: name
+        });
+      }
+      this._addItems(items);
+      dfd.callback();
+    })
+    .error(dfd, errback);
     return dfd;
   },
 
@@ -390,33 +388,31 @@ dojo.declare("rd.MegaviewStore", null, {
       endkey: ["rd.msg.location", "location", [query + "\u9999", {}]],
       reduce: true,
       group: true,
-      ioPublish: false,
-      success: dojo.hitch(this, function(json) {
-        var items = [];
-        for (var i = 0, row; row = json.rows[i]; i++) {
-          var name = row.key[2];
-          if (!name) {
-            continue;
-          }
-          items.push({
-            id: row.key[2],
-            type: "locationTag",
-            name: row.key[2]
-          });
-        }
-        this._addItems(items);
-        dfd.callback();
-      }),
-      error: function(err) {
-        dfd.errback(err);
-      }
+      ioPublish: false
     };
 
     if (count && count != Infinity) {
       args.limit = count;
     }
 
-    rd.store.megaview(args);
+    rd.api().megaview(args)
+    .ok(this, function(json) {
+      var items = [];
+      for (var i = 0, row; row = json.rows[i]; i++) {
+        var name = row.key[2];
+        if (!name) {
+          continue;
+        }
+        items.push({
+          id: row.key[2],
+          type: "locationTag",
+          name: row.key[2]
+        });
+      }
+      this._addItems(items);
+      dfd.callback();
+    })
+    .error(dfd, errback);
     return dfd;
   }
 });

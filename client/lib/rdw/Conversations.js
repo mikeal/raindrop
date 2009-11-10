@@ -746,7 +746,10 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
   _renderHome: function() {
     //summary: does the actual display of the home view.
     console.log("_renderHome start");
-    rd.conversation.home(this.messageLimit, dojo.hitch(this, function(conversations) {
+    rd.api({
+      url: 'inflow/conversations/home',
+      limit: this.messageLimit
+    }).ok(this, function(conversations) {
       console.log("_renderHome conversations received");
        //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
@@ -807,7 +810,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
 
       this.configureFirstActiveItem();
       this.transition("summary");
-    }));
+    });
   },
 
   createHomeConversation: function(conversation) {
@@ -859,17 +862,28 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
 
   contact: function(/*String*/contactId) {
     //summary: responds to rd-protocol-contact topic.
-    rd.conversation.contact(contactId, dojo.hitch(this, "updateConversations", "summary"));
+    rd.api({
+      url: 'inflow/conversations/contact',
+      id: '"' + contactId + '"'
+    })
+    .ok(dojo.hitch(this, "updateConversations", "summary"));
   },
 
   direct: function() {
     //summary: responds to rd-protocol-direct topic.
-    rd.conversation.direct(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+    rd.api({
+      url: 'inflow/conversations/direct',
+      limit: this.messageLimit
+    })
+    .ok(dojo.hitch(this, "updateConversations", "summary"));
   },
 
   group: function() {
     //summary: responds to rd-protocol-group topic.
-    rd.conversation.group(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+    rd.api({
+      url: 'inflow/conversations/group',
+      limit: this.messageLimit
+    }).ok(dojo.hitch(this, "updateConversations", "summary"));
   },
 
   locationTag: function(/*String*/locationId) {
@@ -890,12 +904,19 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
 
   sent: function() {
     //summary: responds to rd-protocol-sent topic.
-    rd.conversation.sent(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+    rd.api({
+      url: "inflow/conversations/identities",
+      limit: this.messageLimit
+    })
+    .ok(dojo.hitch(this, "updateConversations", "summary"));
   },
 
   conversation: function(/*String*/convoId) {
     //summary: responds to requests to view a conversation.
-    rd.api().rest('inflow/conversations/by_id', {key: '"' + convoId + '"'})
+    rd.api({
+      url: 'inflow/conversations/by_id',
+      key: '"' + convoId + '"'
+    })
     .ok(this, function(conversations) {
       //Show the conversation.     
       this.updateConversations("conversation", conversations);

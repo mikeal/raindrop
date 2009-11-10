@@ -131,9 +131,13 @@ rd.api.Api = function(args, parent) {
   if (!this.args.dbPath) {
     this.args.dbPath = rd.dbPath || "/raindrop/";
   }
-  
+
   this._parent = parent;
   this._deferred = new dojo.Deferred();
+
+  if (this.args.url) {
+    this.serverApi(this.args);
+  }
 }
 
 rd.api.Api.prototype = {
@@ -157,6 +161,10 @@ rd.api.Api.prototype = {
     "reduce": 1,
     "include_docs": 1,
     "docs": 1
+  },
+
+  dbPath: function(args) {
+    return args.dbPath || this.args.dbPath || rd.dbPath || "/raindrop/";
   },
 
   /**
@@ -226,6 +234,17 @@ rd.api.Api.prototype = {
     dfd.addErrback(this._deferred, "errback");
 
     return this;
+  },
+  
+  /**
+   * Calls a server API endpoint. Do not call this method
+   * directly, but rather through the rd.api() call.
+   */
+  serverApi: function(args) {
+    args = dojo.delegate(args);
+    args.url = this.dbPath(args) + "_api/" + args.url;
+    args.contentType = " ";
+    return this.xhr(args);
   },
 
   /**
@@ -335,34 +354,22 @@ rd.api.extend({
 
   megaview: function(args) {
     args = dojo.delegate(args);
-    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
-    args.url += "_design/raindrop!content!all/_view/megaview";
+    args.url = this.dbPath(args) + "_design/raindrop!content!all/_view/megaview";
     return this.xhr(args);
   },
 
-  rest: function(ep, args, callback, errback) {
-    args = dojo.delegate(args);
-    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
-    args.url += "_api/" + ep;
-    args.contentType = " ";
-    var ret = this.xhr(args);
-    if (callback) {
-      ret.ok(function(results) {
-          callback(results);
-      });
-    }
-    if (errback) {
-      ret.error(function(results) {
-          errback(results);
-      });
-    }
-    return ret;
+
+  megaviewList: function(args) {
+    args = dojo.delegat(args);
+    var listName = args.listName;
+    delete args.listName;
+    args.url = "raindrop!content!all/_list/" + listName + "/megaview";
+    return this.xhr(args);
   },
 
   doc: function(args) {
     args = dojo.delegate(args);
-    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
-    args.url += args.id;
+    args.url = this.dbPath(args) + args.id;
     return this.xhr(args);
   },
 
@@ -374,8 +381,7 @@ rd.api.extend({
    */
   bulkUpdate: function(args) {
     args = dojo.delegate(args);
-    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
-    args.url += "_bulk_docs";
+    args.url = this.dbPath(args) + "_bulk_docs";
     args.content = {
       docs: args.docs
     };
@@ -390,8 +396,7 @@ rd.api.extend({
    */
   deleteDoc: function(args) {
     args = dojo.delegate(args);
-    args.url = this.args.dbPath || rd.dbPath || "/raindrop/";
-    args.url += args.doc._id + "?rev=" + args.doc._rev;
+    args.url = this.dbPath(args) + args.doc._id + "?rev=" + args.doc._rev;
     args.method = "DELETE";
     return this.xhr(args);
   },
@@ -413,7 +418,7 @@ rd.api.extend({
       delete doc.dbPath;
     }
 
-    var docUrl = (this.args.dbPath || rd.dbPath) + doc._id;
+    var docUrl = this.dbPath(args) + doc._id;
     if (doc._rev) {
       docUrl += "?rev=" + doc._rev;
     }

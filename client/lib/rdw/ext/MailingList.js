@@ -36,7 +36,7 @@ dojo.require("rdw.Conversations");
 dojo.require("rdw.Widgets");
 
 dojo.require("rd.tag");
-dojo.require("rd.store");
+dojo.require("rd.api");
 dojo.require("rdw.MailingListSummary");
 
 //Allow a "mailingList" method on the rd.conversation data API.
@@ -46,19 +46,19 @@ rd.applyExtension("rdw.ext.MailingList", "rd.conversation", {
       //summary: gets the most recent mailing list messages up to limit, then pulls
       //the conversations associated with those messages. Conversation with
       //the most recent message will be first.
-      rd.store.megaview({
+      rd.api().megaview({
         key: ["rd.msg.email.mailing-list", "list_id", listId],
         reduce: false,
-        limit: limit,
-        success: dojo.hitch(this, function(json) {
-          //Get message keys
-          var keys = [];
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            keys.push(row.value.rd_key);
-          }
-  
-          this.messageKey(keys, callback, errback);
-        })
+        limit: limit
+      })
+      .ok(this, function(json) {
+        //Get message keys
+        var keys = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          keys.push(row.value.rd_key);
+        }
+
+        this.messageKey(keys, callback, errback);
       });
     }
   }
@@ -79,33 +79,34 @@ rd.applyExtension("rd.ext.MailingList", "rd.MegaviewStore", {
         startkey: ["rd.mailing-list", "id", query],
         endkey: ["rd.mailing-list", "id", query + "\u9999"],
         reduce: false,
-        ioPublish: false,
-        success: dojo.hitch(this, function(json) {
-          var items = [];
-          for (var i = 0, row; row = json.rows[i]; i++) {
-            var name = row.key[2];
-            if (!name) {
-              continue;
-            }
-            items.push({
-              id: row.value.rd_key[1],
-              type: "mailingList",
-              name: row.key[2]
-            });
-          }
-          this._addItems(items);
-          dfd.callback();
-        }),
-        error: function(err) {
-          dfd.errback(err);
-        }
+        ioPublish: false
       };
   
       if (count && count != Infinity) {
         args.limit = count;
       }
   
-      rd.store.megaview(args);
+      rd.api().megaview(args)
+      .ok(this, function(json) {
+        var items = [];
+        for (var i = 0, row; row = json.rows[i]; i++) {
+          var name = row.key[2];
+          if (!name) {
+            continue;
+          }
+          items.push({
+            id: row.value.rd_key[1],
+            type: "mailingList",
+            name: row.key[2]
+          });
+        }
+        this._addItems(items);
+        dfd.callback();
+      })
+      .error(function(err) {
+        dfd.errback(err);
+      });
+
       return dfd;
     }
   }

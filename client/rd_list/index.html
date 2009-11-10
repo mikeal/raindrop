@@ -50,24 +50,24 @@
   </style>
   <script data-appname="rd_list" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
   <script type="text/javascript" charset="utf-8">
-    dojo.require("rd.store");
+    dojo.require("rd.api");
     rd.addOnLoad(function(){
-      rd.store.megaview({
+      rd.api().megaview({
         key: ['rd.core.content', 'ext_id-schema_id', ["rd.core","rd.ext.ui"]],
         include_docs: true,
-        reduce : false,
-        success: rd.hitch(this, function(json) {
-          var html = "";
-          rd.forEach(json.rows, function(row) {
-            var doc = row.doc;
-            if (doc.rd_key[1] != "rd_list") {
-              html += '<li><a title="' + doc.info + '" href="' + doc.location + '">' + doc.name + '</a></li>';
-            }
-          });
+        reduce : false
+      })
+      .ok(this, function(json) {
+         var html = "";
+         rd.forEach(json.rows, function(row) {
+           var doc = row.doc;
+           if (doc.rd_key[1] != "rd_list") {
+             html += '<li><a title="' + doc.info + '" href="' + doc.location + '">' + doc.name + '</a></li>';
+           }
+         });
 
-          rd.place(html, rd.query("ul")[0], "only");
-        })
-      });
+         rd.place(html, rd.query("ul")[0], "only");
+       });
     });
   </script>
 </head>

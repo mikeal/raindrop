@@ -23,7 +23,7 @@
 
 dojo.provide("rd.pref");
 
-dojo.require("rd.store");
+dojo.require("rd.api");
 
 /**
  * Gets preferences for a preference ID.
@@ -56,37 +56,39 @@ rd.pref = function(prefId, callback, errback) {
     keys.push(rd.pref._key(name));
   }
 
-  rd.store.megaview({
+  var api = rd.api().megaview({
     keys: keys,
     include_docs: true,
-    reduce: false,
-    success: function(json) {
-      var prefs = {},
-          docs = {},
-          isEmpty = true;
-      //first, conver the json returned values into an object keyed by
-      //rd_key value so they are applied to prefs in the right order.
-      for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-        isEmpty = false;
-        docs[doc.rd_key[1]] = doc;
-      }
+    reduce: false
+  })
+  .ok(function(json) {
+    var prefs = {},
+        docs = {},
+        isEmpty = true;
+    //first, conver the json returned values into an object keyed by
+    //rd_key value so they are applied to prefs in the right order.
+    for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+      isEmpty = false;
+      docs[doc.rd_key[1]] = doc;
+    }
 
-      if (!isEmpty) {
-        //Now cycle through the previously generated keys to get the
-        //pref names that should be applied in order, and mixin the prefs
-        //for each pref name into the final result.
-        for (var i = 0, prefName; prefName = prefNames[i]; i++) {
-          var temp = docs[prefName];
-          if (temp) {
-            dojo._mixin(prefs, temp);
-          }
+    if (!isEmpty) {
+      //Now cycle through the previously generated keys to get the
+      //pref names that should be applied in order, and mixin the prefs
+      //for each pref name into the final result.
+      for (var i = 0, prefName; prefName = prefNames[i]; i++) {
+        var temp = docs[prefName];
+        if (temp) {
+          dojo._mixin(prefs, temp);
         }
       }
+    }
 
-      callback(isEmpty ? null : prefs);
-    },
-    error: errback
+    callback(isEmpty ? null : prefs);
   });
+  if (errback) {
+    api.error(errback);
+  }
 }
 
 /**
@@ -108,45 +110,49 @@ rd.pref = function(prefId, callback, errback) {
 rd.pref.save = function(prefId, prefs, callback, errback) {
   //First, see if there is an existing doc, to get its _rev and possibly its
   //_id.
-  rd.store.megaview({
+  var api = rd.api().megaview({
     key: rd.pref._key(prefId),
     include_docs: true,
-    reduce: false,
-    success: function(json) {
-      var doc = (json.rows[0] && json.rows[0].doc) || {};
+    reduce: false
+  })
+  .ok(function(json) {
+    var doc = (json.rows[0] && json.rows[0].doc) || {};
 
-      //Favor existing doc for ID.
-      if (doc._id) {
-        prefs._id = doc._id;
-      }
+    //Favor existing doc for ID.
+    if (doc._id) {
+      prefs._id = doc._id;
+    }
 
-      if (doc._rev && prefs._rev != doc._rev) {
-        var err = new Error("rd.docOutOfDate");
-        err.currentRev = doc._rev;
-        errback(err);
-        return;
-      }
+    if (doc._rev && prefs._rev != doc._rev) {
+      var err = new Error("rd.docOutOfDate");
+      err.currentRev = doc._rev;
+      errback(err);
+      return;
+    }
 
-      //Fill in any rd_* properties
-      if (!prefs.rd_key) {
-        prefs.rd_key = doc.rd_key || ["pref", prefId];
-      }
-      if (!prefs.rd_source) {
-        prefs.rd_source = doc.rd_source || null;
-      }
-      if (!prefs.rd_schema_id) {
-        prefs.rd_schema_id = doc.rd_schema_id || "rd.pref";
-      }
-      if (!prefs.rd_ext_id) {
-        prefs.rd_ext_id = doc.rd_ext_id;
-      }
+    //Fill in any rd_* properties
+    if (!prefs.rd_key) {
+      prefs.rd_key = doc.rd_key || ["pref", prefId];
+    }
+    if (!prefs.rd_source) {
+      prefs.rd_source = doc.rd_source || null;
+    }
+    if (!prefs.rd_schema_id) {
+      prefs.rd_schema_id = doc.rd_schema_id || "rd.pref";
+    }
+    if (!prefs.rd_ext_id) {
+      prefs.rd_ext_id = doc.rd_ext_id;
+    }
 
-      //Save the pref.
-      rd.store.put(prefs, callback, errback);
-    },
-    error: errback
+    //Save the pref.
+    var saveApi = rd.api().put(prefs).ok(callback);
+    if (errback) {
+      saveApi.error(errback);
+    }
   });
-
+  if (errback) {
+    api.error(errback);
+  }
 }
 
 /**

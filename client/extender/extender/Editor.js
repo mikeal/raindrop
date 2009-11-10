@@ -24,7 +24,7 @@
 dojo.provide("extender.Editor");
 
 dojo.require("rdw._Base");
-dojo.require("rd.store");
+dojo.require("rd.api");
 dojo.require("extender.util");
 
 //Uses script-added styles to allow loading on demand at the cost of a
@@ -352,23 +352,23 @@ dojo.declare("extender.Editor", [rdw._Base], {
   fetchManifest: function() {
     //summary: fetches the manifest for this extension. If no manifest exists,
     //create one for it.
-    rd.store.megaview({
+    rd.api().megaview({
       key: ["rd.core.content", "key", ["ext", this.moduleName]],
       include_docs: true,
-      reduce: false,
-      success: dojo.hitch(this, function(json) {
-        var rows = json.rows;
-        if (rows.length) {
-          this.moduleManifest = rows[0].doc;
-        } else {
-          this.generateManifest();
-        }
-        this.enabledNode.checked = !this.moduleManifest.disabled;
-      }),
-      error: dojo.hitch(this, function(json) {
+      reduce: false
+    })
+    .ok(this, function(json) {
+      var rows = json.rows;
+      if (rows.length) {
+        this.moduleManifest = rows[0].doc;
+      } else {
         this.generateManifest();
-        this.enabledNode.checked = !this.moduleManifest.disabled;
-      })
+      }
+      this.enabledNode.checked = !this.moduleManifest.disabled;
+    })
+    .error(this, function(json) {
+      this.generateManifest();
+      this.enabledNode.checked = !this.moduleManifest.disabled;
     });
   },
 

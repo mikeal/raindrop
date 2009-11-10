@@ -109,13 +109,13 @@ if (rd.appName == "inflow") {
       //Register extension for API calls.
       rd.applyExtension("rdw.ext.metrics", "rd.api.Api", {
         after: {
-          rest: function(url, args) {
+          serverApi: function(url, args) {
             if (metrics.enabled) {
               //Only track broadcast calls at the moment
               //TODO: this should only be notification broadcasts, not any broadcast,
               //but our data model story is incomplete for notifications right now.
               if (url == 'inflow/conversations/broadcast') {
-                //Get the deferred returned by the rest call
+                //Get the deferred returned by the serverApi call
                 var dfd = arguments.callee.targetReturn;
                 dfd.ok(function(conversations) {
                   //timeout to avoid blocking other things

@@ -371,7 +371,10 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   _renderHome: function() {
     //summary: does the actual display of the home view.
     console.log("_renderHome start");
-    rd.conversation.broadcast(this.messageLimit, dojo.hitch(this, function(conversations) {
+    rd.api({
+      url: 'inflow/conversations/broadcast',
+      limit: this.messageLimit
+    }).ok(this, function(conversations) {
       console.log("_renderHome conversations received");
       //The home view groups messages by type. So, for each message in each conversation,
       //figure out where to put it.
@@ -422,7 +425,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
       //Inject nodes all at once for best performance.
       this.domNode.appendChild(frag);
-    }));
+    });
   },
 
   createHomeConversation: function(conversation) {

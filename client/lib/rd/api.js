@@ -28,7 +28,6 @@ dojo.require("rd.api.identity");
 dojo.require("rd.api.contact");
 dojo.require("rd.api.me");
 dojo.require("rd.api.message");
-dojo.require("rd.api.conversation");
 
 //The real action is in rd.api.Api, due to load order issues.
 //We want to load all the rd.api.* extensions first, but they depend
