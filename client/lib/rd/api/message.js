@@ -205,12 +205,14 @@ rd.api.message = {
           var rdDoc = msgBag[prop];
           break;
         }
-        seen = api.newDoc({
+        seen = api.createSchemaItem({
           rd_key: rdDoc.rd_key,
           rd_schema_id: "rd.msg.seen",
           rd_source: rdDoc.rd_source,
-          outgoing_state: "outgoing",
-          seen: false
+          items: {
+            outgoing_state: "outgoing",
+            seen: false
+          }
         });
 
         //Update message bag with new schema.
@@ -282,8 +284,13 @@ rd.api.message = {
         schema = api.newDoc({
           rd_key: rdDoc.rd_key,
           rd_schema_id: schemaId,
-          rd_source: rdDoc.rd_source,
-          outgoing_state: "outgoing"
+          outgoing_state: "outgoing",
+          rd_schema_items: {
+            'rd.core.ui': {
+              schema: null,
+              rd_source: rdDoc.rd_source
+            }
+          }
         });
 
         schema[propName] = false;

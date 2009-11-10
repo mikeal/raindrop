@@ -175,15 +175,17 @@ dojo.mixin(rd.contact, {
         uuid.Uuid.setGenerator(uuid.generateRandomUuid);
         var uid = (new uuid.Uuid()).toString();
 
-        var contactDoc = {
-          name: contact.name,
+        var contactSI = {
           rd_key:["contact", uid],
           rd_schema_id: "rd.contact",
-          rd_source: [identity._id]
+          rd_source: [identity._id],
+          items: {
+            name: contact.name
+          }
         }
 
         //Insert the document.
-        var api = rd.api().put(contactDoc)
+        var api = rd.api().createSchemaItem(contactSI)
         .ok(this, function(contact) {
           //Update our cache
           this._store.push(contact);
@@ -516,18 +518,20 @@ dojo.mixin(rd.contact, {
     var idtyMap = {
       rd_key: identity.rd_key,
       rd_schema_id: "rd.identity.contacts",
-      rd_source: [identity._id],
-      rd_megaview_expandable: ["contacts"], 
-      contacts: [
-        [contactId, null]
-      ]
+      rd_source: [identity._id, identity._rev],
+      rd_megaview_expandable: ["contacts"],
+      items: {
+        contacts: [
+          [contactId, null]
+        ]
+      }
     };
 
     //Insert the document.
-    var api = rd.api().put(idtyMap)
-    .ok(this, function() {
+    var api = rd.api().createSchemaItem(idtyMap)
+    .ok(this, function(doc) {
       //Update the data store.
-      this._mapIdtyToContact(idtyMap, contactId);
+      this._mapIdtyToContact(doc, contactId);
       this._attachIdentity(identity);
 
       callback();

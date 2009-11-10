@@ -228,10 +228,7 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
       var senderId = sender.id;
       var subject = dojo.trim(this.subjectInputNode.value);
 
-      var message = {
-        //TODO: make a better rd_key.
-        rd_key: ["manually_created_doc", (new Date()).getTime()],
-        rd_schema_id: "rd.msg.outgoing.simple",
+      var fields = {
         from: [svc, sender.id],
         //TODO: pull out the to_display somehow. Maybe update rd.account
         //to fetch that info along with the ID.
@@ -245,11 +242,17 @@ dojo.declare("rdw.QuickCompose", [rdw._Base], {
         subject: subject,
         outgoing_state: "outgoing"
       };
+      var schema_item = {
+        //TODO: make a better rd_key.
+        rd_key: ["manually_created_doc", (new Date()).getTime()],
+        rd_schema_id: "rd.msg.outgoing.simple",
+        items: fields
+      };
 
       //TODO: temporary hack to limit posting to just email
       if (svc == "email") {
-        dojo.store.put(
-          message,
+        dojo.store.createSchemaItem(
+          schema_item,
           dojo.hitch(this, function(message) {
             this.updateStatus("&#x2714; Message sent.");
           }),
