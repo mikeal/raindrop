@@ -1,5 +1,13 @@
 {
+   "rd_key": [
+       "skype-msg",
+       "raindrop_test_user-1"
+   ],
    "rd_schema_id": "rd.msg.skypemsg.raw",
+   "rd_schema_items" : {
+        "proto.skype" : {"schema": null, "rd_source": null}
+   },
+
    "skype_chat_friendlyname": "Sacha Mobile | is wed. or tomorrow ok for dinner..",
    "skype_type": "EMOTED",
    "skype_users": [
@@ -7,18 +15,12 @@
    ],
    "skype_status": "SENT",
    "skype_id": 1,
-   "rd_key": [
-       "skype-msg",
-       "raindrop_test_user-1"
-   ],
    "skype_from_handle": "raindrop_test_user",
    "skype_is_editable": false,
    "skype_from_dispname": "Raindrop Test User",
-   "rd_source": null,
    "skype_body": "hello there",
    "skype_chatname": "#raindrop_test_user/$+61499999999;40b5348f61f64c96",
    "skype_edited_by": "",
-   "rd_ext_id": "proto.skype",
    "skype_edited_timestamp": 0,
    "skype_chat_members": [
        "+61499999999",

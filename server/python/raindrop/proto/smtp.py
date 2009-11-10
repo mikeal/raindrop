@@ -94,8 +94,10 @@ class SMTPPostingClient(SMTPPostingClient_Base): #smtp.ESMTPClient):
                 _ = yield self.acct._update_sent_state(self.src_doc, 'sending')
                 # And now is also a good (enough) time to do a 'deferred' open
                 # of the attachment.
+                aname, _ = dm.get_schema_attachment_info(self.out_doc,
+                                                         'smtp_body')
                 attach = yield dm.db.openDoc(dm.quote_id(self.out_doc['_id']),
-                                             attachment='smtp_body')
+                                             attachment=aname)
                 self.data_file = StringIO(attach)
             except:
                 logger.error("Failed to talk to couch\n%s",

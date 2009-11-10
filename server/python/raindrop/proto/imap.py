@@ -387,8 +387,8 @@ class ImapProvider(object):
                'infos': cache_doc['infos']
                }
       new_item = {'rd_key' : ['imap-mailbox', [acct_id, folder_name]],
-                  'schema_id': 'rd.imap.mailbox-cache',
-                  'ext_id': self.rd_extension_id,
+                  'rd_schema_id': 'rd.imap.mailbox-cache',
+                  'rd_ext_id': self.rd_extension_id,
                   'items': items,
       }
       if '_id' in cache_doc:
@@ -597,8 +597,8 @@ class ImapProvider(object):
       ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, ".".join(folder_path))
       uid = current[rdkey]
       new_item = {'rd_key': list(rdkey),
-                  'ext_id': ext_id,
-                  'schema_id': 'rd.msg.location',
+                  'rd_ext_id': ext_id,
+                  'rd_schema_id': 'rd.msg.location',
                   'items': {'location': folder_path,
                             'location_sep': delim,
                             'uid': uid,
@@ -699,11 +699,11 @@ class ImapProvider(object):
                                    'data': content,
                                    }
         }
-        items = {'_attachments': attachments}
         infos.append({'rd_key' : rdkey,
-                      'ext_id': self.rd_extension_id,
-                      'schema_id': 'rd.msg.rfc822',
-                      'items': items})
+                      'rd_ext_id': self.rd_extension_id,
+                      'rd_schema_id': 'rd.msg.rfc822',
+                      'items': {},
+                      'attachments': attachments,})
       num += len(infos)
       _ = yield self.write_items(infos)
     defer.returnValue(num)

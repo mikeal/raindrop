@@ -81,8 +81,8 @@ class TestSMTPSimple(TestCaseWithTestDB, LoopbackMixin):
                 }
         result = yield doc_model.create_schema_items([
                     {'rd_key': ['test', 'smtp_test'],
-                     'ext_id': 'testsuite',
-                     'schema_id': 'rd.msg.outgoing.smtp',
+                     'rd_ext_id': 'testsuite',
+                     'rd_schema_id': 'rd.msg.outgoing.smtp',
                      'items': items,
                      'attachments': {'smtp_body': {'data': body}},
                     }])
@@ -197,8 +197,8 @@ class TestSMTPSend(TestCaseWithTestDB, LoopbackMixin):
                 }
         result = yield doc_model.create_schema_items([
                     {'rd_key': ['test', 'smtp_test'],
-                     'ext_id': 'testsuite',
-                     'schema_id': 'rd.msg.outgoing.simple',
+                     'rd_ext_id': 'testsuite',
+                     'rd_schema_id': 'rd.msg.outgoing.simple',
                      'items': items,
                     }])
         src_doc = yield doc_model.db.openDoc(result[0]['id'])

@@ -228,8 +228,8 @@ class TwistySkype(object):
             logger.debug("Creating new skype chat %(skype_chatname)r", chat_props)
             rdkey = self.get_rdkey_for_chat_name(chat_props['skype_chatname'])
             tow.append({'rd_key' : rdkey,
-                        'ext_id': self.rd_extension_id,
-                        'schema_id': 'rd.msg.skypechat.raw',
+                        'rd_ext_id': self.rd_extension_id,
+                        'rd_schema_id': 'rd.msg.skypechat.raw',
                         'items': chat_props})
 
         for msgid in todo:
@@ -264,8 +264,8 @@ class TwistySkype(object):
         # we include the skype username with the ID as they are unique per user.
         rdkey = self.get_rdkey_for_msg(msg)
         pending.append({'rd_key' : rdkey,
-                        'ext_id': self.rd_extension_id,
-                        'schema_id': 'rd.msg.skypemsg.raw',
+                        'rd_ext_id': self.rd_extension_id,
+                        'rd_schema_id': 'rd.msg.skypemsg.raw',
                         'items': doc})
 
     # friends...
@@ -280,9 +280,9 @@ class TwistySkype(object):
             rdkey = ('identity', ('skype', friend._Handle))
             item = rdkey, self.rd_extension_id, 'rd.identity', None, None
             schemas.append({'rd_key' : rdkey,
-                            'schema_id' : 'rd.identity.exists',
+                            'rd_schema_id' : 'rd.identity.exists',
                             'items' : None,
-                            'ext_id': self.rd_extension_id})
+                            'rd_ext_id': self.rd_extension_id})
         return self.conductor.pipeline.provide_schema_items(schemas)
 
 

@@ -150,8 +150,8 @@ class TwitterProcessor(object):
             item, rd_key, schema_id = this_items[tid]
             fields = tweet_to_raw(item)
             infos.append({'rd_key' : rd_key,
-                          'ext_id': self.rd_extension_id,
-                          'schema_id': schema_id,
+                          'rd_ext_id': self.rd_extension_id,
+                          'rd_schema_id': schema_id,
                           'items': fields})
 
         # now the same treatment for the users we found; although for users
@@ -183,8 +183,8 @@ class TwitterProcessor(object):
             items = user_to_raw(user)
             rdkey = ['identity', ['twitter', sn]]
             infos.append({'rd_key' : rdkey,
-                          'ext_id': self.rd_extension_id,
-                          'schema_id': 'rd.identity.twitter',
+                          'rd_ext_id': self.rd_extension_id,
+                          'rd_schema_id': 'rd.identity.twitter',
                           'items': items})
 
         _ = yield self.conductor.pipeline.provide_schema_items(infos)

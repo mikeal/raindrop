@@ -114,6 +114,7 @@ def handler(doc):
             logger.debug("friend %r has no avatar (%s)", iid, why)
         else:
             logger.warning("Cannot save avatar for skype user %s", iid)
+        attachments = None
 
     did = emit_schema('rd.identity.skype', props, attachments=attachments)
 

@@ -39,9 +39,8 @@ logger = logging.getLogger(__name__)
 def split_rc_docid(doc_id):
     if not doc_id.startswith('rc!'):
         raise ValueError("Not a raindrop content docid")
-
-    rt, rdkey, ext, schema = doc_id.split("!", 4)
-    return rt, rdkey, ext, schema
+    rt, rdkey, schema = doc_id.split("!", 3)
+    return rt, rdkey, schema
 
 class Extension(object):
     def __init__(self, id, doc, handler, globs):
@@ -65,6 +64,7 @@ def load_extensions(doc_model):
     # now try the DB - load everything with a rd.ext.workqueue schema
     key = ["rd.core.content","schema_id", "rd.ext.workqueue"]
     ret = yield doc_model.open_view(key=key, reduce=False, include_docs=True)
+    assert ret['rows'], "no extensions!"
     for row in ret['rows']:
         doc = row['doc']
         ext_id = doc['rd_key'][1]
@@ -109,6 +109,8 @@ class Pipeline(object):
     def initialize(self):
         if not self.options.no_process:
             procs = yield self.get_ext_processors()
+            if not procs:
+                raise RuntimeError("no processors could be found")
             assert self.incoming_processor is None # already initialized?
             self.incoming_processor = IncomingItemProcessor(self.doc_model)
             for proc in procs:
@@ -129,16 +131,6 @@ class Pipeline(object):
         until all those new items are fully processed)
         """
         _ = yield self.doc_model.create_schema_items(items)
-        if self.incoming_processor is not None:
-            _ = yield self.incoming_processor.ensure_done()
-
-    @defer.inlineCallbacks
-    def provide_documents(self, docs):
-        """Another main entry-point for 'providers' - the new items are written,
-        then we block until the 'incoming processor' has got to the end (ie,
-        until all those new items are fully processed)
-        """
-        _ = yield self.doc_model.update_documents(docs)
         if self.incoming_processor is not None:
             _ = yield self.incoming_processor.ensure_done()
 
@@ -205,6 +197,13 @@ class Pipeline(object):
             keys = [['rd.core.content', 'ext_id', e.id] for e in exts]
             result = yield self.doc_model.open_view(
                                 keys=keys, reduce=False)
+            to_up = [{'_id': row['id'],
+                      '_rev': row['value']['_rev'],
+                      'rd_key': row['value']['rd_key'],
+                      'rd_schema_id': row['value']['rd_schema_id'],
+                      'rd_ext_id': row['key'][-1],
+                      '_deleted': True
+                      } for row in result['rows']]
         else:
             result = yield self.doc_model.open_view(
                                 # skip NULL rows.
@@ -212,9 +211,15 @@ class Pipeline(object):
                                 endkey=['rd.core.content', 'source', {}],
                                 reduce=False)
 
-        to_del = [{'_id': row['id'], '_rev': row['value']['_rev']} for row in result['rows']]
-        logger.info('deleting %d messages', len(to_del))
-        _ = yield self.doc_model.delete_documents(to_del)
+            to_up = [{'_id': row['id'],
+                      '_rev': row['value']['_rev'],
+                      'rd_key': row['value']['rd_key'],
+                      'rd_schema_id': row['value']['rd_schema_id'],
+                      'rd_ext_id': row['value']['rd_ext_id'],
+                      '_deleted': True
+                      } for row in result['rows']]
+        logger.info('deleting %d schemas', len(to_up))
+        _ = yield self.doc_model.create_schema_items(to_up)
 
         # and rebuild our views
         logger.info("rebuilding all views...")
@@ -312,8 +317,9 @@ class Pipeline(object):
         logger.info("found %d error records", len(result['rows']))
         def gen_em():
             for row in result['rows']:
-                src_id, src_rev = row['doc']['rd_source']
-                yield src_id, src_rev, None, None
+                for ext_info in row['doc']['rd_schema_items'].itervalues():
+                    src_id, src_rev = ext_info['rd_source']
+                    yield src_id, src_rev, None, None
 
         _ = yield self._reprocess_items(gen_em)
 
@@ -366,7 +372,7 @@ class DocsBySeqIteratorFactory(object):
     """Reponsible for creating iterators based on a _changes view"""
     def __init__(self):
         self.stopping = False
-        # XXX - current_seq is invalid if you make multiple iterators!
+        # XXX - current_seq is inaccurate if you make multiple iterators!
         self.current_seq = None
         self.rows = None
 
@@ -409,7 +415,7 @@ class DocsBySeqIteratorFactory(object):
                 src_rev = row['value']['rev']
                 yield src_id, src_rev, None, seq
 
-        assert self.rows is not None, "not initialized"
+        assert self.rows, "not initialized"
         return do_iter(self.rows)
 
 
@@ -469,6 +475,7 @@ class IncomingItemProcessor(object):
             _ = yield self.def_process_done
             logger.debug("existing processor back at seq %d", self.current_seq)
             return
+        assert self.runners, "things get upset if we are asked to do nothing"
         doc_model = self.doc_model
         self.def_process_done = defer.Deferred()
         try:
@@ -637,8 +644,8 @@ class StatefulQueueManager(object):
                       # 'derived'...
                       'rd_source': [src_id, src_rev],
                       # and similarly, say it was created by the extension itself.
-                      'ext_id': qr.queue_id,
-                      'schema_id': 'rd.core.workqueue-state',
+                      'rd_ext_id': qr.queue_id,
+                      'rd_schema_id': 'rd.core.workqueue-state',
                       }
         if len(rows) and 'doc' in rows[0]:
             doc = rows[0]['doc']
@@ -744,7 +751,7 @@ class ProcessingQueueRunner(object):
             self.current_seq = seq
             if schema_id is None:
                 try:
-                    _, _, _, schema_id = split_rc_docid(src_id)
+                    _, _, schema_id = split_rc_docid(src_id)
                 except ValueError, why:
                     logger.log(1, 'skipping document %r: %s', src_id, why)
                     continue
@@ -803,21 +810,25 @@ class ExtensionProcessor(object):
 
         # some extensions declare themselves as 'smart updaters' - they
         # are more efficiently able to deal with updating the records it
-        # write last time than our brute-force approach.
+        # wrote last time than our brute-force approach.
+        docs_previous = {}
         if not self.ext.smart_updater:
             # We need to find *all* items previously written by this extension
-            # so a 'reprocess' doesn't cause conflicts.
+            # so we can manage updating/removal of the old items.
             key = ['rd.core.content', 'ext_id-source', [ext_id, src_id]]
             result = yield dm.open_view(key=key, reduce=False)
             rows = result['rows']
             if rows:
                 dirty = False
                 for row in rows:
-                    if 'error' in row or row['value']['rd_source'] != [src_id, src_rev]:
+                    assert 'error' not in row, row # views don't give error records!
+                    # A list of [ext_id, src] is the last key elt.
+                    src_val = row['key'][2][1]
+                    if src_val != [src_id, src_rev]:
                         dirty = True
                         break
                     # error rows are considered 'dirty'
-                    _, _, _, cur_schema = split_rc_docid(row['id'])
+                    cur_schema = row['value']['rd_schema_id']
                     if cur_schema == 'rd.core.error':
                         logger.debug('document %r generated previous error '
                                      'records - re-running', src_id)
@@ -829,15 +840,10 @@ class ExtensionProcessor(object):
                 logger.debug("document %r is up-to-date", src_id)
                 defer.returnValue((None, None))
 
-            to_del = []
             for row in rows:
-                if 'error' not in row:
-                    to_del.append({'_id' : row['id'],
-                                   '_rev' : row['value']['_rev']})
-            logger.debug("deleting %d docs previously created from %r by %r",
-                         len(to_del), src_id, ext_id)
-            if to_del:
-                _ = yield dm.delete_documents(to_del)
+                v = row['value']
+                prev_key = dm.hashable_key((v['rd_key'], v['rd_schema_id']))
+                docs_previous[prev_key] = v
 
         # Get the source-doc and process it.
         src_doc = (yield dm.open_documents_by_id([src_id]))[0]
@@ -875,6 +881,26 @@ class ExtensionProcessor(object):
             self._handle_ext_failure(Failure(), src_doc, new_items)
 
         logger.debug("extension %r generated %d new schemas", ext_id, len(new_items))
+
+        # check the new items created against the 'source' documents created
+        # previously by the extension.  Nuke the ones which were provided
+        # before and which aren't now.  (This is most likely after an
+        # 'rd.core.error' schema record is written, then the extension is
+        # re-run and it successfully creates a 'real' schema)
+        docs_this = set()
+        for i in new_items:
+            prev_key = dm.hashable_key((i['rd_key'], i['rd_schema_id']))
+            docs_this.add(prev_key)
+        for (prev_key, prev_val) in docs_previous.iteritems():
+            if prev_key not in docs_this:
+                si = {'rd_key': prev_val['rd_key'],
+                      'rd_schema_id': prev_val['rd_schema_id'],
+                      'rd_ext_id': ext_id,
+                      '_deleted': True,
+                      '_rev': prev_val['_rev'],
+                      }
+                new_items.insert(0, si)
+
         # We try hard to batch writes; we earlier just checked to see if
         # only the same key was written, but that still failed.  Last
         # ditch attempt is to see if the extension made a query - if it
@@ -920,8 +946,8 @@ class ExtensionProcessor(object):
                         len(new_items))
         new_items[:] = [{'rd_key' : src_doc['rd_key'],
                          'rd_source': [src_doc['_id'], src_doc['_rev']],
-                         'schema_id': 'rd.core.error',
-                         'ext_id' : self.ext.id,
+                         'rd_schema_id': 'rd.core.error',
+                         'rd_ext_id' : self.ext.id,
                          'items' : edoc,
                          }]
 

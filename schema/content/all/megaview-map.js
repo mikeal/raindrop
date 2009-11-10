@@ -30,33 +30,40 @@
 function(doc) {
   if (doc.rd_schema_id
     && !doc.rd_megaview_ignore_doc) {
-    // every row we emit for this doc uses an identical 'value'.
+    // (almost) every row we emit for this doc uses an identical 'value'.
     var row_val = {'_rev': doc._rev,
                    'rd_key' : doc.rd_key,
-                   'rd_ext' : doc.rd_ext_id,
-                   'rd_schema_id' : doc.rd_schema_id,
-                   'rd_source' : doc.rd_source,
+                   'rd_schema_id' : doc.rd_schema_id
                   }
     // first emit some core 'pseudo-schemas'.
     emit(['rd.core.content', 'key', doc.rd_key], row_val);
     emit(['rd.core.content', 'schema_id', doc.rd_schema_id], row_val);
     emit(['rd.core.content', 'key-schema_id', [doc.rd_key, doc.rd_schema_id]], row_val);
-    emit(['rd.core.content', 'ext_id', doc.rd_ext_id], row_val);
-    emit(['rd.core.content', 'ext_id-schema_id', [doc.rd_ext_id, doc.rd_schema_id]], row_val);
-    // don't emit the revision from the source in the key.
-    var src_val;
-    if (doc.rd_source)
-      src_val = doc.rd_source[0];
-    else
-      src_val = null;
-      
-    emit(['rd.core.content', 'source', src_val], row_val);
-    emit(['rd.core.content', 'key-source', [doc.rd_key, src_val]], row_val);
-    emit(['rd.core.content', 'ext_id-source', [doc.rd_ext_id, src_val]], row_val);
 
-    if (doc.rd_schema_confidence)
-      emit(['rd.core.content', 'rd_schema_confidence', doc.rd_schema_confidence],
-           row_val);
+    // There may be multiple of the same schema for different extensions
+    // in a single doc.  While we don't emit the individual values, we do emit
+    // rd.core.content records which indicate they exist.
+    for (var rd_ext_id in doc.rd_schema_items) {
+      var si_row_val = {'_rev': doc._rev,
+                        'rd_key' : doc.rd_key,
+                        'rd_schema_id' : doc.rd_schema_id,
+                        'rd_ext_id': rd_ext_id
+                        }
+      
+      var schema_item = doc.rd_schema_items[rd_ext_id]
+      emit(['rd.core.content', 'ext_id', rd_ext_id], si_row_val);
+      emit(['rd.core.content', 'ext_id-schema_id', [rd_ext_id, doc.rd_schema_id]], si_row_val);
+      // don't emit the revision from the source in the key.
+      var src_val;
+      if (schema_item.rd_source)
+        src_val = schema_item.rd_source[0];
+      else
+        src_val = null;
+
+      emit(['rd.core.content', 'source', src_val], si_row_val);
+      emit(['rd.core.content', 'key-source', [doc.rd_key, src_val]], si_row_val);
+      emit(['rd.core.content', 'ext_id-source', [rd_ext_id, src_val]], si_row_val);
+    }
 
     // If this schema doesn't want/need values indexed, bail out now.
     if (doc.rd_megaview_ignore_values)

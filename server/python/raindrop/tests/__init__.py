@@ -262,7 +262,7 @@ class TestCaseWithCorpus(TestCaseWithDB):
         import raindrop.tests
         return os.path.join(raindrop.tests.__path__[0], "corpora", name)
 
-    def gen_corpus_docs(self, corpus_name, item_spec="*"):
+    def gen_corpus_schema_items(self, corpus_name, item_spec="*"):
         cwd = os.getcwd()
         corpus_dir = self.get_corpus_dir(corpus_name)
         num = 0
@@ -291,38 +291,38 @@ class TestCaseWithCorpus(TestCaseWithDB):
                         ob = json.load(f)
                     except ValueError, why:
                         self.fail("%r has invalid json: %r" % (filename, why))
+                    # XXX - the below is probably broken but none of our
+                    # JSON files provide them
+                    assert '_attachments' not in ob, "please revisit this code!"
                     for name, data in ob.get('_attachments', {}).iteritems():
                         fname = os.path.join(corpus_dir, data['filename'])
                         with open(fname, 'rb') as attach_f:
-                            enc_data = base64.encodestring(attach_f.read()).replace('\n', '')
-                            data['data'] = enc_data
+                            data['data'] = attach_f.read()
+                sis = self.doc_model.doc_to_schema_items(ob)
             elif os.path.exists(basename + ".rfc822.txt"):
                 # plain rfc822.txt file.
                 with open(basename + ".rfc822.txt", 'rb') as f:
                     data = f.read()
                 msg_id = message_from_string(data)['message-id']
-                ob = {
-                      'rd_schema_id': 'rd.msg.rfc822',
-                      'rd_key': get_rdkey_for_email(msg_id),
-                      'rd_ext_id': 'proto.imap',
-                      'rd_source': None,
-                      '_attachments' : {
-                        'rfc822': {
-                            'content_type': 'message',
-                            'data': base64.encodestring(data).replace('\n', ''),
-                        }
-                      }
+                si = {
+                        'rd_schema_id': 'rd.msg.rfc822',
+                        'rd_key': get_rdkey_for_email(msg_id),
+                        'rd_ext_id': 'proto.imap',
+                        'rd_source': None,
+                        'attachments' : {
+                            'rfc822': {
+                                'content_type': 'message',
+                                'data': data,
+                            }
+                        },
+                        'items' : {},
                     }
+                sis = [si]
             else:
                 print "Don't know how to load '%s.*' into the corpus" % basename
                 continue
-            if '_id' not in ob:
-                si = {'schema_id': ob['rd_schema_id'],
-                      'rd_key': ob['rd_key'],
-                      'ext_id': ob['rd_ext_id'],
-                      'items': []}
-                ob['_id'] = self.doc_model.get_doc_id_for_schema_item(si)
-            yield ob
+            for si in sis:
+                yield si
             num += 1
         self.failUnless(num, "failed to load any docs from %r matching %r" %
                         (corpus_name, item_spec))
@@ -334,7 +334,7 @@ class TestCaseWithCorpus(TestCaseWithDB):
     @defer.inlineCallbacks
     def load_corpus(self, corpus_name, corpus_spec="*"):
         _ = yield self.init_corpus(corpus_name)
-        docs = [d for d in self.gen_corpus_docs(corpus_name, corpus_spec)]
+        items = [i for i in self.gen_corpus_schema_items(corpus_name, corpus_spec)]
         # this will do until we get lots...
-        _ = yield self.doc_model.db.updateDocuments(docs)
-        defer.returnValue(len(docs))
+        _ = yield self.doc_model.create_schema_items(items)
+        defer.returnValue(len(items))
