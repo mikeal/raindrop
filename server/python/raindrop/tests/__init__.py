@@ -137,7 +137,7 @@ class TestCaseWithDB(TestCase):
                 import time;time.sleep(0.1)
                 return db.deleteDB(dbinfo['name']
                     ).addCallbacks(_nuked_ok, _nuke_failed,
-                                   errbackArgs=retries_left-1
+                                   errbackArgs=(retries_left-1,)
                     )
 
             if failure.value.status != '404':
