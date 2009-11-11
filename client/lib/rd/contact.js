@@ -28,6 +28,7 @@ dojo.require("dojo.DeferredList");
 dojo.require("couch");
 dojo.require("rd._api");
 dojo.require("rd.api");
+dojo.require("rd.api.identity");
 
 //Derives from rd._api
 rd.contact = dojo.delegate(rd._api);
@@ -183,7 +184,9 @@ dojo.mixin(rd.contact, {
         }
 
         //Insert the document.
-        var api = rd.api().put(contactDoc)
+        var api = rd.api().put({
+          doc: contactDoc
+        })
         .ok(this, function(contact) {
           //Update our cache
           this._store.push(contact);
@@ -524,7 +527,9 @@ dojo.mixin(rd.contact, {
     };
 
     //Insert the document.
-    var api = rd.api().put(idtyMap)
+    var api = rd.api().put({
+      doc: idtyMap
+    })
     .ok(this, function() {
       //Update the data store.
       this._mapIdtyToContact(idtyMap, contactId);

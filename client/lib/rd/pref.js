@@ -145,7 +145,9 @@ rd.pref.save = function(prefId, prefs, callback, errback) {
     }
 
     //Save the pref.
-    var saveApi = rd.api().put(prefs).ok(callback);
+    var saveApi = rd.api().put({
+      doc: prefs
+    }).ok(callback);
     if (errback) {
       saveApi.error(errback);
     }

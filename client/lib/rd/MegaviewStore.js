@@ -334,8 +334,7 @@ dojo.declare("rd.MegaviewStore", null, {
           }
         );
       })
-      .error(dfd, errback);
-
+      .error(dfd);
     }));
 
     return dfd;   
@@ -374,7 +373,7 @@ dojo.declare("rd.MegaviewStore", null, {
       this._addItems(items);
       dfd.callback();
     })
-    .error(dfd, errback);
+    .error(dfd);
     return dfd;
   },
 
@@ -412,7 +411,7 @@ dojo.declare("rd.MegaviewStore", null, {
       this._addItems(items);
       dfd.callback();
     })
-    .error(dfd, errback);
+    .error(dfd);
     return dfd;
   }
 });

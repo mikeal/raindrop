@@ -28,6 +28,7 @@ dojo.require("rdw.Conversation");
 dojo.require("rdw.conversation.FullConversation");
 dojo.require("rdw.Summary");
 dojo.require("rd.api");
+dojo.require("rd.api.message");
 
 dojo.require("dojo.fx");
 dojo.require("dojox.fx.scroll");

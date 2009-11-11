@@ -23,7 +23,6 @@
 
 dojo.provide("rd.conversation");
 
-dojo.require("rd.contact");
 dojo.require("rd.api");
 
 rd.conversation = {

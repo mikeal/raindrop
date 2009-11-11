@@ -25,8 +25,8 @@ dojo.provide("rdw.ext.metrics");
 
 //Only require inflow if this is the inflow app.
 dojo.requireIf(rd.appName == "inflow", "inflow");
-dojo.require("rd.pref");
-dojo.require("rd.api.Api");
+dojo.require("rd.api");
+dojo.require("rd.api.pref");
 
 rdw.ext.metrics = {
   //TODO: there is a chance we can miss some metrics if the metric trigger
@@ -66,26 +66,33 @@ rdw.ext.metrics = {
   },
   
   savePref: function() {
-    rd.pref("rdw.ext.metrics:inflow",
-      function(doc) {
-        if (!doc) {
-          rdw.ext.metrics._save();
-        } else {
-          doc.enabled = rdw.ext.metrics.enabled;
-          rd.pref.save("rdw.ext.metrics:inflow", doc, function(){});
-        }
-      },
-      function(err) {
-        //No doc, make a new one.
+    rd.api().pref({
+      id: "rdw.ext.metrics:inflow"
+    })
+    .ok(function(doc) {
+      if (!doc) {
         rdw.ext.metrics._save();
+      } else {
+        doc.enabled = rdw.ext.metrics.enabled;
+        rd.api().pref({
+          id: "rdw.ext.metrics:inflow",
+          prefs: doc
+        });
       }
-    );
+    })
+    .error(function(err) {
+      //No doc, make a new one.
+      rdw.ext.metrics._save();
+    });
   },
 
   _save: function() {
-    rd.pref.save("rdw.ext.metrics:inflow", {
-      enabled: rdw.ext.metrics.enabled
-    }, function(){});
+    rd.api().pref({
+      id: "rdw.ext.metrics:inflow",
+      prefs: {
+        enabled: rdw.ext.metrics.enabled
+      }
+    });
   },
 
   explode: function(ary, func) {
@@ -107,7 +114,7 @@ if (rd.appName == "inflow") {
       var metrics = rdw.ext.metrics;
 
       //Register extension for API calls.
-      rd.applyExtension("rdw.ext.metrics", "rd.api.Api", {
+      rd.applyExtension("rdw.ext.metrics", "rd.api", {
         after: {
           serverApi: function(url, args) {
             if (metrics.enabled) {
@@ -172,41 +179,42 @@ if (rd.appName == "inflow") {
       });
 
       //Load the preferences and set up UI/enabled accordingly.
-      rd.pref("rdw.ext.metrics:inflow",
-        function(prefDoc) {
-          //No preferences doc means it is enabled, as well
-          //as explicit pref doc saying it is enabled.
-          if (!prefDoc) {
-            metrics.enabled = true;
-            metrics.createDb();
+      rd.api().pref({
+        id: "rdw.ext.metrics:inflow"
+      })
+      .ok(function(prefDoc) {
+        //No preferences doc means it is enabled, as well
+        //as explicit pref doc saying it is enabled.
+        if (!prefDoc) {
+          metrics.enabled = true;
+          metrics.createDb();
 
-            //No pref doc, so show the user the dialog.
-            dojo.addOnLoad(function() {
-              var html = '<div class="notice"><input type="checkbox" checked> Metrics Enabled. <a href="https://wiki.mozilla.org/Raindrop/MetricsInfo" target="_blank">Learn More</a> <button>Close</button></div>';
-              var node = dojo._toDom(html);
-              inflow.addNotice(node);
+          //No pref doc, so show the user the dialog.
+          dojo.addOnLoad(function() {
+            var html = '<div class="notice"><input type="checkbox" checked> Metrics Enabled. <a href="https://wiki.mozilla.org/Raindrop/MetricsInfo" target="_blank">Learn More</a> <button>Close</button></div>';
+            var node = dojo._toDom(html);
+            inflow.addNotice(node);
 
-              //Wire up events
-              var nodes = dojo.query(node)
-                .query("button").onclick(function(evt) {
-                  dojo.destroy(evt.target.parentNode);
-                  metrics.savePref();
-                })
-              .end()
-                .query("input").onclick(function(evt) {
-                  metrics.enabled = !!evt.target.checked;
-                  metrics.savePref();
-                  metrics[metrics.enabled ? "createDb" : "deleteDb"]();
-                });
-            });
-          } else {
-            metrics.enabled = prefDoc.enabled;
-          }
-        },
-        function(err) {
-          //If an error, just assume disabled.
-          metrics.enabled = false;
+            //Wire up events
+            var nodes = dojo.query(node)
+              .query("button").onclick(function(evt) {
+                dojo.destroy(evt.target.parentNode);
+                metrics.savePref();
+              })
+            .end()
+              .query("input").onclick(function(evt) {
+                metrics.enabled = !!evt.target.checked;
+                metrics.savePref();
+                metrics[metrics.enabled ? "createDb" : "deleteDb"]();
+              });
+          });
+        } else {
+          metrics.enabled = prefDoc.enabled;
         }
-      );
+      })
+      .error(function(err) {
+        //If an error, just assume disabled.
+        metrics.enabled = false;
+      });
   }());
 }

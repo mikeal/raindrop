@@ -24,7 +24,7 @@
 dojo.provide("rdw.Summary");
 
 dojo.require("rdw._Base");
-dojo.require("rd.api");
+dojo.require("rd.api.contact");
 
 dojo.declare("rdw.Summary", [rdw._Base], {
   templateString: '<div class="rdwSummary"></div>',

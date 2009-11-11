@@ -26,7 +26,7 @@ dojo.provide("rdw.Search");
 dojo.require("rd");
 dojo.require("rdw._Base");
 dojo.require("rdw.DataSelector");
-dojo.require("rd.pref");
+dojo.require("rd.api.pref");
 
 dojo.declare("rdw.Search", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "Search.html"),
@@ -34,7 +34,7 @@ dojo.declare("rdw.Search", [rdw._Base], {
 
   historyTemplate: '<li><a href="#rd:${type}:${id}">${value}</a></li>',
 
-  //The name to use for the rd.pref calls.
+  //The name to use for the rd.api.pref calls.
   prefId: "rdw.Search:" + rd.appName,
 
   //The maximum number of history items to show.
@@ -58,7 +58,10 @@ dojo.declare("rdw.Search", [rdw._Base], {
       history: [],
       historyKeys: {}
     };
-    rd.pref(this.prefId, dojo.hitch(this, "onPrefLoad"));
+    rd.api().pref({
+      id: this.prefId
+    })
+    .ok(this, "onPrefLoad");
   },
 
   onPrefLoad: function(/*Object*/prefs) {
@@ -76,7 +79,10 @@ dojo.declare("rdw.Search", [rdw._Base], {
     if (error && error.message == "rd.docOutOfDate") {
       //Out of date, try to merge data best we can.
       var history = this.prefs.history;
-      rd.pref(this.prefId, dojo.hitch(this, function(prefs) {
+      rd.api().pref({
+        id: this.prefId
+      })
+      .ok(this, function(prefs) {
         //Combine our history with latest history, 
         //Combine our history with latest history, avoiding duplicates.
         for (var i = history.length - 1, data; (i > -1) && (data = history[i]); i--) {
@@ -95,8 +101,12 @@ dojo.declare("rdw.Search", [rdw._Base], {
         this.prefs._rev = error.currentRev;
 
         //Try a save again, but if still an error, give up.
-        rd.pref.save(this.prefId, this.prefs, dojo.hitch(this, "onPrefLoad"));
-      }));
+        rd.api().pref({
+          id: this.prefId,
+          prefs: this.prefs
+        })
+        .ok(this, "onPrefLoad");
+      });
     } else {
       console.error(error);
     }
@@ -120,7 +130,12 @@ dojo.declare("rdw.Search", [rdw._Base], {
         this.prefs.history = history.slice(0, this.maxHistory);
       }
   
-      rd.pref.save(this.prefId, this.prefs, dojo.hitch(this, "onPrefLoad"), dojo.hitch(this, "onPrefSaveError"));
+      rd.api().pref({
+        id: this.prefId,
+        prefs: this.prefs
+      })
+      .ok(this, "onPrefLoad")
+      .error(this, "onPrefSaveError");
     }
   },
 

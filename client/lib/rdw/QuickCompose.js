@@ -26,8 +26,7 @@ dojo.provide("rdw.QuickCompose");
 dojo.require("dijit.form.FilteringSelect");
 
 dojo.require("rdw._Base");
-dojo.require("rd.contact");
-dojo.require("rd.api");
+dojo.require("rd.api.me");
 
 dojo.declare("rdw.QuickCompose", [rdw._Base], {
   templatePath: dojo.moduleUrl("rdw.templates", "QuickCompose.html"),

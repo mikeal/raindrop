@@ -25,6 +25,7 @@ dojo.provide("rdw.Widgets");
 
 dojo.require("rdw._Base");
 dojo.require("rd.api");
+dojo.require("rd.api.message");
 dojo.require("rdw.Conversation");
 
 dojo.declare("rdw.Widgets", [rdw._Base], {

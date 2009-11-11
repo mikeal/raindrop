@@ -103,10 +103,7 @@ rd.applyExtension("rd.ext.MailingList", "rd.MegaviewStore", {
         this._addItems(items);
         dfd.callback();
       })
-      .error(function(err) {
-        dfd.errback(err);
-      });
-
+      .error(dfd);
       return dfd;
     }
   }

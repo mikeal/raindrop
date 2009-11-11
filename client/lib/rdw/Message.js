@@ -24,7 +24,6 @@
 dojo.provide("rdw.Message");
 
 dojo.require("rdw._Base");
-dojo.require("rd.contact");
 dojo.require("rd.friendly");
 dojo.require("rd.hyperlink");
 dojo.require("rd.api");

@@ -24,7 +24,7 @@
 dojo.provide("rdw.Account");
 
 dojo.require("rdw._Base");
-dojo.require("rd.api");
+dojo.require("rd.api.me");
 
 dojo.declare("rdw.Account", [rdw._Base], {
   templateString: '<div class="rdwAccount" dojoAttachEvent="onclick: onClick"> \

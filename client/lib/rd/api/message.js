@@ -21,7 +21,6 @@
  * Contributor(s):
  * */
 
-//Never dojo.require this file directly, only dojo.require rd.api.
 dojo.provide("rd.api.message");
 
 dojo.require("rd.api");
