@@ -81,11 +81,11 @@ class TestCase(unittest.TestCase):
         # by default, WARNING or higher messages cause a test failure...
         filter = lambda record: record.levelno < logging.WARNING
         self.log_handler.ok_filters.append(filter)
-        l = logging.getLogger('raindrop')
-        l.addHandler(self.log_handler)
-        # this env-var means the developer wants to see the logs as it runs.
-        if 'RAINDROP_LOG_LEVELS' not in os.environ:
-            l.propagate = False
+        for l in [logging.getLogger(), logging.getLogger('raindrop')]:
+            l.addHandler(self.log_handler)
+            # this env-var means the developer wants to see the logs as it runs.
+            if 'RAINDROP_LOG_LEVELS' not in os.environ:
+                l.propagate = False
         return unittest.TestCase.setUp(self)
 
     def tearDown(self):
