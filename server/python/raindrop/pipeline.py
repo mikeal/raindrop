@@ -52,6 +52,7 @@ class Extension(object):
             self.source_schemas = doc['source_schemas']
         else:
             self.source_schemas = [doc['source_schema']]
+        self.confidence = doc.get('confidence')
         self.handler = handler
         self.globs = globs
         self.running = False # for reentrancy testing...
@@ -104,6 +105,7 @@ class Pipeline(object):
         self.options = options
         self.runner = None
         self.incoming_processor = None
+        self.current_extension_confidences = {}
 
     @defer.inlineCallbacks
     def initialize(self):
@@ -153,6 +155,11 @@ class Pipeline(object):
             if missing:
                 logger.error("The following extensions are unknown: %s",
                              missing)
+        for ext in ret:
+            if ext.confidence is not None:
+                self.current_extension_confidences[ext.id] = ext.confidence
+        self.doc_model.set_extension_confidences(
+                                        self.current_extension_confidences)
         defer.returnValue(ret)
 
     @defer.inlineCallbacks

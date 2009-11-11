@@ -101,6 +101,10 @@ class TestSchemas(TestCaseWithTestDB):
         self.failUnlessEqual(doc.get('_rev'), 'dummy')
 
     def test_add_multi_items(self):
+        # In this test we have 2 schemas providing 'non-conflicting' data
+        # with 2 different confidences - we expect *both* sets of fields.
+        self.doc_model.set_extension_confidences({'rd.testsuite':1,
+                                                  'rd.testsuite.2':2})
         doc, si = self.test_add_single_item()
         si2 = si.copy()
         items = {'field2' : 'value2'}

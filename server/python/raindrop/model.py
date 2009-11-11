@@ -25,6 +25,7 @@ import logging
 import time
 from urllib import quote
 import base64
+import itertools
 
 import twisted.web.error
 from twisted.internet import defer, reactor
@@ -106,6 +107,10 @@ class DocumentModel(object):
     def __init__(self, db):
         self.db = db
         self._important_views = None # views we update periodically
+        self._extension_confidences = {}
+
+    def set_extension_confidences(self, conf):
+        self._extension_confidences = conf
 
     @classmethod
     def quote_id(cls, doc_id):
@@ -246,20 +251,30 @@ class DocumentModel(object):
 
     # Some functions for working/splitting documents and schemas.
     def _aggregate_doc(self, doc):
-        assert len(doc['rd_schema_items']) != 0
-        if len(doc['rd_schema_items']) == 1:
-            assert doc['rd_schema_items'].values()[0]['schema'] is None
+        sitems = doc['rd_schema_items']
+        assert len(sitems) != 0
+        if len(sitems) == 1:
+            assert sitems.values()[0]['schema'] is None
             return # nothing to aggregate.
-        num = 0
-        for ext_id, info in doc['rd_schema_items'].iteritems():
-            schema = info['schema']
+        eids = sorted(((n, self._extension_confidences.get(n, 0))
+                        for n in sitems.iterkeys()),
+                      key=lambda i: i[1])
+        for conf, items in itertools.groupby(eids, lambda i: i[1]):
+            exts = [item[0] for item in items if sitems[item[0]]['schema']]
+            if len(exts)==0:
+                # no extensions actually provided fields.
+                continue
+            if len(exts) != 1:
+                # the doc may not yet have '_id' assigned
+                did = self.get_doc_id_for_schema_item(doc)
+                logger.warn("when processing document %r, the extensions %s "
+                            "all have a confidence level of %d - the first "
+                            "listed extension has been chosen",
+                            did, exts, conf)
+            sitem = sitems[exts[0]]
+            schema = sitem['schema']
             if schema:
-                doc.update(info['schema'])
-                num += 1
-        if num > 1:
-            print "XXX - give me real sorting based on ext confidence!!!!"
-            print "(key: %r, schema: %r, exts: %r" % \
-                  (doc['rd_key'], doc['rd_schema_id'], doc['rd_schema_items'].keys())
+                doc.update(schema)
 
     def _remove_item_from_doc(self, doc, item):
         assert '_deleted' in item
