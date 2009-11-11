@@ -51,6 +51,8 @@ def get_ext_env(doc_model, context, src_doc, ext):
         ni['rd_source'] = [src_doc['_id'], src_doc['_rev']]
         if attachments is not None:
             ni['attachments'] = attachments
+        if ext.category in [ext.PROVIDER, ext.SMART]:
+            ni['rd_schema_provider'] = ext.id
         new_items.append(ni)
         return doc_model.get_doc_id_for_schema_item(ni)
 
@@ -82,6 +84,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
 
     def update_documents(docs):
         context['did_query'] = True
+        assert docs, "please fix the extension to not bother calling with no docs!"
         return threads.blockingCallFromThread(reactor,
                     doc_model.update_documents, docs)
 

@@ -44,13 +44,13 @@ function(doc) {
     // in a single doc.  While we don't emit the individual values, we do emit
     // rd.core.content records which indicate they exist.
     for (var rd_ext_id in doc.rd_schema_items) {
+      var schema_item = doc.rd_schema_items[rd_ext_id]
       var si_row_val = {'_rev': doc._rev,
                         'rd_key' : doc.rd_key,
                         'rd_schema_id' : doc.rd_schema_id,
-                        'rd_ext_id': rd_ext_id
-                        }
-      
-      var schema_item = doc.rd_schema_items[rd_ext_id]
+                        'rd_ext_id': rd_ext_id,
+                        'rd_source': schema_item.rd_source
+                        };
       emit(['rd.core.content', 'ext_id', rd_ext_id], si_row_val);
       emit(['rd.core.content', 'ext_id-schema_id', [rd_ext_id, doc.rd_schema_id]], si_row_val);
       // don't emit the revision from the source in the key.

@@ -43,6 +43,15 @@ def split_rc_docid(doc_id):
     return rt, rdkey, schema
 
 class Extension(object):
+    SMART = "smart" # a "smart" extension - handles dependencies etc itself.
+    # a 'provider' of schema items; a schema is "complete" once a single
+    # provider has run.
+    PROVIDER = "provider"
+    # An 'extender' - extends a schema written by a different extension.  If
+    # only 'extenders' have provided schema fields, the schema is not yet
+    # "complete", so extensions which depend on it aren't run and the field
+    # values don't appear in the megaview.
+    EXTENDER = "extender"
     def __init__(self, id, doc, handler, globs):
         self.id = id
         self.doc = doc
@@ -56,8 +65,8 @@ class Extension(object):
         self.handler = handler
         self.globs = globs
         self.running = False # for reentrancy testing...
-        # Is this extension smart enough to update what it did in the past?
-        self.smart_updater = doc.get('smart_updater', False)
+        # the category - for now we have a default, but later should not!
+        self.category = doc.get('category', self.PROVIDER)
 
 @defer.inlineCallbacks
 def load_extensions(doc_model):
@@ -812,14 +821,21 @@ class ExtensionProcessor(object):
     def __call__(self, src_id, src_rev):
         """The "real" entry-point to this processor"""
         dm = self.doc_model
-        ext_id = self.ext.id
+        ext = self.ext
+        ext_id = ext.id
         force = self.options.force
 
         # some extensions declare themselves as 'smart updaters' - they
         # are more efficiently able to deal with updating the records it
         # wrote last time than our brute-force approach.
         docs_previous = {}
-        if not self.ext.smart_updater:
+        if ext.category == ext.SMART:
+            # the extension says it can take care of everything related to
+            # re-running.  Such extensions are unlikely to be able to be
+            # correctly overridden, but that is life.
+            pass
+        elif ext.category in [ext.PROVIDER, ext.EXTENDER]:
+            is_provider = ext.category==ext.PROVIDER
             # We need to find *all* items previously written by this extension
             # so we can manage updating/removal of the old items.
             key = ['rd.core.content', 'ext_id-source', [ext_id, src_id]]
@@ -829,9 +845,23 @@ class ExtensionProcessor(object):
                 dirty = False
                 for row in rows:
                     assert 'error' not in row, row # views don't give error records!
-                    # A list of [ext_id, src] is the last key elt.
-                    src_val = row['key'][2][1]
-                    if src_val != [src_id, src_rev]:
+                    prev_src = row['value']['rd_source']
+                    # a hack to prevent us cycling to death - if our previous
+                    # run of the extension created this document, just skip
+                    # it.
+                    # This might be an issue in the 'reprocess' case.
+                    if prev_src is not None and prev_src[0] == src_id and \
+                       row['value']['rd_schema_id'] in ext.source_schemas:
+                        # This is illegal for a provider.
+                        if is_provider:
+                            raise ValueError("extension %r is configured to depend on schemas it previously wrote" %
+                                             ext_id)
+                        # must be an extender, which is OK (see above)
+                        logger.debug("skipping document %r - it depends on itself",
+                                     src_id)
+                        defer.returnValue((None, None))
+
+                    if prev_src != [src_id, src_rev]:
                         dirty = True
                         break
                     # error rows are considered 'dirty'
@@ -850,7 +880,12 @@ class ExtensionProcessor(object):
             for row in rows:
                 v = row['value']
                 prev_key = dm.hashable_key((v['rd_key'], v['rd_schema_id']))
+                logger.debug('noting previous schema item %(rd_schema_id)r by'
+                             ' %(rd_ext_id)r for key %(rd_key)r', v)
                 docs_previous[prev_key] = v
+        else:
+            raise ValueError("extension %r has invalid category %r" %
+                             (ext_id, ext.category))
 
         # Get the source-doc and process it.
         src_doc = (yield dm.open_documents_by_id([src_id]))[0]
@@ -859,12 +894,23 @@ class ExtensionProcessor(object):
         # view.  It could even have been updated - so if its not the exact
         # revision we need we just skip it - it will reappear later...
         if src_doc is None or src_doc['_rev'] != src_rev:
-            logger.debug("skipping document - it's changed since we read the queue")
+            logger.debug("skipping document %(_id)r - it's changed since we read the queue",
+                         src_doc)
             defer.returnValue((None, None))
 
         # our caller should have filtered the list to only the schemas
         # our extensions cares about.
-        assert src_doc['rd_schema_id'] in self.ext.source_schemas
+        assert src_doc['rd_schema_id'] in ext.source_schemas
+
+        # If the source of this document is yet to see a schema written by
+        # a 'schema provider', skip calling extensions which depend on this
+        # doc - we just wait for a 'provider' to be called, at which time
+        # the source doc will again trigger us being called again.
+        if not src_doc.get('rd_schema_provider'):
+            logger.debug("skipping document %(_id)r - it has yet to see a schema provider",
+                         src_doc)
+            defer.returnValue((None, None))
+
         # Now process it
         new_items = []
         context = {'new_items': new_items}
@@ -882,7 +928,7 @@ class ExtensionProcessor(object):
                 # an extension returning a value implies they may be
                 # confused?
                 logger.warn("extension %r returned value %r which is ignored",
-                            self.ext, result)
+                            ext, result)
         except:
             # handle_ext_failure may put error records into new_items.
             self._handle_ext_failure(Failure(), src_doc, new_items)
@@ -907,6 +953,8 @@ class ExtensionProcessor(object):
                       '_rev': prev_val['_rev'],
                       }
                 new_items.insert(0, si)
+                logger.debug('deleting previous schema item %(rd_schema_id)r'
+                             ' by %(rd_ext_id)r for key %(rd_key)r', si)
 
         # We try hard to batch writes; we earlier just checked to see if
         # only the same key was written, but that still failed.  Last
@@ -917,7 +965,8 @@ class ExtensionProcessor(object):
         if not must_save:
             # must also save now if they wrote a key for another item.
             for i in new_items:
-                logger.debug('new schema item %(schema_id)r for key %(rd_key)r', i)
+                logger.debug('new schema item %(rd_schema_id)r by'
+                             ' %(rd_ext_id)r for key %(rd_key)r', i)
                 if i['rd_key'] != src_doc['rd_key']:
                     must_save = True
                     break

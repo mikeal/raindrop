@@ -220,6 +220,7 @@ class DocumentModel(object):
 
     @defer.inlineCallbacks
     def update_documents(self, docs):
+        assert docs, "don't call me when you have no docs!"
         logger.debug("attempting to update %d documents", len(docs))
 
         attachments = self._prepare_attachments(docs)
@@ -397,12 +398,25 @@ class DocumentModel(object):
 
         # meta-data stored in rd_schema_items.
         si[ext_id]['rd_source'] = item.get('rd_source')
+        # check the provider flag.  The pipeline should have already detected
+        # multiple providers and chosen one based on confidences.
+        # Anything with a NULL source is implicitly a provider...
+        if item.get('rd_source') is None and 'rd_schema_provider' not in item:
+            item['rd_schema_provider'] = item['rd_ext_id']
+        if 'rd_schema_provider' in item:
+            if 'rd_schema_provider' in doc and item.get('items') and \
+               doc['rd_schema_provider'] != item['rd_schema_provider']:
+                logger.warn('we seem to have multiple providers for %r: %r and %r',
+                            item['rd_schema_id'], doc['rd_schema_provider'],
+                            item['rd_schema_provider'])
+            doc['rd_schema_provider'] = item['rd_schema_provider']
         self._aggregate_doc(doc)
 
     @defer.inlineCallbacks
     def create_schema_items(self, item_defs):
         """Main entry-point to create new (or updated) 'schema items' in
         the database."""
+        assert item_defs, "don't call me when you have no docs!"
         # first build a map of all doc IDs we care about
         ids = set(self.get_doc_id_for_schema_item(si) for si in item_defs)
         # open any docs which already exist.
@@ -452,8 +466,12 @@ class DocumentModel(object):
             else:
                 to_up.append(doc)
 
-        # and update the docs.
-        updated_docs = yield self.update_documents(to_up)
+        # and update the docs - but even though we must have been called with
+        # schema items, we may have detected duplicates and removed them...
+        if to_up:
+            updated_docs = yield self.update_documents(to_up)
+        else:
+            updated_docs = []
         logger.debug("create_schema_items made %r", updated_docs)
         defer.returnValue(updated_docs)
 
