@@ -27,6 +27,47 @@
 // 'rd.core.*' schemas (so the document IDs can still be located) but the
 // values aren't written.
 
+function emit_fields(doc, src, row_val)
+{
+  var rd_megaview_expandable = doc.rd_megaview_expandable || [];
+  for (var prop in src) {
+      //Skip text fields that are big (better served by full
+      //text search), private props and raindrop-housekeeping
+      //props.
+      if ( prop.charAt(0) == "_"
+           || prop.indexOf("rd_") == 0
+           || prop.indexOf("raindrop") == 0) {
+        continue;
+      }
+
+    var val;
+    // don't emit long string values, but do still emit a row with NULL
+    // so it can be found.
+    if ((typeof src[prop] == "string") && src[prop].length > 140)
+      val = null;
+    else
+      val = src[prop];
+    // If the doc has a special attribute rd_megaview_expandable and this
+    // property is in it, then that attribute is an array that each
+    // elt can be expanded - eg 'tags'. We can't do this unconditionally as
+    // things like identity_ids don't make sense expanded. Note we may also
+    // want to unpack real objects?
+    var expand = false;
+    for (var i=0; i<rd_megaview_expandable.length && !expand; i++) {
+      if (prop==rd_megaview_expandable[i]) {
+        expand = true;
+      }
+    }
+    if (expand) {
+      for (var i=0; i<src[prop].length; i++)
+        emit([doc.rd_schema_id, prop, val[i]], row_val);
+    } else {
+      emit([doc.rd_schema_id, prop, val], row_val);
+    }
+  }
+}
+
+
 function(doc) {
   if (doc.rd_schema_id
     && !doc.rd_megaview_ignore_doc) {
@@ -39,6 +80,11 @@ function(doc) {
     emit(['rd.core.content', 'key', doc.rd_key], row_val);
     emit(['rd.core.content', 'schema_id', doc.rd_schema_id], row_val);
     emit(['rd.core.content', 'key-schema_id', [doc.rd_key, doc.rd_schema_id]], row_val);
+
+    // If a field 'rd_megaview_no_aggr' exists, then this schema is special
+    // and consumers are expected to handle the individual items rather than
+    // top-level fields.
+    var emit_schemas = doc.rd_megaview_no_aggr && !doc.rd_megaview_ignore_values;
 
     // There may be multiple of the same schema for different extensions
     // in a single doc.  While we don't emit the individual values, we do emit
@@ -63,47 +109,16 @@ function(doc) {
       emit(['rd.core.content', 'source', src_val], si_row_val);
       emit(['rd.core.content', 'key-source', [doc.rd_key, src_val]], si_row_val);
       emit(['rd.core.content', 'ext_id-source', [rd_ext_id, src_val]], si_row_val);
+      if (emit_schemas) {
+        var this_src = schema_items.schema === null ? doc : schema_items.schema;
+        emit_fields(doc, this_src, si_row_val)
+      }
     }
 
-    // If this schema doesn't want/need values indexed, bail out now.
-    if (doc.rd_megaview_ignore_values)
+    // If this schema doesn't want/need values indexed, or we have already
+    // done it for each individual schemea bail out now.
+    if (doc.rd_megaview_no_aggr || doc.rd_megaview_ignore_values)
       return
-
-    var rd_megaview_expandable = doc.rd_megaview_expandable || [];
-    for (var prop in doc) {
-        //Skip text fields that are big (better served by full
-        //text search), private props and raindrop-housekeeping
-        //props.
-        if ( prop.charAt(0) == "_"
-             || prop.indexOf("rd_") == 0
-             || prop.indexOf("raindrop") == 0) {
-          continue;
-        }
-
-      var val;
-      // don't emit long string values, but do still emit a row with NULL
-      // so it can be found.
-      if ((typeof doc[prop] == "string") && doc[prop].length > 140)
-        val = null;
-      else
-        val = doc[prop];
-      // If the doc has a special attribute rd_megaview_expandable and this
-      // property is in it, then that attribute is an array that each
-      // elt can be expanded - eg 'tags'. We can't do this unconditionally as
-      // things like identity_ids don't make sense expanded. Note we may also
-      // want to unpack real objects?
-      var expand = false;
-      for (var i=0; i<rd_megaview_expandable.length && !expand; i++) {
-        if (prop==rd_megaview_expandable[i]) {
-          expand = true;
-        }
-      }
-      if (expand) {
-        for (var i=0; i<doc[prop].length; i++)
-          emit([doc.rd_schema_id, prop, val[i]], row_val);
-      } else {
-        emit([doc.rd_schema_id, prop, val], row_val);
-      }
-    }
+    emit_fields(doc, doc, row_val);
   }
 }

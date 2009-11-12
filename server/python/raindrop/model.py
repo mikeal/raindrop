@@ -68,6 +68,12 @@ megaview_schemas_ignore_values = [
     'rd.imap.mailbox-cache',
 ]
 
+# Schema definitions which don't want an aggregate written; the individual
+# extensions schemas are emitted individually.
+megaview_schemas_no_aggr = [
+    'rd.msg.location',
+]
+
 def encode_provider_id(proto_id):
     # a 'protocol' gives us a 'blob' used to identify the document; we create
     # a real docid from that protocol_id; we base64-encode what was given to
@@ -257,6 +263,9 @@ class DocumentModel(object):
         if len(sitems) == 1:
             assert sitems.values()[0]['schema'] is None
             return # nothing to aggregate.
+        if doc['rd_schema_id'] in megaview_schemas_no_aggr:
+            doc['rd_megaview_no_aggr'] = True
+            return # megaview will emit the individual schemas.
         eids = sorted(((n, self._extension_confidences.get(n, 0))
                         for n in sitems.iterkeys()),
                       key=lambda i: i[1])
@@ -266,12 +275,10 @@ class DocumentModel(object):
                 # no extensions actually provided fields.
                 continue
             if len(exts) != 1:
-                # the doc may not yet have '_id' assigned
-                did = self.get_doc_id_for_schema_item(doc)
                 logger.warn("when processing document %r, the extensions %s "
                             "all have a confidence level of %d - the first "
                             "listed extension has been chosen",
-                            did, exts, conf)
+                            doc['_id'], exts, conf)
             sitem = sitems[exts[0]]
             schema = sitem['schema']
             if schema:
@@ -400,12 +407,14 @@ class DocumentModel(object):
         si[ext_id]['rd_source'] = item.get('rd_source')
         # check the provider flag.  The pipeline should have already detected
         # multiple providers and chosen one based on confidences.
-        # Anything with a NULL source is implicitly a provider...
+        # Anything with a NULL source is implicitly a provider, but
+        # anything which is a "no aggregate" schema doesn't get this behaviour.
         if item.get('rd_source') is None and 'rd_schema_provider' not in item:
             item['rd_schema_provider'] = item['rd_ext_id']
         if 'rd_schema_provider' in item:
             if 'rd_schema_provider' in doc and item.get('items') and \
-               doc['rd_schema_provider'] != item['rd_schema_provider']:
+               doc['rd_schema_provider'] != item['rd_schema_provider'] and \
+               doc['rd_schema_id'] not in megaview_schemas_no_aggr:
                 logger.warn('we seem to have multiple providers for %r: %r and %r',
                             item['rd_schema_id'], doc['rd_schema_provider'],
                             item['rd_schema_provider'])
