@@ -477,6 +477,10 @@ rd.api.extend({
    * @param {Object} schema_item item to be written
    */
   createSchemaItem: function(item) {
+    //TODO: get a server api endpoint in place and make sure return value
+    //to the ok callback is reasonable.
+    throw new Error("rd.api.createSchemaItem not implemented yet");
+    
     var doc = {};
     doc._id = this._docIdForItem(item);
     if (item._rev)
