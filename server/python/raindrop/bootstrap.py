@@ -205,9 +205,9 @@ def install_client_files(whateva, options):
         _check_dir(client_dir, "", attachments, fp)
 
         new_prints = fp.get_prints()
-        if options.force or design_doc.get('rd_fingerprints') != new_prints:
+        if options.force or design_doc.get('fingerprints') != new_prints:
             logger.info("client files in %r are different - updating doc", doc_name)
-            design_doc['rd_fingerprints'] = new_prints
+            design_doc['fingerprints'] = new_prints
             return d.saveDoc(design_doc, doc_name)
         logger.debug("client files are identical - not updating doc")
         return None
@@ -246,7 +246,7 @@ def install_client_files(whateva, options):
                 finger.update(chunk)
 
         new_prints = fp.get_prints()
-        if options.force or design_doc.get('rd_fingerprints') != new_prints:
+        if options.force or design_doc.get('fingerprints') != new_prints:
             logger.info("updating dojo...")
             dojo_top_dir = tempfile.mktemp('-raindrop-temp')
             os.mkdir(dojo_top_dir)
@@ -261,7 +261,7 @@ def install_client_files(whateva, options):
                 shutil.rmtree(dojo_top_dir)
 
             # save couch doc
-            design_doc['rd_fingerprints'] = new_prints
+            design_doc['fingerprints'] = new_prints
             return d.saveDoc(design_doc, "dojo")
         else:
             return None
@@ -324,15 +324,15 @@ def insert_default_docs(whateva, options):
                     fields[fname] = fval
             sch_item = {
                 'rd_key': rd_key,
-                'schema_id': name,
+                'rd_schema_id': name,
                 'items': fields,
-                'ext_id': 'rd.core',
+                'rd_ext_id': 'rd.core',
             }
             ret.append(sch_item);
 
         # hack our fingerprinter in...
         for sch_item in ret:
-            sch_item['items']['rd_fingerprints'] = fingerprinter.get_prints()
+            sch_item['items']['fingerprints'] = fingerprinter.get_prints()
 
         return ret
 
@@ -379,10 +379,10 @@ def insert_default_docs(whateva, options):
                          did)
             updates.append(item)
         else:
-            fp = item['items']['rd_fingerprints']
+            fp = item['items']['fingerprints']
             existing = r['doc']
             assert existing['_id']==did
-            if not options.force and fp == existing.get('rd_fingerprints'):
+            if not options.force and fp == existing.get('fingerprints'):
                 logger.debug("couch doc %r hasn't changed - skipping", did)
             else:
                 logger.info("couch doc %r has changed - updating", did)
@@ -534,8 +534,8 @@ def check_accounts(whateva, config=None):
             logger.exception("failed to fetch identities for %r", acct_id)
 
         new_info = {'rd_key' : rd_key,
-                    'schema_id': 'rd.account',
-                    'ext_id': 'raindrop.core',
+                    'rd_schema_id': 'rd.account',
+                    'rd_ext_id': 'raindrop.core',
                     'items': acct_info}
         if len(infos)==1:
             existing = infos[0]
@@ -599,7 +599,7 @@ def install_views(whateva, options):
             assert existing['_id']==doc['_id']
             assert '_rev' not in doc
             if not options.force and \
-               doc['rd_fingerprints'] == existing.get('rd_fingerprints'):
+               doc['fingerprints'] == existing.get('fingerprints'):
                 logger.debug("design doc %r hasn't changed - skipping",
                              doc['_id'])
                 continue
@@ -694,7 +694,7 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
                 continue
         
 
-    ret['rd_fingerprints'] = fprinter.get_prints()
+    ret['fingerprints'] = fprinter.get_prints()
     ret['language'] = this_lang
     logger.debug("Document in directory %r has views %s", ddir, ret_views.keys())
     if not ret_views:

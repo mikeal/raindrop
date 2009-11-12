@@ -76,10 +76,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
 
     @defer.inlineCallbacks
     def put_docs(self, corpus_name, corpus_spec="*", expected=None):
-        docs = [d for d in self.gen_corpus_docs(corpus_name, corpus_spec)]
+        items = [d for d in self.gen_corpus_schema_items(corpus_name, corpus_spec)]
         if expected is not None:
-            self.failUnlessEqual(len(docs), expected)
-        _ = yield self.doc_model.db.updateDocuments(docs)
+            self.failUnlessEqual(len(items), expected)
+        _ = yield self.doc_model.create_schema_items(items)
         _ = yield self.ensure_pipeline_complete()
 
     @defer.inlineCallbacks

@@ -254,20 +254,20 @@ rd.api.identity = {
 
     //Generate the new document.
     var idty = {
-      name: body.from_display,
-      nickname: from,
       rd_key: [
         "identity",
         ["email", from]
       ],
       rd_schema_id: "rd.identity",
-      rd_source: [msg.schemas["rd.msg.email"]._id]
+      rd_source: [msg.schemas["rd.msg.email"]._id],
+      items : {
+        name: body.from_display,
+        nickname: from
+      }
     };
 
     //Insert the document.
-    rd.api().put({
-      doc:idty
-    })
+    rd.api().createSchemaItem(idty)
     .ok(this, function(idty) {
       //Update this data store.
       idty = this._storeIdty(idty);

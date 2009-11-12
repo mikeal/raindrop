@@ -164,8 +164,7 @@ def doc_from_bytes(docid, rdkey, b):
     # more thought.  For now, assume they are flat.
     # We must return non-text parts in attachments, so just return
     # *everything* in attachments.
-    attachments = doc['_attachments'] = {}
-
+    attachments = {}
     if mp:
         # a multi-part message - flatten it here by walking the list, but
         # only looking at the 'leaf' nodes.
@@ -191,10 +190,11 @@ def doc_from_bytes(docid, rdkey, b):
                 mi.append(info)
     else:
         attachments['body'] = attach_from_msg((docid, 'body'), msg)
-    return doc
+    return doc, attachments
 
 
 def handler(doc):
     # I need the binary attachment.
     content = open_schema_attachment(doc, "rfc822")
-    emit_schema('rd.msg.email', doc_from_bytes(doc['_id'], doc['rd_key'], content))
+    items, attachments = doc_from_bytes(doc['_id'], doc['rd_key'], content)
+    emit_schema('rd.msg.email', items, attachments=attachments)

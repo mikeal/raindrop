@@ -114,7 +114,7 @@ def handler(doc):
     if doc.get('multipart'):
         infos = doc['multipart_info']
     else:
-        attach = doc['_attachments']['body']
+        aname, attach = get_schema_attachment_info(doc, 'body')
         infos = [{'content_type': attach['content_type'],
                   'name': 'body'}]
 

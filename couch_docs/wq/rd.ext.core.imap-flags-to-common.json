@@ -5,7 +5,7 @@
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
         "info": "Creates 'rd.msg.unseen schemas",
-        "smart_updater": true
+        "category": "smart"
     }
   }
 }

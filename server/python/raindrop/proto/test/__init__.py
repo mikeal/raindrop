@@ -96,28 +96,28 @@ class TestMessageProvider(object):
             rd_key = ['email', 'TestMessage%d' % doc_num]
             data = dict(
               storage_key=doc_num,
-              _attachments=attachments,
               )
-            info = {'schema_id': 'rd.msg.test.raw',
-                    'ext_id': self.rd_extension_id,
+            info = {'rd_schema_id': 'rd.msg.test.raw',
+                    'rd_ext_id': self.rd_extension_id,
                     'rd_source': None,
                     'rd_key': rd_key,
                     'items': data,
+                    'attachments': attachments,
                     }
             self.bulk_docs.append(info)
             # and we 'assert the existance' of 2 identities - one unique to
             # our test message and one common for all.
             if test_emit_identities:
                 self.bulk_docs.append({
-                        'schema_id': 'rd.identity.exists',
-                        'ext_id': self.rd_extension_id,
+                        'rd_schema_id': 'rd.identity.exists',
+                        'rd_ext_id': self.rd_extension_id,
                         'rd_source': None,
                         'rd_key': ['identity', ['test_identity', str(doc_num)]],
                         'items': None,
                     })
                 self.bulk_docs.append({
-                        'schema_id': 'rd.identity.exists',
-                        'ext_id': self.rd_extension_id,
+                        'rd_schema_id': 'rd.identity.exists',
+                        'rd_ext_id': self.rd_extension_id,
                         'rd_source': None,
                         'rd_key': ['identity', ['test_identity', 'common']],
                         'items': None,

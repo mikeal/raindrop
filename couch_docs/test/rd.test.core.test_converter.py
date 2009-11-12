@@ -64,8 +64,7 @@ def handler(src):
                   }
     
     data = {}
-    data['_attachments'] = attachments
-    emit_schema('rd.msg.rfc822', data)
+    emit_schema('rd.msg.rfc822', data, attachments=attachments)
 
     # emit a 'flags' schema too just for fun
     emit_schema('rd.msg.flags', {'seen': False})
@@ -78,8 +77,8 @@ def handler(src):
         # unique to the message and one common across all.
         # invent relationships called 'public' and 'personal'...
         items = [
-            (('test_identity', str(me)), 'personal'),
+            (['test_identity', str(me)], 'personal'),
         ]
         if test_proto.test_emit_common_identities:
-            items.append((('test_identity', 'common'), 'public'))
+            items.append((['test_identity', 'common'], 'public'))
         emit_related_identities(items, {'name':'test protocol'})

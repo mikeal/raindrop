@@ -468,6 +468,57 @@ rd.api.extend({
   },
 
   /**
+   * creates a "schema item" in the raindrop data store.
+   * This is the same basic API used by the back-end, and ultimately should
+   * become an API function so it does the 'confidences' thing (but for now
+   * we assume docs written by the front-end aren't also written by different
+   * extensions, so avoid it.)
+   *
+   * @param {Object} schema_item item to be written
+   */
+  createSchemaItem: function(item) {
+    var doc = {};
+    doc._id = this._docIdForItem(item);
+    if (item._rev)
+      doc._rev = item._rev;
+    doc.rd_key = item.rd_key;
+    doc.rd_schema_id = item.rd_schema_id;
+    for each (var item_name in item) {
+      doc[item_name] = item[item_name];
+    }
+    var ext_id = doc.rd_ext_id || rd.uiExtId;
+    doc.rd_schema_items = {};
+    doc.rd_schema_items[ext_id] = {
+      schema: null,
+      rd_source: item.rd_source || null
+    };
+    if (item.rd_megaview_expandable) {
+      doc.rd_megaview_expandable = item.rd_megaview_expandable;
+    }
+    var docUrl = this.dbPath(args) + doc._id;
+    if (item._rev) {
+      docUrl += "?rev=" + item._rev;
+    }
+
+    var xhrArgs = dojo.delegate(args);
+    xhrArgs.url = docUrl;
+    xhrArgs.method = "PUT";
+    xhrArgs.putData = dojo.toJson(doc);
+
+    this.xhr(xhrArgs).ok(function(response){
+      //Update the rev number on the doc.
+      if (response.rev) {
+        doc._rev = response.rev;
+      }
+      //Use the modified doc as the deferred
+      //response data.
+      return doc;
+    });
+
+    return this;
+  },
+
+  /**
    * Sets up a new document for insertion.
    * It will generate the _id and rd_ext_id on the document if it does
    * not exist. Warning: it modifies the args.doc object.
@@ -483,16 +534,19 @@ rd.api.extend({
 
     //Generate the ID for the document, if needed.
     if (!doc._id) {
-      doc._id = "rc!"
-              + doc.rd_key[0]
-              + "."
-              + rd.toBase64(doc.rd_key[1])
-              + "!"
-              + doc.rd_ext_id
-              + "!"
-              + doc.rd_schema_id;
+      doc._id = this._docIdForItem(doc);
     }
 
     return doc;
+  },
+
+  _docIdForItem: function(item) {
+    return "rc!"
+           + item.rd_key[0]
+           + "."
+           + rd.toBase64(item.rd_key[1])
+           + "!"
+           + item.rd_schema_id;
   }
+
 });

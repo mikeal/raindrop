@@ -104,7 +104,6 @@ def handler(doc):
                              'data': data,
                             }
                        }
-        props['_attachments'] = attachments
         has_avatar = True
     except Skype4Py.errors.ISkypeError, why:
         has_avatar = False
@@ -115,8 +114,9 @@ def handler(doc):
             logger.debug("friend %r has no avatar (%s)", iid, why)
         else:
             logger.warning("Cannot save avatar for skype user %s", iid)
+        attachments = None
 
-    did = emit_schema('rd.identity.skype', props)
+    did = emit_schema('rd.identity.skype', props, attachments=attachments)
 
     # emit one for the normalized identity schema
     props = {

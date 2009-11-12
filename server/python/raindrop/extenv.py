@@ -39,21 +39,20 @@ def get_ext_env(doc_model, context, src_doc, ext):
     # NOTE: These are all called in the context of a worker thread and
     # are expected by the caller to block.
     new_items = context['new_items']
-    def emit_schema(schema_id, items, rd_key=None, confidence=None,
-                    attachments=None):
-        ni = {'schema_id': schema_id,
+    def emit_schema(schema_id, items, rd_key=None, attachments=None):
+        ni = {'rd_schema_id': schema_id,
               'items': items,
-              'ext_id' : ext.id,
+              'rd_ext_id' : ext.id,
               }
         if rd_key is None:
             ni['rd_key'] = src_doc['rd_key']
         else:
             ni['rd_key'] = rd_key
-        if confidence is not None:
-            ni['confidence'] = confidence
         ni['rd_source'] = [src_doc['_id'], src_doc['_rev']]
         if attachments is not None:
             ni['attachments'] = attachments
+        if ext.category in [ext.PROVIDER, ext.SMART]:
+            ni['rd_schema_provider'] = ext.id
         new_items.append(ni)
         return doc_model.get_doc_id_for_schema_item(ni)
 
@@ -71,11 +70,12 @@ def get_ext_env(doc_model, context, src_doc, ext):
     def open_schema_attachment(src, attachment, **kw):
         "A function to abstract document storage requirements away..."
         doc_id = src['_id']
-        logger.debug("attempting to open attachment %s/%s", doc_id, attachment)
         dm = doc_model
+        found, info = dm.get_schema_attachment_info(src, attachment)
+        logger.debug("attempting to open attachment %s/%s", doc_id, found)
         return threads.blockingCallFromThread(reactor,
                     dm.db.openDoc, dm.quote_id(doc_id),
-                    attachment=attachment, **kw)
+                    attachment=found, **kw)
 
     def open_view(*args, **kw):
         context['did_query'] = True
@@ -84,6 +84,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
 
     def update_documents(docs):
         context['did_query'] = True
+        assert docs, "please fix the extension to not bother calling with no docs!"
         return threads.blockingCallFromThread(reactor,
                     doc_model.update_documents, docs)
 
@@ -116,6 +117,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
     new_globs['emit_schema'] = emit_schema
     new_globs['emit_related_identities'] = emit_related_identities
     new_globs['open_schema_attachment'] = open_schema_attachment
+    new_globs['get_schema_attachment_info'] = doc_model.get_schema_attachment_info
     new_globs['open_view'] = open_view
     new_globs['update_documents'] = update_documents
     new_globs['get_my_identities'] = get_my_identities
@@ -139,9 +141,9 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
     # one if it doesn't already exist.
     for iid, rel in idrels:
         yield {'rd_key' : ['identity', iid],
-               'schema_id' : 'rd.identity.exists',
+               'rd_schema_id' : 'rd.identity.exists',
                'items': None,
-               'ext_id' : ext_id,
+               'rd_ext_id' : ext_id,
                }
 
     # Find contacts associated with any and all of the identities;
@@ -179,9 +181,9 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
         cdoc.update(def_contact_props)
         logger.debug("Will create new contact %r", contact_id)
         yield {'rd_key' : ['contact', contact_id],
-               'schema_id' : 'rd.contact',
+               'rd_schema_id' : 'rd.contact',
                # ext_id might be wrong here - maybe it should be 'us'?
-               'ext_id' : ext_id,
+               'rd_ext_id' : ext_id,
                'items' : cdoc,
         }
 
@@ -219,7 +221,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
                 doc_rev = sch['_rev']
         if new_rel_fields is not None:
             yield {'rd_key' : ['identity', iid],
-                   'schema_id' : 'rd.identity.contacts',
-                   'ext_id' : ext_id,
+                   'rd_schema_id' : 'rd.identity.contacts',
+                   'rd_ext_id' : ext_id,
                    'items' : new_rel_fields,
             }

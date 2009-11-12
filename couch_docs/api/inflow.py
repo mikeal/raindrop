@@ -142,6 +142,10 @@ class ConversationAPI(API):
                 # other things, and do not want to have extensions register extra stuff? TODO.
                 if '.rfc822' in schema_id or '.raw' in schema_id:
                     continue
+                # Remove the individual extension values and any other special meta.
+                for attr in ('rd_schema_items', 'rd_megaview_expandable'):
+                    if attr in doc:
+                        del doc[attr]
                 # TODO: note that we may get many of the same schema, which implies
                 # we need to aggregate them - tags is a good example.  For
                 # now just make noise...

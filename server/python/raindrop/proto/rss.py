@@ -71,12 +71,17 @@ def maybe_update_doc(conductor, doc_model, doc, options):
     logger.debug('rss feed %r has changed', uri)
     # update the headers - twisted already has them in the format we need
     # (ie, lower-cased keys, each item is a list)
-    doc['headers'] = factory.response_headers.copy()
-    a = doc['_attachments'] = {}
-    ct = doc['headers']['content-type'][0]
-    a['response'] = {'content_type': ct,
+    items = {
+        'headers': factory.response_headers.copy()
+    }
+    a = {}
+    a['response'] = {'content_type': items['headers']['content-type'][0],
                      'data': result}
-    _ = yield conductor.pipeline.provide_documents([doc])
+    si = doc_model.doc_to_schema_items(doc).next()
+    si['items'] = items
+    si['attachments'] = a
+    si['_rev'] = doc['_rev']
+    _ = yield conductor.pipeline.provide_schema_items([si])
     logger.info('updated feed %r', uri)
 
 
