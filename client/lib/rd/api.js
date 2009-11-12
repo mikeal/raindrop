@@ -483,8 +483,11 @@ rd.api.extend({
       doc._rev = item._rev;
     doc.rd_key = item.rd_key;
     doc.rd_schema_id = item.rd_schema_id;
-    for each (var item_name in item) {
-      doc[item_name] = item[item_name];
+    var empty = {};
+    for (var prop in item) {
+      if(!(prop in empty)) {
+        doc[prop] = item[prop];
+      }
     }
     var ext_id = doc.rd_ext_id || rd.uiExtId;
     doc.rd_schema_items = {};
