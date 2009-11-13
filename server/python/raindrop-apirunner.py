@@ -52,6 +52,7 @@ api_globals={'json': json}
 # A little hack so we can record some basic perf stats about certain things.
 # You must modify couch's local.ini to include '--show-perf' on the cmdline.
 if '--show-perf' in sys.argv:
+    sys.argv.remove('--show-perf')
     def note_timeline(msg, *args):
         msg = msg % args
         log("%.3g: %s", clock(), msg)
@@ -271,7 +272,7 @@ def main():
             else:
                 # call the API handler - we expect the API to be robust and
                 # catch mostexceptions, so if we see one, we just die.
-                note_timeline("api request: %(path)s", req)
+                note_timeline("api request: %s", req['path'])
                 resp = handler(req)
                 note_timeline("api back")
 
