@@ -31,6 +31,7 @@ request URL.
 
 import sys
 import httplib
+from time import clock
 from urllib import urlencode, quote
 
 try:
@@ -47,6 +48,15 @@ from raindrop import config
 # Below are some utilities all Python implemented API functions have available
 # in their globals
 api_globals={'json': json}
+
+# A little hack so we can record some basic perf stats about certain things.
+# You must modify couch's local.ini to include '--show-perf' on the cmdline.
+if '--show-perf' in sys.argv:
+    def note_timeline(msg, *args):
+        msg = msg % args
+        log("%.3g: %s", clock(), msg)
+else:
+    note_timeline = lambda msg, *args: None
 
 # This is a port of some of the couch.js class.
 class CouchDB:
@@ -129,8 +139,11 @@ class RDCouchDB(CouchDB):
         keys = opts.get('keys')
         if keys is not None:
             del opts['keys']
+        note_timeline("megaview request opts=%s, %d keys", opts, len(keys or []))
         # and make the request.
-        return self.view('raindrop!content!all/megaview', opts, keys)
+        ret = self.view('raindrop!content!all/megaview', opts, keys)
+        note_timeline("megaview result - %d rows", len(ret['rows']))
+        return ret
 
 api_globals['RDCouchDB'] = RDCouchDB
 
@@ -244,6 +257,11 @@ def main():
             msg = '%d document(s) dropped' % len(_handlers)
             resp = {'code': 200, 'json': {'info': msg}}
             _handlers.clear()
+        elif len(req['path'])==3 and req['path'][-1] == '_exit':
+            json.dump({'code': 200, 'json': {'info': 'goodbye'}}, sys.stdout)
+            sys.stdout.write("\n")
+            sys.stdout.flush()
+            sys.exit(0)
         else:
             try:
                 handler = get_api_handler(cfg, req)
@@ -253,7 +271,9 @@ def main():
             else:
                 # call the API handler - we expect the API to be robust and
                 # catch mostexceptions, so if we see one, we just die.
+                note_timeline("api request: %(path)s", req)
                 resp = handler(req)
+                note_timeline("api back")
 
         json.dump(resp, sys.stdout)
         sys.stdout.write("\n")
