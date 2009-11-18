@@ -240,13 +240,14 @@ class ImapProvider(object):
   @defer.inlineCallbacks
   def _reqList(self, conn, *args, **kwargs):
     self.account.reportStatus(brat.EVERYTHING, brat.GOOD)
+    acct_id = self.account.details.get('id','')
     caps = yield conn.getCapabilities()
     if 'XLIST' in caps:
       result = yield conn.xlist('', '*')
       kind = self.account.details.get('kind','')
       if kind is '':
         logger.warning("set kind=gmail for account %s in your .raindrop for correct settings",
-                        self.account.details.get('id',''))
+                        acct_id)
     else:
       logger.warning("This IMAP server doesn't support XLIST, so performance may suffer")
       result = yield conn.list('', '*')
@@ -312,7 +313,7 @@ class ImapProvider(object):
     try:
       _ = yield self._updateFolders(conn, todo)
     except:
-      log_exception("Failed to update folders")
+      log_exception("Failed to update folders for account %r", acct_id)
     # and tell the query queue everything is done.
     self.query_queue.put(None)
 
@@ -472,7 +473,9 @@ class ImapProvider(object):
       else:
         updated_flags = {}
     except imap4.MismatchedQuoting, exc:
-      log_exception("failed to fetchAll/fetchFlags folder %r", folder_path)
+      acct_id = self.account.details.get('id','')
+      log_exception("failed to fetchAll/fetchFlags folder %r on account %r",
+                    folder_path, acct_id)
       new_infos = {}
       updated_flags = {}
     logger.info("folder %r has %d new items, %d flags for old items",
@@ -810,8 +813,9 @@ def _do_get_connection(account, conductor, ready, retries_left, backoff):
       else:
         status = failure_to_status(fail)
         account.reportStatus(**status)
-        logger.warning('Failed to connect, will retry after %s secs: %s',
-                       backoff, fail.getErrorMessage())
+        acct_id = account.details.get('id','')
+        logger.warning('Failed to connect to account %r, will retry after %s secs: %s',
+                       acct_id, backoff, fail.getErrorMessage())
         next_backoff = min(backoff * 2, MAX_BACKOFF) # magic number
         conductor.reactor.callLater(backoff,
                                     _do_get_connection,
@@ -903,7 +907,8 @@ class IMAPAccount(base.AccountBase):
       except Exception:
         # We only get here when all retries etc have failed and a queue has
         # given up for good.
-        log_exception("failed to process a queue")
+        acct_id = self.details.get('id','')
+        log_exception("failed to process a queue for account %r", acct_id)
         def_done.errback(Failure())
 
     @defer.inlineCallbacks
@@ -974,7 +979,8 @@ class IMAPAccount(base.AccountBase):
               break
             # some other bizarre error - just skip this batch and continue
             self.reportStatus(**failure_to_status(Failure()))
-            log_exception('failed to process an IMAP query request')
+            log_exception('failed to process an IMAP query request for account %r',
+                          self.details.get('id',''))
             # This was the queue seeding request; looping again to fetch a
             # queue item is likely to hang (as nothing else is in there)
             # There is no point doing a retry; this doesn't seem to be
