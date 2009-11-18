@@ -191,7 +191,20 @@ if (rd.appName == "inflow") {
 
           //No pref doc, so show the user the dialog.
           dojo.addOnLoad(function() {
-            var html = '<div class="notice"><input type="checkbox" checked> Metrics Enabled. <a href="https://wiki.mozilla.org/Raindrop/MetricsInfo" target="_blank">Learn More</a> <button>Close</button></div>';
+            var html = '<div class="notice"> \
+                        <div class="header"> \
+                          <div class="row"> \
+                            <span class="title">Welcome to the Raindrop Community!</span> \
+                            <span class="close"><button>Close</button></span> \
+                          </div> \
+                        </div> \
+                        <div class="message"> \
+                          <div class="row"> \
+                            <span class="content">Raindrop is design, developed, and tested through a constant process of community participation and we try to ensure everyone can participate by sharing anonymous survey information.  We respect you and your privacy, to learn more <a href="https://wiki.mozilla.org/Raindrop/Community/Metrics_Survey" target="_blank">click here</a></span> \
+                            <span class="action"><div><input name="metrics" type="checkbox" checked> Participating</div></span> \
+                          </div> \
+                        </div> \
+                        </div>';
             var node = dojo._toDom(html);
             inflow.addNotice(node);
 

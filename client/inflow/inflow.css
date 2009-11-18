@@ -141,7 +141,8 @@ body {
   max-width: 940px;
 }
 
-#notices .notice {
+#notices > .notice {
+  font-family: Helvetica, Arial, Sans-serif;
   padding: 7px;
   margin: 7px 0;
   border: 1px solid #0066dd;
@@ -150,19 +151,55 @@ body {
   color: HighlightText;
 }
 
-#notices .notice a {
-  color: HighlightText;
+#notices > .notice > .header,
+#notices > .notice > .message {
+  display: table;
+  width: 100%;
 }
 
-#notices .notice button {
+#notices > .notice > .header > .row,
+#notices > .notice > .message > .row{
+  display: table-row;
+}
+
+#notices > .notice > .header > .row > .title,
+#notices > .notice > .header > .row > .close,
+#notices > .notice > .message > .row > .content,
+#notices > .notice > .message > .row > .action {
+  display: table-cell;
+}
+
+#notices > .notice > .header > .row > .title {
+  font-weight: bold;
+  letter-spacing: 2px;
+}
+
+#notices > .notice > .header > .row > .close,
+#notices > .notice > .message > .row > .action {
+  text-align: right;
+}
+
+#notices > .notice > .header > .row > .close > button {
   padding: 0 3px;
-  float: right;
   font-weight: bold;
   background-color: HighlightText;
   -moz-border-radius: 3.5px;
   color: Highlight;
   text-transform: lowercase;
   cursor: pointer;
+}
+
+#notices > .notice > .message {
+  margin-top: 7px;
+}
+
+#notices > .notice > .message > .row > .content > a {
+  color: HighlightText;
+}
+
+#notices > .notice > .message > .row > .action {
+  vertical-align: bottom;
+  white-space: nowrap;
 }
 
 #content {
