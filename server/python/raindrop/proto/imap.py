@@ -142,7 +142,7 @@ class ImapClient(imap4.IMAP4Client):
 
   def _doLogin(self, *args, **kwargs):
     return self.login(self.account.details['username'].encode('imap4-utf-7'),
-                      self.account.details['password'].encode('imap4-utf-7'))
+                      self.account.details['password'])
 
   def xlist(self, reference, wildcard):
     # like 'list', but does XLIST.  Caller is expected to have checked the
