@@ -1,0 +1,173 @@
+Delivered-To: doesnotexist@example.com
+Received: by 10.115.51.7 with SMTP id d7cs232975wak;
+        Thu, 1 Oct 2009 11:43:44 -0700 (PDT)
+Received: by 10.101.5.34 with SMTP id h34mr1403790ani.150.1254422623436;
+        Thu, 01 Oct 2009 11:43:43 -0700 (PDT)
+Return-Path: <twitter-follow-doesnotexist=example.com@postmaster.twitter.com>
+Received: from mx007.twitter.com (mx007.twitter.com [128.121.146.143])
+        by mx.google.com with ESMTP id 35si831423vws.18.2009.10.01.11.43.41;
+        Thu, 01 Oct 2009 11:43:42 -0700 (PDT)
+Received-SPF: pass (google.com: domain of twitter-follow-doesnotexist=example.com@postmaster.twitter.com designates 128.121.146.143 as permitted sender) client-ip=128.121.146.143;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of twitter-follow-doesnotexist=example.com@postmaster.twitter.com designates 128.121.146.143 as permitted sender) smtp.mail=twitter-follow-doesnotexist=example.com@postmaster.twitter.com; dkim=pass header.i=@twitter.com
+Received: from twitter.com (localhost [127.0.0.1])
+	by mx007.twitter.com (Postfix) with ESMTP id 8C55974E8E5
+	for <doesnotexist@example.com>; Thu,  1 Oct 2009 18:43:41 +0000 (UTC)
+X-DKIM: Sendmail DKIM Filter v2.8.2 mx007.twitter.com 8C55974E8E5
+DKIM-Signature: v=1; a=rsa-sha1; c=simple/simple; d=twitter.com; s=dkim;
+	t=1254422621; i=@twitter.com; bh=luysiUWBVKYI/q26zDeOhsAT96A=;
+	h=Date:From:Reply-To:To:Message-Id:Subject:Mime-Version:
+	 Content-Type;
+	b=lfka+XkqhZ40SewUng0nm/W4LFbp59rX+HAfF+aG6DHSfvZdx4GoPFqoOjQPxWaWm
+	 BgdfcHT7NlDRW0NpS1cBhnbdqDNYOpuRVVpQGxD0KZZXhyXVLNRWM8jHyBLI3LFtYm
+	 kGFSj/egCT+1ZFXGxu9pK4MY8bRE5xY5ZrBOcYQ0=
+X-DomainKeys: Sendmail DomainKeys Filter v1.0.2 mx007.twitter.com 8C55974E8E5
+DomainKey-Signature: a=rsa-sha1; s=default; d=twitter.com; c=simple; q=dns;
+	b=oRmNZ2cWqzXbasOgVAAMDJJA7mLqyJUA+HfmkslU/C257c0TGc5X/sZPxFg1fMO8i
+	KwEqIff1m2BJv85zeJJdQ==
+Date: Thu, 1 Oct 2009 18:43:41 +0000
+From: Twitter <twitter-follow-doesnotexist=example.com@postmaster.twitter.com>
+Reply-To: noreply@postmaster.twitter.com
+To: doesnotexist@example.com
+Message-Id: <4ac4f85d89769_1de3156943569ffc176015a@mx007.twitter.com.tmail>
+Subject: Some Dude is now following you on Twitter!
+Mime-Version: 1.0
+Content-Type: multipart/alternative; boundary=mimepart_4ac4f85d8aba3_1de3156943569ffc17602f7
+X-Twittercreatedat: Thu Oct 01 18:43:41 +0000 2009
+X-Twitterrecipientid: 78972387
+X-Twitterrecipientscreenname: memyself
+X-Campaignid: twitter20080331162631
+X-Twitteremailtype: is_following
+Bounces-To: Twitter <twitter-follow-doesnotexist=example.com@postmaster.twitter.com>
+X-Twittersenderid: 24280271
+Errors-To: Twitter <twitter-follow-doesnotexist=example.com@postmaster.twitter.com>
+X-Twittersendername: Some Dude
+X-Twittersenderscreenname: somedude
+X-Twitterrecipientname: Me Myself
+
+
+--mimepart_4ac4f85d8aba3_1de3156943569ffc17602f7
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: Quoted-printable
+Content-Disposition: inline
+
+Hi, Me Myself (memyself).
+
+Some Dude (somedude) is now following your tweets on Twitter.
+
+Check out Some Dude's profile here:
+  http://twitter.com/somedude
+
+Some Dude may not appear in your follower list. Some Dude may have
+decided to stop following you, or the account may have been suspended
+for a Terms of Service violation.
+
+Best,
+Twitter
+
+--
+Turn off these emails at: http://twitter.com/account/notifications
+
+--mimepart_4ac4f85d8aba3_1de3156943569ffc17602f7
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: Quoted-printable
+Content-Disposition: inline
+
+<html>
+<body>
+  <style type=3D"text/css">
+  a { color: #0084B4}
+  a:hover { color: #215e88}
+  h1, h2 { margin: 0 0 16px 0; color: #000;}
+  h2 { font: 20px Georgia, serif; }
+  h3 { margin: 14px 0 4px 0;  color: #000; font: normal 18px Georgia, ser=
+if; line-height: 22px; }
+  p, ul { margin: 4px 0 15px 0; }
+  p { font:13px 'Lucida Grande', Lucida Grande, Helvetica, Arial, sans-se=
+rif; line-height: 18px; }
+  .user:after { content: "."; display: block; height: 0; clear: both; vis=
+ibility: hidden;   }
+  .user { {display: inline-block;}
+  </style>
+  <div style=3D"padding: 8px; background-color:#9AE4E8;background-image: =
+url(http://s.twimg.com/a/1254358647/images/bg.gif);background-repeat: no-=
+repeat;background-position: left top;background-attachment:fixed; -moz-bo=
+rder-radius:7px;-webkit-border-radius:7px;">
+    <div id=3D"mail-header" style=3D"padding: 8px; margin: 8px 0px;">
+      <a href=3D"http://twitter.com"><img src=3D"http://s.twimg.com/a/125=
+4358647/images/twitter_logo_header.png?src=3Dmail" style=3D"border: 0px;"=
+/></a>
+    </div>
+    <div style=3D"height: 10px; padding: 0; margin: 0">
+      <img src=3D"http://s.twimg.com/a/1254358647/images/arr2.gif" style=3D=
+"padding:0px;margin:2px 0px 0px 25px;">
+    </div>
+    <div id=3D"bubble">
+      <table width=3D"100%" style=3D"background-color:#fff; color: #222; =
+-moz-border-radius:5px;-webkit-border-radius:5px; *margin-top: -5px">
+        <tr><td width=3D"100%" style=3D"padding: 8px; margin: 8px;">
+          <h2 style=3D"margin-bottom:16px;">Hi, Me Myself.</h2>
+<p>
+<a href=3D"http://twitter.com/somedude?utm_source=3Dfollow&utm_campaign=3D=
+twitter20080331162631&utm_medium=3Demail">Some Dude (somedude)</a> is no=
+w following your tweets on Twitter. =
+
+</p>
+<p>
+A little information about Some Dude: </p>
+<div style=3D"margin: 8px 0 16px 0px;font: 13px 'Lucida Grande', Lucida G=
+rande, Helvetica, Arial, sans-serif;line-height: 18px; background: #f6f6f=
+6; border: 1px solid #eee; padding: 5px;-moz-border-radius:5px;-webkit-bo=
+rder-radius:5px;" class=3D"user">
+<table>
+  <tr>
+    <td valign=3D"top"><a href=3D"http://twitter.com/somedude?utm_source=3D=
+follow&utm_campaign=3Dtwitter20080331162631&utm_medium=3Demail" style=3D"=
+text-decoration:none"><img src=3D"http://a1.twimg.com/profile_images/9553=
+9718/Photo_7b_normal.jpg" width=3D"48px" height=3D"48px" style=3D"border:=
+ 1px solid #ccc;margin-right: 5px"/></a></td>
+    <td valign=3D"top">
+      <span style=3D"color: #777;font-size: 110%;font-style:italic;font-f=
+amily: Georgia, serif;">
+        <span style=3D"padding-left: 6px">78 followers</span><br/>
+        <span style=3D"padding-left: 6px">29 tweets</span><br/>
+        <span style=3D"padding-left: 6px">following 27 people</span>
+      </span>
+    </td>
+  </tr>
+</table>
+</div>
+
+<p style=3D"border-top: 1px solid rgb(238, 238, 238);font-family: 'Lucida=
+ Grande',Lucida Grande,Helvetica,Arial,sans-serif; font-style: normal;fon=
+t-variant: normal; font-weight: normal; font-size: 13px; font-size-adjust=
+: none;font-stretch: normal; line-height: 18px; margin-bottom: 0pt; paddi=
+ng-top: 13px;">
+<span style=3D"font-family: Georgia,serif; font-variant: normal; font-wei=
+ght: normal; font-size: 13px;line-height: normal; font-size-adjust: none;=
+ font-stretch: normal; font-style: italic;color: rgb(102, 102, 102);">The=
+ Twitter Team</span>  =
+
+<p style=3D"margin-top:5px;font-size:10px;">
+Turn off these emails at: <a href=3D"http://twitter.com/account/notificat=
+ions?utm_source=3Dfollow&utm_campaign=3Dtwitter20080331162631&utm_medium=3D=
+email">http://twitter.com/account/notifications</a>
+</p>
+
+</p>
+
+<p style=3D"margin-top:5px;font-size:10px;">
+Please do not reply to this message; it was sent from an unmonitored emai=
+l address.  This message is a service email related to your use of Twitte=
+r.  For general inquiries or to request support with your Twitter account=
+, please visit us at <a href=3D"http://twitter.com/help/">Twitter Support=
+</a>.
+</p>
+
+        </td></tr>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
+
+--mimepart_4ac4f85d8aba3_1de3156943569ffc17602f7--

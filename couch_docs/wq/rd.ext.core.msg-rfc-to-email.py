@@ -25,7 +25,7 @@
 # message/raw/rfc822
 
 from email import message_from_string
-from email.utils import unquote
+from email.utils import mktime_tz, parsedate_tz, unquote
 from email.header import decode_header
 import codecs
 import re
@@ -197,4 +197,15 @@ def handler(doc):
     # I need the binary attachment.
     content = open_schema_attachment(doc, "rfc822")
     items, attachments = doc_from_bytes(doc['_id'], doc['rd_key'], content)
+ 
+    # Get the timestamp for the message.   
+    if 'headers' in items and 'date' in items['headers']:
+        dval = items['headers']['date'][0]
+        if dval:
+            try:
+                items['timestamp'] = mktime_tz(parsedate_tz(dval))
+            except (ValueError, TypeError), exc:
+                logger.debug('Failed to parse date %r in doc %r: %s',
+                             dval, doc['_id'], exc)
+
     emit_schema('rd.msg.email', items, attachments=attachments)

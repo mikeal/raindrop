@@ -21,7 +21,7 @@
 # Contributor(s):
 #
 
-from email.utils import mktime_tz, parsedate_tz, parseaddr
+from email.utils import parseaddr
 from email._parseaddr import AddressList
 from email.message import Message
 
@@ -98,17 +98,8 @@ def handler(doc):
 
     if 'subject' in headers:
         ret['subject'] = headers['subject']
-    if 'date' in headers:
-        dval = headers['date']
-        if dval:
-            try:
-                ret['timestamp'] = mktime_tz(parsedate_tz(dval))
-            except (ValueError, TypeError), exc:
-                logger.debug('Failed to parse date %r in doc %r: %s',
-                             dval, doc['_id'], exc)
-                # later extensions will get upset if no attr exists
-                # XXX - is this still true?  We should fix those extensions!
-                ret['timestamp'] = 0
+    if 'timestamp' in doc:
+        ret['timestamp'] = doc['timestamp']
 
     # body handling
     if doc.get('multipart'):

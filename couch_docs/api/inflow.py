@@ -276,42 +276,6 @@ class ConversationAPI(API):
         log("conv_id: %s", conv_id)
         return self._fetch_conversations(db, [conv_id]);
 
-    # The 'home'end-point.
-    def home(self, req):
-        self.requires_get(req)
-        args = self.get_args(req, limit=30)
-        db = RDCouchDB(req)
-
-        result = db.megaview(startkey=["rd.msg.recip-target", "target-timestamp", ['direct', {}]],
-                             endkey=["rd.msg.recip-target", "target-timestamp", ['direct']],
-                             descending=True,
-                             reduce=False,
-                             include_docs=False,
-                             limit=args['limit'])
-
-        # note the results are already sorted by descending timestamp
-        # Filter out the items that are not "fresh".
-        all_recips = self._filter_fresh(db,
-                                        [row['value']['rd_key'] for row in result['rows']])
-        # The json has the rd_key for messages in timestamp order;
-        # now we need to fetch the 'rd.msg.conversation' schema to fetch the
-        # convo ID.
-        keys = [['rd.core.content', 'key-schema_id', [rdkey, 'rd.msg.conversation']]
-                for rdkey in all_recips]
-        result = db.megaview(keys=keys,
-                             reduce=False,
-                             include_docs=True)
-        conv_set = set()
-        for row in result['rows']:
-            conv_set.add(row['doc']['conversation_id'])
-        conv_ids = list(conv_set)
-
-        # now fetch the conversation objects.
-        convos = self._fetch_conversations(db, conv_ids)
-        # sort based on timestamp on latest message in convo.
-        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
-        return convos
-
     # Fetch all conversations which have the specified messages in them.
     def with_messages(self, req):
         self.requires_get_or_post(req)
@@ -418,6 +382,45 @@ class ConversationAPI(API):
         convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
         return convos
 
+    def _multi_target(self, req, targets):
+        self.requires_get(req)
+        args = self.get_args(req, limit=30)
+        db = RDCouchDB(req)
+
+        all_recips = []
+        for target in targets:
+            result = db.megaview(startkey=["rd.msg.recip-target", "target-timestamp", [target, {}]],
+                             endkey=["rd.msg.recip-target", "target-timestamp", [target]],
+                             descending=True,
+                             reduce=False,
+                             include_docs=False,
+                             limit=args['limit'])
+
+            # note the results are already sorted by descending timestamp
+            # Filter out the items that are not "fresh".
+            all_recips.extend(self._filter_fresh(db,
+                                            [row['value']['rd_key'] for row in result['rows']]))
+
+        # The json has the rd_key for messages in timestamp order;
+        # now we need to fetch the 'rd.msg.conversation' schema to fetch the
+        # convo ID.
+        keys = [['rd.core.content', 'key-schema_id', [rdkey, 'rd.msg.conversation']]
+                for rdkey in all_recips]
+        result = db.megaview(keys=keys,
+                             reduce=False,
+                             include_docs=True)
+        conv_set = set()
+        for row in result['rows']:
+            conv_set.add(row['doc']['conversation_id'])
+        conv_ids = list(conv_set)
+
+        # now fetch the conversation objects.
+        convos = self._fetch_conversations(db, conv_ids)
+        # sort based on timestamp on latest message in convo.
+        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
+        return convos
+
+
     # The 'simpler' end-points based around self._query()
     def direct(self, req):
         return self._query(req,
@@ -437,6 +440,11 @@ class ConversationAPI(API):
                            endkey=["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
                            )
 
+    def impersonal(self, req):
+        return self._multi_target(req, ['broadcast', 'notification'])
+
+    def personal(self, req):
+        return self._multi_target(req, ['direct', 'group'])
 
 class ContactAPI(API):
     def _fetch_identies_for_contact(self, db, cid):

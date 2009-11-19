@@ -52,8 +52,9 @@ def handler(doc):
     preview_body = preview_body[:140] + (preview_body[140:] and '...') # cute trick
     ret['body_preview'] = preview_body
     ret['body'] = body_text
-    timestamp = doc['updated_parsed']
-    ret['timestamp'] = timestamp
+    timestamp = 0
+    if 'timestamp' in doc:
+        ret['timestamp'] = timestamp = doc['timestamp']
 
     emit_schema('rd.msg.body', ret)
     # and also emit a recipient-target - it probably should be its own

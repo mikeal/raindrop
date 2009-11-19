@@ -373,7 +373,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
     //summary: does the actual display of the home view.
     console.log("_renderHome start");
     rd.api({
-      url: 'inflow/conversations/broadcast',
+      url: 'inflow/conversations/impersonal',
       limit: this.messageLimit
     }).ok(this, function(conversations) {
       console.log("_renderHome conversations received");

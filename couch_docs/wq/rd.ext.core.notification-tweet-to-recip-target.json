@@ -1,0 +1,12 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.notification"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "category": "extender",
+        "confidence": 1,
+        "info": "Sets target=notification on rd.msg.recip-target schemas for twitter notifications"
+    }
+  }
+}
