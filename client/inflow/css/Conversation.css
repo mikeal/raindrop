@@ -38,6 +38,10 @@
   background-color: #ffffd9;
 }
 
+.rdwConversation.active {
+
+}
+
 .rdwConversation.unread > .header > .subject {
   padding-left: 22px;
   background-image: url("../i/new/rd_new_icon.png");
@@ -54,25 +58,40 @@
 }
 
 .rdwConversation > .header > .type {
-  display: inline-block;
   float: right;
-  padding: 0 0 0 21px;
   margin: 4px 0 0 0;
   font-family: Droid-serif, Georgia, Times, serif;
   font-size: 10px;
+}
+
+.rdwConversation > .header > .type.direct {
   background-image: url("../i/new/rd_inflow_directmessage.png");
   background-repeat: no-repeat;
   background-position: left;
+  padding: 0 0 0 21px;
+}
+
+.rdwConversation > .header > .type.group {
+  background-image: url("../i/new/rd_inflow_groupmessage.png");
+  background-repeat: no-repeat;
+  background-position: left;
+  padding: 0 0 0 17px;
 }
 
 .rdwConversation > .header > .subject {
   margin: 3px 0 0 0;
-  display: table;
+  display: inline-block;
   font-size: 13px;
   font-weight: bold;
   color: #FF5959;
   text-decoration: none;
+  outline: none;
 }
+
+.rdwConversation > .header > .subject:hover {
+  text-decoration: underline;
+}
+
 
 .rdwConversation > .messages {
   width: 610px;
@@ -106,15 +125,28 @@
 
 .actions a.reply,
 .actions a.fwd {
-  font-family: Droid-sans, Helvetica, Arial, Sans-serif;
+  font-family: droid-serif, georgia, times, serif;
   font-style: normal;
   float: right;
   color: #000;
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  background-color: #e6e6e6;
+  padding: 0px 4px;
   border: none;
-  text-decoration: underline;
-  font-size: 11.5px;
+  font-size: 10px;
+  text-decoration: none;
+  border: 1px solid #ccc;
 }
 
+.actions a.reply:hover,
+.actions a.fwd:hover {
+  text-decoration: none;
+  background-color: #ff5959;
+  color: white;
+  border: 1px solid transparent;
+}
+  
 .rdwConversation > .actions a:first-child {
   padding: 0 4px 0 0;
 }

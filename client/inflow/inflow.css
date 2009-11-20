@@ -109,31 +109,45 @@ body {
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
   font-size: 11.5px;
   line-height: 16px;
+  margin-top: 55px;
 }
 
 #top {
   font-family: droid-serif, georgia, times, serif;
-  width: 940px;
-  margin: 16px 10px 9px 10px;
+  width: 100%;
+  padding: 16px 10px 9px 10px;
+  -moz-box-shadow: 0 0 10px #CCCCCC;
+  -webkit-box-shadow: 0 0 10px #CCCCCC;
+  background-color: white;
+  position: fixed;
+  top: 0;
+  z-index: 10000;
 }
 
 #top a {
-  color: #1a1a1a;
+  color: #000;
+  background-color: #e6e6e6;
+  padding: 2px 4px;
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
   text-decoration: none;
 }
 
 #top a:hover {
-  text-decoration: underline;
+  color: #FFF;
+  background-color: #ff5959;
 }
 
 #logo {
-  position: fixed;
+  position: absolute;
   height: 16px;
-  width: 16px;
-  background-image: url("i/logo.png");
+  width: 82px;
+  background-image: url("i/new/rd_logo.png");
+  background-repeat: no-repeat;
+  background-position: right;
   z-index: 101;
-  top: 15px;
-  right: 10px;
+  top: 18px;
+  left: 871px;
 }
 
 #notices {

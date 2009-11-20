@@ -23,7 +23,8 @@
 
 /* CSS for the various default Widgets we display */
 
-.WidgetBox {
+.WidgetBox,
+.rdwWidgets.start .rdwConversation {
   width: 300px;
   margin: 10px;
   float: left;
@@ -80,8 +81,12 @@
 }
 
 .rdwConversationTwitterTimeLine .rdwMessage > .message > .content a {
-  color: #1a1a1a;
+  color: #ff5959;
   text-decoration: none;
+}
+
+.rdwConversationTwitterTimeLine .rdwMessage > .message > .content a:hover {
+  text-decoration: underline;
 }
 
 /* ### MAILING LIST ### */
@@ -107,7 +112,48 @@
   padding: 0 0 0 16px;
   background-image: url("../i/new/rd_widget_rss.png");
   background-repeat: no-repeat;
-  background-position: left;
+  background-position: left 2px;
   min-height: 16px;
   display: block;
+}
+
+/* ### BROADCASTS ### */
+
+.rdwWidgets.start .rdwConversation {
+  background-color: #ffdede;
+}
+
+.rdwWidgets.start .rdwConversation > .messages {
+  padding: 0;
+  width: 100%;
+}
+
+.rdwWidgets.start .rdwConversation > .actions {
+  display: none;
+}
+
+.rdwWidgets.start .rdwConversation > .header {
+  padding: 0;
+}
+
+.rdwWidgets.start .rdwConversation > .header > .type {
+  float: none;
+  margin: 0;
+  padding: 0 0 0 18px;
+  background-image: url("../i/new/rd_widget_broadcast.png");
+  background-repeat: no-repeat;
+  background-position: left 3px;
+}
+
+.rdwWidgets.start .rdwConversation > .header > .subject {
+  font-size: 11.5px;
+  margin: 6px 0 0 0;
+}
+
+.rdwWidgets.start .rdwConversation > .header > .subject:hover {
+  text-decoration: underline;
+}
+
+.rdwWidgets.start .rdwMessage > .message > .header {
+  margin: 0;
 }

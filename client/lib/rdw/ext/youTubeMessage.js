@@ -63,7 +63,8 @@ rd.applyExtension("rdw.ext.youTubeMessage", "rdw.Message", {
       }
 
       var youTubeImgTemplateString = '<div class="thumbnail"><a href="${url}">' +
-                                     '<img src="${thumb}" class="thumbnail"/></a></div>';
+                                     '<img src="${thumb}" class="thumbnail"/></a>' +
+                                     '<div class="play"></div></div>';
 
       var img = dojo.string.substitute(youTubeImgTemplateString, {
         url: yt["media:player"]["url"],

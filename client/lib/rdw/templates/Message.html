@@ -1,14 +1,15 @@
 <div class="rdwMessage ${type}" tabindex="${tabIndex}" dojoAttachEvent="onclick: onClick">
-  <div class="message">
-    <div class="header">
-      <span class="author">
-        <a dojoAttachPoint="fromNode" href="javascript:void(0);" class="from fn nickname">${fromName}</a>
-      </span>
-      <span class="published">
-        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
-        <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
-      </span>
-    </div>
+  <div class="total">1 of 2</div>
+    <div class="message">
+      <div class="header">
+        <span class="author">
+          <a dojoAttachPoint="fromNode" href="javascript:void(0);" class="from fn nickname">${fromName}</a>
+        </span>
+        <span class="published">
+          <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
+          <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
+        </span>
+      </div>
     <div class="content">${message}</div>
   </div>
 </div>

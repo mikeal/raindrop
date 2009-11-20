@@ -23,10 +23,13 @@
 
 .rdwLoading {
   overflow:hidden;
-  display: inline-block;
+  display: block;
   text-indent: -40em;
   width: 16px;
   height: 16px;
   background-image: url("../i/ajax-loader.gif");
   background-color:transparent;
+  position: fixed;
+  right: 10px;
+  top: 16px;
 }

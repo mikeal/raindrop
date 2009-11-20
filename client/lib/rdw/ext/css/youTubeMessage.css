@@ -24,27 +24,46 @@
 .rdwMessage > .message > .attachments > .youTube {
   min-width: 290px;
   margin: 8px 0 0 0;
-  padding: 8px 0 0 0;
+  padding: 16px 0 0 0;
   font-size: 10px;
-  border-top: 1px dotted #e6e6e6;
+  background-image: url("../../../../inflow/i/new/rd_links_icon.png");
+  background-repeat: no-repeat;
+  background-position: left 0px;
 }
 
 .rdwMessage > .message > .attachments > .youTube > .thumbnail {
   display: inline-block;
-  height: 92px;
-  width: 122px;
+  height: 75px;
+  width: 100px;
+  position: relative;
 }
 
 .rdwMessage > .message > .attachments > .youTube > .thumbnail > a > img {
-  max-width: 120px;
-  max-height: 90px;
-  border: 1px solid transparent;
+  max-width: 100px;
+  max-height: 75px;
+  opacity: 0.75;
 }
+
+.rdwMessage > .message > .attachments > .youTube > .thumbnail > a > img:hover {
+  opacity: 1;
+}
+
+.rdwMessage > .message > .attachments > .youTube > .thumbnail .play { 
+  width: 22px;
+  height: 13px;
+  display: inline-block;
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background-image: url("../../../../inflow/i/new/rd_play_icon.png");
+  z-index: 1;
+  cursor: pointer;
+} 
 
 .rdwMessage > .message > .attachments > .youTube > .info {
   display: inline-block;
   vertical-align: top;
-  margin-left: 0.5em;
+  margin-left: 5px;
 }
 
 .rdwMessage > .message > .attachments > .youTube > .info > a.title {
