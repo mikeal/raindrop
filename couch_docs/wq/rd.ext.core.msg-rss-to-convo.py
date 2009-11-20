@@ -28,8 +28,5 @@ def handler(doc):
     if not 'link' in doc:
         return
 
-    items = {
-        'conversation_id': doc['link']
-    }
-
-    emit_schema('rd.msg.conversation', items, rd_key=doc['rd_key'])
+    conv_id = ['url', doc['link']]
+    emit_convo_relations([doc['rd_key']], conv_id)

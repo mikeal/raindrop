@@ -30,6 +30,13 @@ from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 
+try:
+    import json
+except ImportError:
+    import simplejson as json
+import base64
+    
+
 import extenv
 
 import logging
@@ -41,6 +48,11 @@ def split_rc_docid(doc_id):
         raise ValueError("Not a raindrop content docid")
     rt, rdkey, schema = doc_id.split("!", 3)
     return rt, rdkey, schema
+
+def decode_rdkey(encoded_key):
+    prefix, b64part = encoded_key.split(".", 1)
+    json_str = base64.decodestring(b64part)
+    return [prefix, json.loads(json_str)]
 
 class Extension(object):
     SMART = "smart" # a "smart" extension - handles dependencies etc itself.
@@ -434,6 +446,36 @@ class DocsBySeqIteratorFactory(object):
         assert self.rows, "not initialized"
         return do_iter(self.rows)
 
+    @defer.inlineCallbacks
+    def make_dep_iter_factory(self, doc_model):
+        # find any documents which declare they depend on the documents
+        # in our change list, then lookup the "source" of that doc
+        # (ie, the one that "normally" triggers that doc to re-run)
+        # and return that source.
+        keys = []
+        for src_id, src_rev, _, seq in self.make_iter():
+            _, enc_rd_key, schema_id = split_rc_docid(src_id)
+            rd_key = decode_rdkey(enc_rd_key)
+            keys.append(["rd.core.content", "dep", [rd_key, schema_id]])
+        results = yield doc_model.open_view(keys=keys, reduce=False)
+        rows = results['rows']
+        # Make a set to remove any dups.
+        result_seq = set()
+        for row in rows:
+            src_id = row['value']['rd_source'][0]
+            result_seq.add(src_id)
+
+        class IterFact:
+            def __init__(self, src_ids):
+                self.src_ids = src_ids
+            def make_iter(self):
+                def do_iter(src_ids):
+                    for src_id in src_ids:
+                        yield src_id, None, None, None
+                return do_iter(self.src_ids)
+
+        defer.returnValue(IterFact(list(result_seq)))
+
 
 class IncomingItemProcessor(object):
     """Starts a message pipeline at the 'current' sequence number - then all
@@ -509,6 +551,10 @@ class IncomingItemProcessor(object):
                     break
                 for runner in self.runners:
                     ds.append(runner.process_queue(iter.make_iter()))
+                # and any deps.
+                dep_iter_fact = yield iter.make_dep_iter_factory(doc_model)
+                for runner in self.runners:
+                    ds.append(runner.process_queue(dep_iter_fact.make_iter()))
                 _ = yield defer.DeferredList(ds)
                 self.current_seq = iter.current_seq
             took = time.clock() - start
@@ -893,7 +939,7 @@ class ExtensionProcessor(object):
         # it is quite possible that the doc was deleted since we read that
         # view.  It could even have been updated - so if its not the exact
         # revision we need we just skip it - it will reappear later...
-        if src_doc is None or src_doc['_rev'] != src_rev:
+        if src_doc is None or (src_rev != None and src_doc['_rev'] != src_rev):
             logger.debug("skipping document %(_id)r - it's changed since we read the queue",
                          src_doc)
             defer.returnValue((None, None))

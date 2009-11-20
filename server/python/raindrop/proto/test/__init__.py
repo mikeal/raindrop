@@ -83,11 +83,11 @@ class TestMessageProvider(object):
     def check_test_message(self, i):
         logger.debug("seeing if message with ID %d exists", i)
         rd_key = ['email', 'TestMessage%d' % i]
-        return self.doc_model.open_schemas(rd_key, "rd.msg.test.raw"
+        return self.doc_model.open_schemas([(rd_key, "rd.msg.test.raw")]
                         ).addCallback(self.process_test_message, i)
 
     def process_test_message(self, schemas, doc_num):
-        if not schemas:
+        if schemas[0] is None:
             # make an attachment for testing purposes.
             attachments = {"raw-attach" : {"content_type" : 'application/octet-stream',
                                         "data" : 'test\0blob'

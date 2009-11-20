@@ -113,6 +113,12 @@ function(doc) {
         var this_src = schema_items.schema === null ? doc : schema_items.schema;
         emit_fields(doc, this_src, si_row_val)
       }
+      // Emit any extra dependencies
+      if (schema_item.rd_deps) {
+        for (var i=0; i<schema_item.rd_deps.length; i++) {
+          emit(['rd.core.content', 'dep', schema_item.rd_deps[i]], si_row_val);
+        }
+      }
     }
 
     // If this schema doesn't want/need values indexed, or we have already

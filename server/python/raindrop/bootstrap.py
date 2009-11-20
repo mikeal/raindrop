@@ -515,9 +515,8 @@ def check_accounts(whateva, config=None):
         logger.debug("Checking account '%s'", acct_id)
         rd_key = ['raindrop-account', acct_id]
 
-        infos = yield dm.open_schemas(rd_key, 'rd.account')
-
-        assert len(infos) in [0, 1]
+        infos = yield dm.open_schemas([(rd_key, 'rd.account')])
+        assert len(infos) == 1
         acct_info = acct_info.copy()
         try:
             del acct_info['password']
@@ -537,8 +536,8 @@ def check_accounts(whateva, config=None):
                     'rd_schema_id': 'rd.account',
                     'rd_ext_id': 'raindrop.core',
                     'items': acct_info}
-        if len(infos)==1:
-            existing = infos[0]
+        existing = infos[0]
+        if existing is not None:
             # See if the items are identical, and skip if they are.
             for name, value in acct_info.iteritems():
                 if existing.get(name)!=value:

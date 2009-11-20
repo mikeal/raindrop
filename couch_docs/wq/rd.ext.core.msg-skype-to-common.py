@@ -34,6 +34,6 @@ def handler(doc):
             'timestamp': doc['skype_timestamp'], # skype's works ok here?
             }
     emit_schema('rd.msg.body', bdoc)
-    # and a conversation schema
-    cdoc = {'conversation_id': doc['skype_chatname']}
-    emit_schema('rd.msg.conversation', cdoc)
+    # and tell the framework about the conversation
+    cid = ['skype', doc['skype_chatname']]
+    emit_convo_relations([doc['rd_key']], cid)

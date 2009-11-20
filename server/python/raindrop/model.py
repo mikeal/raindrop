@@ -61,6 +61,8 @@ megaview_schemas_expandable_values = {
     'rd.msg.body' : ['to', 'to_display', 'cc', 'cc_display'],
     'rd.account' : ['identities'],
     'rd.ext.api' : ['endpoints'],
+    'rd.conv.messages' : ['messages'],
+    'rd.conv.summary' : ['messages', 'recent', 'identities', 'target-timestamp'],
 }
 # Ditto - info which should come from the schema-defn itself - a list of
 # schemas that don't need values emitted, just the keys etc.
@@ -419,6 +421,8 @@ class DocumentModel(object):
                             item['rd_schema_id'], doc['rd_schema_provider'],
                             item['rd_schema_provider'])
             doc['rd_schema_provider'] = item['rd_schema_provider']
+        if 'rd_deps' in item:
+            si[ext_id]['rd_deps'] = item['rd_deps']
         self._aggregate_doc(doc)
 
     @defer.inlineCallbacks
@@ -484,23 +488,12 @@ class DocumentModel(object):
         logger.debug("create_schema_items made %r", updated_docs)
         defer.returnValue(updated_docs)
 
-    @defer.inlineCallbacks
-    def open_schemas(self, rd_key, schema_id):
-        key_type, key_val = rd_key
-        enc_key_val = encode_provider_id(json.dumps(key_val))
-        key_part = "%s.%s" % (key_type, enc_key_val)
-        sk = "rc!" + key_part + "!"
-        ek = sk[:-1] + '#' # '#' sorts later than '!'
-
-        ret = []
-        result = yield self.db.listDoc(startkey=sk,
-                                       endkey=ek,
-                                       include_docs=True)
-        for r in result['rows']:
-            _, _, sch_id = r['id'].split('!', 3)
-            if sch_id == schema_id:
-                ret.append(r['doc'])
-        defer.returnValue(ret)
+    def open_schemas(self, wanted):
+        dids = []
+        for (rd_key, schema_id) in wanted:
+            temp_si = {'rd_key' : rd_key, 'rd_schema_id': schema_id}
+            dids.append(self.get_doc_id_for_schema_item(temp_si))
+        return self.open_documents_by_id(dids)
 
     def _prepare_attachments(self, docs):
         # called internally when creating a batch of documents. Returns a list
