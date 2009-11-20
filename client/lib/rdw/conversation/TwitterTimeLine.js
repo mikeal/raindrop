@@ -30,8 +30,13 @@ dojo.require("rdw.Conversation");
  */
 dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
   templateString: '<div class="WidgetBox rdwConversationTwitterTimeLine"> \
-                    <div dojoAttachPoint="nameNode" class="title">Twitter</div> \
-                    <div class="tweetList" dojoAttachPoint="containerNode"></div> \
+                     <div dojoAttachPoint="nameNode" class="title">Twitter</div> \
+                     <div class="tweetList" dojoAttachPoint="containerNode"></div> \
+                     <div class="actions"> \
+                       <div class="viewAll">view all</div> \
+                       <div class="noteCount" dojoAttachPoint="noteCountNode"></div> \
+                       <div class="broadcastCount" dojoAttachPoint="broadcastCountNode"></div> \
+                     </div> \
                    </div>',
 
   /**
@@ -54,6 +59,19 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
   },
 
   /**
+   * storage for notification messages. An array.
+   */
+  noteMsgs: null,
+
+  /**
+   * Widget lifecycle method, called before template is generated.
+   */
+  postMixInProperties: function() {
+    this.inherited("postMixInProperties", arguments);
+    this.noteMsgs = [];
+  },
+
+  /**
    * Determines if TwitterTimeLine can support this conversation.
    *
    * @param conversation {object} the conversation API object.
@@ -62,7 +80,37 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
     var msg = conversation.messages[0];
     var recip = msg.schemas["rd.msg.recip-target"];
     var keyType = msg.schemas["rd.msg.body"].rd_key[0];
-    return keyType == "tweet" && recip && recip.target == "broadcast";
+    var notification = msg.schemas["rd.msg.notification"];
+    var notifyType = notification && notification.type;
+  
+    return (keyType == "tweet" && recip && recip.target == "broadcast") || notifyType == "twitter";
+  },
+
+
+  /**
+   * Adds a message to this group.
+   *
+   * @param conversation {object} the conversation for this widget.
+   */
+  addConversation: function(conversation) {
+    if (conversation) {
+      this.conversation = conversation;
+    }
+
+    var msg = this.conversation.messages[0];
+    if (msg.schemas["rd.msg.notification"]) {
+      this.noteMsgs.push(msg);
+    } else {
+      //A regular broadcast message. Pull the messages out of the conversation.
+      var messages = conversation.messages;
+      if (messages && messages.length) {
+        this.msgs.push.apply(this.msgs, conversation.messages);
+      }
+    }
+
+    if (this._displayed) {
+      this.display();
+    }
   },
 
   /**
@@ -71,9 +119,17 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
   display: function() {
     this.inherited("display", arguments);
 
-    //Update total count.
-    rd.escapeHtml(dojo.string.substitute(this.i18n.poundCount, {
-      count: this.msgs.length
-    }), this.countNode, "only");
+    //Update the notification and broadcast counts.
+    this._updateCount(this.noteCountNode, this.noteMsgs.length);
+    this._updateCount(this.broadcastCountNode, this.msgs.length);
+  },
+
+  _updateCount: function(node, count) {
+    if (count) {
+      node.innerHTML = count;
+      node.style.disply = "";
+    } else {
+      node.style.disply = "none";
+    }
   }
 });

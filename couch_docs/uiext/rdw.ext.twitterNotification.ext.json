@@ -1,9 +1,0 @@
-{
-  "schemas" : {
-    "rd.ext.uiext" : {
-      "exts": {
-        "rdw.Conversations": "rdw.ext.twitterNotification.ext"
-      }
-    }
-  }
-}
