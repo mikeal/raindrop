@@ -39,11 +39,13 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
   //be sure to always set it on the instance.
   conversations: [],
 
-  //The max number of messages to fetch from conversation APIs.
-  //Note this is number of messages that match a criteria --
-  //more messages might show up if they are part of the conversations
-  //for the messages that match the criteria.
-  messageLimit: 30,
+  //The max number of conversations to fetch from the API.  Each conversation
+  // will have a maxiumum of messageLimit messages returned.
+  conversationLimit: 30,
+
+  //The max number of messages to fetch from each conversation using the
+  // conversation APIs.
+  messageLimit: 3,
 
   //The widget to use to show a full conversation.
   fullConversationCtorName: "rdw.conversation.FullConversation",
@@ -749,7 +751,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     console.log("_renderHome start");
     rd.api({
       url: 'inflow/conversations/personal',
-      limit: this.messageLimit
+      limit: this.conversationLimit,
+      message_limit: this.messageLimit
     }).ok(this, function(conversations) {
       console.log("_renderHome conversations received");
        //The home view groups messages by type. So, for each message in each conversation,
@@ -874,7 +877,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //summary: responds to rd-protocol-direct topic.
     rd.api({
       url: 'inflow/conversations/direct',
-      limit: this.messageLimit
+      limit: this.conversationLimit,
+      message_limit: this.messageLimit
     })
     .ok(dojo.hitch(this, "updateConversations", "summary"));
   },
@@ -883,7 +887,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //summary: responds to rd-protocol-group topic.
     rd.api({
       url: 'inflow/conversations/group',
-      limit: this.messageLimit
+      limit: this.conversationLimit,
+      message_limit: this.conversationLimit
     }).ok(dojo.hitch(this, "updateConversations", "summary"));
   },
 
@@ -895,19 +900,20 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       locationId = locationId.split(",");
     }
 
-    rd.conversation.location(locationId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+    rd.conversation.location(locationId, this.conversationLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   starred: function() {
     //summary: responds to rd-protocol-starred topic.
-    rd.conversation.starred(this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+    rd.conversation.starred(this.conversationLimit, dojo.hitch(this, "updateConversations", "summary"));
   },
 
   sent: function() {
     //summary: responds to rd-protocol-sent topic.
     rd.api({
       url: "inflow/conversations/identities",
-      limit: this.messageLimit
+      limit: this.conversationLimit,
+      message_limit: this.messageLimit
     })
     .ok(dojo.hitch(this, "updateConversations", "summary"));
   },

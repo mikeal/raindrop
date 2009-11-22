@@ -180,7 +180,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Conversations", {
 
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
-      rd.conversation.mailingList(listId, this.messageLimit, dojo.hitch(this, "updateConversations", "summary"));
+      rd.conversation.mailingList(listId, this.conversationLimit, dojo.hitch(this, "updateConversations", "summary"));
     }
   }
 });

@@ -158,6 +158,7 @@ rd.api.prototype = {
    */
   _couchDbSafeProps: {
     "id": 1, //technically not view compatible, but desirable for our server API
+    "message_limit": 1, // also not part of views, but part of our API.
     "key": 1,
     "keys": 1,
     "startkey": 1,
