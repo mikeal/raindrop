@@ -98,6 +98,16 @@ class CouchDB:
         self.maybeThrowError(resp)
         return json.load(resp);
 
+    # Args here are different than js - pythonic makes more sense...
+    def allDocs(self, keys, **options):
+        assert keys, "you really don't want all the docs!"
+        uri = self.uri + "_all_docs" + self.encodeOptions(options)
+        resp = self.request("POST", uri,
+                            headers={"Content-Type": "application/json"},
+                            body=json.dumps({'keys':keys}))
+        self.maybeThrowError(resp)
+        return json.load(resp);
+
     # Convert a options object to an url query string.
     # ex: {key:'value',key2:'value2'} becomes '?key="value"&key2="value2"'
     def encodeOptions(self, options):
@@ -122,7 +132,16 @@ api_globals['log'] = log
 # dict or set.  For now, tuple does exactly that (but may not later if we
 # find rd_keys with subitems as lists)
 # javascript would do something like ",".join(key_val);
-hashable_key = tuple
+def hashable_key(key):
+    # turn a list, possibly itself holding lists, into something immutable.
+    ret = []
+    for item in key:
+        if isinstance(item, list):
+            ret.append(hashable_key(item))
+        else:
+            ret.append(item)
+    return tuple(ret)
+
 api_globals['hashable_key'] = hashable_key
 
 # -- raindrop specific APIs
