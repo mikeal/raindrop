@@ -405,7 +405,8 @@ class DocsBySeqIteratorFactory(object):
         self.rows = None
 
     @defer.inlineCallbacks
-    def initialize(self, doc_model, start_seq, limit=2000, stop_seq=None):
+    def initialize(self, doc_model, start_seq, limit=2000, stop_seq=None,
+                   include_deps=False):
         if stop_seq is not None and start_seq >= stop_seq:
             defer.returnValue(False)
 
@@ -415,15 +416,42 @@ class DocsBySeqIteratorFactory(object):
         result = yield doc_model.db.listDocsBySeq(limit=limit,
                                                   startkey=start_seq)
         self.rows = result['rows']
+        if not self.rows:
+            defer.returnValue(False) # nothing to do.
+
+        self.dep_rows = []
+        if include_deps:
+            # find any documents which declare they depend on the documents
+            # in the list, then lookup the "source" of that doc
+            # (ie, the one that "normally" triggers that doc to re-run)
+            # and return that source.
+            all_ids = set()
+            keys = []
+            for row in self.rows:
+                src_id = row['id']
+                all_ids.add(src_id)
+                _, enc_rd_key, schema_id = split_rc_docid(src_id)
+                rd_key = decode_rdkey(enc_rd_key)
+                keys.append(["rd.core.content", "dep", [rd_key, schema_id]])
+            results = yield doc_model.open_view(keys=keys, reduce=False)
+            rows = results['rows']
+            # Find all unique IDs.
+            result_seq = set()
+            for row in rows:
+                src_id = row['value']['rd_source'][0]
+                if src_id not in all_ids:
+                    self.dep_rows.append(src_id)
+                    all_ids.add(src_id)
+
         # Return True if this iterator has anything to do...
-        defer.returnValue(len(self.rows)!=0)
+        defer.returnValue(True)
 
     def make_iter(self):
         """Make a new iterator over the rows"""
-        def do_iter(rows):
+        def do_iter():
             mutter = lambda *args: None # might be useful one day for debugging...
             # Find the next row this queue can use.
-            for row in rows:
+            for row in self.rows:
                 # XXX - current_seq will be whatever the last iterator consumed.
                 seq = self.current_seq = row['key']
                 if self.stop_seq is not None and seq >= self.stop_seq:
@@ -443,38 +471,12 @@ class DocsBySeqIteratorFactory(object):
                 src_rev = row['value']['rev']
                 yield src_id, src_rev, None, seq
 
+            # and the 'dep' rows.
+            for src_id in self.dep_rows:
+                yield src_id, None, None, None
+
         assert self.rows, "not initialized"
-        return do_iter(self.rows)
-
-    @defer.inlineCallbacks
-    def make_dep_iter_factory(self, doc_model):
-        # find any documents which declare they depend on the documents
-        # in our change list, then lookup the "source" of that doc
-        # (ie, the one that "normally" triggers that doc to re-run)
-        # and return that source.
-        keys = []
-        for src_id, src_rev, _, seq in self.make_iter():
-            _, enc_rd_key, schema_id = split_rc_docid(src_id)
-            rd_key = decode_rdkey(enc_rd_key)
-            keys.append(["rd.core.content", "dep", [rd_key, schema_id]])
-        results = yield doc_model.open_view(keys=keys, reduce=False)
-        rows = results['rows']
-        # Make a set to remove any dups.
-        result_seq = set()
-        for row in rows:
-            src_id = row['value']['rd_source'][0]
-            result_seq.add(src_id)
-
-        class IterFact:
-            def __init__(self, src_ids):
-                self.src_ids = src_ids
-            def make_iter(self):
-                def do_iter(src_ids):
-                    for src_id in src_ids:
-                        yield src_id, None, None, None
-                return do_iter(self.src_ids)
-
-        defer.returnValue(IterFact(list(result_seq)))
+        return do_iter()
 
 
 class IncomingItemProcessor(object):
@@ -546,16 +548,13 @@ class IncomingItemProcessor(object):
             while not self.stopping:
                 ds = []
                 iter = DocsBySeqIteratorFactory()
-                more = yield iter.initialize(doc_model, start_seq=self.current_seq)
+                more = yield iter.initialize(doc_model, start_seq=self.current_seq,
+                                             include_deps=True)
                 if not more:
                     break
                 for runner in self.runners:
                     ds.append(runner.process_queue(iter.make_iter()))
-                # and any deps.
-                dep_iter_fact = yield iter.make_dep_iter_factory(doc_model)
-                for runner in self.runners:
-                    ds.append(runner.process_queue(dep_iter_fact.make_iter()))
-                _ = yield defer.DeferredList(ds)
+                _ = yield defer.DeferredList(ds)                    
                 self.current_seq = iter.current_seq
             took = time.clock() - start
             logger.debug("incoming queue complete at seq %d (%0.2f secs)",
