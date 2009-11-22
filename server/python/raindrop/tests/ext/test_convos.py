@@ -2,11 +2,6 @@ from twisted.internet import defer, reactor
 
 from raindrop.tests import TestCaseWithCorpus
 
-class ConvoTestCase(TestCaseWithCorpus):
-    @defer.inlineCallbacks
-    def setUp(self):
-        _ = yield TestCaseWithCorpus.setUp(self)
-        ndocs = yield self.load_corpus('hand-rolled')
 
 class TestSimpleCorpus(TestCaseWithCorpus):
     def ensure_doc(self, doc, expected_doc):
@@ -80,15 +75,15 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         expected_doc = {
             'earliest_timestamp': body_schema['timestamp'],
             'latest_timestamp': body_schema['timestamp'],
-            'recent': [msgid],
-            'messages': [msgid],
+            'message_ids': [msgid],
+            'unread_ids': [msgid],
+            'subject': None, # our test messages have no subject!
             'target-timestamp': [['from', body_schema['timestamp']]],
             'identities': [['email', 'raindrop_test_recip2@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip3@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip@mozillamessaging.com'],
                            ['email', 'raindrop_test_user@mozillamessaging.com'],
                             ],
-            'num_unread': 1,
         }
         self.ensure_doc(doc_sum, expected_doc)
 
@@ -126,10 +121,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'earliest_timestamp': None,
             'latest_timestamp': None,
             'target-timestamp': [],
-            'recent': [],
-            'messages': [],
+            'subject': None, # our test messages have no subject!
+            'message_ids': [],
+            'unread_ids': [],
             'identities': [],
-            'num_unread': 0,
         }
         self.ensure_doc(doc_sum, expected_doc)
 
@@ -166,14 +161,98 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         expected_doc = {
             'earliest_timestamp': min(body_orig['timestamp'], body_reply['timestamp']),
             'latest_timestamp': max(body_orig['timestamp'], body_reply['timestamp']),
-            'recent': sorted([msgid, msgid_reply]),
-            'messages': sorted([msgid, msgid_reply]),
+            'unread_ids': [msgid_reply, msgid],
+            'message_ids': [msgid_reply, msgid],
+            'subject': 'Re', # our test reply has a simple subject!
             'target-timestamp': [['direct', body_reply['timestamp']], ['from', body_orig['timestamp']]],
             'identities': [['email', 'raindrop_test_recip2@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip3@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip@mozillamessaging.com'],
                            ['email', 'raindrop_test_user@mozillamessaging.com'],
                             ],
-            'num_unread': 2,
         }
         self.ensure_doc(doc_sum, expected_doc)
+
+    @defer.inlineCallbacks
+    def test_convo_combine(self):
+        # in this test we introduce 2 docs with no references to each other
+        # (so end up with 2 convos), then introduce a 3rd with a reference
+        # to both originals - we should result in a single conversation.
+        _ = yield self.init_corpus('hand-rolled')
+        msg1 = """\
+Delivered-To: raindrop_test_user@mozillamessaging.com
+From: Raindrop Test User <Raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <Raindrop_test_recip@mozillamessaging.com>
+Date: Sat, 21 Jul 2009 12:13:14 -0000
+Message-Id: <1234@something>
+
+Hello
+"""
+        msg2 = """\
+Delivered-To: raindrop_test_user@mozillamessaging.com
+From: Raindrop Test User <Raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <Raindrop_test_recip@mozillamessaging.com>
+Date: Sat, 21 Jul 2009 12:13:14 -0000
+Message-Id: <5678@something>
+
+Hello again
+"""
+        # this one has the 2 references.
+        msg3 = """\
+Delivered-To: raindrop_test_user@mozillamessaging.com
+From: Raindrop Test User <Raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <Raindrop_test_recip@mozillamessaging.com>
+Date: Sat, 21 Jul 2009 12:13:14 -0000
+Message-Id: <90@something>
+References: <1234@something> <5678@something> 
+
+Hello again again
+"""
+        for (src, msgid) in [(msg1, "1234@something"), (msg2, "5678@something")]:
+            si = {'rd_key': ['email', msgid],
+                  'rd_schema_id': 'rd.msg.rfc822',
+                  'rd_source' : None,
+                  'rd_ext_id': 'rd.testsuite',
+                  'items': {},
+                  'attachments' : {
+                        'rfc822': {
+                            'data': src
+                        }
+                  }
+                  }
+            _ = yield self.doc_model.create_schema_items([si])
+        _ = yield self.ensure_pipeline_complete()
+        # should be 2 convos.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
+        result = yield self.doc_model.open_view(key=key, reduce=False)
+        self.failUnlessEqual(len(result['rows']), 2)
+        # now the last message - one convo should vanish.
+        si = {'rd_key': ['email', "90@something"],
+              'rd_schema_id': 'rd.msg.rfc822',
+              'rd_source' : None,
+              'rd_ext_id': 'rd.testsuite',
+              'items': {},
+              'attachments' : {
+                    'rfc822': {
+                        'data': msg3
+                    }
+              }
+              }
+        _ = yield self.doc_model.create_schema_items([si])
+        _ = yield self.ensure_pipeline_complete()
+        # should be 1 convos.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
+        result = yield self.doc_model.open_view(key=key, reduce=False)
+        self.failUnlessEqual(len(result['rows']), 1)
+        conv_id = result['rows'][0]['value']['rd_key']
+        # with all 3 messages.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.messages']
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+        self.failUnlessEqual(len(result['rows']), 1)
+        msg_ids = result['rows'][0]['doc']['messages']
+        seen_ids = set([self.doc_model.hashable_key(mid) for mid in msg_ids])
+        mine = set([('email', '90@something'),
+                    ('email', '1234@something'),
+                    ('email', '5678@something')])
+        self.failUnlessEqual(seen_ids, mine)

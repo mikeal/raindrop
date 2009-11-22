@@ -282,11 +282,28 @@ def items_from_convo_relations(doc_model, msg_keys, conv_id, ext_id):
             # yay - an existing one.
             conv_id = list(all_conv_keys)[0]
         else:
-            # XXX - we must *merge* the 2 conversations together??
-            logger.warn("The set of messages %s appear in multiple conversations %s",
+            # we must *merge* the 2 conversations together.  Pick one
+            # to use and arrange to delete the others.
+            logger.debug("The set of messages %s appear in multiple conversations %s",
                         msg_keys, all_conv_keys)
             # just pick one of them
-            conv_id = list(all_conv_keys)[0]
+            all_keys = list(all_conv_keys)
+            conv_id = all_keys[0]
+            dids = []
+            for todel in all_keys[1:]:
+                # XXX - is this enough?  Should we nuke *all* schemas with
+                # the rd_key of the convo?
+                schids = ['rd.conv.messages', 'rd.conv.summary']
+                for schid in schids:
+                    tempsi = {'rd_key': todel,
+                              'rd_schema_id':schid,
+                              }
+                    dids.append(doc_model.get_doc_id_for_schema_item(tempsi))
+            docs = threads.blockingCallFromThread(reactor,
+                                doc_model.open_documents_by_id, dids)
+            docs = [doc for doc in docs if doc is not None]
+            threads.blockingCallFromThread(reactor,
+                                doc_model.delete_documents, docs)
 
     # attempt to open the specified convo so we can adjust the messages.
     cdoc = threads.blockingCallFromThread(reactor,
