@@ -110,7 +110,7 @@ function(doc) {
       emit(['rd.core.content', 'key-source', [doc.rd_key, src_val]], si_row_val);
       emit(['rd.core.content', 'ext_id-source', [rd_ext_id, src_val]], si_row_val);
       if (emit_schemas) {
-        var this_src = schema_items.schema === null ? doc : schema_items.schema;
+        var this_src = doc.rd_schema_items.schema === null ? doc : doc.rd_schema_items.schema;
         emit_fields(doc, this_src, si_row_val)
       }
       // Emit any extra dependencies
