@@ -225,6 +225,7 @@ class DocumentModel(object):
                 errors.append(dinfo)
         if errors:
             raise DocumentSaveError(errors)
+        defer.returnValue(results)
 
     @defer.inlineCallbacks
     def update_documents(self, docs):
