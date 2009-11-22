@@ -106,8 +106,7 @@ def handler(doc):
             logger.info('creating rss-entry %r', rd_key)
             items = make_feedparser_jsonable(entry)
             items['channel'] = info_values
-            if 'updated_parsed' in doc:
-                items['timestamp'] = doc['updated_parsed']
+            items['timestamp'] = items['updated_parsed']
             emit_schema('rd.raw.rss-entry', items, rd_key=rd_key)
             num += 1
     logger.info('created %d rss items from %r', num, doc['_id'])
