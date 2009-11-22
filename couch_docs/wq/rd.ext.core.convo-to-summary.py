@@ -34,10 +34,11 @@ def handler(doc):
         all_msgs.append(new)
 
     identities = set()
-    num_unread = 0
     good_msgs = []
+    unread = []
     latest_by_recip_target = {}
     earliest_timestamp = latest_timestamp = None
+    subject = None
     for msg_info in all_msgs:
         if 'rd.msg.body' not in msg_info:
             continue
@@ -48,13 +49,16 @@ def handler(doc):
         # the message is good!
         good_msgs.append(msg_info)
         if 'rd.msg.seen' not in msg_info or not msg_info['rd.msg.seen']['seen']:
-            num_unread += 1
+            unread.append(msg_info)
         body_schema = msg_info['rd.msg.body']            
         for field in ["to", "cc"]:
             if field in body_schema:
                 for val in body_schema[field]:
                     identities.add(tuple(val))
-        identities.add(tuple(msg_info['rd.msg.body']['from']))
+        try:
+            identities.add(tuple(msg_info['rd.msg.body']['from']))
+        except KeyError:
+            pass # things like RSS feeds don't have a 'from'
         if earliest_timestamp is None or \
            msg_info['rd.msg.body']['timestamp'] < earliest_timestamp:
             earliest_timestamp = msg_info['rd.msg.body']['timestamp']
@@ -63,10 +67,23 @@ def handler(doc):
             latest_timestamp = msg_info['rd.msg.body']['timestamp']
         if 'rd.msg.recip-target' in msg_info:
             this_target = msg_info['rd.msg.recip-target']['target']
-            this_ts = msg_info['rd.msg.recip-target']['timestamp']
+            this_ts = msg_info['rd.msg.body']['timestamp']
             cur_latest = latest_by_recip_target.get(this_target, 0)
             if this_ts > cur_latest:
                 latest_by_recip_target[this_target] = this_ts
+        # last subject seen wins.
+        this_subject = msg_info['rd.msg.body'].get('subject')
+        if this_subject:
+            subject = this_subject
+
+    # a couple of 'pseudo' or 'combo' recip-targets.
+    if 'direct' in latest_by_recip_target and 'group' in latest_by_recip_target:
+        latest_by_recip_target['personal'] = \
+            max(latest_by_recip_target['direct'], latest_by_recip_target['group'])
+
+    if 'broadcast' in latest_by_recip_target and 'notification' in latest_by_recip_target:
+        latest_by_recip_target['impersonal'] = \
+            max(latest_by_recip_target['broadcast'], latest_by_recip_target['notification'])
 
     # sort the messages and select the 3 most-recent.
     good_msgs.sort(key=lambda item: item['rd.msg.body']['timestamp'],
@@ -74,13 +91,13 @@ def handler(doc):
     recent = good_msgs[:3]
 
     item = {
+        'subject': subject,
         # msg list is subtly different than rd.conv.messages - only the "good" messages.
-        'messages': [i['rd.msg.body']['rd_key'] for i in good_msgs],
-        'recent': [i['rd.msg.body']['rd_key'] for i in recent],
+        'message_ids': [i['rd.msg.body']['rd_key'] for i in good_msgs],
+        'unread_ids': [i['rd.msg.body']['rd_key'] for i in unread],
         'identities': sorted(list(identities)),
         'earliest_timestamp': earliest_timestamp,
         'latest_timestamp': latest_timestamp,
-        'num_unread': num_unread,
         'target-timestamp': [],
     }
     for target, timestamp in sorted(latest_by_recip_target.iteritems()):
