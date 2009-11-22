@@ -33,9 +33,6 @@ class TestConvoSimple(APITestCase):
     def sanity_check_convo(self, convo):
         # all messages in a convo must have the same conversation ID.
         messages = convo['messages']
-        seen_cids = set([msg['schemas']['rd.msg.conversation']['conversation_id']
-                        for msg in messages])
-        self.failUnlessEqual(len(seen_cids), 1, seen_cids)
         # No message should appear twice.
         seen_keys = set([tuple(msg['schemas']['rd.msg.body']['rd_key'])
                         for msg in messages])
@@ -78,3 +75,34 @@ class TestConvoSimple(APITestCase):
         self.failUnlessEqual(seen.intersection(known_msgs), known_msgs)
         unknown_msgs = self.get_known_msgs_not_from_identities()
         self.failUnlessEqual(seen.intersection(unknown_msgs), set())
+
+    @defer.inlineCallbacks
+    def test_with_messages(self):
+        known_msgs = self.get_known_msgs_to_identities()
+        result = yield self.call_api("inflow/conversations/with_messages",
+                                     keys=list(known_msgs))
+        # should be 1 convo
+        self.failUnlessEqual(len(result), 1)
+        self.sanity_check_convo(result[0])
+        seen=set()
+        for msg in result[0]['messages']:
+            seen.add(self.doc_model.hashable_key(msg['id']))
+        self.failUnlessEqual(known_msgs.intersection(seen), known_msgs)
+
+    @defer.inlineCallbacks
+    def test_by_id(self):
+        known_msgs = self.get_known_msgs_to_identities()
+        # find the conv ID
+        key = ['rd.conv.messages', 'messages', list(known_msgs)[0]]
+        result = yield self.doc_model.open_view(key=key, reduce=False)
+        # should be 1 convo
+        self.failUnlessEqual(len(result['rows']), 1)
+        conv_id = result['rows'][0]['value']['rd_key']
+
+        result = yield self.call_api("inflow/conversations/by_id",
+                                     key=conv_id)
+        self.sanity_check_convo(result)
+        seen = set()
+        for msg in result['messages']:
+            seen.add(self.doc_model.hashable_key(msg['id']))
+        self.failUnlessEqual(known_msgs.intersection(seen), known_msgs)

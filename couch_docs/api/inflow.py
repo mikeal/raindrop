@@ -83,26 +83,6 @@ class API:
 
 # The classes which define the API; all methods without a leading _ are public
 class ConversationAPI(API):
-    def _filter_fresh(self, db, rdkeys):
-        keys = []
-        fresh = set()
-        for rd_key in rdkeys:
-            keys.append(["rd.core.content", "key-schema_id", [rd_key, "rd.msg.archived"]]);
-            keys.append(["rd.core.content", "key-schema_id", [rd_key, "rd.msg.deleted"]]);
-            fresh.add(hashable_key(rd_key))
-        result = db.megaview(keys=keys, reduce=False, include_docs=True)
-        # For anything seen/deleted/archived, mark it as not fresh.
-        for row in result['rows']:
-            doc = row['doc']
-            if doc.get('deleted') or doc.get('archived'):
-                try:
-                    fresh.remove(hashable_key(doc['rd_key']))
-                except KeyError:
-                    pass
-
-        # Now weed out the not-fresh from the result.
-        return [rdkey for rdkey in rdkeys if hashable_key(rd_key) in fresh]
-
     def _filter_known_identities(self, db, idids):
         # Given a list/set of identity IDs, return those 'known' (ie, associated
         # with a contact.
@@ -168,7 +148,7 @@ class ConversationAPI(API):
                 from_key = hashable_key(frm)
                 from_map.setdefault(from_key, []).append(bag)
 
-            message_results.append(bag);
+            message_results.append(bag)
 
         # Look up the IDs for the from identities. If they are real
         # identities, synthesize a schema to represent this.
@@ -184,120 +164,94 @@ class ConversationAPI(API):
                 bag["rd.msg.ui.known"] = {
                     "rd_schema_id" : "rd.msg.ui.known"
                 }
-        return message_results
+        # make "objects" as returned by the API
+        ret = []
+        for bag in message_results:
+            attachments = []
+            for schema_items in bag.itervalues():
+                if 'is_attachment' in schema_items:
+                    attachments.append(schema_items)
 
-    def _make_conversation(self, messages):
-        # Transforms an array of messages, where each message is collection
-        # of schema documents into an inflow API conversation object.
-        conv = {
-            'people': [],
-            'unread': 0,
-            'messages': []
-        }
-        people = set()
-        msg = messages[0]
-        conv['id'] = msg['rd.msg.conversation']['conversation_id']
-        if 'subject' in msg['rd.msg.body']:
-            conv['subject'] = msg['rd.msg.body']['subject']
+            ob = {"schemas": bag,
+                  "id": bag['rd.msg.body']['rd_key'],
+                  }
+            if attachments:
+                ob['attachments'] = attachments
+            ret.append(ob)
+        return ret
 
-        # Cycle through the messages to pull out some aggregate data            
-        for schemas in messages:
-            #Is the message unread? If so, increase unread count
-            if not 'rd.msg.seen' in schemas or not 'seen' in schemas or not schemas['rd.msg.seen']['seen']:
-                conv['unread'] += 1
+    def _build_conversations(self, db, conv_summaries, message_limit):
+        # Takes a list of rd.conv.summary schemas and some request args,
+        # and builds a list of conversation objects suitable for the result
+        # of the API call.
 
-            body = schemas['rd.msg.body']
-            # Get all the people on this thread
-            for field in ['from', 'to', 'cc', 'bcc']:
-                if field in body:
-                    names = field == 'from' and [body[field]] or body[field]
-                    for name in names:
-                        people.add(hashable_key(name))
+        # build parallel lists of msg_ids and the conv they belong with,
+        # while also building the result set we populate.
+        ret = []
+        msg_keys = []
+        convs = []
+        for cs in conv_summaries:
+            ret_conv = {
+                'id': cs['rd_key'],
+                'subject': cs['subject'],
+                'identities': cs['identities'],
+                'unread': len(cs['unread_ids']),
+                'unread_ids': cs['unread_ids'],
+                'message_ids': cs['message_ids'],
+                'messages': []
+            }
+            ret.append(ret_conv)
+            these_ids = cs['message_ids']
+            if message_limit is not None:
+                these_ids = these_ids[:message_limit]
+            for msg_key in these_ids:
+                msg_keys.append(msg_key)
+                convs.append(ret_conv)
 
-            # For each schema doc, if it is an attachment, add it to the
-            # attachments list
-
-            for schema in schemas.itervalues():
-                if 'is_attachment' in schema:
-                    conv.setdefault('attachments', []).append(schema)
-
-            conv['messages'].append({
-                'schemas': schemas
-            })
-        conv['people'] = list(people)
-        return conv
-
-    def _fetch_conversations(self, db, conv_ids):
-        # Takes a list of conversation IDs and returns a list of sorted
-        # 'conversations' - each conversation is itself a list of sorted
-        # 'messages', where each 'message' is a dict of schemas.
-        keys = [["rd.msg.conversation", "conversation_id", cid]
-                for cid in conv_ids]
-        result = db.megaview(keys=keys, reduce=False)
-        # Build up a list of rd_keys for the messages so we can fetch whatever
-        # schemas are necessary.
-        rdkeys = (row['value']['rd_key'] for row in result['rows'])
-
-        messages = self._fetch_messages(db, rdkeys)
-
-        # Create final result.
-        conversations = {}
-        for message in messages:
-            try:
-                cid = message['rd.msg.conversation']['conversation_id']
-            except KeyError:
-                log("message with no conversation: %s", message)
-                continue
-
-            conversations.setdefault(cid, []).append(message)
-
-        # Now sort the messages in each conversation by timestamp,
-        # earliest timestamp first.
-        for convo in conversations.itervalues():
-            convo.sort(key=lambda a: a['rd.msg.body']['timestamp'], reverse=True)
-        # Now sort conversations so the conversation with a message that is
-        # most
-        convos = sorted(conversations.itervalues(),
-                      key=lambda c: c[-1]['rd.msg.body']['timestamp'], reverse=True)
-
-        # Transform the array of arrays into an array of conversation objects
-        convo_list = []
-        for messages in convos:
-            convo_list.append(self._make_conversation(messages))
-
-        return convo_list
+        if msg_keys:
+            messages = self._fetch_messages(db, msg_keys)
+            assert len(messages)==len(msg_keys) # else our zip() will be wrong!
+            for ret_conv, msg in zip(convs, messages):
+                ret_conv['messages'].append(msg)
+        return ret
 
     # The 'single' end-point for getting a single conversation.
     def by_id(self, req):
         self.requires_get(req)
-        args = self.get_args(req, key="key")
+        args = self.get_args(req, key="key", message_limit=None)
         db = RDCouchDB(req)
         conv_id = args["key"]
         log("conv_id: %s", conv_id)
-        return self._fetch_conversations(db, [conv_id]);
+        # get the document holding the convo summary.
+        key = ['rd.core.content', 'key-schema_id', [conv_id, 'rd.conv.summary']]
+        result = db.megaview(key=key, reduce=False, include_docs=True)
+        if not result['rows']:
+            return None
+        sum_doc = result['rows'][0]['doc']
+        return self._build_conversations(db, [sum_doc], args['message_limit'])[0]
 
     # Fetch all conversations which have the specified messages in them.
     def with_messages(self, req):
         self.requires_get_or_post(req)
-        args = self.get_args(req, 'keys')
+        args = self.get_args(req, 'keys', message_limit=None)
         db = RDCouchDB(req)
-        return self._with_messages(db, args['keys'])
+        return self._with_messages(db, args['keys'], args['message_limit'])
 
-    def _with_messages(self, db, msg_keys):
-        keys = [['rd.core.content', 'key-schema_id', [k, 'rd.msg.conversation']]
-                for k in msg_keys]
-
-        result = db.megaview(keys=keys, reduce=False, include_docs=True)
-
-        conv_set = set()
+    def _with_messages(self, db, msg_keys, message_limit):
+        # make a megaview request to determine the convo IDs with the messages.
+        keys = [['rd.conv.messages', 'messages', mid] for mid in msg_keys]
+        result = db.megaview(keys=keys, reduce=False)
+        conv_ids = set()
         for row in result['rows']:
-            conv_set.add(row['doc']['conversation_id'])
-        conv_ids = list(conv_set)
+            conv_ids.add(hashable_key(row['value']['rd_key']))
 
-        # now fetch the conversation objects.
-        convos = self._fetch_conversations(db, conv_ids)
-        # and no sorting for this function.
-        return convos
+        # open the conv summary docs.
+        keys = [['rd.core.content', 'key-schema_id', [conv_id, 'rd.conv.summary']]
+                for conv_id in conv_ids]
+        result = db.megaview(keys=keys, reduce=False, include_docs=True)
+        # now make the conversation objects.
+        docs = [row['doc'] for row in result['rows']]
+        return self._build_conversations(db, docs, message_limit)
 
     # Fetch all conversations which include a message from the specified contact
     def contact(self, req):
@@ -316,7 +270,7 @@ class ConversationAPI(API):
         # XXX - shouldn't we do 'to' etc too?
         db = RDCouchDB(req)
         self.requires_get(req)
-        args = self.get_args(req, ids=None)
+        args = self.get_args(req, ids=None, message_limit=None)
         ids = args['ids']
         if ids is None:
             # special case - means "my identity".  Note this duplicates code
@@ -329,122 +283,70 @@ class ConversationAPI(API):
                 iid = row['key'][2]
                 mine.add(hashable_key(iid))
             ids = list(mine)
-        return self._identities(db, ids)
+        return self._identities(db, ids, args)
 
-    def _identities(self, db, idids):
-        keys = [["rd.msg.body", "from", idid] for idid in idids]
-        keys.extend([["rd.msg.body", "to", idid] for idid in idids])
-        keys.extend([["rd.msg.body", "cc", idid] for idid in idids])
+    def _identities(self, db, idids, args):
+        keys = [["rd.conv.summary", "identities", idid] for idid in idids]
         result = db.megaview(keys=keys, reduce=False)
-        message_keys = [r['value']['rd_key'] for r in result['rows']]
-        # Load the conversations based on these message IDs.
-        result = self._with_messages(db, message_keys)
-        # sort the result
-        result.sort(key=lambda c: c['messages'][0]['schemas']['rd.msg.body']['timestamp'],
-                    reverse=True)
-        return result
+        conv_doc_ids = set(r['id'] for r in result['rows'])
+        result = db.allDocs(keys=list(conv_doc_ids), include_docs=True)
+        # filter out deleted etc.
+        docs = [row['doc'] for row in result['rows'] if 'doc' in row]
+        return self._build_conversations(db, docs, args['message_limit'])
 
     # Helper for most other end-points
     def _query(self, req, **kw):
         def_opts = {
             'reduce': False,
-            'startkey': ["rd.msg.body", "timestamp", {}],
-            'endkey': ["rd.msg.body", "timestamp"],
-            'include_docs': False,
+            'include_docs': True,
             'descending': True,
         }
         opts = def_opts.copy()
         opts.update(kw)
 
         self.requires_get(req)
-        args = self.get_args(req, limit=30, skip=0)
+        args = self.get_args(req, limit=30, skip=0, message_limit=None)
         opts['limit'] = args['limit']
         opts['skip'] = args['skip']
         db = RDCouchDB(req)
 
         result = db.megaview(**opts)
 
-        # The json has the rd_key for messages in timestamp order;
-        # now we need to fetch the 'rd.msg.conversation' schema to fetch the
-        # convo ID.
-        keys = [['rd.core.content', 'key-schema_id', [row['value']['rd_key'], 'rd.msg.conversation']]
-                 for row in result['rows']]
-
-        result = db.megaview(keys=keys, reduce=False, include_docs=True)
-        conv_set = set()
-        for row in result['rows']:
-            conv_set.add(row['doc']['conversation_id'])
-        conv_ids = list(conv_set)
-
-        # now fetch the conversation objects.
-        convos = self._fetch_conversations(db, conv_ids)
-        # sort based on timestamp on latest message in convo.
-        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
+        convo_summaries = [row['doc'] for row in result['rows']]
+        convos = self._build_conversations(db, convo_summaries, args['message_limit'])
+        # results are already sorted!
         return convos
-
-    def _multi_target(self, req, targets):
-        self.requires_get(req)
-        args = self.get_args(req, limit=30)
-        db = RDCouchDB(req)
-
-        all_recips = []
-        for target in targets:
-            result = db.megaview(startkey=["rd.msg.recip-target", "target-timestamp", [target, {}]],
-                             endkey=["rd.msg.recip-target", "target-timestamp", [target]],
-                             descending=True,
-                             reduce=False,
-                             include_docs=False,
-                             limit=args['limit'])
-
-            # note the results are already sorted by descending timestamp
-            # Filter out the items that are not "fresh".
-            all_recips.extend(self._filter_fresh(db,
-                                            [row['value']['rd_key'] for row in result['rows']]))
-
-        # The json has the rd_key for messages in timestamp order;
-        # now we need to fetch the 'rd.msg.conversation' schema to fetch the
-        # convo ID.
-        keys = [['rd.core.content', 'key-schema_id', [rdkey, 'rd.msg.conversation']]
-                for rdkey in all_recips]
-        result = db.megaview(keys=keys,
-                             reduce=False,
-                             include_docs=True)
-        conv_set = set()
-        for row in result['rows']:
-            conv_set.add(row['doc']['conversation_id'])
-        conv_ids = list(conv_set)
-
-        # now fetch the conversation objects.
-        convos = self._fetch_conversations(db, conv_ids)
-        # sort based on timestamp on latest message in convo.
-        convos.sort(key=lambda c: c["messages"][-1]["schemas"]["rd.msg.body"]["timestamp"], reverse=True)
-        return convos
-
 
     # The 'simpler' end-points based around self._query()
     def direct(self, req):
         return self._query(req,
-                           startkey=["rd.msg.recip-target", "target-timestamp", ["direct", {}]],
-                           endkey=["rd.msg.recip-target", "target-timestamp", ["direct"]],
+                           startkey=["rd.conv.summary", "target-timestamp", ["direct", {}]],
+                           endkey=["rd.conv.summary", "target-timestamp", ["direct"]],
                            )
 
     def group(self, req):
         return self._query(req,
-                           startkey=["rd.msg.recip-target", "target-timestamp", ["group", {}]],
-                           endkey=["rd.msg.recip-target", "target-timestamp", ["group"]],
+                           startkey=["rd.conv.summary", "target-timestamp", ["group", {}]],
+                           endkey=["rd.conv.summary", "target-timestamp", ["group"]],
                           )
 
     def broadcast(self, req):
         return self._query(req,
-                           startkey=["rd.msg.recip-target", "target-timestamp", ["broadcast", {}]],
-                           endkey=["rd.msg.recip-target", "target-timestamp", ["broadcast"]],
+                           startkey=["rd.conv.summary", "target-timestamp", ["broadcast", {}]],
+                           endkey=["rd.conv.summary", "target-timestamp", ["broadcast"]],
                            )
 
     def impersonal(self, req):
-        return self._multi_target(req, ['broadcast', 'notification'])
+        return self._query(req,
+                           startkey=["rd.conv.summary", "target-timestamp", ["impersonal", {}]],
+                           endkey=["rd.conv.summary", "target-timestamp", ["impersonal"]],
+                           )
 
     def personal(self, req):
-        return self._multi_target(req, ['direct', 'group'])
+        return self._query(req,
+                           startkey=["rd.conv.summary", "target-timestamp", ["personal", {}]],
+                           endkey=["rd.conv.summary", "target-timestamp", ["personal"]],
+                           )
 
 class ContactAPI(API):
     def _fetch_identies_for_contact(self, db, cid):

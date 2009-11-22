@@ -79,11 +79,18 @@ class TestConfidencesBase(APITestCase):
     def _test_override(self):
         # We should see the conversation including the message we "modified"
         our_msg = ('email', '07316ced2329a69aa169f3b9c6467703@bitbucket.org')
+        # make a megaview request to determine the convo ID with our message.
+        result = yield self.doc_model.open_view(key=['rd.conv.messages', 'messages', our_msg],
+                                                reduce=False)
+        # should be exactly 1 convo.
+        self.failUnlessEqual(len(result['rows']), 1)
+        our_conv_id = result['rows'][0]['value']['rd_key']
         seen = set()
-        result = yield self.call_api("inflow/conversations/identities")
+        result = yield self.call_api("inflow/conversations/identities",
+                                     message_limit=100)
         # loop over the convos finding the one we care about.
         for convo in result:
-            if convo['id'] == our_msg[1]:
+            if convo['id'] == our_conv_id:
                 msgs = convo['messages']
                 # and only one message in the convo.
                 self.failUnlessEqual(len(msgs), 1, msgs)
