@@ -35,7 +35,10 @@ def handler(doc):
 
     references = set()
     if 'references' in headers:
-        references.add(headers['references'])
+        # 'references' is a bit special though - the provider of the source
+        # schema has already split them!
+        for ref in headers['references']:
+            references.add(ref)
     if 'in-reply-to' in headers:
         references.add(headers['in-reply-to'])
     # the self-message...
