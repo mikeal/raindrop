@@ -256,6 +256,7 @@ class ImapProvider(object):
     logger.info("examining folders")
     folders_use = []
     # First pass - filter folders we don't care about.
+    to_exclude = set(o.lower() for o in re.split(", *", self.account.details['exclude_folders']))
     for flags, delim, name in result:
       name = name.decode('imap4-utf-7') # twisted gives back the encoded str.
       ok = True
@@ -267,6 +268,10 @@ class ImapProvider(object):
       if ok and self.options.folders and \
          name.lower() not in [o.lower() for o in self.options.folders]:
         logger.debug('skipping folder %r - not in specified folder list', name)
+        ok = False
+      if ok and 'exclude_folders' in self.account.details and \
+         name.lower() in to_exclude:
+        logger.debug('skipping folder %r - in exclude list', name)
         ok = False
       if ok:
         folders_use.append((flags, delim, name ))
@@ -712,6 +717,9 @@ class ImapProvider(object):
     defer.returnValue(num)
 
   def shouldFetchMessage(self, msg_info):
+    if "\\deleted" in [f.lower() for f in msg_info['FLAGS']]:
+      logger.debug("msg is deleted - skipping: %r", msg_info)
+      return False
     if self.options.max_age:
       # XXX - we probably want the 'internal date'...
       date_str = msg_info['ENVELOPE'][0]
