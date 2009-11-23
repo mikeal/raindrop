@@ -55,7 +55,7 @@ if '--show-perf' in sys.argv:
     sys.argv.remove('--show-perf')
     def note_timeline(msg, *args):
         msg = msg % args
-        log("%.3g: %s", clock(), msg)
+        log("%.3f: %s", clock(), msg)
 else:
     note_timeline = lambda msg, *args: None
 
