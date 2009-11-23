@@ -164,7 +164,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'unread_ids': [msgid_reply, msgid],
             'message_ids': [msgid_reply, msgid],
             'subject': 'Re', # our test reply has a simple subject!
-            'target-timestamp': [['direct', body_reply['timestamp']], ['from', body_orig['timestamp']]],
+            'target-timestamp': [['direct', body_reply['timestamp']],
+                                 ['from', body_orig['timestamp']],
+                                 ['personal', body_reply['timestamp']],
+                                 ],
             'identities': [['email', 'raindrop_test_recip2@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip3@mozillamessaging.com'],
                            ['email', 'raindrop_test_recip@mozillamessaging.com'],
