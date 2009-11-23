@@ -42,6 +42,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
 
   templateString: dojo.cache("rdw.templates", "Message.html"),
 
+  //The link for the expanding to full conversation.
+  expandLink: "",
+
   postMixInProperties: function() {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
