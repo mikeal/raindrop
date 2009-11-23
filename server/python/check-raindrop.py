@@ -270,6 +270,10 @@ def check_couch():
     my_dir = os.path.abspath(os.path.dirname(__file__))
     cmd = tpl % (sys.executable, my_dir)
     check_couch_external(url, "raindrop-api", cmd, "_api", configure)
+    # and for the sake of it, tell the external to restart, just incase it
+    # changed (this might be better off in run-raindrop, but it causes a bit
+    # of couch log noise...)
+    urllib2.urlopen(url + "raindrop/_api/_exit")
 
     # XXX - we currently don't take advantage of that...
     #check_couch_external(url, configure)
