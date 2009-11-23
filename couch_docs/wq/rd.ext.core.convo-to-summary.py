@@ -77,13 +77,13 @@ def handler(doc):
             subject = this_subject
 
     # a couple of 'pseudo' or 'combo' recip-targets.
-    if 'direct' in latest_by_recip_target and 'group' in latest_by_recip_target:
+    if 'direct' in latest_by_recip_target or 'group' in latest_by_recip_target:
         latest_by_recip_target['personal'] = \
-            max(latest_by_recip_target['direct'], latest_by_recip_target['group'])
+            max(latest_by_recip_target.get('direct',0), latest_by_recip_target.get('group', 0))
 
-    if 'broadcast' in latest_by_recip_target and 'notification' in latest_by_recip_target:
+    if 'broadcast' in latest_by_recip_target or 'notification' in latest_by_recip_target:
         latest_by_recip_target['impersonal'] = \
-            max(latest_by_recip_target['broadcast'], latest_by_recip_target['notification'])
+            max(latest_by_recip_target.get('broadcast', 0), latest_by_recip_target.get('notification', 0))
 
     # sort the messages and select the 3 most-recent.
     good_msgs.sort(key=lambda item: item['rd.msg.body']['timestamp'],
