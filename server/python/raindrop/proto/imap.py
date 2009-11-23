@@ -256,7 +256,10 @@ class ImapProvider(object):
     logger.info("examining folders")
     folders_use = []
     # First pass - filter folders we don't care about.
-    to_exclude = set(o.lower() for o in re.split(", *", self.account.details['exclude_folders']))
+    if 'exclude_folders' in self.account.details:
+      to_exclude = set(o.lower() for o in re.split(", *", self.account.details['exclude_folders']))
+    else:
+      to_exclude = set()
     for flags, delim, name in result:
       name = name.decode('imap4-utf-7') # twisted gives back the encoded str.
       ok = True
