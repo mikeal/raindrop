@@ -922,15 +922,15 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //summary: responds to requests to view a conversation.
     rd.api({
       url: 'inflow/conversations/by_id',
-      key: '"' + convoId + '"'
+      key: dojo.fromJson(unescape(convoId))
     })
-    .ok(this, function(conversations) {
+    .ok(this, function(conversation) {
       //Show the conversation.     
-      this.updateConversations("conversation", conversations);
+      this.updateConversations("conversation", [conversation]);
 
       //Update the summary.
       if (this.summaryWidget.conversation) {
-        this.summaryWidget.conversation(conversations[0]);
+        this.summaryWidget.conversation(conversation);
       }
     });
   },
