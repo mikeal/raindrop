@@ -237,13 +237,12 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //Get the active, focused element and see if it is widget with a message
     var id = dojo.doc.activeElement.id;
     var widget = id && dijit.byId(id);
-    var msg = widget && widget.msg;
+    var convo = widget && widget.convo;
 
-    var convoId = msg
-                  && msg.schemas["rd.msg.conversation"]
-                  && msg.schemas["rd.msg.conversation"].conversation_id;
+    var convoId = convo
+                  && msg.id;
     if (convoId) {
-      rd.setFragId("rd:conversation:" + convoId);
+      rd.setFragId("rd:conversation:" + dojo.toJson(convoId));
     }
   },
 

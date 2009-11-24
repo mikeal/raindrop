@@ -105,6 +105,7 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
       var messages = conversation.messages;
       if (messages && messages.length) {
         this.msgs.push.apply(this.msgs, conversation.messages);
+        this.mapMessages(conversation);
       }
     }
 
