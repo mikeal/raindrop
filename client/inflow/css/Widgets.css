@@ -39,7 +39,6 @@
 
 .WidgetBox > .title {
   font-family: droid-serif, georgia, times, serif;
-  display: inline-block;
   font-size: 10px;
 }
 
@@ -67,6 +66,41 @@
   color: #888;
 }
 
+.WidgetBox  > .actions {
+  margin-top: 8px;
+}
+
+.WidgetBox > .actions > .action {
+  display: inline;
+  padding: 0px 4px;
+  margin-left: 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.WidgetBox > .actions > .noteCount,
+.WidgetBox > .actions > .broadcastCount {
+  float: right;
+  background-color: #ff5959;
+}
+
+.WidgetBox > .actions > .noteCount {
+  background-image: url("../i/new/rd_notification_icon.png");
+  background-repeat: no-repeat;
+  background-position: right;
+  padding-right: 24px;
+}
+
+.WidgetBox > .actions > .broadcastCount {
+  background-image: url("../i/new/rd_broadcast_icon.png");
+  background-repeat: no-repeat;
+  background-position: right;
+  padding-right: 25px;
+}
+
 /* ### TWITTER ### */
 
 .rdwConversationTwitterTimeLine {
@@ -87,49 +121,6 @@
 
 .rdwConversationTwitterTimeLine .rdwMessage > .message > .content a:hover {
   text-decoration: underline;
-}
-
-.rdwConversationTwitterTimeLine > .actions {
-  margin-top: 8px;
-}
-
-.rdwConversationTwitterTimeLine > .actions > .viewAll,
-.rdwConversationTwitterTimeLine > .actions > .noteCount,
-.rdwConversationTwitterTimeLine > .actions > .broadcastCount {
-  display: inline;
-  padding: 0px 4px;
-  margin-left: 4px;
-  -moz-border-radius: 4px;
-  -webkit-border-radius: 4px;
-  color: #fff;
-  font-size: 10px;
-  font-weight: bold;
-}
-
-.rdwConversationTwitterTimeLine > .actions > .viewAll {
-  float: left;
-  margin-left: 0;
-  background-color: #000;
-}
-
-.rdwConversationTwitterTimeLine > .actions > .noteCount,
-.rdwConversationTwitterTimeLine > .actions > .broadcastCount {
-  float: right;
-  background-color: #ff5959;
-}
-
-.rdwConversationTwitterTimeLine > .actions > .noteCount {
-  background-image: url("../i/new/rd_notification_icon.png");
-  background-repeat: no-repeat;
-  background-position: right;
-  padding-right: 24px;
-}
-
-.rdwConversationTwitterTimeLine > .actions > .broadcastCount {
-  background-image: url("../i/new/rd_broadcast_icon.png");
-  background-repeat: no-repeat;
-  background-position: right;
-  padding-right: 25px;
 }
 
 /* ### MAILING LIST ### */

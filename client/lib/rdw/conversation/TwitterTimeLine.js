@@ -33,9 +33,8 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
                      <div dojoAttachPoint="nameNode" class="title">Twitter</div> \
                      <div class="tweetList" dojoAttachPoint="containerNode"></div> \
                      <div class="actions"> \
-                       <div class="viewAll">view all</div> \
-                       <div class="noteCount" dojoAttachPoint="noteCountNode"></div> \
-                       <div class="broadcastCount" dojoAttachPoint="broadcastCountNode"></div> \
+                       <div class="action broadcastCount"><span dojoAttachPoint="broadcastCountNode"></span> messages</div> \
+                       <div class="action noteCount"><span dojoAttachPoint="noteCountNode"></span> updates</div> \
                      </div> \
                    </div>',
 
@@ -128,9 +127,9 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
   _updateCount: function(node, count) {
     if (count) {
       node.innerHTML = count;
-      node.style.disply = "";
+      node.parentNode.style.display = "";
     } else {
-      node.style.disply = "none";
+      node.parentNode.style.display = "none";
     }
   }
 });
