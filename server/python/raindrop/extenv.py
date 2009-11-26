@@ -230,7 +230,7 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
             else:
                 # not found - we need to update this doc
                 new_rel_fields = schema.copy()
-                sch['contacts'] = existing + [new_rel]
+                schema['contacts'] = existing + [new_rel]
                 logger.debug("new relationship (update) from %r -> %r",
                              iid, contact_id)
                 # and note the fields which allows us to update...
