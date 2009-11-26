@@ -69,13 +69,16 @@ def get_ext_env(doc_model, context, src_doc, ext):
         logger.debug("emit_related_identities for %r - now %d items",
                      ext.id, len(new_items))
 
-    def emit_convo_relations(msg_ids, conv_id):
-        logger.debug("emit_convo_relations for %r", ext.id)
+    def find_and_emit_conversation(msg_ids):
+        logger.debug("find_and_emit_conversation for %r", ext.id)
+        # we use the same ext_id here regardless of the actual extension
+        # calling us.
+        ext_id = 'rd.core'
         for item in items_from_convo_relations(doc_model,
-                                                msg_ids, conv_id, ext.id):
+                                                msg_ids, ext_id):
             item['rd_source'] = [src_doc['_id'], src_doc['_rev']]
             new_items.append(item)
-        logger.debug("emit_convo_relations for %r - now %d items",
+        logger.debug("find_and_emit_conversation for %r - now %d items",
                      ext.id, len(new_items))
 
     def open_schema_attachment(src, attachment, **kw):
@@ -131,7 +134,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
     new_globs = {}
     new_globs['emit_schema'] = emit_schema
     new_globs['emit_related_identities'] = emit_related_identities
-    new_globs['emit_convo_relations'] = emit_convo_relations
+    new_globs['find_and_emit_conversation'] = find_and_emit_conversation
     new_globs['open_schema_attachment'] = open_schema_attachment
     new_globs['open_schemas'] = open_schemas
     new_globs['get_schema_attachment_info'] = doc_model.get_schema_attachment_info
@@ -242,84 +245,71 @@ def items_from_related_identities(doc_model, idrels, def_contact_props, ext_id):
 
 # XXX - this is very close logically to items_from_related_identities - it
 # needs to be refactored!
-def items_from_convo_relations(doc_model, msg_keys, conv_id, ext_id):
-    # conv_id may be None - in which case we look for an existing convo
-    # with any of the messages.  If we don't find one, we create a new one.
-    # If conv_id is not None, that conv ID will be used, creating it if
-    # necessary.  Consider the 2 use cases:
-    # 1) Email does not have the concept of a canonical conversation - a
-    # conversation is "derived" from related messages.  None should always
-    # be passed in this case.
-    # 2) Skype has the concept of a "chat" and messages within that chat.
-    # In this case, the skype provided ID for the chat should be used.
-
+def items_from_convo_relations(doc_model, msg_keys, ext_id):
+    # We look for an existing convo with any of the messages.  If we don't
+    # find one, we create a new one.  This is to handle email, which does
+    # not have the concept of a canonical conversation - a conversation is
+    # "derived" from related messages.  This should not be used for services
+    # which provide an ID for a conversation - eg, skyke has the concept of a "chat" and messages within that chat.
+    # In cases like the above, a simple rd.msg.conversation schema can be
+    # emitted.
     msg_keys = list(msg_keys) # likely a generator...
     assert msg_keys, "don't give me an empty list - just don't emit!!"
 
-    if conv_id is None:
-        # Find conversations associated with any and all of the messages;
-        # any messages not associated with a contact will be updated
-        # to have a contact (either one we find with for different ID)
-        # or a new one we create.
-        results = []
-        keys = [['rd.conv.messages', 'messages', rdkey] for rdkey in msg_keys]
-        results = threads.blockingCallFromThread(reactor,
-                        doc_model.open_view, keys=keys, reduce=False)
-        # run over the results - in the perfect world there would be exactly
-        # one (or zero) convo IDs returned.  More than 1 means something is
-        # out of synch.
-        all_conv_keys = set()
-        for row in results['rows']:
-            all_conv_keys.add(doc_model.hashable_key(tuple(row['value']['rd_key'])))
-        if len(all_conv_keys) == 0:
-            # make a new one; the conv_id will include the entire rd_key
-            # of one of the messages to avoid conflicts between different
-            # 'providers' (eg, while a msg-id should be unique within emails,
-            # there is nothing to prevent a 'skype chat ID' conflicting with
-            # a message-id.)
-            conv_id = ['conv', msg_keys[0]]
-        elif len(all_conv_keys) == 1:
-            # yay - an existing one.
-            conv_id = list(all_conv_keys)[0]
-        else:
-            # we must *merge* the 2 conversations together.  Pick one
-            # to use and arrange to delete the others.
-            logger.debug("The set of messages %s appear in multiple conversations %s",
-                        msg_keys, all_conv_keys)
-            # just pick one of them
-            all_keys = list(all_conv_keys)
-            conv_id = all_keys[0]
-            dids = []
-            for todel in all_keys[1:]:
-                # XXX - is this enough?  Should we nuke *all* schemas with
-                # the rd_key of the convo?
-                schids = ['rd.conv.messages', 'rd.conv.summary']
-                for schid in schids:
-                    tempsi = {'rd_key': todel,
-                              'rd_schema_id':schid,
-                              }
-                    dids.append(doc_model.get_doc_id_for_schema_item(tempsi))
-            docs = threads.blockingCallFromThread(reactor,
-                                doc_model.open_documents_by_id, dids)
-            docs = [doc for doc in docs if doc is not None]
-            threads.blockingCallFromThread(reactor,
-                                doc_model.delete_documents, docs)
+    # Find conversations associated with any and all of the messages;
+    results = []
+    keys = [['rd.core.content', 'key-schema_id', [rdkey, 'rd.msg.conversation']]
+            for rdkey in msg_keys]
+    results = threads.blockingCallFromThread(reactor,
+                    doc_model.open_view, keys=keys, include_docs=True, reduce=False)
+    # run over the results - in the perfect world there would be exactly
+    # one (or zero) convo IDs returned.  More than 1 means something is
+    # out of synch.
+    all_conv_keys = set()
+    existing = {}
+    for row in results['rows']:
+        cid = doc_model.hashable_key(row['doc']['conversation_id'])
+        existing[doc_model.hashable_key(row['value']['rd_key'])] = cid
+        all_conv_keys.add(cid)
 
-    # attempt to open the specified convo so we can adjust the messages.
-    cdoc = threads.blockingCallFromThread(reactor,
-                doc_model.open_schemas, [(conv_id, 'rd.conv.messages')])[0]
-    if cdoc is None:
-        cdoc = {'messages' : []}
+    # see if an existing convo exists for these messages.
+    if len(all_conv_keys) == 0:
+        # make a new one; the conv_id will include the entire rd_key
+        # of one of the messages to avoid conflicts between different
+        # 'providers' (eg, while a msg-id should be unique within emails,
+        # there is nothing to prevent a 'skype chat ID' conflicting with
+        # a message-id.)
+        conv_id = ['conv', msg_keys[0]]
+    else:
+        # at least 1 convo - and possibly more (in which case we update the
+        # other convos to point at this convo)
+        conv_id = list(all_conv_keys)[0]
 
-    messages = set((doc_model.hashable_key(m) for m in cdoc['messages']))
-    for rdkey in msg_keys:
-        messages.add(doc_model.hashable_key(rdkey))
-    # we keep the message-list sorted so abitrary ordering doesn't cause the
-    # document to be considered different when it is semantically identical.
-    # We don't care *what* it is sorted by, so long as it is deterministic.
-    cdoc['messages'] = sorted(list((list(m) for m in messages)))
-    yield {'rd_schema_id': 'rd.conv.messages',
-           'rd_key': conv_id,
-           'rd_ext_id': ext_id,
-           'rd_schema_provider': ext_id,
-           'items': cdoc}
+    conv_id = doc_model.hashable_key(conv_id)
+    convos_to_merge = set()
+    # now run over all the keys we were passed and see which ones need updating.
+    for msg_key in msg_keys:
+        msg_key = doc_model.hashable_key(msg_key)
+        try:
+            if existing[msg_key] != conv_id:
+                convos_to_merge.add(existing[msg_key])
+        except KeyError:
+            # no existing convo for this message - easy
+            yield {'rd_key': msg_key,
+                   'rd_schema_id': 'rd.msg.conversation',
+                   'rd_ext_id': ext_id,
+                   'rd_schema_provider': ext_id,
+                   'items': {'conversation_id': conv_id}}
+    # find all existing items in all convos to merge, and update every message
+    # in those convos to point at this one.
+    keys = [['rd.msg.conversation', 'conversation_id', cid]
+            for cis in convos_to_merge]
+    results = threads.blockingCallFromThread(reactor,
+                    doc_model.open_view, keys=keys, reduce=False)
+    for row in results['rows']:
+        yield {'rd_key': msg_key,
+               'rd_schema_id': 'rd.msg.conversation',
+               'rd_ext_id': ext_id,
+               'rd_schema_provider': ext_id,
+               '_rev': row['value']['_rev'],
+               'items': {'conversation_id': conv_id}}

@@ -38,4 +38,4 @@ def handler(doc):
     emit_schema('rd.msg.body', bdoc)
     # and the conversation magic
     cid = ['twitter', doc.get('twitter_in_reply_to_status_id', doc['twitter_id'])]
-    emit_convo_relations([doc['rd_key']], cid)
+    emit_schema('rd.msg.conversation', 'conversation_id', cid)

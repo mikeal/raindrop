@@ -46,4 +46,4 @@ def handler(doc):
     logger.debug("references: %s", '\n\t'.join(references))
     
     keys = (get_rdkey_for_email(mid) for mid in references)
-    emit_convo_relations(keys, None)
+    find_and_emit_conversation(keys)

@@ -80,11 +80,12 @@ class TestConfidencesBase(APITestCase):
         # We should see the conversation including the message we "modified"
         our_msg = ('email', '07316ced2329a69aa169f3b9c6467703@bitbucket.org')
         # make a megaview request to determine the convo ID with our message.
-        result = yield self.doc_model.open_view(key=['rd.conv.messages', 'messages', our_msg],
-                                                reduce=False)
-        # should be exactly 1 convo.
+        key = ['rd.core.content', 'key-schema_id', [our_msg, 'rd.msg.conversation']]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+        # should be exactly 1 record.
         self.failUnlessEqual(len(result['rows']), 1)
-        our_conv_id = result['rows'][0]['value']['rd_key']
+        our_conv_id = result['rows'][0]['doc']['conversation_id']
         seen = set()
         result = yield self.call_api("inflow/conversations/identities",
                                      message_limit=100)

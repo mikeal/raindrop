@@ -1,6 +1,7 @@
-# We take as input an 'rd.conv.messages' schema and emit an 'rd.conv.summary'
-# schema.  Building the summary is expensive, but it means less work by the
-# front end.
+# We take as input an 'rd.msg.conversation' schema (for a *message*) and
+# emit an 'rd.conv.summary' schema for a *conversation* (ie, for a different
+# rd_key than our input document).
+# Building the summary is expensive, but it means less work by the front end.
 # We also record we are dependent on any of the messages themselves changing,
 # so when as item is marked as 'unread', the summary changes accordingly.
 import itertools
@@ -8,6 +9,7 @@ import itertools
 # these are the schemas we need.
 src_msg_schemas = [
     'rd.msg.body',
+    'rd.msg.conversation',
     'rd.msg.archived',
     'rd.msg.deleted',
     'rd.msg.seen',
@@ -15,11 +17,14 @@ src_msg_schemas = [
 ]
 
 def handler(doc):
-    # we expect the convo to have messages or have been nuked.
-    assert doc['messages']
+    conv_id = doc['conversation_id']
+    # query to determine all messages in this convo.
+    result = open_view(key=['rd.msg.conversation', 'conversation_id', conv_id],
+                       reduce=False)
     # the list of items we want.
     wanted = []
-    for msg_key in doc['messages']:
+    for row in result['rows']:
+        msg_key = row['value']['rd_key']
         for sch_id in src_msg_schemas:
             wanted.append((msg_key, sch_id))
 
@@ -92,7 +97,7 @@ def handler(doc):
 
     item = {
         'subject': subject,
-        # msg list is subtly different than rd.conv.messages - only the "good" messages.
+        # msg list is only the "good" messages.
         'message_ids': [i['rd.msg.body']['rd_key'] for i in good_msgs],
         'unread_ids': [i['rd.msg.body']['rd_key'] for i in unread],
         'identities': sorted(list(identities)),
@@ -105,6 +110,8 @@ def handler(doc):
     # our 'dependencies' are *all* messages, not just the "good" ones.
     deps = []
     for msg in all_msgs:
+        # get the rd_key from any schema which exists
+        msg_key = list(msg.values())[0]['rd_key']
         for sid in src_msg_schemas:
-            deps.append((msg['rd.msg.body']['rd_key'], sid))
-    emit_schema('rd.conv.summary', item, deps=deps)
+            deps.append((msg_key, sid))
+    emit_schema('rd.conv.summary', item, rd_key=conv_id, deps=deps)

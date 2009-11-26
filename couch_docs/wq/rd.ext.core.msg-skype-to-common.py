@@ -36,4 +36,4 @@ def handler(doc):
     emit_schema('rd.msg.body', bdoc)
     # and tell the framework about the conversation
     cid = ['skype', doc['skype_chatname']]
-    emit_convo_relations([doc['rd_key']], cid)
+    emit_schema('rd.msg.conversation', {'conversation_id': cid})

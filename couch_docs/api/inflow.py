@@ -239,11 +239,15 @@ class ConversationAPI(API):
 
     def _with_messages(self, db, msg_keys, message_limit):
         # make a megaview request to determine the convo IDs with the messages.
-        keys = [['rd.conv.messages', 'messages', mid] for mid in msg_keys]
-        result = db.megaview(keys=keys, reduce=False)
+        # XXX - note we could maybe avoid include_docs by using the
+        # 'message_ids' field on the conv_summary doc - although that will not
+        # list messages flaged as 'deleted' etc.
+        keys = [['rd.core.content', 'key-schema_id', [mid, 'rd.msg.conversation']]
+                for mid in msg_keys]
+        result = db.megaview(keys=keys, reduce=False, include_docs=True)
         conv_ids = set()
         for row in result['rows']:
-            conv_ids.add(hashable_key(row['value']['rd_key']))
+            conv_ids.add(hashable_key(row['doc']['conversation_id']))
 
         # open the conv summary docs.
         keys = [['rd.core.content', 'key-schema_id', [conv_id, 'rd.conv.summary']]

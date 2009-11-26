@@ -29,4 +29,4 @@ def handler(doc):
         return
 
     conv_id = ['url', doc['link']]
-    emit_convo_relations([doc['rd_key']], conv_id)
+    emit_schema_item('rd.msg.conversation', {'conversation_id': conv_id})

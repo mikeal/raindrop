@@ -36,6 +36,12 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         defer.returnValue(docs)
 
     @defer.inlineCallbacks
+    def get_messages_in_convo(self, cid):
+        key = ["rd.msg.conversation", "conversation_id", cid]
+        result = yield self.doc_model.open_view(key=key, reduce=False)
+        defer.returnValue([row['value']['rd_key'] for row in result['rows']])
+    
+    @defer.inlineCallbacks
     def put_docs(self, corpus_name, corpus_spec="*", expected=None):
         items = [d for d in self.gen_corpus_schema_items(corpus_name, corpus_spec)]
         if expected is not None:
@@ -53,25 +59,14 @@ class TestSimpleCorpus(TestCaseWithCorpus):
 
         msgid = ['email', 'd3d08a8a534c464881a95b75300e9011@something']
         body_schema = (yield self.doc_model.open_schemas([(msgid, 'rd.msg.body')]))[0]
-        # should be one 'rd.convo.messages' and one 'rd.convo.summary' doc
-        # in total in the DB.
-        keys = [['rd.core.content', 'schema_id', 'rd.conv.messages'],
-                ['rd.core.content', 'schema_id', 'rd.conv.summary'],
-            ]
-        result = yield self.doc_model.open_view(keys=keys, reduce=False,
-                                                include_docs = True)
+        # should be one 'rd.convo.summary' doc in the DB.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
         rows = result['rows']
-        self.failUnlessEqual(len(rows), 2, str(rows))
-        # results should be ordered by key, so .messages first.
-        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.messages')
-        self.failUnlessEqual(rows[1]['doc']['rd_schema_id'], 'rd.conv.summary')
-        doc_msgs = rows[0]['doc']
-        doc_sum = rows[1]['doc']
-        ## The document should have the expected properties/values.
-        expected_doc = {
-            'messages': [msgid]
-        }
-        self.ensure_doc(doc_msgs, expected_doc)
+        self.failUnlessEqual(len(rows), 1, str(rows))
+        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.summary')
+        doc_sum = rows[0]['doc']
         expected_doc = {
             'earliest_timestamp': body_schema['timestamp'],
             'latest_timestamp': body_schema['timestamp'],
@@ -86,6 +81,10 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                             ],
         }
         self.ensure_doc(doc_sum, expected_doc)
+
+        # only this message should be in the convo.
+        msgs = yield self.get_messages_in_convo(doc_sum['rd_key'])
+        self.failUnlessEqual(msgs, [msgid])
 
     @defer.inlineCallbacks
     def test_convo_deleted(self):
@@ -103,20 +102,14 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         }
         _ = yield self.doc_model.create_schema_items([si])
         _ = yield self.ensure_pipeline_complete()
-        # should be one 'rd.convo.messages' and one 'rd.convo.summary' doc
-        # in total in the DB.
-        keys = [['rd.core.content', 'schema_id', 'rd.conv.messages'],
-                ['rd.core.content', 'schema_id', 'rd.conv.summary'],
-            ]
-        result = yield self.doc_model.open_view(keys=keys, reduce=False,
-                                                include_docs = True)
+        # should be one 'rd.convo.summary' doc in the DB.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
         rows = result['rows']
-        self.failUnlessEqual(len(rows), 2, str(rows))
-        # results should be ordered by key, so .messages first.
-        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.messages')
-        self.failUnlessEqual(rows[1]['doc']['rd_schema_id'], 'rd.conv.summary')
-        doc_msgs = rows[0]['doc']
-        doc_sum = rows[1]['doc']
+        self.failUnlessEqual(len(rows), 1, str(rows))
+        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.summary')
+        doc_sum = rows[0]['doc']
         expected_doc = {
             'earliest_timestamp': None,
             'latest_timestamp': None,
@@ -127,6 +120,8 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'identities': [],
         }
         self.ensure_doc(doc_sum, expected_doc)
+        # Note our deleted message still has the rd.msg.conversation schema;
+        # but as we tested above, it doesn't appear in the 'summary'
 
     @defer.inlineCallbacks
     def test_convo_multiple(self):
@@ -140,24 +135,14 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                                     [(msgid, 'rd.msg.body'),
                                      (msgid_reply, 'rd.msg.body'),
                                         ]))
-        # should still be exactly one convo referencing both messages.
-        keys = [['rd.core.content', 'schema_id', 'rd.conv.messages'],
-                ['rd.core.content', 'schema_id', 'rd.conv.summary'],
-            ]
-        result = yield self.doc_model.open_view(keys=keys, reduce=False,
-                                                include_docs = True)
+        # should be exactly one convo referencing both messages.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
         rows = result['rows']
-        self.failUnlessEqual(len(rows), 2, str(rows))
-        # results should be ordered by key, so .messages first.
-        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.messages')
-        self.failUnlessEqual(rows[1]['doc']['rd_schema_id'], 'rd.conv.summary')
-        doc_msgs = rows[0]['doc']
-        doc_sum = rows[1]['doc']
-        ## The document should have the expected properties/values.
-        expected_doc = {
-            'messages': sorted([msgid, msgid_reply]),
-        }
-        self.ensure_doc(doc_msgs, expected_doc)
+        self.failUnlessEqual(len(rows), 1, str(rows))
+        self.failUnlessEqual(rows[0]['doc']['rd_schema_id'], 'rd.conv.summary')
+        doc_sum = rows[0]['doc']
         expected_doc = {
             'earliest_timestamp': min(body_orig['timestamp'], body_reply['timestamp']),
             'latest_timestamp': max(body_orig['timestamp'], body_reply['timestamp']),
@@ -175,6 +160,9 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                             ],
         }
         self.ensure_doc(doc_sum, expected_doc)
+        # check messages in the convo.
+        msgs = yield self.get_messages_in_convo(doc_sum['rd_key'])
+        self.failUnlessEqual(sorted(msgs), sorted([msgid_reply, msgid]))
 
     @defer.inlineCallbacks
     def test_convo_combine(self):
@@ -249,13 +237,85 @@ Hello again again
         self.failUnlessEqual(len(result['rows']), 1)
         conv_id = result['rows'][0]['value']['rd_key']
         # with all 3 messages.
-        key = ['rd.core.content', 'schema_id', 'rd.conv.messages']
+        msg_ids = yield self.get_messages_in_convo(conv_id)
+        mine = [['email', '90@something'],
+                ['email', '1234@something'],
+                ['email', '5678@something']]
+        self.failUnlessEqual(sorted(msg_ids), sorted(mine))
+
+    @defer.inlineCallbacks
+    def test_convo_non_delivery(self):
+        # in this test we introduce a "sent" message, and a
+        # non-delivery-report for that message - they should appear in the
+        # same convo.
+        _ = yield self.init_corpus('hand-rolled')
+        msg1 = """\
+From: Raindrop Test User <Raindrop_test_user@mozillamessaging.com>
+To: Raindrop Test Recipient <Raindrop_test_recip@mozillamessaging.com>
+Date: Sat, 21 Jul 2009 12:13:14 -0000
+Message-Id: <1234@something>
+
+Hello
+"""
+        msg2 = """\
+Delivered-To: raindrop_test_user@mozillamessaging.com
+Received: by 10.90.81.19 with SMTP id e19cs3488agb;
+        Mon, 27 Jul 2009 21:04:20 -0700 (PDT)
+Return-Path: <>
+Message-ID: <00163646cc282790b3046fbc2ac7@googlemail.com>
+From: Mail Delivery Subsystem <mailer-daemon@googlemail.com>
+To: raindrop_test_user@mozillamessaging.com
+Subject: Delivery Status Notification (Failure)
+Date: Mon, 27 Jul 2009 21:04:18 -0700 (PDT)
+X-Failed-Recipients: Raindrop_test_recip@mozillamessaging.com
+
+This is an automatically generated Delivery Status Notification
+
+Delivery to the following recipient failed permanently:
+
+     Raindrop_test_recip@mozillamessaging.com
+
+Technical details of permanent failure: 
+Google tried to deliver your message, blah blah blah
+
+   ----- Original message -----
+
+Received: by 10.114.103.9 with SMTP id a9mr11144409wac.14.1248753856901;
+        Mon, 27 Jul 2009 21:04:16 -0700 (PDT)
+Message-ID: <1234@something>
+Date: Tue, 28 Jul 2009 14:03:22 +1000
+From: Raindrop Test User <raindrop_test_user@mozillamessaging.com>
+To: Raindrop_test_recip@mozillamessaging.com
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
+Content-Transfer-Encoding: 7bit
+
+
+   ----- End of message -----
+
+"""
+        mid1 = "1234@something"
+        mid2 = "00163646cc282790b3046fbc2ac7@googlemail.com"
+        for (src, msgid) in [(msg1, mid1),
+                             (msg2, mid2)]:
+            si = {'rd_key': ['email', msgid],
+                  'rd_schema_id': 'rd.msg.rfc822',
+                  'rd_source' : None,
+                  'rd_ext_id': 'rd.testsuite',
+                  'items': {},
+                  'attachments' : {
+                        'rfc822': {
+                            'data': src
+                        }
+                  }
+                  }
+            _ = yield self.doc_model.create_schema_items([si])
+        _ = yield self.ensure_pipeline_complete()
+        # should be 1 convo.
+        key = ['rd.core.content', 'schema_id', 'rd.conv.summary']
         result = yield self.doc_model.open_view(key=key, reduce=False,
                                                 include_docs=True)
         self.failUnlessEqual(len(result['rows']), 1)
-        msg_ids = result['rows'][0]['doc']['messages']
-        seen_ids = set([self.doc_model.hashable_key(mid) for mid in msg_ids])
-        mine = set([('email', '90@something'),
-                    ('email', '1234@something'),
-                    ('email', '5678@something')])
-        self.failUnlessEqual(seen_ids, mine)
+        # and it should have both messages.
+        doc = result['rows'][0]['doc']
+        self.failUnlessEqual(sorted(doc['message_ids']),
+                             sorted([['email', mid1], ['email', mid2]]))

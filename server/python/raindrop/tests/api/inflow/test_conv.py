@@ -92,12 +92,19 @@ class TestConvoSimple(APITestCase):
     @defer.inlineCallbacks
     def test_by_id(self):
         known_msgs = self.get_known_msgs_to_identities()
-        # find the conv ID
-        key = ['rd.conv.messages', 'messages', list(known_msgs)[0]]
-        result = yield self.doc_model.open_view(key=key, reduce=False)
+        # find the conv IDs
+        keys = [['rd.core.content', 'key-schema_id', [mid, 'rd.msg.conversation']]
+                for mid in known_msgs]
+        result = yield self.doc_model.open_view(keys=keys, reduce=False,
+                                                include_docs=True)
         # should be 1 convo
-        self.failUnlessEqual(len(result['rows']), 1)
-        conv_id = result['rows'][0]['value']['rd_key']
+        self.failUnlessEqual(len(result['rows']), len(keys))
+        conv_id = None
+        for row in result['rows']:
+            if conv_id is None:
+                conv_id = row['doc']['conversation_id']
+            else:
+                self.failUnlessEqual(conv_id, row['doc']['conversation_id'])
 
         result = yield self.call_api("inflow/conversations/by_id",
                                      key=conv_id)

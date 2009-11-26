@@ -22,6 +22,7 @@
 #
 
 import re
+from raindrop.proto.imap import get_rdkey_for_email
 
 # Creates 'rd.msg.conversation' schemas for certain Delivery Status Notifications
 #
@@ -57,27 +58,10 @@ def failed_recipient(doc):
     if (match):
         logger.debug("found Message-ID header in DSN message '%s'", match.group(1))
         id = match.group(1)
-        create_conversation_from_failed_id(id,doc)
+        # make an rd_key for the referenced message.
+        rdkey_orig = get_rdkey_for_email(id)
+        # and say this message and the original are related.
+        find_and_emit_conversation([doc['rd_key'], rdkey_orig])
     else:
         logger.info("No match found for DSN messsage")
         return
-
-# XXX this is mostly copied and pasted from the rd.ext.core.msg-email-to-convo.py
-# and it would be nice if that was reused somehow instead of c&p'd
-def create_conversation_from_failed_id(failed_message_id, doc):
-    keys = ['rd.core.content', 'key-schema_id',
-            [['email', failed_message_id], 'rd.msg.conversation']]
-    result = open_view(keys=keys, reduce=False, include_docs=True)
-    # build a map of the keys we actually got back.
-    rows = [r for r in result['rows'] if 'error' not in r]
-    if rows:
-        assert 'doc' in rows[0], rows
-        convo_id = rows[0]['doc']['conversation_id']
-        logger.debug("FOUND CONVERSATION header_message_id %s with conversation_id %s",
-                     failed_message_id, convo_id)
-    else:
-        logger.debug("CREATING conversation_id %s", failed_message_id)
-        convo_id = failed_message_id
-
-    emit_schema('rd.msg.conversation', {'conversation_id': convo_id},
-                rd_key=doc['rd_key'])
