@@ -839,6 +839,7 @@ class ProcessingQueueRunner(object):
             # conflict as we write them (see above - our 'buffering' makes
             # this necessary...)
             for si in got:
+                doc_model.check_schema_item(si)
                 did = doc_model.get_doc_id_for_schema_item(si)
                 conflict_sources[did] = (src_id, src_rev)
             items.extend(got)

@@ -148,6 +148,32 @@ class DocumentModel(object):
         return meta, items
 
     @classmethod
+    def check_schema_item(cls, item):
+        """Check a schema item (presumably from an extension) and raise
+        ValueError if it is insane.
+        """
+        for attr in ['rd_key', 'rd_ext_id']:
+            val = item.get(attr)
+            if not val:
+                raise ValueError("no %r specifed" % attr, item)
+
+        source = item.get('rd_source')
+        if source:
+            if not isinstance(source, (tuple, list)) or len(source)!=2:
+                raise ValueError("invalid rd_source", item)
+        if '_deleted' in item:
+            if '_rev' not in item:
+                raise ValueError("you must provide _rev to delete", item)
+        else:
+            # deleting an item doesn't require schema items!
+            try:
+                items = item['items']
+                if items is not None and not isinstance(items, dict):
+                    raise ValueError("items must be a dict", item)
+            except KeyError:
+                raise ValueError("no schema items ('items') specifed", item)
+
+    @classmethod
     def doc_to_schema_items(cls, doc):
         """Turn a couch document back into a 'schema item' record"""
         meta, items = cls.split_meta_from_items(doc)
@@ -398,8 +424,8 @@ class DocumentModel(object):
             if mname in doc:
                 if mname in item and \
                    self.hashable_key(doc[mname]) != self.hashable_key(item[mname]):
-                    raise RuntimeError("doc confused about %s - %s vs %s" %
-                                       (mname, doc[mname], item[mname]))
+                    raise RuntimeError("doc confused about %s - %s vs %s\ndoc=%s\nitem=%s" %
+                                       (mname, doc[mname], item[mname], doc, item))
             elif mname in item:
                 doc[mname] = item[mname]
             else:
