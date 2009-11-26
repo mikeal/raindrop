@@ -30,6 +30,8 @@ from twisted.internet import defer, threads, task
 from twisted.python.failure import Failure
 from twisted.internet import reactor
 
+from raindrop.model import DocumentSaveError
+
 try:
     import json
 except ImportError:
@@ -807,6 +809,15 @@ class ProcessingQueueRunner(object):
 
         logger.debug("starting processing %r", self.queue_id)
         items = []
+        # Given multiple extensions may write to the same document (as all
+        # instances of the same schema are stored in the same document),
+        # conflicts are inevitable.  When we see conflicts we simply retry a
+        # few times in the expectation things will magically resolve
+        # themselves.
+        # This is more complicated than it need be due to our 'buffered
+        # writing' - but performance really sucks without it...
+        conflicts = []
+        conflict_sources = {} # key is src_id, value is created doc id.
         # process until we run out.
         for src_id, src_rev, schema_id, seq in src_gen:
             self.current_seq = seq
@@ -824,12 +835,50 @@ class ProcessingQueueRunner(object):
             if not got:
                 continue
             num_created += len(got)
+            # note which src caused an item to be generated, incase we
+            # conflict as we write them (see above - our 'buffering' makes
+            # this necessary...)
+            for si in got:
+                did = doc_model.get_doc_id_for_schema_item(si)
+                conflict_sources[did] = (src_id, src_rev)
             items.extend(got)
             if must_save or len(items)>20:
-                _ = yield doc_model.create_schema_items(items)
+                try:
+                    _ = yield doc_model.create_schema_items(items)
+                except DocumentSaveError, exc:
+                    conflicts.extend(exc.infos)
                 items = []
         if items:
-            _ = yield doc_model.create_schema_items(items)
+            try:
+                _ = yield doc_model.create_schema_items(items)
+            except DocumentSaveError, exc:
+                conflicts.extend(exc.infos)
+
+        # retry conflicts 3 times (yet another magic number)
+        for i in range(3):
+            if not conflicts:
+                break
+            logger.debug("handling %d conflicts", len(conflicts))
+            new_conflicts = []
+            for cinfo in conflicts:
+                # find the src which created the conflicting item.
+                src_id, src_rev = conflict_sources[cinfo['id']]
+                logger.debug("redoing conflict when processing %r,%r", src_id,
+                             src_rev)
+                # and ask it to go again...
+                got, _ = yield processor(src_id, src_rev)
+                # don't bother batching when handling conflicts...
+                try:
+                    _ = yield doc_model.create_schema_items(got)
+                except DocumentSaveError, exc:
+                    new_conflicts.extend(exc.infos)
+            logger.debug("handling the %d conflicts created %d new conflicts",
+                         len(conflicts), len(new_conflicts))
+            conflicts = new_conflicts
+        else:
+            # if we have remaining conflicts even after retrying, throw an error
+            if conflicts:
+                raise DocumentSaveError(conflicts)
 
         logger.debug("finished processing %r to %r - %d processed",
                      self.queue_id, self.current_seq, num_created)
