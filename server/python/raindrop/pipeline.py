@@ -868,11 +868,12 @@ class ProcessingQueueRunner(object):
                              src_rev)
                 # and ask it to go again...
                 got, _ = yield processor(src_id, src_rev)
-                # don't bother batching when handling conflicts...
-                try:
-                    _ = yield doc_model.create_schema_items(got)
-                except DocumentSaveError, exc:
-                    new_conflicts.extend(exc.infos)
+                if got:
+                    # don't bother batching when handling conflicts...
+                    try:
+                        _ = yield doc_model.create_schema_items(got)
+                    except DocumentSaveError, exc:
+                        new_conflicts.extend(exc.infos)
             logger.debug("handling the %d conflicts created %d new conflicts",
                          len(conflicts), len(new_conflicts))
             conflicts = new_conflicts
