@@ -307,7 +307,7 @@ def items_from_convo_relations(doc_model, msg_keys, ext_id):
     results = threads.blockingCallFromThread(reactor,
                     doc_model.open_view, keys=keys, reduce=False)
     for row in results['rows']:
-        yield {'rd_key': msg_key,
+        yield {'rd_key': row['value']['rd_key'],
                'rd_schema_id': 'rd.msg.conversation',
                'rd_ext_id': ext_id,
                'rd_schema_provider': ext_id,
