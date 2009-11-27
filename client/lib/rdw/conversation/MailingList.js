@@ -71,7 +71,7 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
   },
 
   /**
-   * Determines if TwitterTimeLine can support this conversation.
+   * Determines if the widget can support this conversation.
    *
    * @param conversation {object} the conversation API object
    */

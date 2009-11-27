@@ -103,23 +103,30 @@
 
 /* ### TWITTER ### */
 
-.rdwConversationTwitterTimeLine {
+.rdwExtTwitterGroup {
   background-color: #C4F3FF;
 }
 
-.rdwConversationTwitterTimeLine > .title {
+
+.rdwExtTwitterGroup > .title {
   padding: 0 0 0 22px;
   background-image: url("../i/new/rd_widget_twitter.png");
   background-repeat: no-repeat;
   background-position: left;
+  color: inherit;
+  text-decoration: none;
 }
 
-.rdwConversationTwitterTimeLine .rdwMessage > .message > .content a {
+.rdwExtTwitterGroup > .title:hover {
+  text-decoration: underline;
+}
+
+.rdwExtTwitterGroup .rdwMessage > .message > .content a {
   color: #ff5959;
   text-decoration: none;
 }
 
-.rdwConversationTwitterTimeLine .rdwMessage > .message > .content a:hover {
+.rdwExtTwitterGroup .rdwMessage > .message > .content a:hover {
   text-decoration: underline;
 }
 

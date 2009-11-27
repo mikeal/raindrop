@@ -36,7 +36,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
   //The max number of conversations to fetch from the API.  Each conversation
   // will have a maxiumum of messageLimit messages returned.
-  conversationLimit: 30,
+  conversationLimit: 60,
 
   //The max number of messages to fetch from each conversation using the
   // conversation APIs.
@@ -45,9 +45,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   //List of modules that can handle display of a conversation.
   //It is assumed that moduleName.prototype.canHandle(conversation) is defined
   //for each entry in this array.
-  convoModules: [
-    "rdw.conversation.TwitterTimeLine"
-  ],
+  convoModules: [],
 
   //Widget used for default conversation objects, when no home group is applicable.
   conversationCtorName: "rdw.Conversation",

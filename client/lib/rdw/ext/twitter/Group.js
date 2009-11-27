@@ -21,16 +21,16 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.TwitterTimeLine");
+dojo.provide("rdw.ext.twitter.Group");
 
 dojo.require("rdw.Conversation");
 
 /**
  * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
-  templateString: '<div class="WidgetBox rdwConversationTwitterTimeLine"> \
-                     <div dojoAttachPoint="nameNode" class="title">Twitter</div> \
+dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation], {
+  templateString: '<div class="WidgetBox rdwExtTwitterGroup"> \
+                     <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title">Twitter</a> \
                      <div class="tweetList" dojoAttachPoint="containerNode"></div> \
                      <div class="actions"> \
                        <div class="action broadcastCount"><span dojoAttachPoint="broadcastCountNode"></span> messages</div> \
@@ -71,7 +71,7 @@ dojo.declare("rdw.conversation.TwitterTimeLine", [rdw.Conversation], {
   },
 
   /**
-   * Determines if TwitterTimeLine can support this conversation.
+   * Determines if the widget can support this conversation.
    *
    * @param conversation {object} the conversation API object.
    */

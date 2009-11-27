@@ -158,10 +158,6 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
 //for mailing lists.
 rd.applyExtension("rdw.ext.MailingList", "rdw.Summary", {
   addToPrototype: {
-    topics: {
-      "rd-protocol-mailingList": "mailingList"
-    },
-
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
       this.addSupporting(new rdw.MailingListSummary({
@@ -180,7 +176,12 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Conversations", {
 
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
-      rd.conversation.mailingList(listId, this.conversationLimit, dojo.hitch(this, "updateConversations", "summary"));
+      rd.conversation.mailingList(listId, this.conversationLimit, dojo.hitch(this, function(conversations) {  
+        this.updateConversations("summary", conversations);
+        if (this.summaryWidget.mailingList) {
+          this.summaryWidget.mailingList(listId);
+        }
+      }));
     }
   }
 });

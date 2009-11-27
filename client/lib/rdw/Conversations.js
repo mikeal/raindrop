@@ -124,7 +124,7 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
         this._sub(prop, this.topics[prop]);
       }
     }
-    
+
     //See if there was a last known state of displayed messages and
     //show them.
     this.checkUpdateInfo();
