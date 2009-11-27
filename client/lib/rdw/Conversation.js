@@ -72,9 +72,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
   postMixInProperties: function() {
     //summary: dijit lifecycle method
     this.inherited("postMixInProperties", arguments);
-    this.msgConvoMap = {};
     this.msgs = this.conversation.messages;
-    this.mapMessages(this.conversation);
   },
 
   postCreate: function() {
@@ -82,18 +80,6 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     this.inherited("postCreate", arguments);
     if (this.displayOnCreate) {
       this.display();
-    }
-  },
-
-  mapMessages: function(conversation) {
-    //summary: maps all messages in the conversation to the conversation
-    //ID. Useful for generating links to a conversation given a message.
-    var msgs = conversation.messages;
-    if (msgs) {
-      var convoId = dojo.toJson(conversation.id);
-      for (var i = 0; i < msgs.length; i++) {
-        this.msgConvoMap[dojo.toJson(msgs[i].id)] = convoId;
-      }
     }
   },
 
@@ -148,7 +134,6 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     var messages = conversation.messages;
     if (messages && messages.length) {
       this.msgs.push.apply(this, conversation.messages);
-      this.mapMessages(conversation);
     }
 
     if (this._displayed) {
@@ -256,7 +241,6 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
         this.lastDisplayedMsg = msg;
         this.addSupporting(new ctor({
           msg: msg,
-          convoId: this.msgConvoMap[dojo.toJson(msg.id)],
           type: index == 0 ? "" : this.replyStyle,
           tabIndex: index == 0 || this.allowReplyMessageFocus ? 0 : -1
         }, dojo.create("div", null, this.containerNode)));

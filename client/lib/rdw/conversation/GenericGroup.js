@@ -97,7 +97,6 @@ dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation], {
     var messages = conversation.messages;
     if (messages && messages.length) {
       this.msgs.push.apply(this.msgs, messages);
-      this.mapMessages(conversation);
       this.totalCount += messages.length;
     }
 

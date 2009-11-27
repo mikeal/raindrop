@@ -39,9 +39,6 @@ dojo.declare("rdw.Message", [rdw._Base], {
   //Warning: this is a prototype property: be sure to
   //set it per instance.
   msg: null,
-  
-  //The conversation ID associated with this message.
-  convoId: null,
 
   templateString: dojo.cache("rdw.templates", "Message.html"),
 
@@ -82,6 +79,9 @@ dojo.declare("rdw.Message", [rdw._Base], {
     }
 
     //Set up the link for the full conversation view action.
+    this.convoId = schemas
+      && schemas["rd.msg.conversation"]
+      && schemas["rd.msg.conversation"].conversation_id;
     if (this.convoId) {
       this.expandLink = "rd:conversation:" + dojo.toJson(this.convoId);
     }
