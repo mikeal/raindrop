@@ -77,6 +77,24 @@ class TestConvoSimple(APITestCase):
         self.failUnlessEqual(seen.intersection(unknown_msgs), set())
 
     @defer.inlineCallbacks
+    def test_twitter(self):
+        result = yield self.call_api("inflow/conversations/twitter")
+        # confirm only one conversation
+        self.failUnlessEqual(1, len(result))
+
+        # get the one conversation and sanity check it.
+        convo = result[0]
+        self.sanity_check_convo(convo)
+
+        # confirm only one message
+        self.failUnlessEqual(1, len(convo['messages']))
+
+        msg = convo['messages'][0]
+        # check the rd_key from the body schema
+        rdkey = msg['schemas']['rd.msg.body']['rd_key']        
+        self.failUnlessEqual(['tweet', 6119612045], rdkey)
+
+    @defer.inlineCallbacks
     def test_with_messages(self):
         known_msgs = self.get_known_msgs_to_identities()
         result = yield self.call_api("inflow/conversations/with_messages",

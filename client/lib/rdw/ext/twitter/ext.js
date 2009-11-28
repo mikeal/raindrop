@@ -45,7 +45,7 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.Conversations", {
     twitter: function() {
       //summary: responds to requests to show all twitter messages
       rd.api({
-        url: 'inflow/conversations/personal',
+        url: 'inflow/conversations/twitter',
         limit: this.conversationLimit,
         message_limit: this.messageLimit
       })

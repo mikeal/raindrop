@@ -1,0 +1,31 @@
+{
+	"_id": "rc!tweet.NjExOTYxMjA0NQ==!rd.msg.tweet.raw", 
+	"_rev": "1-42be1f763b32780f5d7529012b03630b", 
+	"rd_key": [
+		"tweet", 
+		6119612045
+	], 
+	"twitter_favorited": false, 
+	"rd_schema_provider": "proto.twitter", 
+	"twitter_user": "davidascher", 
+	"rd_schema_id": "rd.msg.tweet.raw", 
+	"twitter_id": 6119612045, 
+	"rd_schema_items": {
+		"proto.twitter": {
+			"rd_source": null, 
+			"schema": null
+		}
+	}, 
+	"twitter_source": "<a href=\"http://twitterrific.com\" rel=\"nofollow\">Twitterrific</a>", 
+	"twitter_created_at_in_seconds": 1259348322, 
+	"twitter_truncated": false, 
+	"twitter_text": "HTML & Javascript templating needs a serious reboot.", 
+	"twitter_created_at": "Fri Nov 27 18:58:42 +0000 2009", 
+	"twitter_user_name": "David Ascher", 
+	"_revs_info": [
+		{
+			"rev": "1-42be1f763b32780f5d7529012b03630b", 
+			"status": "available"
+		}
+	]
+}

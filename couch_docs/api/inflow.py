@@ -193,13 +193,17 @@ class ConversationAPI(API):
         for cs in conv_summaries:
             ret_conv = {
                 'id': cs['rd_key'],
-                'subject': cs['subject'],
                 'identities': cs['identities'],
                 'unread': len(cs['unread_ids']),
                 'unread_ids': cs['unread_ids'],
                 'message_ids': cs['message_ids'],
                 'messages': []
             }
+
+            # Some messages, like tweets do not have subjects            
+            if 'subject' in cs:
+                ret_conv['subject'] = cs['subject']
+
             ret.append(ret_conv)
             these_ids = cs['message_ids']
             if message_limit is not None:
@@ -351,6 +355,25 @@ class ConversationAPI(API):
                            startkey=["rd.conv.summary", "target-timestamp", ["personal", {}]],
                            endkey=["rd.conv.summary", "target-timestamp", ["personal"]],
                            )
+
+    def twitter(self, req):
+        opts = {
+            'startkey': ["rd.msg.tweet.raw", "twitter_created_at_in_seconds", 9999999999999999],
+            'endkey': ["rd.msg.tweet.raw", "twitter_created_at_in_seconds", 0],
+            'reduce': False,
+            'descending': True,
+        }
+
+        self.requires_get(req)
+        args = self.get_args(req, limit=30, skip=0, message_limit=None)
+        opts['limit'] = args['limit']
+        opts['skip'] = args['skip']
+        db = RDCouchDB(req)
+
+        result = db.megaview(**opts)
+
+        keys = [row['value']['rd_key'] for row in result['rows']]
+        return self._with_messages(db, keys, args['message_limit'])
 
 class ContactAPI(API):
     def _fetch_identies_for_contact(self, db, cid):
