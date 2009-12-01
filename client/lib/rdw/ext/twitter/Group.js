@@ -24,18 +24,22 @@
 dojo.provide("rdw.ext.twitter.Group");
 
 dojo.require("rdw.Conversation");
+dojo.require("rdw.fx.wiper");
 
 /**
  * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation], {
-  templateString: '<div class="WidgetBox rdwExtTwitterGroup"> \
+dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
+  templateString: '<div class="WidgetBox rdwExtTwitterGroup" dojoAttachPoint="headNode"> \
                      <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title">Twitter</a> \
-                     <div class="tweetList" dojoAttachPoint="containerNode"></div> \
-                     <div class="actions"> \
-                       <div class="action broadcastCount"><span dojoAttachPoint="broadcastCountNode"></span> messages</div> \
-                       <div class="action noteCount"><span dojoAttachPoint="noteCountNode"></span> updates</div> \
-                     </div> \
+                     <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                     <div dojoAttachPoint="bodyNode"> \
+                       <div class="tweetList" dojoAttachPoint="containerNode"></div> \
+                       <div class="actions"> \
+                         <div class="action broadcastCount"><span dojoAttachPoint="broadcastCountNode"></span> messages</div> \
+                         <div class="action noteCount"><span dojoAttachPoint="noteCountNode"></span> updates</div> \
+                       </div> \
+                     </div. \
                    </div>',
 
   /**
@@ -68,6 +72,14 @@ dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation], {
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
     this.noteMsgs = [];
+  },
+
+  /**
+   * Widget lifecycle method, called after template is in the DOM.
+   */
+  postCreate: function() {
+    this.inherited("postCreate", arguments);
+    this.wiperInit("open");
   },
 
   /**

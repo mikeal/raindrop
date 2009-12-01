@@ -66,6 +66,16 @@
   color: #888;
 }
 
+.WidgetBox .wipeToggle {
+  visibility: hidden;
+  float: right;
+  pointer: cursor;
+}
+
+.WidgetBox:hover .wipeToggle {
+  visibility: visible;
+}
+
 .WidgetBox  > .actions {
   margin-top: 8px;
 }

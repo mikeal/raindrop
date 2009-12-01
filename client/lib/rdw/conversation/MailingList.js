@@ -24,14 +24,16 @@
 dojo.provide("rdw.conversation.MailingList");
 
 dojo.require("rdw.Conversation");
+dojo.require("rdw.fx.wiper");
 
 /**
  * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
+dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationMailingList"> \
                     <span dojoAttachPoint="nameNode" class="title"></span> \
-                    <div class="mailingList" dojoAttachPoint="containerNode"></div> \
+                    <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                    <div class="mailingList" dojoAttachPoint="containerNode,bodyNode"></div> \
                   </div>',
 
   /**
@@ -59,6 +61,14 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation], {
     this.inherited("postMixInProperties", arguments);
     this.convoIds = {};
     this.totalCount = 0;
+  },
+
+  /**
+   * Widget lifecycle method, called after template is in the DOM.
+   */
+  postCreate: function() {
+    this.inherited("postCreate", arguments);
+    this.wiperInit("open");
   },
 
   /**

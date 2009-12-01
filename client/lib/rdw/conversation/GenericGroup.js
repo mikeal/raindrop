@@ -24,14 +24,16 @@
 dojo.provide("rdw.conversation.GenericGroup");
 
 dojo.require("rdw.Conversation");
+dojo.require("rdw.fx.wiper");
 
 /**
  * Groups some broadcast/general group messages into one "conversation"
  */
-dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation], {
+dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationGenericGroup"> \
                     <div dojoAttachPoint="nameNode" class="title"></div> \
-                    <div class="genericGroup" dojoAttachPoint="containerNode"></div> \
+                    <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                    <div class="genericGroup" dojoAttachPoint="containerNode,bodyNode"></div> \
                   </div>',
 
   /**
@@ -64,6 +66,14 @@ dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation], {
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
     this.totalCount = 0;
+  },
+
+  /**
+   * Widget lifecycle method, called after template is in the DOM.
+   */
+  postCreate: function() {
+    this.inherited("postCreate", arguments);
+    this.wiperInit("open");
   },
 
   /**
