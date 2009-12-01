@@ -27,6 +27,7 @@ dojo.require("rdw._Base");
 dojo.require("rd.api");
 dojo.require("rd.api.message");
 dojo.require("rdw.Conversation");
+dojo.require("rdw.SummaryGroup");
 
 dojo.declare("rdw.Widgets", [rdw._Base], {
   //Array of conversations to show.
@@ -49,6 +50,9 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
   //Widget used for default conversation objects, when no home group is applicable.
   conversationCtorName: "rdw.Conversation",
+
+  //Widget used for the summary group widget, the first one in the widget list.
+  summaryGroupCtorName: "rdw.SummaryGroup",
 
   templateString: '<div class="rdwWidgets"></div>',
 
@@ -418,8 +422,15 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
       this._sortGroups();
 
-      //Add all the widgets to the DOM and ask them to display.
       var frag = dojo.doc.createDocumentFragment();
+
+      //Create summary group widget and add it first to the fragment.  
+      var summaryWidgetCtor = dojo.getObject(this.summaryGroupCtorName);
+      var summaryWidget = new summaryWidgetCtor();
+      this.addSupporting(summaryWidget);
+      summaryWidget.placeAt(frag);
+
+      //Add all the widgets to the DOM and ask them to display.      
       for (var i = 0, group; group = this._groups[i]; i++) {
         group.placeAt(frag);
         group.display();
