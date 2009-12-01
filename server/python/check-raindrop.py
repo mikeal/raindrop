@@ -273,7 +273,12 @@ def check_couch():
     # and for the sake of it, tell the external to restart, just incase it
     # changed (this might be better off in run-raindrop, but it causes a bit
     # of couch log noise...)
-    urllib2.urlopen(url + "raindrop/_api/_exit")
+    try:
+        urllib2.urlopen(url + "raindrop/_api/_exit")
+    except urllib2.HTTPError, exc:
+        # 'not found' is OK; anything else may be a problem...
+        if exc.code != 404:
+            raise
 
     # XXX - we currently don't take advantage of that...
     #check_couch_external(url, configure)
