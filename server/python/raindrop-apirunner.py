@@ -301,4 +301,8 @@ def main():
     log("raindrop api runner terminating normally")
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        # likely couch itself is closing...
+        sys.stderr.write('raindrop api runner interrupted...\n')
