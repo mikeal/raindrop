@@ -105,6 +105,9 @@ class TestCaseWithDB(TestCase):
             _ = yield self.pipeline.finalize()
         _ = yield TestCase.tearDown(self)
 
+    def get_options(self):
+        return FakeOptions()
+
     @defer.inlineCallbacks
     def ensure_pipeline_complete(self):
         # later we will support *both* backlog and incoming at the
@@ -164,16 +167,17 @@ class TestCaseWithDB(TestCase):
                       for r in got['rows'] if r['doc']['id'] not in wanted_ids]
             _ = yield db.updateDocuments(dbinfo['name'], to_del)
 
+        opts = self.get_options()
         return db.deleteDB(dbinfo['name']
                 ).addCallbacks(_nuked_ok, _nuke_failed, errbackArgs=(5,)
                 ).addCallback(fab_db
                 ).addCallback(bootstrap.check_accounts, config
                 # client files are expensive (particularly dojo) and not
                 # necessary yet...
-                #).addCallback(bootstrap.install_client_files, FakeOptions()
+                #).addCallback(bootstrap.install_client_files, opts
                 #).addCallback(bootstrap.update_apps
-                ).addCallback(bootstrap.insert_default_docs, FakeOptions()
-                ).addCallback(bootstrap.install_views, FakeOptions()
+                ).addCallback(bootstrap.insert_default_docs, opts
+                ).addCallback(bootstrap.install_views, opts
                 ).addCallback(del_non_test_accounts
                 )
 
@@ -212,9 +216,6 @@ class TestCaseWithTestDB(TestCaseWithDB):
         _ = yield self.prepare_test_db(self.config)
         _ = yield self.pipeline.initialize()
 
-    def get_options(self):
-        return FakeOptions()
-
     def make_config(self):
         # change the name of the DB used.
         config = raindrop.config.init_config()
@@ -251,13 +252,31 @@ class TestCaseWithCorpus(TestCaseWithDB):
         dbinfo = self.config.couches['local']
         dbinfo['name'] = 'raindrop_test_suite'
         dbinfo['port'] = 5984
-        opts = FakeOptions()
+        opts = self.get_options()
         self.doc_model = get_doc_model()
         self.pipeline = Pipeline(self.doc_model, opts)
         return self.prepare_test_db(self.config
             ).addCallback(lambda _: self.pipeline.initialize()
             )
 
+    def rfc822_to_schema_item(self, fp):
+        data = fp.read() # we need to use the data twice...
+        msg_id = message_from_string(data)['message-id']
+        si = {
+                'rd_schema_id': 'rd.msg.rfc822',
+                'rd_key': get_rdkey_for_email(msg_id),
+                'rd_ext_id': 'proto.imap',
+                'rd_source': None,
+                'attachments' : {
+                    'rfc822': {
+                        'content_type': 'message',
+                        'data': data,
+                    }
+                },
+                'items' : {},
+            }
+        return si
+        
     def get_corpus_dir(self, name):
         import raindrop.tests
         return os.path.join(raindrop.tests.__path__[0], "corpora", name)
@@ -302,22 +321,7 @@ class TestCaseWithCorpus(TestCaseWithDB):
             elif os.path.exists(basename + ".rfc822.txt"):
                 # plain rfc822.txt file.
                 with open(basename + ".rfc822.txt", 'rb') as f:
-                    data = f.read()
-                msg_id = message_from_string(data)['message-id']
-                si = {
-                        'rd_schema_id': 'rd.msg.rfc822',
-                        'rd_key': get_rdkey_for_email(msg_id),
-                        'rd_ext_id': 'proto.imap',
-                        'rd_source': None,
-                        'attachments' : {
-                            'rfc822': {
-                                'content_type': 'message',
-                                'data': data,
-                            }
-                        },
-                        'items' : {},
-                    }
-                sis = [si]
+                    sis = [self.rfc822_to_schema_item(f)]
             else:
                 print "Don't know how to load '%s.*' into the corpus" % basename
                 continue
