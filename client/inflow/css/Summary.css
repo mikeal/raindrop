@@ -31,11 +31,12 @@
   background-repeat: no-repeat;
   padding-left: 16px;
   background-position: left;
+  font-weight: bold;
 }
 
 .rdwSummary.conversation {
   font-style: normal;
-  font-weight: normal;
+  font-weight: bold;
   color: #000;
   background-image: none;
   padding-left: 0;

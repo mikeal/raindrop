@@ -38,8 +38,8 @@ dojo.provide("rdw.fx.wiper");
 dojo.declare("rdw.fx.wiper", null, {
   _wiperOpenClass: "rdwFxWiperOpen",
   _wiperClosedClass: "rdwFxWiperClosed",
-  wipeTextShow: "Show",
-  wipeTextHide: "Hide",
+  wipeTextShow: "+",
+  wipeTextHide: "-",
 
   wiperDuration: 200,
 

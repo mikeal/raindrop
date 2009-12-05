@@ -22,9 +22,9 @@
  * */
 
 .rdwConversationFullMessage {
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
   border: 1px solid #e6e6e6;
-  -moz-box-shadow: 3px 3px 0 #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0 #e6e6e6;
   background-color: #fff;
   margin: 0 0 20px 0;
 }

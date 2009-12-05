@@ -37,6 +37,7 @@
 .rdwConversationFullConversation > .messages {
   padding:0;
   width: 620px;
+  background-color: #f2f2f2;
 }
 
 .rdwConversationFullConversation > .toolBox {

@@ -26,12 +26,12 @@
 .rdwConversation {
   width: 620px;
   margin: 10px 10px 20px 10px;
-  border: 1px solid #e6e6e6;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
-  -moz-box-shadow: 3px 3px 0px #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border: 1px solid #e6e6e6;
 }
 
 .rdwConversation.unread {
@@ -75,7 +75,7 @@
   background-image: url("../i/new/rd_inflow_groupmessage.png");
   background-repeat: no-repeat;
   background-position: left;
-  padding: 0 0 0 17px;
+  padding: 0 0 0 26px;
 }
 
 .rdwConversation > .header > .subject {
@@ -100,12 +100,12 @@
 }
 
 .rdwConversation > .actions {
-  margin: 7px 0 0 0;
+  margin: 5px;
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
-  padding: 0 5px 7px 5px;
   visibility: hidden;
+  width: 608px;
 }
 
 .rdwConversation:hover > .actions {
@@ -117,6 +117,7 @@
   border-right: 1px solid #000;
   color: #ff5959;
   text-decoration: none;
+  display: inline;
 }
 
 .rdwConversation > .actions a:hover {
@@ -127,12 +128,13 @@
 .actions a.fwd {
   font-family: droid-serif, georgia, times, serif;
   font-style: normal;
-  float: right;
   color: #000;
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
-  background-color: #e6e6e6;
-  padding: 0px 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  background-image: url("../i/new/rd_button_bg.jpg");
+  background-position: center;
+  background-repeat: repeat-x;
+  padding: 2px 4px;
   border: none;
   font-size: 10px;
   text-decoration: none;
@@ -142,11 +144,9 @@
 .actions a.reply:hover,
 .actions a.fwd:hover {
   text-decoration: none;
-  background-color: #ff5959;
-  color: white;
-  border: 1px solid transparent;
+  border: 1px solid #888;
 }
   
-.rdwConversation > .actions a:first-child {
+.rdwConversation > .actions.boxFlex a:first-child {
   padding: 0 4px 0 0;
 }

@@ -423,15 +423,20 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
       this._sortGroups();
 
       var frag = dojo.doc.createDocumentFragment();
+      var zIndex = this._groups.length;
 
       //Create summary group widget and add it first to the fragment.  
       var summaryWidgetCtor = dojo.getObject(this.summaryGroupCtorName);
       var summaryWidget = new summaryWidgetCtor();
+      //Want summary widget to be the highest, add + 1 since group work
+      //below uses i starting at 0.
+      summaryWidget.domNode.style.zIndex = zIndex + 1;
       this.addSupporting(summaryWidget);
       summaryWidget.placeAt(frag);
 
       //Add all the widgets to the DOM and ask them to display.      
       for (var i = 0, group; group = this._groups[i]; i++) {
+        group.domNode.style.zIndex = zIndex - i;
         group.placeAt(frag);
         group.display();
       }

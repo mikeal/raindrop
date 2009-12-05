@@ -25,25 +25,30 @@
 
 .WidgetBox,
 .rdwWidgets.start .rdwConversation {
-  width: 300px;
-  margin: 10px;
+  width: 310px;
+  margin: 10px 0;
   float: left;
-  padding: 5px;
-  -moz-box-shadow: 3px 3px 0px #e6e6e6;
-  -webkit-box-shadow: 3px 3px 0px #e6e6e6;
-  border: 1px solid #e6e6e6;
+  padding: 5px 1px 5px 9px;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
+  position: relative;
+  margin-top: -30px;
+  padding-top: 25px;
+}
+
+.WidgetBox:nth-child(2) {
+  margin-top: -35px;
 }
 
 .WidgetBox > .title {
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
+  font-weight: bold;
 }
 
 .WidgetBox .rdwMessage {
-  margin-top: 6px;
+  margin-top: 8px;
   padding-bottom: 1px;
 }
 
@@ -68,8 +73,18 @@
 
 .WidgetBox .wipeToggle {
   visibility: hidden;
-  float: right;
   pointer: cursor;
+  position: absolute;
+  top: 25px;
+  right: 0;
+  outline: none;
+  background-color: #333;
+  color: white;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  font-family: droid-sans-mono, monospace;
+  font-size: 12px;
+  padding: 0 3px;
 }
 
 .WidgetBox:hover .wipeToggle {
@@ -78,12 +93,12 @@
 
 .WidgetBox  > .actions {
   margin-top: 8px;
+  width: 100%;
 }
 
 .WidgetBox > .actions > .action {
   display: inline;
-  padding: 0px 4px;
-  margin-left: 4px;
+  padding: 1px 4px;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   color: #fff;
@@ -111,10 +126,26 @@
   padding-right: 25px;
 }
 
+/* ### SUMMARY ### */
+
+.rdwSummaryGroup {
+  padding: 48px 0 0 0;
+  margin: 0 0 10px 0;
+  -moz-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
+  -webkit-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
+  border-width: 1px 12px 18px 9px;  
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  background-image: none;
+}
+
+
 /* ### TWITTER ### */
 
 .rdwExtTwitterGroup {
-  background-color: #C4F3FF;
+  -moz-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
+  border-width: 1px 9px 12px 1px; 
 }
 
 
@@ -143,7 +174,9 @@
 /* ### MAILING LIST ### */
 
 .rdwConversationMailingList {
-  background-color: #FFDEDE;
+  -moz-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
+  border-width: 1px 9px 12px 1px; 
 }
 
 .rdwConversationMailingList > .title {
@@ -156,7 +189,9 @@
 /* ### GENERIC GROUP ### */
 
 .rdwConversationGenericGroup {
-  background-color: #E9FFE0; 
+  -moz-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
+  border-width: 1px 9px 12px 1px; 
 } 
 
 .rdwConversationGenericGroup > .title {
