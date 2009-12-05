@@ -31,9 +31,15 @@ dojo.require("rdw.fx.wiper");
  */
 dojo.declare("rdw.conversation.GenericGroup", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationGenericGroup"> \
-                    <div dojoAttachPoint="nameNode" class="title"></div> \
-                    <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
-                    <div class="genericGroup" dojoAttachPoint="containerNode,bodyNode"></div> \
+                     <div class="WidgetHeader hbox"> \
+                      <div dojoAttachPoint="nameNode" class="title"></div> \
+                      <span class="actions boxFlex"> \
+                         <span class="action broadcastCount" dojoAttachPoint="broadcastCountNode"></span> \
+                         <span class="action noteCount" dojoAttachPoint="noteCountNode"></span> \
+                         <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                      </span> \
+                     </div> \
+                     <div class="WidgetBody genericGroup" dojoAttachPoint="containerNode,bodyNode"></div> \
                   </div>',
 
   /**
