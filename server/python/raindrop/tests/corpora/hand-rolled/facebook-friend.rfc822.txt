@@ -1,0 +1,141 @@
+                                                                                                                                                                                                                                                               
+Delivered-To: foo@example.com
+Received: by 10.151.27.10 with SMTP id e10cs412716ybj;
+        Fri, 4 Dec 2009 13:04:07 -0800 (PST)
+Received: by 10.114.236.40 with SMTP id j40mr4735011wah.75.1259960646909;
+        Fri, 04 Dec 2009 13:04:06 -0800 (PST)
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+Received: from mx-out.facebook.com (outmail007.snc1.tfbnw.net [69.63.178.166])
+        by mx.google.com with ESMTP id 15si1845384pxi.101.2009.12.04.13.04.05;
+        Fri, 04 Dec 2009 13:04:05 -0800 (PST)
+Received-SPF: pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.166 as permitted sender) client-ip=69.63.178.166;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.166 as permitted sender) smtp.mail=notification+kjdmmhv--5ki@facebookmail.com; dkim=pass header.i=@facebookmail.com
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+DKIM-Signature: v=1; a=rsa-sha1; d=facebookmail.com; s=q1-2009b; c=relaxed/relaxed;
+	q=dns/txt; i=@facebookmail.com; t=1259960645;
+	h=From:Subject:Date:To:MIME-Version:Content-Type;
+	bh=MZOgH9B0q+selEDHLS3QAVH57ZA=;
+	b=eayiKQ8ms6WDzDfBU48SmW6U7RX6uXsuKKSAjIAcbYIAxYAYZxMSbafkSOxzCoqI
+	bRr71BPtNVWmv9w/GRGFcA==;
+Received: from [10.18.255.129] ([10.18.255.129:63604])
+	by mta301.snc1.facebook.com (envelope-from <notification+kjdmmhv--5ki@facebookmail.com>)
+	(ecelerity 3.0.17.34360 r(34360)) with ECSTREAM
+	id E3/05-24170-549791B4; Fri, 04 Dec 2009 13:04:05 -0800
+X-Facebook: from zuckmail ([NjQuNDYuMzEuNzU=]) 
+	by www.facebook.com with HTTP (ZuckMail);
+Date: Fri, 4 Dec 2009 13:04:04 -0800
+To: Foo Bar <foo@example.com>
+From: Facebook <notification+kjdmmhv--5ki@facebookmail.com>
+Reply-to: noreply <noreply@facebookmail.com>
+Subject: Cool Dude added you as a friend on Facebook...
+Message-ID: <dacbf3320d830a5b7fc9c097ae8d6877@www.facebook.com>
+X-Priority: 3
+X-Mailer: ZuckMail [version 1.00]
+X-Facebook-Notify: friend; from=1583870606; mailid=1837672G5af329b28dffGefb12G2
+Errors-To: notification+kjdmmhv--5ki@facebookmail.com
+X-FACEBOOK-PRIORITY: 0
+MIME-Version: 1.0
+Content-Type: multipart/alternative;
+	boundary="b1_dacbf3320d830a5b7fc9c097ae8d6877"
+
+
+--b1_dacbf3320d830a5b7fc9c097ae8d6877
+Content-Type: text/plain; charset = "UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi Foo,
+
+Cool Dude added you as a friend on Facebook.  We need to confirm that =
+you know Cool in order for you to be friends on Facebook.
+
+Thanks,
+The Facebook Team
+
+To confirm this friend request, follow the link below:
+http://www.facebook.com/n/?reqs.php&mid=3D1837672G5af329b28dffGefb12G2
+
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=
+=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D=3D
+This message was intended for foo@example.com. Want to control which =
+emails you receive from Facebook? Go to:
+http://www.facebook.com/editaccount.php?notifications=3D1&md=3DZnJpZW5kO2Z=
+yb209MTU4Mzg3MDYwNjt0bz0xMDAwMDA0MjMxMjAzODM=3D
+Facebook's offices are located at 1601 S. California Ave., Palo Alto, CA =
+94304.
+
+
+--b1_dacbf3320d830a5b7fc9c097ae8d6877
+Content-Type: text/html; charset = "UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional //EN">
+<html><head><meta http-equiv=3D"Content-Type" content=3D"text/html; =
+charset=3Dutf-8"><title>Facebook</title></head><body style=3D"margin: 0; =
+padding: 0;" dir=3D"ltr"><table width=3D"98%" border=3D"0" =
+cellspacing=3D"0" cellpadding=3D"40"><tr><td bgcolor=3D"#f7f7f7" =
+width=3D"100%" style=3D"font-family: 'lucida grande', tahoma, verdana, =
+arial, sans-serif;"><table cellpadding=3D"0" cellspacing=3D"0" =
+border=3D"0" width=3D"620"><tr><td style=3D"background: #3b5998; color: =
+#fff; font-weight: bold; font-family: 'lucida grande', tahoma, verdana, =
+arial, sans-serif; padding: 4px 8px; vertical-align: middle; font-size: =
+16px; letter-spacing: -0.03em; text-align: =
+left;">facebook</td></tr><tr><td style=3D"background-color: #fff; =
+border-bottom: 1px solid #3b5998; border-left: 1px solid #ccc; =
+border-right: 1px solid #ccc;font-family: 'lucida grande', tahoma, =
+verdana, arial, sans-serif; padding: 15px;" valign=3D"top"><table><tr><td =
+width=3D"470px" style=3D"font-size: 12px;" valign=3D"top" =
+align=3D"left"><div style=3D"margin-bottom: 15px; font-size: 13px;">Hi =
+Foo,</div><div style=3D"margin-bottom: 15px;">Cool Dude added you as a =
+friend on Facebook.  We need to confirm that you know Cool in order for =
+you to be friends on Facebook.</div><div style=3D"margin-bottom: =
+15px;"><div style=3D"border-bottom: 1px solid #ccc; =
+line-height:5px;">&nbsp;</div><br /><table cellpadding=3D"0" =
+style=3D"margin-top: 5px;"><tr valign=3D"top"><td style=3D"padding: 0px =
+3px 10px 0px;"><a href=3D"http://www.facebook.com/n/?reqs.php&amp;mid=3D18=
+37672G5af329b28dffGefb12G2"><img style=3D"border: 0px none;" alt=3D"Cool =
+Dude" =
+src=3D"http://profile.ak.fbcdn.net/v227/53/123/q1583870606_6862.jpg" =
+width=3D"50" height=3D"50" /></a></td><td width=3D"95" style=3D"font-size: =
+11px; color: #999; padding: 0px 0px 10px 0px;"><span style=3D"font-size: =
+11px; color: #3B5998;"><a href=3D"http://www.facebook.com/n/?reqs.php&amp;=
+mid=3D1837672G5af329b28dffGefb12G2" style=3D"color: #3B5998; =
+text-decoration: none; font-size: 11px; font-weight: bold;">Cool =
+Dude</a></span><br /></tr></table><div style=3D"border-bottom: 1px solid =
+#ccc; line-height:5px;">&nbsp;</div><br /></div><div =
+style=3D"margin-bottom: 15px; margin: 0;">Thanks,<br />
+The Facebook Team</div></td><td valign=3D"top" width=3D"150" =
+style=3D"padding-left: 15px;" align=3D"left"><table width=3D"100%" =
+cellspacing=3D"0" cellpadding=3D"0"><tr><td style=3D"background-color: =
+#FFF8CC; border: 1px solid #FFE222; color: #333; padding: 10px; font-size: =
+12px;"><div style=3D"margin-bottom: 15px;">To confirm Cool as a =
+friend:</div><table cellspacing=3D"0" cellpadding=3D"0"><tr><td =
+style=3D"border: 1px solid #3b6e22;"><table cellspacing=3D"0" =
+cellpadding=3D"0"><tr><td style=3D"padding: 5px 15px;background-color: =
+#67a54b;border-top: 1px solid #95bf82;"><a href=3D"http://www.facebook.com=
+/n/?reqs.php&amp;mid=3D1837672G5af329b28dffGefb12G2" style=3D"color: =
+#fff;font-size: 13px;font-weight: bold;text-decoration: none;">Add =
+Friend</a></td></tr></table></td></tr></table></td></tr></table></td></tr>=
+</table><img src=3D"http://www.facebook.com/email_open_log_pic.php?k=3Dkjd=
+mmhv--5ki&amp;t=3D11&amp;mid=3D1837672G5af329b28dffGefb12G2" alt=3D"" =
+style=3D"border: 0; height:1px; width:1px;" /><div style=3D"padding-top: =
+15px;"><table width=3D"100%" cellspacing=3D"0" cellpadding=3D"0"><tr><td =
+style=3D"background-color: #FFF8CC; border: 1px solid #FFE222; color: =
+#333; padding: 10px; font-size: 11px;"><div style=3D"font-weight: bold; =
+margin-bottom: 2px;">To confirm this friend request, follow the link =
+below:</div><a href=3D"http://www.facebook.com/n/?reqs.php&amp;mid=3D18376=
+72G5af329b28dffGefb12G2" style=3D"color: #3b5998; text-decoration: =
+none;">http://www.facebook.com/n/?reqs.php&mid=3D1837672G5af329b28dffGefb1=
+2G2</a></td></tr></table></div></td></tr><tr><td style=3D"color: #999; =
+padding: 10px; font-size: 11px; font-family: 'lucida grande', tahoma, =
+verdana, arial, sans-serif;">This message was intended for =
+foo@example.com. Want to control which emails you receive from Facebook? =
+Go to:
+http://www.facebook.com/editaccount.php?notifications=3D1&md=3DZnJpZW5kO2Z=
+yb209MTU4Mzg3MDYwNjt0bz0xMDAwMDA0MjMxMjAzODM=3D
+Facebook's offices are located at 1601 S. California Ave., Palo Alto, CA =
+94304.</td></tr></table></td></tr></table></body></html>
+
+
+
+--b1_dacbf3320d830a5b7fc9c097ae8d6877--
+

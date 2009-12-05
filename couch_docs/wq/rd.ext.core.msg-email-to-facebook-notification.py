@@ -34,19 +34,19 @@ def handler(schema):
 
     headers = schema['headers']
 
-    # A mail from twitter.
-    # Use X-TwitterEmailType to figure out if a direct message or an follow
-    # messagehttp://apiwiki.twitter.com/FAQ
-    # X-TwitterEmailType will be 'is_following' or 'direct_message'.
-    if not 'x-twitteremailtype' in headers:
+    # A mail from facebook.
+    # Use X-Facebook-Notify to figure out if facebook notification.
+    # Right now, only treat type of "friend" as a notification, but
+    # may need to change this in the future.
+    if not 'x-facebook-notify' in headers:
         return
 
-    twitterType = headers['x-twitteremailtype'][0]
-    if not twitterType:
+    facebookType = headers['x-facebook-notify'][0]
+    if not facebookType:
         return
 
-    if twitterType == "is_following":
-        type ='twitter'
+    if facebookType.startswith('friend;'):
+        type ='facebook'
         items = {'type' : type,
                  'timestamp': schema['timestamp'],
                  'type-timestamp': [type, schema['timestamp']],

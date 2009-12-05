@@ -139,37 +139,42 @@
   background-image: none;
 }
 
+/* ### ACCOUNT GROUPS ### */
 
-/* ### TWITTER ### */
-
-.rdwExtTwitterGroup {
+.rdwExtAccountGroup {
   -moz-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
   -webkit-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
   border-width: 1px 9px 12px 1px; 
 }
 
-
-.rdwExtTwitterGroup > .title {
+.rdwExtAccountGroup > .title {
   padding: 0 0 0 22px;
-  background-image: url("../i/new/rd_widget_twitter.png");
   background-repeat: no-repeat;
   background-position: left;
   color: inherit;
   text-decoration: none;
 }
 
-.rdwExtTwitterGroup > .title:hover {
+.rdwExtAccountGroup > .title:hover {
   text-decoration: underline;
 }
 
-.rdwExtTwitterGroup .rdwMessage > .message > .content a {
+.rdwExtAccountGroup .rdwMessage > .message > .content a {
   color: #ff5959;
   text-decoration: none;
 }
 
-.rdwExtTwitterGroup .rdwMessage > .message > .content a:hover {
+.rdwExtAccountGroup .rdwMessage > .message > .content a:hover {
   text-decoration: underline;
 }
+
+
+/* ### TWITTER ### */
+
+.rdwExtTwitterGroup > .title {
+  background-image: url("../i/new/rd_widget_twitter.png");
+}
+
 
 /* ### MAILING LIST ### */
 

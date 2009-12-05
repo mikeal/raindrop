@@ -30,7 +30,7 @@ dojo.require("rdw.fx.wiper");
  * Groups twitter broadcast messages into one "conversation"
  */
 dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
-  templateString: '<div class="WidgetBox rdwExtTwitterGroup" dojoAttachPoint="headNode"> \
+  templateString: '<div class="WidgetBox rdwExtAccountGroup rdwExtTwitterGroup" dojoAttachPoint="headNode"> \
                      <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title">Twitter</a> \
                      <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
                      <div dojoAttachPoint="bodyNode"> \

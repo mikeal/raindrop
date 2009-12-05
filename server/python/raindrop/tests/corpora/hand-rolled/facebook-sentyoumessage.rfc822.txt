@@ -1,0 +1,61 @@
+                                                                                                                                                                                                                                                               
+Delivered-To: foo@example.com
+Received: by 10.151.27.10 with SMTP id e10cs413679ybj;
+        Fri, 4 Dec 2009 13:33:10 -0800 (PST)
+Received: by 10.114.186.32 with SMTP id j32mr4704440waf.165.1259962389992;
+        Fri, 04 Dec 2009 13:33:09 -0800 (PST)
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+Received: from mx-out.facebook.com (outmail002.snc1.tfbnw.net [69.63.178.161])
+        by mx.google.com with ESMTP id 27si13485129pzk.43.2009.12.04.13.33.08;
+        Fri, 04 Dec 2009 13:33:08 -0800 (PST)
+Received-SPF: pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.161 as permitted sender) client-ip=69.63.178.161;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.161 as permitted sender) smtp.mail=notification+kjdmmhv--5ki@facebookmail.com; dkim=pass header.i=@facebookmail.com
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+DKIM-Signature: v=1; a=rsa-sha1; d=facebookmail.com; s=q1-2009b; c=relaxed/relaxed;
+	q=dns/txt; i=@facebookmail.com; t=1259962226;
+	h=From:Subject:Date:To:MIME-Version:Content-Type;
+	bh=P1E+kCVsakCS66TnuzRB6E/gC88=;
+	b=JxLut6LP7P+vxpvuB6Op054nEbb8eETcC8nrix4iEtvZLhooF3hk7A7Tm2/jNMNz
+	W9lJ37zub8B542duhjQnNQ==;
+Received: from [10.18.255.139] ([10.18.255.139:33748])
+	by mta307.snc1.facebook.com (envelope-from <notification+kjdmmhv--5ki@facebookmail.com>)
+	(ecelerity 3.0.17.34360 r(34360)) with ECSTREAM
+	id BF/45-03317-27F791B4; Fri, 04 Dec 2009 13:30:26 -0800
+X-Facebook: from zuckmail ([NjQuNDYuMzEuNzU=]) 
+	by www.facebook.com with HTTP (ZuckMail);
+Date: Fri, 4 Dec 2009 13:30:26 -0800
+To: Foo Bar <foo@example.com>
+From: Facebook <notification+kjdmmhv--5ki@facebookmail.com>
+Reply-to: noreply <noreply@facebookmail.com>
+Subject: Cool Dude sent you a message on Facebook...
+Message-ID: <c1a904e7ffb6fc731ce294b3376e0679@www.facebook.com>
+X-Priority: 3
+X-Mailer: ZuckMail [version 1.00]
+X-Facebook-Notify: msg; from=1583870606; t=1157115859994; mailid=1837ca0G5af329b28dffGefd34G0
+Errors-To: notification+kjdmmhv--5ki@facebookmail.com
+X-FACEBOOK-PRIORITY: 0
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
+
+Cool sent you a message.
+
+Subject: Welcome!
+
+"Hey, what's new? Just sending you a message."
+
+To reply to this message, follow the link below:
+http://www.facebook.com/n/?inbox%2Freadmessage.php&t=3D1157115859994&mid=
+=3D1837ca0G5af329b28dffGefd34G0
+
+___
+Find people from your Gmail address book on Facebook! Go to: =
+http://www.facebook.com/find-friends/?ref=3Demail
+
+This message was intended for foo@example.com. Want to control which =
+emails you receive from Facebook? Go to:
+http://www.facebook.com/editaccount.php?notifications=3D1&md=3DbXNnO2Zyb20=
+9MTU4Mzg3MDYwNjt0PTExNTcxMTU4NTk5OTQ7dG89MTAwMDAwNDIzMTIwMzgz
+Facebook's offices are located at 1601 S. California Ave., Palo Alto, CA =
+94304.
+

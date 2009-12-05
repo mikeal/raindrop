@@ -6,7 +6,7 @@
         "content_type" : "application/x-python",
         "category": "extender",
         "confidence": 1,
-        "info": "Sets target=notification on rd.msg.recip-target schemas for twitter notifications"
+        "info": "Sets target=notification on rd.msg.recip-target schemas for if there is an rd.msg.notification"
     }
   }
 }

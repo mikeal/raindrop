@@ -21,16 +21,16 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.facebookNotification.ext");
+dojo.provide("rdw.ext.facebook.ext");
 
 dojo.require("rdw.Widgets");
-dojo.require("rdw.ext.facebookNotification.Group");
+dojo.require("rdw.ext.facebook.Group");
 
 //Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.facebookNotification.ext", "rdw.Widgets", {
+rd.applyExtension("rdw.ext.facebook.ext", "rdw.Widgets", {
   addToPrototype: {
     convoModules: [
-      "rdw.ext.facebookNotification.Group"
+      "rdw.ext.facebook.Group"
     ]
   }
 });

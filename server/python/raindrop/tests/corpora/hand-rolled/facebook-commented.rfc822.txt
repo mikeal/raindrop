@@ -1,0 +1,64 @@
+                                                                                                                                                                                                                                                               
+Delivered-To: foo@example.com
+Received: by 10.151.27.10 with SMTP id e10cs413714ybj;
+        Fri, 4 Dec 2009 13:34:17 -0800 (PST)
+Received: by 10.115.102.5 with SMTP id e5mr759775wam.210.1259962457147;
+        Fri, 04 Dec 2009 13:34:17 -0800 (PST)
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+Received: from mx-out.facebook.com (outmail013.snc1.tfbnw.net [69.63.178.172])
+        by mx.google.com with ESMTP id 42si7593301pzk.65.2009.12.04.13.34.15;
+        Fri, 04 Dec 2009 13:34:16 -0800 (PST)
+Received-SPF: pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.172 as permitted sender) client-ip=69.63.178.172;
+Authentication-Results: mx.google.com; spf=pass (google.com: domain of notification+kjdmmhv--5ki@facebookmail.com designates 69.63.178.172 as permitted sender) smtp.mail=notification+kjdmmhv--5ki@facebookmail.com; dkim=pass header.i=@facebookmail.com
+Return-Path: <notification+kjdmmhv--5ki@facebookmail.com>
+DKIM-Signature: v=1; a=rsa-sha1; d=facebookmail.com; s=q1-2009b; c=relaxed/relaxed;
+	q=dns/txt; i=@facebookmail.com; t=1259962455;
+	h=From:Subject:Date:To:MIME-Version:Content-Type;
+	bh=oc+zUNgA/7OigmpA/iKpFKg7jK0=;
+	b=Pcfj7bfu8s18ErDWSG1SYTQSD+/TFwlb1khyod+32lLvK9VfOvVDNA6fhd9twuhB
+	V6vyPJXPD+xBELgeNBhbXA==;
+Received: from [10.18.255.135] ([10.18.255.135:63325])
+	by mta008.snc1.facebook.com (envelope-from <notification+kjdmmhv--5ki@facebookmail.com>)
+	(ecelerity 2.2.2.45 r(34067)) with ECSTREAM
+	id F1/92-00723-750891B4; Fri, 04 Dec 2009 13:34:15 -0800
+X-Facebook: from zuckmail ([NjQuNDYuMzEuNzU=]) 
+	by www.facebook.com with HTTP (ZuckMail);
+Date: Fri, 4 Dec 2009 13:34:15 -0800
+To: Foo Bar <foo@example.com>
+From: Facebook <notification+kjdmmhv--5ki@facebookmail.com>
+Reply-to: noreply <noreply@facebookmail.com>
+Subject: Cool Dude commented on your status...
+Message-ID: <5758beebbeb1aaad129252c51ea54c2a@www.facebook.com>
+X-Priority: 3
+X-Mailer: ZuckMail [version 1.00]
+X-Facebook-Notify: feed_comment; from=1583870606; uid=100000423120383; owner=100000423120383; oid=197245106043; mailid=1837d85G5af329b28dffGefd87G36
+Errors-To: notification+kjdmmhv--5ki@facebookmail.com
+X-FACEBOOK-PRIORITY: 0
+MIME-Version: 1.0
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="UTF-8"
+
+Cool Dude commented on your status:
+
+"Push it?"
+
+
+To see the comment thread, follow the link below:
+http://www.facebook.com/n/?%2Fprofile.php&v=3Dfeed&story_fbid=3D1972451060=
+43&id=3D100000423120383&mid=3D1837d85G5af329b28dffGefd87G36
+
+Thanks,
+The Facebook Team
+
+___
+Find people from your Gmail address book on Facebook! Go to: =
+http://www.facebook.com/find-friends/?ref=3Demail
+
+This message was intended for foo@example.com. Want to control which =
+emails you receive from Facebook? Go to:
+http://www.facebook.com/editaccount.php?notifications=3D1&md=3DZmVlZF9jb21=
+tZW50O2Zyb209MTU4Mzg3MDYwNjt1aWQ9MTAwMDAwNDIzMTIwMzgzO293bmVyPTEwMDAwMDQyM=
+zEyMDM4MztvaWQ9MTk3MjQ1MTA2MDQzO3RvPTEwMDAwMDQyMzEyMDM4Mw=3D=3D
+Facebook's offices are located at 1601 S. California Ave., Palo Alto, CA =
+94304.
+

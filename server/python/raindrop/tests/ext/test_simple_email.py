@@ -148,3 +148,32 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         rows = result['rows']
         self.failUnlessEqual(len(rows), 1)
         self.failUnlessEqual(rows[0]['doc']['target'], "notification");
+
+    @defer.inlineCallbacks
+    def test_facebook_notification(self):
+        # Load all facebook docs, but only facebook-friend should generate
+        # an rd.msg.notification schema.
+        ndocs = yield self.load_corpus("hand-rolled", "facebook-*")
+        self.failUnlessEqual(ndocs, 3) # failed to load any corpus docs???
+        _ = yield self.ensure_pipeline_complete()
+
+        # load the rd.msg.notification document and compare the results.
+        key = ["rd.core.content", "schema_id", "rd.msg.notification"]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+
+        # Make sure we got one result with type twitter
+        rows = result['rows']
+        self.failUnlessEqual(len(rows), 1)
+        self.failUnlessEqual(rows[0]['doc']['type'], "facebook");
+        rd_key = rows[0]['doc']['rd_key']
+
+        # Check that recip-target is notification.
+        key = ["rd.core.content", "key-schema_id", [rd_key, "rd.msg.recip-target"]]
+        result = yield self.doc_model.open_view(key=key, reduce=False,
+                                                include_docs=True)
+
+        # Make sure we got one result with type twitter
+        rows = result['rows']
+        self.failUnlessEqual(len(rows), 1)
+        self.failUnlessEqual(rows[0]['doc']['target'], "notification");

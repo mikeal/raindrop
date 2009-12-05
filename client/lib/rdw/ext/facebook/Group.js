@@ -21,13 +21,11 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.facebookNotification.Group");
+dojo.provide("rdw.ext.facebook.Group");
 
 dojo.require("rdw.conversation.GenericGroup");
 
-dojo.declare("rdw.ext.facebookNotification.Group", [rdw.conversation.GenericGroup], {
-  matchRegExp: /notification[^@]*@facebookmail.com/,
-
+dojo.declare("rdw.ext.facebook.Group", [rdw.conversation.GenericGroup], {
   /**
    * Determines if message is supported.
    *
@@ -35,15 +33,19 @@ dojo.declare("rdw.ext.facebookNotification.Group", [rdw.conversation.GenericGrou
    */
   canHandle: function(conversation) {
     var msg = conversation.messages[0];
-    var targetDoc = msg.schemas["rd.msg.recip-target"];
-    var bodyDoc = msg.schemas["rd.msg.body"];
-    var target = targetDoc && targetDoc.target;
+    var notification = msg.schemas["rd.msg.notification"];
 
-    return target == "notification" && bodyDoc && bodyDoc.from && this.matchRegExp.test(bodyDoc.from[1] || "");
+    return notification && notification.type == "facebook";
   },
   
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
     this.groupTitle = "Facebook Notifications";
+  },
+
+  postCreate: function() {
+    this.inherited("postCreate", arguments);
+    dojo.removeClass(this.domNode, "rdwConversationGenericGroup");
+    dojo.addClass(this.domNode, "rdwExtAccountGroup");
   }
 });

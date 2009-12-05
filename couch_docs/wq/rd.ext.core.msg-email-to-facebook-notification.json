@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.email"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Creates 'rd.msg.notification' schemas for facebook notifications using info in the rd.msg.email headers"
+    }
+  }
+}

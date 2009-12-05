@@ -22,12 +22,11 @@
 #
 
 def handler(schema):
-    if 'type' in schema and schema['type'] == 'twitter':
-        type = 'notification'
-        timestamp = 0
-        if 'timestamp' in schema:
-            timestamp = schema['timestamp']
-        items = {'target' : type,
-                 'target-timestamp': [type, timestamp],
-                 }
-        emit_schema('rd.msg.recip-target', items)
+    type = 'notification'
+    timestamp = 0
+    if 'timestamp' in schema:
+        timestamp = schema['timestamp']
+    items = {'target' : type,
+             'target-timestamp': [type, timestamp],
+             }
+    emit_schema('rd.msg.recip-target', items)
