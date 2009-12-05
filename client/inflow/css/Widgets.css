@@ -87,6 +87,10 @@
   visibility: visible;
 }
 
+.WidgetBox > .WidgetHeader {
+  width: 100%;
+}
+
 .WidgetBox > .WidgetHeader > .actions {
   text-align: right;
 }
@@ -170,6 +174,13 @@
 
 .rdwExtTwitterGroup > .WidgetHeader > .title {
   background-image: url("../i/new/rd_widget_twitter.png");
+}
+
+
+/* ### FACEBOOK ### */
+
+.rdwExtFacebookGroup > .WidgetHeader > .title {
+  background-image: url("../i/new/rd_widget_mailinglist.png");
 }
 
 

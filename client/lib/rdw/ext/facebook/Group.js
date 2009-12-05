@@ -46,6 +46,6 @@ dojo.declare("rdw.ext.facebook.Group", [rdw.conversation.GenericGroup], {
   postCreate: function() {
     this.inherited("postCreate", arguments);
     dojo.removeClass(this.domNode, "rdwConversationGenericGroup");
-    dojo.addClass(this.domNode, "rdwExtAccountGroup");
+    dojo.addClass(this.domNode, "rdwExtAccountGroup rdwExtFacebookGroup");
   }
 });
