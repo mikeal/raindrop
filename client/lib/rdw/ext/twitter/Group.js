@@ -31,14 +31,16 @@ dojo.require("rdw.fx.wiper");
  */
 dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwExtTwitterGroup" dojoAttachPoint="headNode"> \
-                     <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title">Twitter</a> \
-                     <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
-                     <div dojoAttachPoint="bodyNode"> \
+                     <div class="WidgetHeader hbox"> \
+                      <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title start">Twitter</a> \
+                      <span class="actions boxFlex"> \
+                         <span class="action broadcastCount" dojoAttachPoint="broadcastCountNode"></span> \
+                         <span class="action noteCount" dojoAttachPoint="noteCountNode"></span> \
+                         <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                      </span> \
+                     </div> \
+                     <div class="WidgetBody" dojoAttachPoint="bodyNode"> \
                        <div class="tweetList" dojoAttachPoint="containerNode"></div> \
-                       <div class="actions"> \
-                         <div class="action broadcastCount"><span dojoAttachPoint="broadcastCountNode"></span> messages</div> \
-                         <div class="action noteCount"><span dojoAttachPoint="noteCountNode"></span> updates</div> \
-                       </div> \
                      </div. \
                    </div>',
 
@@ -138,9 +140,9 @@ dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
   _updateCount: function(node, count) {
     if (count) {
       node.innerHTML = count;
-      node.parentNode.style.display = "";
+      node.style.display = "";
     } else {
-      node.parentNode.style.display = "none";
+      node.style.display = "none";
     }
   }
 });

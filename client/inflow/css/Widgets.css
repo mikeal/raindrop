@@ -27,7 +27,6 @@
 .rdwWidgets.start .rdwConversation {
   width: 310px;
   margin: 10px 0;
-  float: left;
   padding: 5px 1px 5px 9px;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
@@ -41,7 +40,7 @@
   margin-top: -35px;
 }
 
-.WidgetBox > .title {
+.WidgetBox > .WidgetHeader > .title {
   font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
   font-weight: bold;
@@ -74,9 +73,6 @@
 .WidgetBox .wipeToggle {
   visibility: hidden;
   pointer: cursor;
-  position: absolute;
-  top: 25px;
-  right: 0;
   outline: none;
   background-color: #333;
   color: white;
@@ -91,13 +87,15 @@
   visibility: visible;
 }
 
-.WidgetBox  > .actions {
-  margin-top: 8px;
-  width: 100%;
+.WidgetBox > .WidgetHeader > .actions {
+  text-align: right;
 }
 
-.WidgetBox > .actions > .action {
-  display: inline;
+.WidgetBox > .WidgetHeader > .actions > .action:empty {
+  display: none;
+}
+
+.WidgetBox > .WidgetHeader > .actions > .action {
   padding: 1px 4px;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
@@ -106,20 +104,19 @@
   font-weight: bold;
 }
 
-.WidgetBox > .actions > .noteCount,
-.WidgetBox > .actions > .broadcastCount {
-  float: right;
+.WidgetBox > .WidgetHeader > .actions > .noteCount,
+.WidgetBox > .WidgetHeader > .actions > .broadcastCount {
   background-color: #ff5959;
 }
 
-.WidgetBox > .actions > .noteCount {
+.WidgetBox > .WidgetHeader > .actions > .noteCount {
   background-image: url("../i/new/rd_notification_icon.png");
   background-repeat: no-repeat;
   background-position: right;
   padding-right: 24px;
 }
 
-.WidgetBox > .actions > .broadcastCount {
+.WidgetBox > .WidgetHeader > .actions > .broadcastCount {
   background-image: url("../i/new/rd_broadcast_icon.png");
   background-repeat: no-repeat;
   background-position: right;
@@ -149,7 +146,7 @@
 }
 
 
-.rdwExtTwitterGroup > .title {
+.rdwExtTwitterGroup > .WidgetHeader > .title {
   padding: 0 0 0 22px;
   background-image: url("../i/new/rd_widget_twitter.png");
   background-repeat: no-repeat;
@@ -158,7 +155,7 @@
   text-decoration: none;
 }
 
-.rdwExtTwitterGroup > .title:hover {
+.rdwExtTwitterGroup > .WidgetHeader > .title:hover {
   text-decoration: underline;
 }
 
@@ -179,7 +176,7 @@
   border-width: 1px 9px 12px 1px; 
 }
 
-.rdwConversationMailingList > .title {
+.rdwConversationMailingList > .WidgetHeader > .title {
   padding: 0 0 0 18px;
   background-image: url("../i/new/rd_widget_mailinglist.png");
   background-repeat: no-repeat;
@@ -194,7 +191,7 @@
   border-width: 1px 9px 12px 1px; 
 } 
 
-.rdwConversationGenericGroup > .title {
+.rdwConversationGenericGroup > .WidgetHeader > .title {
   padding: 0 0 0 16px;
   background-image: url("../i/new/rd_widget_rss.png");
   background-repeat: no-repeat;

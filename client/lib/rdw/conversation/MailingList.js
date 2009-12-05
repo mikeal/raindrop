@@ -31,8 +31,14 @@ dojo.require("rdw.fx.wiper");
  */
 dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationMailingList"> \
-                    <span dojoAttachPoint="nameNode" class="title"></span> \
-                    <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                     <div class="WidgetHeader hbox"> \
+                      <div dojoAttachPoint="nameNode" class="title"></div> \
+                      <span class="actions boxFlex"> \
+                         <span class="action broadcastCount" dojoAttachPoint="broadcastCountNode"></span> \
+                         <span class="action noteCount" dojoAttachPoint="noteCountNode"></span> \
+                         <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
+                      </span> \
+                     </div> \
                     <div class="mailingList" dojoAttachPoint="containerNode,bodyNode"></div> \
                   </div>',
 
