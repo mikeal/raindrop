@@ -32,8 +32,8 @@ dojo.require("rdw.fx.wiper");
 dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwExtTwitterGroup rdwExtAccountGroup" dojoAttachPoint="headNode"> \
                      <div class="WidgetHeader hbox"> \
-                      <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title start">Twitter</a> \
-                      <span class="actions boxFlex"> \
+                      <a href="#rd:twitter" dojoAttachPoint="nameNode" class="title start boxFlex">Twitter</a> \
+                      <span class="actions"> \
                          <span class="action broadcastCount" dojoAttachPoint="broadcastCountNode"></span> \
                          <span class="action noteCount" dojoAttachPoint="noteCountNode"></span> \
                          <button class="wipeToggle" dojoAttachPoint="headNode" dojoAttachEvent="onclick: toggleWiper"></button> \
