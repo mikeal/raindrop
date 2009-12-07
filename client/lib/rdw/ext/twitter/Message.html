@@ -1,0 +1,17 @@
+<div class="rdwMessage rdwExtTwitterMessage ${type} hbox" tabindex="${tabIndex}" dojoAttachEvent="onclick: onClick">
+  <div class="pictureSection">
+    <img class="picture" src="${imgUrl}" dojoAttachPoint="pictureNode">
+  </div>
+  <div class="message boxFlex">
+    <div class="header">
+      <span class="author">
+        <a dojoAttachPoint="fromNode" href="javascript:void(0);" class="from fn nickname">${fromName}</a>
+      </span>
+      <span class="published">
+        <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
+        <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
+      </span>
+    </div>
+    <div class="content">${message}</div>
+  </div>
+</div>

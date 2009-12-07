@@ -73,6 +73,11 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     "rd-notify-delete-undo": "delUndo"
   },
 
+  //List of topic names and the corresponding ctor name to use for
+  //conversation widgets. If there is no matching ctor name for a topic,
+  //then the conversationCtorName property will be used.
+  topicConversationCtorNames: {},
+
   //Which topic actions should be considered only transition actions
   //instead of actions that fetch new data.
   transitionOnlyActions: {
@@ -353,6 +358,9 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
         };
       }
 
+      //Store the topic name for future reference
+      this.currentTopic = topicName;
+
       //Clear out the summary widget
       this.summaryWidget.clear();
 
@@ -415,7 +423,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       //and load up each conversation widget in there.
       var frag = dojo.doc.createDocumentFragment();
       for (var i = 0, conv; conv = this.conversations[i]; i++) {
-        this.addSupporting(new (dojo.getObject(this.conversationCtorName))({
+        var ctorName = this.topicConversationCtorNames[this.currentTopic] || this.conversationCtorName;
+        this.addSupporting(new (dojo.getObject(ctorName))({
            conversation: conv
          }, dojo.create("div", null, frag)));        
       }
@@ -821,7 +830,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //should not display itself immediately since prioritization of the home
     //widgets still needs to be done. Similarly, it should not try to attach
     //to the document's DOM yet. Override for more custom behavior/subclasses.
-    return new (dojo.getObject(this.conversationCtorName))({
+    var ctorName = this.topicConversationCtorNames[this.currentTopic] || this.conversationCtorName;
+    return new (dojo.getObject(ctorName))({
       conversation: conversation,
       unreadReplyLimit: 2,
       displayOnCreate: false,

@@ -27,6 +27,7 @@ dojo.require("rdw.Summary");
 dojo.require("rdw.Conversations");
 dojo.require("rdw.Widgets");
 dojo.require("rdw.ext.twitter.Group");
+dojo.require("rdw.ext.twitter.Conversation");
 
 rd.applyExtension("rdw.ext.twitter.ext", "rdw.Summary", {
   addToPrototype: {
@@ -40,6 +41,10 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.Conversations", {
   addToPrototype: {
     topics: {
       "rd-protocol-twitter": "twitter"
+    },
+
+    topicConversationCtorNames: {
+      "rd-protocol-twitter": "rdw.ext.twitter.Conversation"
     },
 
     twitter: function() {

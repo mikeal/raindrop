@@ -186,10 +186,7 @@ dojo.mixin(rd.contact, {
         }
 
         //Insert the document.
-        var api = rd.api().put({
         var api = rd.api().createSchemaItem(contactSI)
-          doc: contactDoc
-        })
         .ok(this, function(contact) {
           //Update our cache
           this._store.push(contact);
