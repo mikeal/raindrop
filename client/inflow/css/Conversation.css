@@ -54,7 +54,10 @@
 }
 
 .rdwConversation > .header {
-  padding: 1px 5px 0px 5px;
+  padding: 2px 5px 0px 5px;
+  width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 .rdwConversation > .header > .convoType {
@@ -64,23 +67,30 @@
   font-size: 10px;
 }
 
+.rdwConversation > .header > .type {
+  margin: 4px 0 0 0;
+  font-size: 10px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+}
+
 .rdwConversation > .header > .type.direct {
   background-image: url("../i/new/rd_inflow_directmessage.png");
   background-repeat: no-repeat;
-  background-position: left;
+  background-position: left 4px;
   padding: 0 0 0 21px;
 }
 
 .rdwConversation > .header > .type.group {
   background-image: url("../i/new/rd_inflow_groupmessage.png");
   background-repeat: no-repeat;
-  background-position: left;
+  background-position: left 4px;
   padding: 0 0 0 26px;
 }
 
 .rdwConversation > .header > .subject {
   margin: 3px 0 0 0;
-  display: inline-block;
+  display: block;
   font-size: 13px;
   font-weight: bold;
   color: #FF5959;
@@ -99,9 +109,30 @@
   -moz-box-sizing: border-box;
 }
 
-.rdwConversation  input {
-  border: 1px solid black;
+.rdwConversation .quickReply {
+  margin: 0 5px;
+}
+
+.rdwConversation .replyTextArea {
   width: 100%;
+  height: 24px;
+  padding: 4px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  border: 1px solid #E6E6E6;
+  background-image: url("../i/new/rd_input_bg.png");
+  background-repeat: repeat-x;
+  color: #888;
+  font-family: "droid-sans", helvetica, arial, sans;
+  font-size: 11.5px;
+}
+
+.rdwConversation .replyTextArea:focus {
+  border: 1px solid #ccc;
+  color: #000;
+  height: 60px;
 }
 
 .rdwConversation > .actions {

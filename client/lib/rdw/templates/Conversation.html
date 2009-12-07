@@ -1,11 +1,11 @@
 <div class="rdwConversation" dojoAttachEvent="onclick: onClick">
-  <div class="header">
+  <div class="header hbox">
+    <a href="#" class="subject boxFlex" title="${i18n.expand}" dojoAttachPoint="subjectNode"></a>
     <div class="type" dojoAttachPoint="typeNode"></div>
-    <a href="#" class="subject" title="${i18n.expand}" dojoAttachPoint="subjectNode"></a>
   </div>
   <div class="messages" dojoAttachPoint="containerNode"></div>
   <div class="quickReply">
-    <input type="text">
+    <textarea class="replyTextArea"></textarea>
   </div>
   <div class="actions hbox" dojoAttachPoint="actionsNode">
     <div class="hbox boxFlex">

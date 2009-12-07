@@ -41,8 +41,6 @@
 }
 
 .WidgetBox > .WidgetHeader > .title {
-  font-family: droid-serif, georgia, times, serif;
-  font-size: 10px;
   font-weight: bold;
 }
 
@@ -104,7 +102,7 @@
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   color: #fff;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: bold;
 }
 
@@ -134,7 +132,7 @@
   margin: 0 0 10px 0;
   -moz-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
   -webkit-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
-  border-width: 1px 12px 18px 9px;  
+  border-width: 1px 12px 17px 9px;  
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   background-image: none;
