@@ -57,7 +57,7 @@
   padding: 1px 5px 0px 5px;
 }
 
-.rdwConversation > .header > .type {
+.rdwConversation > .header > .convoType {
   float: right;
   margin: 4px 0 0 0;
   font-family: Droid-serif, Georgia, Times, serif;
@@ -97,6 +97,11 @@
   width: 610px;
   padding: 0 0 5px 5px;
   -moz-box-sizing: border-box;
+}
+
+.rdwConversation  input {
+  border: 1px solid black;
+  width: 100%;
 }
 
 .rdwConversation > .actions {
