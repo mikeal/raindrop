@@ -88,6 +88,10 @@ def timeit(func, *args):
     took = time.clock()-start
     defer.returnValue((ret, took))
 
+@defer.inlineCallbacks
+def report_db_state(db):
+    info = yield db.infoDB()
+    print "DB has %(doc_count)d docs at seq %(update_seq)d in %(disk_size)d bytes" % info
 
 @defer.inlineCallbacks
 def run_timings_async(_, opts):
@@ -113,8 +117,13 @@ def run_timings_async(_, opts):
     tc.pipeline.options.exts = None
     _, avg = yield timeit(tc.pipeline.start_backlog)
     print "Ran remaining extensions in %.3f" % (avg,)
-    info = yield tc.pipeline.doc_model.db.infoDB()
-    print "DB has %(doc_count)d docs in %(disk_size)d bytes" % info
+    _ = yield report_db_state(tc.pipeline.doc_model.db)
+    # try unprocess then process_backlog
+    _, avg = yield timeit(tc.pipeline.unprocess)
+    print "Unprocessed in %.3f" % (avg,)
+    _, avg = yield timeit(tc.pipeline.start_backlog)
+    print "re-processed in %.3f" % (avg,)
+    _ = yield report_db_state(tc.pipeline.doc_model.db)
 
 
 @defer.inlineCallbacks
@@ -124,8 +133,7 @@ def run_timings_sync(_, opts):
     _ = yield tc.setUp()
     ndocs, avg = yield timeit(load_and_sync, tc, opts)
     print "Loaded and processed %d documents in %.3f" % (ndocs, avg)
-    info = yield tc.pipeline.doc_model.db.infoDB()
-    print "DB has %(doc_count)d docs in %(disk_size)d bytes" % info
+    _ = yield report_db_state(tc.pipeline.doc_model.db)
    
 
 def main():
