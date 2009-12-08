@@ -49,7 +49,7 @@ def handler(doc):
             continue
         if 'rd.msg.deleted' in msg_info and msg_info['rd.msg.deleted']['deleted']:
             continue
-        if 'rd.msg.archived' in msg_info and msg_info['rd.msg.arvhived']['archived']:
+        if 'rd.msg.archived' in msg_info and msg_info['rd.msg.archived']['archived']:
             continue
         # the message is good!
         good_msgs.append(msg_info)
