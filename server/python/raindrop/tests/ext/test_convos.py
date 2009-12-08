@@ -79,6 +79,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                            ['email', 'raindrop_test_recip@mozillamessaging.com'],
                            ['email', 'raindrop_test_user@mozillamessaging.com'],
                             ],
+            'from_display': ['Raindrop Test User']
         }
         self.ensure_doc(doc_sum, expected_doc)
 
@@ -118,6 +119,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
             'message_ids': [],
             'unread_ids': [],
             'identities': [],
+            'from_display': []
         }
         self.ensure_doc(doc_sum, expected_doc)
         # Note our deleted message still has the rd.msg.conversation schema;
@@ -158,6 +160,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                            ['email', 'raindrop_test_recip@mozillamessaging.com'],
                            ['email', 'raindrop_test_user@mozillamessaging.com'],
                             ],
+            'from_display': ['Raindrop Test Recipient', 'Raindrop Test User']
         }
         self.ensure_doc(doc_sum, expected_doc)
         # check messages in the convo.

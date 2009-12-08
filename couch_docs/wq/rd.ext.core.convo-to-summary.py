@@ -39,6 +39,7 @@ def handler(doc):
         all_msgs.append(new)
 
     identities = set()
+    from_display = []
     good_msgs = []
     unread = []
     latest_by_recip_target = {}
@@ -61,9 +62,13 @@ def handler(doc):
                 for val in body_schema[field]:
                     identities.add(tuple(val))
         try:
-            identities.add(tuple(msg_info['rd.msg.body']['from']))
+            identities.add(tuple(body_schema['from']))
         except KeyError:
             pass # things like RSS feeds don't have a 'from'
+        try:
+            from_display.append(body_schema['from_display'])
+        except KeyError:
+            pass # things like RSS feeds don't have a 'from_display'
         if earliest_timestamp is None or \
            msg_info['rd.msg.body']['timestamp'] < earliest_timestamp:
             earliest_timestamp = msg_info['rd.msg.body']['timestamp']
@@ -101,6 +106,7 @@ def handler(doc):
         'message_ids': [i['rd.msg.body']['rd_key'] for i in good_msgs],
         'unread_ids': [i['rd.msg.body']['rd_key'] for i in unread],
         'identities': sorted(list(identities)),
+        'from_display': from_display,
         'earliest_timestamp': earliest_timestamp,
         'latest_timestamp': latest_timestamp,
         'target-timestamp': [],

@@ -194,6 +194,7 @@ class ConversationAPI(API):
             ret_conv = {
                 'id': cs['rd_key'],
                 'identities': cs['identities'],
+                'from_display': cs['from_display'],
                 'unread': len(cs['unread_ids']),
                 'unread_ids': cs['unread_ids'],
                 'message_ids': cs['message_ids'],
