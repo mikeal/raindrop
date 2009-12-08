@@ -152,6 +152,7 @@
   background-position: left;
   color: inherit;
   text-decoration: none;
+  outline: none;
 }
 
 .rdwExtAccountGroup > .WidgetHeader > .title:hover {

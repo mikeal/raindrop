@@ -32,6 +32,8 @@
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   border: 1px solid #e6e6e6;
+  background-image: url("../i/new/rd_message_bg.png");
+  background-repeat: repeat-x;
 }
 
 .rdwConversation.unread {
