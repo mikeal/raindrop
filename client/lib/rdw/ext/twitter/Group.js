@@ -45,6 +45,11 @@ dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
                    </div>',
 
   /**
+   * The relative importance of this group widget. 0 is most important.
+   */
+  groupSort: 1,
+
+  /**
    * The limit of tweets to use.
    */
   unreadReplyLimit: 1,

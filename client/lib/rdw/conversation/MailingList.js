@@ -48,6 +48,11 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
   messageCtorName: "rdw.conversation.MailingListMessage",
 
   /**
+   * The relative importance of this group widget. 0 is most important.
+   */
+  groupSort: 4,
+
+  /**
    * Limit to number of unread messages. If value is -1, then it means show all.
    * In this context, it is treated as number of threads to show that have unread
    * messages.

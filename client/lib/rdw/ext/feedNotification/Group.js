@@ -27,6 +27,11 @@ dojo.require("rdw.conversation.GenericGroup");
 
 dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], {
   /**
+   * The relative importance of this group widget. 0 is most important.
+   */
+  groupSort: 10,
+
+  /**
    * Holds on to the ID for the feed.
    */
   feedId: "",

@@ -27,6 +27,11 @@ dojo.require("rdw.conversation.GenericGroup");
 
 dojo.declare("rdw.ext.facebook.Group", [rdw.conversation.GenericGroup], {
   /**
+   * The relative importance of this group widget. 0 is most important.
+   */
+  groupSort: 1,
+
+  /**
    * Determines if message is supported.
    *
    * @param conversation {object} the conversation API object.

@@ -420,7 +420,11 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
         }
       }
 
-      this._sortGroups();
+      this._groups.sort(function(a, b) {
+        var aSort = "groupSort" in a ? a.groupSort : 100,
+            bSort = "groupSort" in b ? b.groupSort : 100;
+        return aSort > bSort;
+      });
 
       var frag = dojo.doc.createDocumentFragment();
       var zIndex = this._groups.length;
@@ -457,18 +461,6 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
       displayOnCreate: false,
       allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Conversation
-  },
-
-  _sortGroups: function() {
-    //summary: handles sorting the groups. Default behavior
-    //is to have true groups at the bottom, below regular
-    //message groups.
-    var regular = [];
-    var groupie = [];
-    for (var i = 0, group; group = this._groups[i]; i++) {
-      group._isGroup ? groupie.push(group) : regular.push(group);
-    }
-    this._groups = regular.concat(groupie);
   },
 
   _groupHandled: function(/*Object*/conversation) {
