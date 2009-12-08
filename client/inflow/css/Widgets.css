@@ -198,6 +198,21 @@
   background-position: left;
 }
 
+/* ### BROADCAST ### */
+
+.rdwConversationBroadcast {
+  -moz-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
+  border-width: 1px 9px 12px 1px; 
+}
+
+.rdwConversationBroadcast > .WidgetHeader > .title {
+  padding: 0 0 0 18px;
+  background-image: url("../i/new/rd_widget_mailinglist.png");
+  background-repeat: no-repeat;
+  background-position: left;
+}
+
 /* ### GENERIC GROUP ### */
 
 .rdwConversationGenericGroup {

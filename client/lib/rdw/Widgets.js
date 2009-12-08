@@ -26,7 +26,7 @@ dojo.provide("rdw.Widgets");
 dojo.require("rdw._Base");
 dojo.require("rd.api");
 dojo.require("rd.api.message");
-dojo.require("rdw.Conversation");
+dojo.require("rdw.conversation.Broadcast");
 dojo.require("rdw.SummaryGroup");
 
 dojo.declare("rdw.Widgets", [rdw._Base], {
@@ -49,7 +49,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
   convoModules: [],
 
   //Widget used for default conversation objects, when no home group is applicable.
-  conversationCtorName: "rdw.Conversation",
+  conversationCtorName: "rdw.conversation.Broadcast",
 
   //Widget used for the summary group widget, the first one in the widget list.
   summaryGroupCtorName: "rdw.SummaryGroup",
