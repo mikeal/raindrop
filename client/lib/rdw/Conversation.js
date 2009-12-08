@@ -62,6 +62,8 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
 
   moreMessagesTemplate: '<a class="moreMessages" href="#${url}">&#9654; ${message}</a>',
 
+  impersonalTemplate: dojo.cache("rdw.templates", "impersonal.html"),
+
   msgSort: function (a,b) {
     //summary: default message sorting is by timestamp, most
     //recent message is last. This method should not use
@@ -87,6 +89,10 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     //summary: handles clicks for tool actions. Uses event
     //delegation to publish the right action.
     var href = evt.target.href;
+    if (!href && evt.target.nodeName.toLowerCase() == "button") {
+      href = "#" + evt.target.name;
+    }
+
     if (href && (href = href.split("#")[1])) {
       if (href == "reply" || href == "forward") {
         //Dynamically load the module that will handle
@@ -117,6 +123,18 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
         evt.preventDefault();
       } else if (href == "archive" || href == "delete" || href == "spam") {
         rd.pub("rdw.Conversation." + href, this, this.conversation);
+        dojo.stopEvent(evt);
+      } else if (href == "impersonal") {
+        if (this.headerNode) {
+          //Make sure there is not an existing impersonal UI
+          dojo.query(".newImpersonal", this.domNode).remove();
+
+          //Now add the UI
+          dojo.query(this.headerNode).after(this.impersonalTemplate);
+        }
+        dojo.stopEvent(evt);
+      } else if (href == "createImpersonal") {
+        dojo.query(".newImpersonal", this.domNode).remove();
         dojo.stopEvent(evt);
       }
     }

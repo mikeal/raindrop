@@ -36,6 +36,7 @@
   forwardSubjectPrefix: "Fwd: ",
   home: "Home",
   hideQuotedText: "- Hide quoted text",
+  impersonal: "not personal",
   groupName: "Group Conversations",
   groupTitle: "You and multiple other people are discussing",
   less: "less",

@@ -1,5 +1,5 @@
 <div class="rdwConversation" dojoAttachEvent="onclick: onClick">
-  <div class="header hbox">
+  <div class="header hbox" dojoAttachPoint="headerNode">
     <a href="#" class="subject boxFlex" title="${i18n.expand}" dojoAttachPoint="subjectNode"></a>
     <div class="type" dojoAttachPoint="typeNode"></div>
   </div>
@@ -12,6 +12,7 @@
       <a href="#" class="expand" title="${i18n.expand}" dojoAttachPoint="expandNode">${i18n.expand}</a>
       <a href="#archive" class="archive" title="${i18n.archive}">${i18n.archive}</a>
       <a href="#delete" class="delete" title="${i18n.deleted}">${i18n.deleted}</a>
+      <a href="#impersonal" class="impersonal" title="${i18n.impersonal}">${i18n.impersonal}</a>
     </div>
     <div class="hbox">
       <a class="reply" href="#reply" dojoattachpoint="replyNode">${i18n.reply}</a>
