@@ -373,7 +373,11 @@ class ConversationAPI(API):
         result = db.megaview(**opts)
 
         keys = [row['value']['rd_key'] for row in result['rows']]
-        return self._with_messages(db, keys, args['message_limit'])
+        convos = self._with_messages(db, keys, args['message_limit'])
+        
+        convos.sort(key=lambda item: item['messages'][0]['schemas']['rd.msg.body']['timestamp'],
+                   reverse=True)
+        return convos
 
 class ContactAPI(API):
     def _fetch_identies_for_contact(self, db, cid):
