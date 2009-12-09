@@ -194,7 +194,6 @@ class ConversationAPI(API):
             ret_conv = {
                 'id': cs['rd_key'],
                 'identities': cs['identities'],
-                'from_display': cs['from_display'],
                 'unread': len(cs['unread_ids']),
                 'unread_ids': cs['unread_ids'],
                 'message_ids': cs['message_ids'],
@@ -204,6 +203,10 @@ class ConversationAPI(API):
             # Some messages, like tweets do not have subjects            
             if 'subject' in cs:
                 ret_conv['subject'] = cs['subject']
+
+            # Some messages, like rss feeds do not have a correct from.
+            if 'from_display' in cs:
+                ret_conv['from_display'] = cs['from_display']
 
             ret.append(ret_conv)
             these_ids = cs['message_ids']
