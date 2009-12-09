@@ -151,7 +151,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     }
     var messages = conversation.messages;
     if (messages && messages.length) {
-      this.msgs.push.apply(this, conversation.messages);
+      this.msgs.push.apply(this.msgs, conversation.messages);
     }
 
     if (this._displayed) {

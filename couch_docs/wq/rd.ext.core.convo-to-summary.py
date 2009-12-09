@@ -40,6 +40,7 @@ def handler(doc):
 
     identities = set()
     from_display = []
+    from_display_map = {}
     good_msgs = []
     unread = []
     latest_by_recip_target = {}
@@ -66,7 +67,10 @@ def handler(doc):
         except KeyError:
             pass # things like RSS feeds don't have a 'from'
         try:
-            from_display.append(body_schema['from_display'])
+            fd = body_schema['from_display']
+            if (not fd in from_display_map):
+                from_display_map[fd] = 1
+                from_display.append(fd)
         except KeyError:
             pass # things like RSS feeds don't have a 'from_display'
         if earliest_timestamp is None or \

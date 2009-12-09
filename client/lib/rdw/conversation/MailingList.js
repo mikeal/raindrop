@@ -70,8 +70,11 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
    */
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
+    //Hack, see TODO below about Conversations inside Conversations.
+    this.msgs = [];
     this.convoIds = {};
     this.totalCount = 0;
+    this.addConversation(this.conversation);
   },
 
   /**
@@ -111,17 +114,32 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
    * @param conversation {object} the conversation API object.
    */
   addConversation: function(conversation) {
+    this.conversation = conversation;
+
     //Only add one message per conversation.
     var convoId = conversation.id;
     if(convoId && !this.convoIds[convoId]) {
-      this.inherited("addConversation", arguments);
+      //Add some extra data to the message, the senders.
+      //TODO: This is a bit of
+      //a hack. Probably need to allow rdw.Conversation widgets to contain
+      //other rdw.Conversation subclasses instead of just messages.
+      var msg = conversation.messages[0];
+      msg.convoFromDisplay = conversation.from_display;
+      msg.convoUnreadCount = conversation.unread;
+      this.msgs.push(msg);
+
       var listDoc = conversation.messages[0].schemas["rd.msg.email.mailing-list"];
+ 
       this.listId = listDoc.list_id;
       this.listName = listDoc.list_id;
       this.convoIds[convoId] = 1;
     }
 
     this.totalCount += 1;
+
+    if (this._displayed) {
+      this.display();
+    }
   },
 
   /**

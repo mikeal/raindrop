@@ -3,6 +3,8 @@
     <div class="header">
       <a href="#${expandLink}" class="subject" title="${i18n.expand}">${subject}</a>
     </div>
-    <div class="content">${message}</div>
+    <span class="unreadCount" dojoAttachPoint="unreadCountNode">${unreadDisplay}</span>
+    <span class="separator" dojoAttachPoint="separatorNode">-</span>
+    <span class="content">${convoFromDisplay}</span>
   </div>
 </div>

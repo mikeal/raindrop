@@ -26,5 +26,24 @@ dojo.provide("rdw.conversation.MailingListMessage");
 dojo.require("rdw.Message");
 
 dojo.declare("rdw.conversation.MailingListMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.conversation.templates", "MailingListMessage.html")
+  templateString: dojo.cache("rdw.conversation.templates", "MailingListMessage.html"),
+  
+  postMixInProperties: function() {
+    this.inherited("postMixInProperties", arguments);
+    this.convoFromDisplay = this.msg.convoFromDisplay.join(", ");
+    this.unreadDisplay = "";
+    if (this.msg.convoUnreadCount) {
+      this.unreadDisplay = rd.template(this.i18n.newCount, {
+        count: this.msg.convoUnreadCount
+      });
+    }
+  },
+  
+  postCreate: function() {
+    this.inherited("postCreate", arguments);
+    if (!this.msg.convoUnreadCount) {
+      this.unreadCountNode.style.display = "none";
+      this.separatorNode.style.display = "none";
+    }
+  }
 });
