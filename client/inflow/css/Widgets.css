@@ -208,9 +208,9 @@
 
 .rdwConversationBroadcast > .WidgetHeader > .title {
   padding: 0 0 0 18px;
-  background-image: url("../i/new/rd_widget_mailinglist.png");
+  background-image: url("../i/new/rd_widget_broadcast.png");
   background-repeat: no-repeat;
-  background-position: left;
+  background-position: left 3px;
 }
 
 /* ### GENERIC GROUP ### */

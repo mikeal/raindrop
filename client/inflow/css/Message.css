@@ -25,6 +25,7 @@
 
 .rdwMessage {
   outline: none;
+  width: 100%;
 }
 
 .rdwMessage .total {
@@ -41,11 +42,11 @@
 }
 
 .rdwMessage > .message  > .header { 
-  margin: 8px 0 0 0;
+  padding: 5px 0 0 0;
 }
 
 .rdwMessage.reply > .message  > .header { 
-  margin: 4px 0 0 0;
+  padding: 4px 0 0 0;
 }
 
 .rdwMessage > .message > .header > .author > .from {
@@ -81,7 +82,7 @@
   display: none;
 }
 
-.rdwMessage > .message > .header > .published:hover >.additional {
+.rdwMessage > .message > .header > .published:hover > .additional {
   display: inline;
 }
 
@@ -103,11 +104,13 @@
   padding: 0 0 0 50px;
   border-top: 1px solid #e6e6e6;
   position: relative;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 /* ### TWITTER ### */
 .rdwExtTwitterMessage .picture {
   width: 48px;
   height: 48px;
-  margin: 8px 10px 0 0;
+  margin: 5px 10px 0 0;
 }

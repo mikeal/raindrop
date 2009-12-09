@@ -41,8 +41,43 @@
 }
 
 .rdwConversation.active {
-
+  border: 1px solid #ccc;
 }
+
+/*### IMPERSONAL ###*/
+.rdwConversation > .newImpersonal {
+  margin: 5px 0;
+  padding: 10px 5px;
+  border-top: 1px solid #e6e6e6;
+  border-bottom: 1px solid #e6e6e6;
+  position: relative;
+  background-image: url("../i/new/rd_impersonal_bg.png");
+  background-position: bottom;
+  background-repeat: repeat-x;
+  background-color: #fff;
+} 
+
+.rdwConversation > .newImpersonal > .impersonalOptions h4 {
+  font-size: 13px;
+}
+
+.rdwConversation > .newImpersonal > .impersonalOptions > .impersonalFilter {
+  font-weight: bold;
+  margin: 5px 0;
+}
+
+.rdwConversation > .newImpersonal button {
+  position: absolute;
+  right: 5px;
+  top: 50%;
+  margin-top: -10px;
+}
+
+.rdwConversation > .newImpersonal label {
+  padding: 0 10px 5px 0;
+}
+
+/*### END IMPERSONAL ###*/
 
 .rdwConversation.unread > .header > .subject {
   padding-left: 22px;
@@ -56,7 +91,7 @@
 }
 
 .rdwConversation > .header {
-  padding: 2px 5px 0px 5px;
+  padding: 0 5px;
   width: 100%;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
@@ -162,9 +197,9 @@
   text-decoration: underline;
 }
 
+.rdwConversation button,
 .actions a.reply,
 .actions a.fwd {
-  font-family: droid-serif, georgia, times, serif;
   font-style: normal;
   color: #000;
   -moz-border-radius: 4px;
@@ -179,6 +214,7 @@
   border: 1px solid #ccc;
 }
 
+.rdwConversation button:hover,
 .actions a.reply:hover,
 .actions a.fwd:hover {
   text-decoration: none;

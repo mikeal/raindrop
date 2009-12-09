@@ -151,16 +151,14 @@ body {
 }
 
 #notices {
-  margin: 0px 0 10px 10px;
-  max-width: 940px;
+  max-width: 950px;
 }
 
 #notices > .notice {
-  font-family: Helvetica, Arial, Sans-serif;
+  font-family: "droid-sans", Helvetica, Arial, Sans-serif;
   padding: 7px;
-  margin: 7px 0;
+  margin: 0;
   border: 1px solid #0066dd;
-  -moz-border-radius: 3.5px;
   background-color: Highlight;
   color: HighlightText;
 }
