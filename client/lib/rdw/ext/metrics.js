@@ -27,6 +27,7 @@ dojo.provide("rdw.ext.metrics");
 dojo.requireIf(rd.appName == "inflow", "inflow");
 dojo.require("rd.api");
 dojo.require("rd.api.pref");
+dojo.require("dojo.NodeList-traverse");
 
 rdw.ext.metrics = {
   //TODO: there is a chance we can miss some metrics if the metric trigger
@@ -191,7 +192,7 @@ if (rd.appName == "inflow") {
 
           //No pref doc, so show the user the dialog.
           dojo.addOnLoad(function() {
-            var html = '<div class="notice"> \
+            var html = '<div class="notice rdwExtMetrics"> \
                         <div class="header"> \
                           <div class="row"> \
                             <span class="title">Welcome to the Raindrop Community!</span> \
@@ -211,7 +212,7 @@ if (rd.appName == "inflow") {
             //Wire up events
             var nodes = dojo.query(node)
               .query("button").onclick(function(evt) {
-                dojo.destroy(evt.target.parentNode);
+                dojo.query(evt.target).parents(".rdwExtMetrics").remove();
                 metrics.savePref();
               })
             .end()
