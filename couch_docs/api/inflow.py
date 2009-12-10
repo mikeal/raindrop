@@ -268,13 +268,13 @@ class ConversationAPI(API):
     # Fetch all conversations which include a message from the specified contact
     def contact(self, req):
         self.requires_get(req)
-        args = self.get_args(req, "id")
+        args = self.get_args(req, "id", message_limit=None)
         cid = args['id']
 
         db = RDCouchDB(req)
         capi = ContactAPI()
         idids = capi._fetch_identies_for_contact(db, cid)
-        return _identities(db, idids)
+        return self._identities(db, idids, args)
 
     # Fetch all conversations which include a message from the specified contact
     def identities(self, req):

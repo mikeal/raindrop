@@ -877,7 +877,8 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //summary: responds to rd-protocol-contact topic.
     rd.api({
       url: 'inflow/conversations/contact',
-      id: '"' + contactId + '"'
+      id: '"' + contactId + '"',
+      message_limit: this.messageLimit
     })
     .ok(dojo.hitch(this, "updateConversations", "summary"));
   },
