@@ -43,6 +43,10 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.Conversations", {
       "rdw.ext.twitter.Conversation"
     ],
 
+    fullConvoModules: [
+      "rdw.ext.twitter.Conversation"
+    ],
+
     topics: {
       "rd-protocol-twitter": "twitter"
     },

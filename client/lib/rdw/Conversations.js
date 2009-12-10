@@ -73,9 +73,21 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     "rd-notify-delete-undo": "delUndo"
   },
 
+  //List of modules that can handle display of a conversation.
+  //It is assumed that moduleName.prototype.canHandle(conversation) is defined
+  //for each entry in this array.
+  convoModules: [],
+
+  //List of modules that can handle display of a *full* conversation.
+  //It is assumed that moduleName.prototype.canHandle(conversation) is defined
+  //for each entry in this array.
+  fullConvoModules: [],
+
   //List of topic names and the corresponding ctor name to use for
   //conversation widgets. If there is no matching ctor name for a topic,
-  //then the conversationCtorName property will be used.
+  //then the conversationCtorName property will be used. These values
+  //are only consulted if there is not a matching widget via convoModules
+  //or fullConvoModules.
   topicConversationCtorNames: {},
 
   //Which topic actions should be considered only transition actions
@@ -84,11 +96,6 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     "archive": 1,
     "del": 1
   },
-
-  //List of modules that can handle display of a conversation.
-  //It is assumed that moduleName.prototype.canHandle(conversation) is defined
-  //for each entry in this array.
-  convoModules: [],
 
   //The key for navigation.
   navKeys: {
@@ -401,6 +408,15 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     if (viewType == "conversation") {
       this.oneConversation = conversations[0];
 
+      //Make sure we translate all fullConvoWidgets from string names into ctors.
+      if (!this.fullConvoWidgets) {
+        this.fullConvoWidgets = [];
+        for (var i = 0, module; module = this.fullConvoModules[i]; i++) {
+          var mod = dojo.getObject(module);
+          this.fullConvoWidgets.push(mod);
+        }
+      }
+
       //Clean up old convoWidget
       if (this.convoWidget) {
         this.removeSupporting(this.convoWidget);
@@ -408,11 +424,21 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       }
 
       //Make new convoWidget.
-      var ctor = dojo.getObject(this.fullConversationCtorName);
+      var ctor = this._getConvoWidget(this.oneConversation, this.fullConvoWidgets) ||
+                 dojo.getObject(this.fullConversationCtorName);
       this.convoWidget = new ctor({
         conversation: this.oneConversation
       }, dojo.create("div", null, this.convoNode));
     } else {
+      //Make sure we translate all convoWidgets from string names into ctors.
+      if (!this.convoWidgets) {
+        this.convoWidgets = [];
+        for (var i = 0, module; module = this.convoModules[i]; i++) {
+          var mod = dojo.getObject(module);
+          this.convoWidgets.push(mod);
+        }
+      }
+
       this.destroyAllSupporting(this.destroyIgnore);
 
       //Showing summaries of a few conversations.
@@ -423,8 +449,10 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       //and load up each conversation widget in there.
       var frag = dojo.doc.createDocumentFragment();
       for (var i = 0, conv; conv = this.conversations[i]; i++) {
-        var ctorName = this.topicConversationCtorNames[this.currentTopic] || this.conversationCtorName;
-        this.addSupporting(new (dojo.getObject(ctorName))({
+        var ctor = this._getConvoWidget(conv, this.convoWidgets) ||
+                   dojo.getObject(this.topicConversationCtorNames[this.currentTopic] ||
+                   this.conversationCtorName);
+        this.addSupporting(new ctor({
            conversation: conv
          }, dojo.create("div", null, frag)));        
       }
@@ -673,6 +701,9 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
     //summary: dijit lifecycle method. Be sure to get rid
     //of anything we do not want if this widget is re-instantiated,
     //like for on-the-fly extension purposes.
+    delete this.fullConvoWidgets;
+    delete this.convoWidgets;
+
     if (this.convoWidget) {
       this.convoWidget.destroy();
     }
@@ -722,136 +753,26 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
   home: function() {
     //summary: responds to rd-protocol-home topic.
 
-    console.log("starting home request");
-
-    //reset stored state.
-    this.conversations = [];
-    //Indicate this is a collection of home conversations.
-    this.conversations._rdwConversationsType = "home";
-    this._groups = [];
-
-    //Be sure convoModules are loaded.
-    console.log("loading convo modules.");
-
-    if (!this.convoWidgets) {
-      for (var i = 0, module; module = this.convoModules[i]; i++) {
-        dojo["require"](module);
-      }
-
-      dojo.addOnLoad(dojo.hitch(this, function(){
-        console.log("finished loading group modules.");
-        this.convoWidgets = [];
-        for (var i = 0, module; module = this.convoModules[i]; i++) {
-          var mod = dojo.getObject(module);
-          this.convoWidgets.push(mod);
-        }
-        this.destroyAllSupporting(this.destroyIgnore);
-        this._renderHome();
-      }));
-    } else {
-      this.destroyAllSupporting(this.destroyIgnore);
-      this._renderHome();
-    }
-  },
-
-  _renderHome: function() {
-    //summary: does the actual display of the home view.
-    console.log("_renderHome start");
     rd.api({
       url: 'inflow/conversations/personal',
       limit: this.conversationLimit,
       message_limit: this.messageLimit
-    }).ok(this, function(conversations) {
-      console.log("_renderHome conversations received");
-       //The home view groups messages by type. So, for each message in each conversation,
-      //figure out where to put it.
-      if (conversations && conversations.length) {
-        this.conversations.push.apply(this.conversations, conversations);
+    })
+    .ok(this, function(conversations) {
+      //Indicate this is a collection of home conversations.
+      this.conversations._rdwConversationsType = "home";
 
-        var leftOver = [];
-        for (var i = 0, convo; convo = conversations[i]; i++) {
-          //Feed the message to existing created groups.
-          if (!this._groupHandled(convo)) {
-            //Existing group could not handle it, see if there is a new group
-            //handler that can handle it.
-            var handler = this._getHomeGroup(convo);
-            if (handler) {
-              var widget = new handler({
-                conversation: convo,
-                displayOnCreate: false
-              }, dojo.create("div"));
-              widget._isGroup = true;
-              this._groups.push(widget);
-              this.addSupporting(widget);
-            } else {
-              leftOver.push(convo);
-            }
-          }
-        }
+      //Show the conversation.
+      this.updateConversations("summary", conversations);
 
-        //If any messsages not handled by a group in a conversation
-        //are left over, create a regular conversation for them.
-        if (leftOver.length) {
-          for (var i = 0, convo; convo = leftOver[i]; i++) {
-            var widget = this.createHomeConversation(convo);
-            this._groups.push(widget);
-            this.addSupporting(widget);
-          }
-        }
-      }
-
-      //Add all the widgets to the DOM and ask them to display.
-      console.log("_renderHome starting to display widgets");
-      var frag = dojo.doc.createDocumentFragment();
-      for (var i = 0, group; group = this._groups[i]; i++) {
-        group.placeAt(frag);
-        group.display();
-      }
-
-      console.log("_renderHome ending display widgets");
-
-      //Inject nodes all at once for best performance.
-      this.listNode.appendChild(frag);
-
-      console.log("_renderHome widgets injected into the dom");
-
-      //Update the summary area.
+      //Update the summary.
       this.summaryWidget.home();
-
-      this.configureFirstActiveItem();
-      this.transition("summary");
     });
   },
 
-  createHomeConversation: function(conversation) {
-    //summary: creates a Conversation widget for the Home view. The Conversation widget
-    //should not display itself immediately since prioritization of the home
-    //widgets still needs to be done. Similarly, it should not try to attach
-    //to the document's DOM yet. Override for more custom behavior/subclasses.
-    var ctorName = this.topicConversationCtorNames[this.currentTopic] || this.conversationCtorName;
-    return new (dojo.getObject(ctorName))({
-      conversation: conversation,
-      unreadReplyLimit: 2,
-      displayOnCreate: false,
-      allowReplyMessageFocus: false
-    }, dojo.create("div")); //rdw.Conversation
-  },
-
-  _groupHandled: function(/*Object*/conversation) {
-    //summary: if a group in the groups array can handle the conversation give
-    //it to that group and return true.
-    for (var i = 0, group; group = this._groups[i]; i++) {
-      if (group.canHandle && group.canHandle(conversation)) {
-        group.addConversation(conversation);
-        return true;
-      }
-    }
-    return false;
-  },
-
-  _getHomeGroup: function(/*Object*/conversation) {
+  _getConvoWidget: function(/*Object*/conversation, widgets) {
     //summary: determines if there is a home group that can handle the conversation.
-    for (var i = 0, module; module = this.convoWidgets[i]; i++) {
+    for (var i = 0, module; module = widgets[i]; i++) {
       if (module.prototype.canHandle(conversation)) {
         return module;
       }
