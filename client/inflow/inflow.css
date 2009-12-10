@@ -105,20 +105,47 @@ a img{
 
 
 body {
-  color: #000;
+  color: #1a1a1a;
   font-family: Droid-sans, Helvetica, Arial, Sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 16px;
   margin-top: 41px;
+}
+
+button {
+  font-style: normal;
+  color: #1a1a1a;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  background-image: url("i/new/rd_button_bg.png");
+  background-position: bottom;
+  background-repeat: repeat-x;
+  background-color: #fff;
+  padding: 2px 4px;
+  border: none;
+  font-size: 10px;
+  text-decoration: none;
+  border: 1px solid #ccc;
+}
+
+.dj_gecko button {
+  padding: 1px 2px;
+}
+
+button:hover {
+  text-decoration: none;
+  border: 1px solid #888;
 }
 
 #top {
   font-family: droid-serif, georgia, times, serif;
   width: 100%;
   padding: 16px 10px 9px 10px;
-  -moz-box-shadow: 0 0 10px #CCCCCC;
-  -webkit-box-shadow: 0 0 10px #CCCCCC;
-  background-color: white;
+  -moz-border-image: url("i/new/rd_header_bg.png") 1 1 6 1;
+  -webkit-border-image: url("i/new/rd_header_bg.png") 1 1 6 1;
+  border-width: 1px 1px 6px 1px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
   position: fixed;
   top: 0;
   z-index: 10000;
@@ -229,6 +256,8 @@ body {
   position: relative;
   z-index: 1;
   width: 300px;
+  background-image: url("i/new/rd_widget_bg.png");
+  background-repeat: repeat-y;
 }
 
 #footer {

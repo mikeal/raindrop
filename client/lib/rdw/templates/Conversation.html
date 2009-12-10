@@ -8,15 +8,13 @@
     <textarea class="replyTextArea">${i18n.reply}</textarea>
   </div>
   <div class="actions hbox" dojoAttachPoint="actionsNode">
-    <div class="hbox boxFlex">
-      <a href="#" class="expand" title="${i18n.expand}" dojoAttachPoint="expandNode">${i18n.expand}</a>
-      <a href="#archive" class="archive" title="${i18n.archive}">${i18n.archive}</a>
-      <a href="#delete" class="delete" title="${i18n.deleted}">${i18n.deleted}</a>
-      <a href="#impersonal" class="impersonal" title="${i18n.impersonal}">${i18n.impersonal}</a>
+    <div class="leftActions boxFlex">
+      <button name="expand" dojoAttachPoint="expandNode">${i18n.expand}</button>
+      <button name="archive">${i18n.archive}</button>
+      <button name="delete">${i18n.deleted}</button>
+      <button name="impersonal">${i18n.impersonal}</button>
     </div>
-    <div class="hbox">
-      <a class="reply" href="#reply" dojoattachpoint="replyNode">${i18n.reply}</a>
-    </div>
+    <button name="reply" dojoattachpoint="replyNode">${i18n.reply}</button>
   </div>
   <div dojoAttachPoint="toolDisplayNode"></div>
 </div>

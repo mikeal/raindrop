@@ -57,7 +57,7 @@ dojo.declare("rdw.Summary", [rdw._Base], {
   conversation: function(/*Object*/ conversation) {
     //summary: responds to showing a full conversation.
     var title = conversation.subject || "";
-    var html = rd.escapeHtml(title) + '<div class="actions"><a href="#archive">archive</a><a href="#delete">delete</a></div>';
+    var html = rd.escapeHtml(title) + '<div class="actions"><button name="archive">archive</button><button name="delete">delete</button></div>';
     this.domNode.innerHTML = html;
     dojo.addClass(this.domNode, "conversation");
   },

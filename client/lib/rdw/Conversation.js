@@ -199,12 +199,12 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
 
     //Set up the link for the full conversation view action, and set the subject.
     if (this.conversation.id) {
-      var convoId = "#rd:conversation:" + JSON.stringify(this.conversation.id);
+      var convoId = "rd:conversation:" + JSON.stringify(this.conversation.id);
       if (this.subjectNode) {
-        dojo.attr(this.subjectNode, "href", convoId);
+        dojo.attr(this.subjectNode, "href", "#" + convoId);
       }
       if (this.expandNode) {
-        dojo.attr(this.expandNode, "href", convoId);
+        dojo.attr(this.expandNode, "name", convoId);
       }
     }
     if (this.subjectNode) {
