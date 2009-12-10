@@ -88,8 +88,9 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
   onClick: function(evt) {
     //summary: handles clicks for tool actions. Uses event
     //delegation to publish the right action.
-    var href = evt.target.href;
-    if (!href && evt.target.nodeName.toLowerCase() == "button") {
+    var href = evt.target.href,
+        isButton = evt.target.nodeName.toLowerCase() === "button";
+    if (!href && isButton) {
       href = "#" + evt.target.name;
     }
 
@@ -136,6 +137,8 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       } else if (href == "createImpersonal") {
         dojo.query(".newImpersonal", this.domNode).remove();
         dojo.stopEvent(evt);
+      } else if (isButton) {
+        location = "#" + href;
       }
     }
   },

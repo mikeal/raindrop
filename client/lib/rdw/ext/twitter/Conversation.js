@@ -35,5 +35,15 @@ dojo.declare("rdw.ext.twitter.Conversation", [rdw.Conversation], {
   //to show individual messages.
   messageCtorName: "rdw.ext.twitter.Message",
 
-  templateString: dojo.cache("rdw.ext.twitter", "Conversation.html")
+  templateString: dojo.cache("rdw.ext.twitter", "Conversation.html"),
+
+  /**
+   * Determines if the widget can support this conversation.
+   *
+   * @param conversation {object} the conversation API object.
+   */
+  canHandle: function(conversation) {
+    var msg = conversation.messages[0];
+    return !this.conversation && conversation.message_ids[0][0] === "tweet";
+  }
 });

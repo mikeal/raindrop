@@ -800,8 +800,6 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
         }
       }
 
-      this._sortGroups();
-
       //Add all the widgets to the DOM and ask them to display.
       console.log("_renderHome starting to display widgets");
       var frag = dojo.doc.createDocumentFragment();
@@ -837,18 +835,6 @@ dojo.declare("rdw.Conversations", [rdw._Base], {
       displayOnCreate: false,
       allowReplyMessageFocus: false
     }, dojo.create("div")); //rdw.Conversation
-  },
-
-  _sortGroups: function() {
-    //summary: handles sorting the groups. Default behavior
-    //is to have true groups at the bottom, below regular
-    //message groups.
-    var regular = [];
-    var groupie = [];
-    for (var i = 0, group; group = this._groups[i]; i++) {
-      group._isGroup ? groupie.push(group) : regular.push(group);
-    }
-    this._groups = regular.concat(groupie);
   },
 
   _groupHandled: function(/*Object*/conversation) {

@@ -39,6 +39,10 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.Summary", {
 
 rd.applyExtension("rdw.ext.twitter.ext", "rdw.Conversations", {
   addToPrototype: {
+    convoModules: [
+      "rdw.ext.twitter.Conversation"
+    ],
+
     topics: {
       "rd-protocol-twitter": "twitter"
     },
