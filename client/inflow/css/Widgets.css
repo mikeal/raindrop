@@ -71,7 +71,7 @@
   visibility: hidden;
   pointer: cursor;
   outline: none;
-  font-family: droid-sans-mono, monospace;
+  width: 24px;
   font-size: 12px;
 }
 
@@ -262,5 +262,8 @@
 }
 
 .rdwWidgets.start .rdwMessage > .message > .header {
-  margin: 0;
+  margin: 4px 0 0 0;
+  padding: 4px 0 0 0;
+  background-image: url("../i/new/rd_widget_header_bg.png");
+  background-repeat: repeat-x;
 }

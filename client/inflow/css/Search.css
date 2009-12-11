@@ -23,9 +23,8 @@
 
 .Search {
   position: relative;
-  padding-left: 0.5em;
+  padding: 1px 0 0 8px;
   display: inline-block;
-  border: 1px solid black;
 }
 
 .Search > form {

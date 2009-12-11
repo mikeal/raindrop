@@ -42,7 +42,7 @@
 }
 
 .rdwMessage > .message  > .header { 
-  padding: 4px 0 0 0;
+  padding: 4px 0;
 }
 
 .rdwMessage.reply > .message  > .header { 
@@ -92,7 +92,7 @@
   border-top: none;
   background-image: url("../i/new/rd_replies_icon.png");
   background-repeat: no-repeat;
-  padding: 8px 0 0 50px;
+  padding: 8px 0 0 58px;
 }
 
 .rdwConversation .messages .rdwMessage.reply:nth-child(2) .total {
@@ -101,7 +101,7 @@
 
 .rdwMessage.reply {
   margin: 4px 0 0 0;
-  padding: 0 0 0 50px;
+  padding: 0 0 0 58px;
   border-top: 1px solid #e6e6e6;
   position: relative;
   -moz-box-sizing: border-box;

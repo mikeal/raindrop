@@ -61,7 +61,7 @@
   background-image: url("../i/new/rd_move_bg.png");
   background-repeat: no-repeat;
   background-position: left center;
-  padding: 0 0 0 48px;
+  padding: 0 0 0 58px;
 }
 
 .rdwConversation > .newImpersonal > .impersonalOptions h4 {
@@ -194,11 +194,7 @@
   width: auto;
 }
 
-.rdwMessage.rdwExtTwitterMessage > .message  > .header:first-child { 
-  padding: 4px 0 5px 0;
-}
-
-.rdwMessage.rdwExtTwitterMessage.reply > .message  > .header:first-child { 
+.rdwMessage.rdwExtTwitterMessage.reply > .message  > .header { 
   padding: 4px 0;
 }
 
