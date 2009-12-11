@@ -304,7 +304,10 @@ class ConversationAPI(API):
         result = db.allDocs(keys=list(conv_doc_ids), include_docs=True)
         # filter out deleted etc.
         docs = [row['doc'] for row in result['rows'] if 'doc' in row]
-        return self._build_conversations(db, docs, args['message_limit'])
+        convos = self._build_conversations(db, docs, args['message_limit'])
+        convos.sort(key=lambda item: item['messages'][0]['schemas']['rd.msg.body']['timestamp'],
+                   reverse=True)
+        return convos
 
     # Helper for most other end-points
     def _query(self, req, **kw):
