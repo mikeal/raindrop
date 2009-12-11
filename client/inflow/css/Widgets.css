@@ -70,7 +70,6 @@
 .WidgetBox .wipeToggle {
   visibility: hidden;
   pointer: cursor;
-  outline: none;
   width: 24px;
   font-size: 12px;
 }

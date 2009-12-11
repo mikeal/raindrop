@@ -114,7 +114,7 @@ body {
 
 button {
   font-style: normal;
-  color: #1a1a1a;
+  color: #333;
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   background-image: url("i/new/rd_button_bg.png");
@@ -136,6 +136,19 @@ button {
 button:hover {
   text-decoration: none;
   border: 1px solid #888;
+}
+
+button:active {
+  background-color: #e6e6e6;
+  background-image: none;
+}
+
+button::-moz-focus-inner,
+input[type="reset"]::-moz-focus-inner,
+input[type="button"]::-moz-focus-inner,
+input[type="submit"]::-moz-focus-inner,
+input[type="file"] > input[type="button"]::-moz-focus-inner {
+    border: 1px dotted transparent;
 }
 
 #top {
@@ -318,25 +331,34 @@ button:hover {
 .dijitMenu {
   -moz-box-shadow: 0 0 10px #888888;
   -webkit-box-shadow: 0 0 10px #888888;
-  background-color:yellow;
-  border:1px solid black;
+  background-color: #fff;
+  border: 1px solid #888;
+  border-top: none;
+  max-height: 450px;
+  overflow-y: auto !important;
+}
+
+.dijitPopup {
+  position: fixed !important;
+  top: 46px !important;
+  left: 60px !important;
 }
 
 .dijitMenuItem {
   color: #1a1a1a;
   padding: 3.5px !important;
+  border-top: 1px solid #f2f2f2;
 }
 
 .dijitMenuItem:hover {
-  text-decoration: underline;
+  background-color: #f2f2f2 !important;
+}
+
+.dijitMenuItemSelected {
+  background-color: #f2f2f2 !important;
 }
 
 .dijitMenuItem li {
-  background-color: transparent !important;
-}
-
-.dijitMenuItem li:hover,
-.dijitReset li:hover {
   background-color: transparent !important;
 }
 

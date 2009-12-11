@@ -166,9 +166,10 @@
   color: #888;
   font-family: "droid-sans", helvetica, arial, sans;
   font-size: 12px;
-  background-color: #f2f2f2;
+  background-color: #fff;
   background-image: url("../i/new/rd_input_bg.png");
   background-repeat: repeat-x;
+  border: 1px solid #e6e6e6;
 }
 
 .rdwConversation .replyTextArea:focus {
