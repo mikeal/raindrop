@@ -204,7 +204,8 @@ class ImapProvider(object):
   @defer.inlineCallbacks
   def write_items(self, items):
     try:
-      _ = yield self.conductor.pipeline.provide_schema_items(items)
+      if items:
+        _ = yield self.conductor.pipeline.provide_schema_items(items)
     except DocumentSaveError, exc:
       # So - conflicts are a fact of life in this 'queue' model: we check
       # if a record exists and it doesn't, so we queue the write.  By the
@@ -575,6 +576,12 @@ class ImapProvider(object):
       rdkey = get_rdkey_for_email(msg_id)
       current[tuple(rdkey)] = result['UID']
 
+    # We hack the 'extension_id' in a special way to allow multiple of the
+    # same schema; multiple IMAP accounts, for example, may mean the same
+    # rdkey ends up with multiple of these location records.
+    # XXX - this is a limitation in the doc model we should fix!
+    ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, ".".join(folder_path))
+
     # fetch all things in couch which (a) are currently tagged with this
     # location and (b) was tagged by this mapi account.  We do (a) via the
     # key param, and filter (b) here...
@@ -594,6 +601,7 @@ class ImapProvider(object):
         to_nuke.append({'_id': doc['_id'],
                         '_rev': doc['_rev'],
                         '_deleted': True,
+                        'rd_ext_id': ext_id,
                         })
       scouch.add(rdkey)
 
@@ -601,11 +609,6 @@ class ImapProvider(object):
     to_add = {}
     for rdkey in set(current) - scouch:
       # Item in the folder but couch doesn't know it is there.
-      # We hack the 'extension_id' in a special way to allow multiple of the
-      # same schema; multiple IMAP accounts, for example, may mean the same
-      # rdkey ends up with multiple of these location records.
-      # XXX - this is a limitation in the doc model we should fix!
-      ext_id = "%s~%s~%s" % (self.rd_extension_id, acct_id, ".".join(folder_path))
       uid = current[rdkey]
       new_item = {'rd_key': list(rdkey),
                   'rd_ext_id': ext_id,
