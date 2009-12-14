@@ -96,12 +96,9 @@ dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
    */
   canHandle: function(conversation) {
     var msg = conversation.messages[0];
-    var recip = msg.schemas["rd.msg.recip-target"];
-    var keyType = msg.schemas["rd.msg.body"].rd_key[0];
-    var notification = msg.schemas["rd.msg.notification"];
-    var notifyType = notification && notification.type;
-  
-    return (keyType == "tweet" && recip && recip.target == "broadcast") || notifyType == "twitter";
+    var keyType = msg.schemas["rd.msg.body"] && msg.schemas["rd.msg.body"].rd_key[0];
+
+    return keyType == "tweet";
   },
 
 
