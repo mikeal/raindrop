@@ -36,6 +36,8 @@ import random
 import string
 from pprint import pprint
 
+import httplib2
+
 server = couchdb.Server('http://127.0.0.1:5984')
 try:
     del server['test']
@@ -49,7 +51,16 @@ def timeit(desc, func, *args):
     func(*args)
     print desc, "took", time.clock()-start
 
-def load_docs(nraw=7000):
+def configure_erlang_views():
+    headers = {'X-Couch-Persist': 'false'}
+    h = httplib2.Http()
+    uri = server.resource.uri + '/_config/native_query_servers/erlang'
+    resp, content = h.request(uri, "PUT",
+                              json.dumps('{couch_native_process, start_link, []}'),
+                              headers=headers)
+    assert resp['status']=='200', resp
+    
+def load_docs(nraw=1000):
     # load 'nraw' raw documents, them simulate each of these raw docs having
     # 5 additional 'simple' documents each...
     common = {
@@ -113,10 +124,10 @@ def load_docs(nraw=7000):
 
 def load_views():
     ddocs = [
-        {"_id": "_design/views", 
+        {"_id": "_design/js-megaview", 
          "views" : {
-           "megaview" : {
-                # This is a verbatim copy of our mega-view, including comments etc.
+           "view" : {
+                # This is an old verbatim copy of our mega-view, including comments etc.
                 "map": """
                         // A doc may have rd_megaview_ignore_doc set - this excludes the doc
                         // completely from the megaview.
@@ -133,7 +144,6 @@ def load_views():
                                            'rd_key' : doc.rd_key,
                                            'rd_ext' : doc.rd_ext_id,
                                            'rd_schema_id' : doc.rd_schema_id,
-                                           'rd_source' : doc.rd_source,
                                           }
                             // first emit some core 'pseudo-schemas'.
                             emit(['rd.core.content', 'key', doc.rd_key], row_val);
@@ -203,13 +213,163 @@ def load_views():
                 },
             },
         },
-        {"_id": "_design/views2", 
+
+        {"_id": "_design/js-simpleview", 
          "views" : {
-           "simple" : {
-                "map": """function(doc) {if (doc.foo) emit(doc.foo, doc.etc);}"""
+           "view" : {
+                "map": """function(doc) {if (doc.foo) emit(doc.foo, doc.foo);}""",
+                "reduce": "_count",
                 },
             },
         },
+
+        {"_id": "_design/erlang-megaview", 
+         "language": "erlang",
+         "views" : {
+           "view" : {
+                "map": """\
+% An erlang implementation of the mega-view.
+fun({ThisDoc}) ->
+    % return every field in the document which isn't 'reserved'
+    User_fields = fun(Doc) ->
+        RawFields = lists:filter( 
+            fun({K, _V}) -> 
+                case K of
+                % leading '_'
+                <<$_, _/binary >>            -> false;
+                % leading 'rd_'
+                <<$r, $d, $_, _/binary >>    -> false;
+                % else...
+                _                            -> true
+               end
+            end,
+            Doc),
+        case proplists:get_value(<<"rd_megaview_expandable">>, Doc) of
+        undefined ->
+            % result is just the raw fields.
+            RawFields;
+        Expandable ->
+            % there is a rd_megaview_expandable field - process it
+            % any field value in 'rd_megaview_expandable' will be a nested list.
+            lists:flatten(
+                lists:map(
+                    fun({K, V}) ->
+                        case lists:any( fun(X) -> K==X end, Expandable) of
+                        true  -> lists:map( fun(Y) -> {K, Y} end, V);
+                        false -> {K,V}
+                        end
+                    end,
+                    RawFields
+                )
+            )
+        end
+    end,
+
+    Emit_for_rd_item = fun(Doc, SchemaID) ->
+        RDKey = proplists:get_value(<<"rd_key">>, Doc),
+        ExtID = proplists:get_value(<<"rd_ext_id">>, Doc),
+        SchemaConf = proplists:get_value(<<"rd_schema_confidence">>, Doc),
+        % we don't emit the revision from the source in the key.
+        RDSource = proplists:get_value(<<"rd_source">>, Doc),
+        SrcVal = case RDSource of
+                    undefined -> null;
+                    null -> null;
+                    _    -> hd(RDSource)
+                end,
+
+        % The value that gets written for every row we write.
+        Value = {[ {<<"_rev">>, proplists:get_value(<<"_rev">>, Doc)},
+                   {<<"rd_key">>, proplists:get_value(<<"rd_key">>, Doc)},
+                   {<<"rd_ext">>, ExtID},
+                   {<<"rd_schema_id">>, SchemaID}
+                ]},
+
+        Fixed = [
+            {[<<"rd.core.content">>, <<"key">>, RDKey]},
+            {[<<"rd.core.content">>, <<"schema_id">>, SchemaID]},
+            {[<<"rd.core.content">>, <<"key-schema_id">>, [RDKey, SchemaID]]},
+            {[<<"rd.core.content">>, <<"ext_id">>, ExtID]},
+            {[<<"rd.core.content">>, <<"ext_id-schema_id">>, [ExtID, SchemaID]]},
+            {[<<"rd.core.content">>, <<"source">>, SrcVal]},
+            {[<<"rd.core.content">>, <<"key-source">>, [RDKey, SrcVal]]},
+            {[<<"rd.core.content">>, <<"ext_id-source">>, [ExtID, SrcVal]]},
+            % a condition
+            {[<<"rd.core.content">>, <<"rd_schema_confidence">>, SchemaConf], SchemaConf}
+        ],
+
+        FilteredFixed = lists:map( 
+            fun(K) -> element(1, K) end,
+            lists:filter( 
+               fun(V) -> 
+                   case V of
+                   {_Key} -> true;
+                   {_Key, null} -> false;
+                   {_Key, undefined} -> false;
+                   {_Key, _} -> true
+                   end
+               end,
+               Fixed
+            )
+        ),
+
+        % If this schema doesn't want/need values indexed, don't fetch them.
+        AllKeys = case proplists:get_value(<<"rd_megaview_ignore_values">>, Doc) of
+        undefined ->
+            % fetch the user fields too...
+            UserKeys = lists:map(
+                fun({K, V}) ->
+                    % emit null if a string value > 140 chars is seen.
+                    NV = case V of 
+                            <<_:(140*8), _/binary>> -> null;
+                            _                       -> V
+                        end,
+                    [SchemaID, K, NV]
+                end,
+                User_fields(Doc)
+            ),
+            FilteredFixed ++ UserKeys;
+        _ ->
+            FilteredFixed
+        end,
+        % finally the results
+        lists:foreach(
+            fun (K) -> Emit(K, Value) end,
+         AllKeys )
+    end,
+
+    case proplists:get_value(<<"rd_megaview_ignore_doc">>, ThisDoc) of
+    undefined ->
+        SchemaID = proplists:get_value(<<"rd_schema_id">>, ThisDoc),
+        case SchemaID of
+            undefined -> none;
+            _         -> Emit_for_rd_item(ThisDoc, SchemaID)
+        end;
+    _ -> none
+    end
+end.
+""",
+                "reduce": "_count",
+                },
+            },
+        },
+
+        {"_id": "_design/erlang-simpleview", 
+         "language": "erlang",
+         "views" : {
+           "view" : {
+                "map": """\
+fun({Doc}) ->
+    case proplists:get_value(<<"foo">>, Doc) of
+    undefined -> none;
+    Val       -> Emit(Val, Val)
+    end
+end.
+""",
+                "reduce": "_count",
+                },
+            },
+        },
+
     ]
     db.update(ddocs)
 
@@ -217,11 +377,32 @@ def run_view(view):
     # must open the view *and* access the results due to black magic :(
     len(db.view(view))
 
+configure_erlang_views()
 timeit("loading docs", load_docs)
 print "database info is:"; pprint(db.info())
 load_views() # fast - not worth timing
 
-for view in ('_design/views/_view/megaview', '_design/views2/_view/simple'):
-    timeit('view %r' % view, run_view, view)
+for viewtype in ('megaview', 'simpleview'):
+    results = []
+    for lang in ('js', 'erlang'):
+        view = '_design/' + lang + "-" + viewtype + '/_view/view'
+        timeit('view %r' % view, run_view, view)
+        # now do it again with reduce=False, so we can sanity
+        # check the benchmark is checking what we thing it is
+        # (ie, that the results are identical)
+        results.append(list(db.view(view, reduce=False)))
+
+    r1, r2 = results
+    if len(r1) != len(r2):
+        print "View results aren't the same! - %d rows vs %d rows" % (r1, r2)
+        continue
+
+    for i, (rw1, rw2) in enumerate(zip(r1, r2)):
+        if rw1 != rw2:
+            print "View results aren't the same! - at row", i
+            pprint(rw1)
+            pprint(rw2)
+            continue # stop after first problem!
+    
 
 print "database info is:"; pprint(db.info())

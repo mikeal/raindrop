@@ -567,7 +567,12 @@ def install_views(whateva, options):
                                               "../../../schema"))
 
     # first see if we have erlang available...
+    # NOTE: current performance benchmarks (see couch_perf.py) show erlang
+    # as being no faster (and with some upcoming couch changes, *slower*)
+    # than JS - so this is disabled (and should be deleted once we are
+    # sure JS is going to be faster forever :)
     extra_langs = []
+    ignore_me = """
     raw_config = yield db.get('/_config/native_query_servers')
     config = json.loads(raw_config)
     if 'erlang' in config:
@@ -580,6 +585,7 @@ def install_views(whateva, options):
         #    "This couch server is not configured for erlang view servers.\n"
         #    "consider executing 'check-raindrop.py --configure' to enable them.")
         pass
+    """
 
     docs = [d for d in generate_view_docs_from_filesystem(schema_src, extra_langs)]
     logger.debug("Found %d documents in '%s'", len(docs), schema_src)
@@ -654,7 +660,13 @@ def _build_views_doc_from_directory(ddir, extra_langs = []):
             fqr = os.path.join(ddir, view_name + rtail + this_ext)
             try:
                 with open(fqr) as f:
-                    data = f.read()
+                    # support the 'builtin' reduce functionality - if line 1
+                    # starts with an '_', only that line is used.
+                    first = f.readline()
+                    if first.startswith('_'):
+                        data = first.strip()
+                    else:
+                        data = first + f.read()
                     ret_views[view_name]['reduce'] = data
                     fprinter.get_finger(view_name+rtail+this_ext).update(data)
             except (OSError, IOError):

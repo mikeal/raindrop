@@ -1,3 +1,10 @@
+_count
+
+// Note - this file _must_ have the first line starting with an underscore;
+// the raindrop bootstrap process treats that as a special case and only that
+// first line will be sent to couchdb.
+// Note that '_count' is a special 'builtin' reduce function...
+
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1
  *
@@ -20,10 +27,3 @@
  *
  * Contributor(s):
  * */
-
-function(keys, values, rereduce) {
-    if (rereduce)
-        return sum(values)
-    else
-        return values.length;
-}

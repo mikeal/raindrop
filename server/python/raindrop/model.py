@@ -230,6 +230,15 @@ class DocumentModel(object):
 
     def get_doc_id_for_schema_item(self, si):
         """Returns an *unquoted* version of the doc ID"""
+        if '_id' in si:
+            # already has an ID - could well be deleted - either way, hope it
+            # is as expected.
+            assert '_deleted' in si or \
+                   self._calc_doc_id_for_schema_item(si)==si['_id'], si
+            return si['_id']
+        return self._calc_doc_id_for_schema_item(si)
+
+    def _calc_doc_id_for_schema_item(self, si):
         key_type, key_val = si['rd_key']
         enc_key_val = encode_provider_id(json.dumps(key_val))
         key_part = "%s.%s" % (key_type, enc_key_val)
