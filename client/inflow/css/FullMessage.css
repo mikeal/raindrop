@@ -59,7 +59,6 @@
 .rdwConversationFullMessage > .message > .header > .published {
   display: table;
   float: right;
-  font-family: droid-serif, georgia, times, serif;
   font-style: normal;
   font-size: 10px;
   margin-top: 4px;

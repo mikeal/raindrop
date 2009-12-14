@@ -64,4 +64,8 @@
   display: list-item;
   list-style: none;
   color: #1a1a1a;
+  text-decoration: none;
+  font-size: 12px;
+  display: inline;
+  font-weight: normal;
 }
