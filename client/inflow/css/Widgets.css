@@ -82,6 +82,19 @@
   width: 100%;
 }
 
+.WidgetBox > .WidgetHeader > .title {
+  padding: 0 0 0 22px;
+  background-repeat: no-repeat;
+  background-position: left;
+  color: inherit;
+  text-decoration: none;
+  outline: none;
+}
+
+.WidgetBox > .WidgetHeader > .title:hover {
+  text-decoration: underline;
+}
+
 .WidgetBox > .WidgetHeader > .actions {
   text-align: right;
 }
@@ -137,19 +150,6 @@
   -moz-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
   -webkit-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 1;
   border-width: 1px 9px 12px 1px; 
-}
-
-.rdwExtAccountGroup > .WidgetHeader > .title {
-  padding: 0 0 0 22px;
-  background-repeat: no-repeat;
-  background-position: left;
-  color: inherit;
-  text-decoration: none;
-  outline: none;
-}
-
-.rdwExtAccountGroup > .WidgetHeader > .title:hover {
-  text-decoration: underline;
 }
 
 .rdwExtAccountGroup .rdwMessage > .message > .content a {

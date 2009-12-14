@@ -32,7 +32,7 @@ dojo.require("rdw.fx.wiper");
 dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationMailingList"> \
                      <div class="WidgetHeader hbox"> \
-                      <div dojoAttachPoint="nameNode" class="title boxFlex"></div> \
+                      <a href="#" dojoAttachPoint="nameNode" class="title boxFlex"></a> \
                       <span class="actions"> \
                          <span class="action broadcastCount" dojoAttachPoint="broadcastCountNode"></span> \
                          <span class="action noteCount" dojoAttachPoint="noteCountNode"></span> \
@@ -157,5 +157,6 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
 
     //Update the title.
     rd.escapeHtml(this.listName, this.nameNode, "only");
+    dojo.attr(this.nameNode, "href", "#rd:mailingList:" + encodeURIComponent(this.listId));
   }
 });
