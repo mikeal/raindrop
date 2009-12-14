@@ -161,7 +161,7 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
   -webkit-box-sizing: border-box;
   position: fixed;
   top: 0;
-  z-index: 10000;
+  z-index: 1001;
 }
 
 #top a {
@@ -187,7 +187,7 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
   background-position: right;
   z-index: 101;
   top: 18px;
-  left: 871px;
+  left: 866px;
 }
 
 #notices {

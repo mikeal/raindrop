@@ -173,8 +173,9 @@
 }
 
 .rdwConversation .replyTextArea:focus {
-  color: #373737;
+  color: #333;
   height: 60px;
+  border: 1px solid #ccc;
 }
 
 .rdwConversation > .actions {

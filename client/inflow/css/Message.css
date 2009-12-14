@@ -72,8 +72,6 @@
 }
 
 .rdwMessage > .message > .header > .published {
-  font-family: droid-serif, georgia, times, serif;
-  font-style: italic;
   font-size: 10px;
   color: #888;
 }

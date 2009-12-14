@@ -166,6 +166,7 @@
 
 .rdwExtTwitterGroup > .WidgetHeader > .title {
   background-image: url("../i/new/rd_widget_twitter.png");
+  background-position: left 3px;
 }
 
 
@@ -203,7 +204,7 @@
   padding: 0 0 0 18px;
   background-image: url("../i/new/rd_widget_broadcast.png");
   background-repeat: no-repeat;
-  background-position: left 3px;
+  background-position: left 4px;
 }
 
 /* ### GENERIC GROUP ### */
