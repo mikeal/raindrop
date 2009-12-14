@@ -27,10 +27,11 @@ dojo.provide("rd.onHashChange");
 
 ;(function(){
   var value = location.href.split("#")[1] || "";
+  rd.onHashChange.value = value;
   var interval = setInterval(function(){
     var newValue = location.href.split("#")[1] || "";
     if (newValue != value) {
-      value = newValue;
+      rd.onHashChange.value = value = newValue;
       //Use a set timeout so an error on a subscriber does
       //not stop the polling.
       setTimeout(function() {

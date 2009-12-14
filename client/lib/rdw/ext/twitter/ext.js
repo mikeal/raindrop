@@ -24,6 +24,7 @@
 dojo.provide("rdw.ext.twitter.ext");
 
 dojo.require("rdw.Summary");
+dojo.require("rdw.SummaryGroup");
 dojo.require("rdw.Conversations");
 dojo.require("rdw.Widgets");
 dojo.require("rdw.ext.twitter.Group");
@@ -33,6 +34,18 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.Summary", {
   addToPrototype: {
     twitter: function() {
       rd.escapeHtml("Twitter Timeline", this.domNode);
+    }
+  }
+});
+
+rd.applyExtension("rdw.ext.twitter.ext", "rdw.SummaryGroup", {
+  addToPrototype: {
+    topics: {
+      "rd-protocol-twitter": "twitter"
+    },
+
+    twitter: function() {
+      this.domNode.innerHTML = "Twitter Timeline";
     }
   }
 });

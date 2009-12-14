@@ -269,6 +269,15 @@ dojo._listener.getDispatcher = function(){
       //summary: converts a qualifying fragment ID (url #hash value)
       //into a rd-protocol topic. Useful if want to dispatch a protocol
       //topic without changing the page URL.
+      var topic = this.getFragIdTopic(fragId);
+      if (topic) {
+	rd.pub(topic.name, topic.data);
+      }
+    },
+
+    getFragIdTopic: function(/*String*/fragId) {
+      //summary: if the topic is a fragment ID that maps to a rd-protocol topic,
+      //get the value as a rd-protocol topic.
       if (fragId && fragId.indexOf("rd:") == 0) {
 	//Have a valid rd: protocol link.
 	fragId = fragId.split(":");
@@ -278,11 +287,12 @@ dojo._listener.getDispatcher = function(){
 	//value to pass to protocol handler.
 	fragId.splice(0, 2);
 	if (fragId.length) {
-	  rd.pub("rd-protocol-" + proto, fragId.join(":"));
+	  return {name: "rd-protocol-" + proto, data: fragId.join(":")};
 	} else {
-	  rd.pub("rd-protocol-" + proto);
+	  return {name: "rd-protocol-" + proto};
 	}
       }
+      return null;
     },
 
     //Types of extension wrapping. Similar to aspected oriented advice.
