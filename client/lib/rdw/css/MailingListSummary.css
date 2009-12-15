@@ -36,8 +36,9 @@
 }
 
 .MailingListSummary .description {
-  font-size: x-small;
-  color: #666;
+  font-size: 10px;
+  color: #888;
+  display: inline;
 }
 
 .MailingListSummary > .tools > a.message {

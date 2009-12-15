@@ -61,9 +61,7 @@
 }
 
 .WidgetBox .rdwMessage > .message > .header > .published {
-  font-family: droid-serif, georgia, times, serif;
   font-size: 10px;
-  font-style: italic;
   color: #888;
 }
 
@@ -189,7 +187,7 @@
   padding: 0 0 0 18px;
   background-image: url("../i/new/rd_widget_mailinglist.png");
   background-repeat: no-repeat;
-  background-position: left;
+  background-position: left 3px;
 }
 
 /* ### BROADCAST ### */
@@ -266,4 +264,8 @@
   padding: 4px 0 0 0;
   background-image: url("../i/new/rd_widget_header_bg.png");
   background-repeat: repeat-x;
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount {
+  font-weight: bold;
 }

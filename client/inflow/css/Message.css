@@ -42,7 +42,7 @@
 }
 
 .rdwMessage > .message  > .header { 
-  padding: 4px 0;
+  padding: 4px 0 6px 0;
 }
 
 .rdwMessage.reply > .message  > .header { 
