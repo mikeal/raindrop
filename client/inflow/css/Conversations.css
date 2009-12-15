@@ -35,16 +35,6 @@
   width: 8000px;
 }
 
-.rdwConversations ol {
-  position: relative;
-  display: block;
-  float: left;
-  width: 100%;
-  list-style: none; 
-  margin: 0;
-  padding: 0;
-}
-
 .rdwConversationsSwipe {
   position: fixed;
   bottom: 150px;
