@@ -98,6 +98,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     //ID is required
     rd.escapeHtml(this.doc.id, this.idNode, "only");
     this.idNode.href = this.doc.post;
+    this.idNode.title = this.doc.post.replace(/^mailto:/,"");
 
     //Name is not a required field so we check for it
     if (this.doc.name)

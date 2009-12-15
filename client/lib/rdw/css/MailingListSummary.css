@@ -24,28 +24,20 @@
 .MailingListSummary {
   padding: 0;
 }
-.MailingListSummary > .tools {
-  /* Use float to align tools to the right-hand side of the summary pane.
-   * The Message widget uses absolute positioning to achieve this effect;
-   * should we do the same here? */
-  float: right;
+
+.MailingListSummary .id {
+  font-weight: bold;
+  text-decoration: none;
+  color: inherit;
 }
 
-.MailingListSummary > .tools > a.button {
-  background-color: #1A1A1A;
-  color: #FFF;
-  opacity: 0.5;
-  border: none;
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  vertical-align: middle;
+.MailingListSummary .id:hover {
+  text-decoration: underline;
+}
+
+.MailingListSummary .description {
   font-size: x-small;
-  padding: 1px 5px;
-  cursor: pointer;
-}
-
-.MailingListSummary > .tools:hover > a.button {
-  opacity: 1;
+  color: #666;
 }
 
 .MailingListSummary > .tools > a.message {
@@ -55,11 +47,7 @@
    * the process of being unsubscribed. */
 }
 
-.MailingListSummary > .other {
-  margin-top: 0;
-  margin-left: 0;
-}
-
+/*Archives will be moved to the summary right side widget */
 .MailingListSummary > .other > a {
   display: list-item;
   list-style: none;

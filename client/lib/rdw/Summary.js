@@ -51,7 +51,7 @@ dojo.declare("rdw.Summary", [rdw._Base], {
   //**************************************************
   home: function() {
     //summary: responds to rd-protocol-home topic.
-    rd.escapeHtml("Inflow", this.domNode, "only");
+    this.domNode.innerHTML = "<strong>Inflow</strong>";
   },
 
   conversation: function(/*Object*/ conversation) {
