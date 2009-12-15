@@ -412,7 +412,8 @@ def handler(message):
         match = re.search('([\W\w]*)\s*<(.+)>.*', list_id)
         if (match):
             list_id = match.group(2)
-            list_name = match.group(1).lstrip().rstrip()
+            # remove leading and trailing spaces and quotes
+            list_name = match.group(1).lstrip().rstrip().strip('\'"')
             logger.debug("complex list-id header with ID '%s' and name '%s'",
                          list_id, list_name)
         else:
