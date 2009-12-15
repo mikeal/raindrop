@@ -90,6 +90,41 @@ dojo.declare("rdw.Message", [rdw._Base], {
   postCreate: function() {
     //summary: dijit lifecycle method
     this.inherited("postCreate", arguments);
+
+    var msgDoc = this.msg.schemas['rd.msg.body'];
+
+    rd.api().me().ok(this, function(idtys) {
+      myself = idtys.map(function(idty) { return idty.rd_key[1][1]; });
+
+      if (msgDoc.to) {
+        for (var i = 0; i < msgDoc.to.length; i++) {
+          var email = msgDoc.to[i][1];
+          if (! myself.some(function(e) { return e == email; })) {
+            var username = email.slice(0, email.indexOf("@"));
+            //XXX hacky first name grabber, will aslo grab titles like "Mr."
+            var name = msgDoc.to_display[i], first_name = msgDoc.to_display[i].split(" ")[0];
+            var display = first_name || username;
+            console.log("to: " + i + " - " + name + " - " + username);
+            dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <"+email+">" }, this.recipientsNode);
+          }
+        }
+      }
+
+      if (msgDoc.cc) {
+        for (var i = 0; i < msgDoc.cc.length; i++) {
+          var email = msgDoc.cc[i][1];
+          if (! myself.some(function(e) { return e == email; })) {
+            var username = email.slice(0, email.indexOf("@"));
+            //XXX hacky first name grabber, will aslo grab titles like "Mr."
+            var name = msgDoc.cc_display[i], first_name = msgDoc.cc_display[i].split(" ")[0];
+            var display = first_name || username;
+            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <"+email+">" }, this.recipientsNode);
+          }
+        }
+      }
+
+    });
+
   },
 
   onClick: function(evt) {

@@ -55,6 +55,34 @@
   text-decoration: none;
 }
 
+.rdwMessage > .message  > .header > .recipients {
+  list-style: none;
+}
+
+.rdwMessage > .message  > .header > .recipients:empty {
+  display: none;
+}
+
+.rdwMessage > .message  > .header > .recipients > .recipient {
+  display: inline;
+}
+
+.rdwMessage > .message  > .header > .recipients > .recipient.to {
+  color: #1a1a1a;
+}
+
+.rdwMessage > .message  > .header > .recipients > .recipient.cc {
+  color: #3a3a3a;
+}
+
+.rdwMessage > .message  > .header > .recipients > .recipient:after {
+  content: ", ";
+}
+
+.rdwMessage > .message  > .header > .recipients > .recipient:last-child:after {
+  content: "";
+}
+
 .rdwMessage > .message > .content { }
 
 /*Any links that appear appear in the message body */
