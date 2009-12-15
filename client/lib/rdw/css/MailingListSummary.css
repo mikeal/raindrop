@@ -38,23 +38,68 @@
 .MailingListSummary .description {
   font-size: 10px;
   color: #888;
-  display: inline;
 }
 
-.MailingListSummary > .tools > a.message {
+/*XXX This is temporary CSS until the Status, Actions, and Archives are moved */
+
+.MailingListSummary table,
+.MailingListSummary tbody,
+.MailingListSummary tr,
+.MailingListSummary td {
+  width: 100%;
+  border: none;
+  border-collapse: collapse;
+}
+
+/*XXX Status, Actions, and Archives will be moved to the summary right side widget */
+
+.MailingListSummary .status {
   /* Put styles here that affect tools when they are in a message state,
    * meaning they display an informative message rather than being a control
    * users can manipulate, like the subscription tool when the user is in
    * the process of being unsubscribed. */
+  font-size: small;
 }
 
-/*Archives will be moved to the summary right side widget */
-.MailingListSummary > .other > a {
-  display: list-item;
-  list-style: none;
+.MailingListSummary .status[status="subscribed"] {
+  font-size: xx-small;
+  text-transform: lowercase;
+  color: #999;
+}
+
+.MailingListSummary .status[status="unsubscribe-pending"] {
+
+}
+
+.MailingListSummary .status[status="unsubscribe-confirmed"] {
+
+}
+
+.MailingListSummary .status[status="unsubscribed"] {
+
+}
+
+.MailingListSummary .action[status="subscribed"] {
+
+}
+
+.MailingListSummary .action[status="unsubscribe-pending"] {
+  display: none;
+}
+
+.MailingListSummary .action[status="unsubscribe-confirmed"] {
+  display: none;
+}
+
+.MailingListSummary .action[status="unsubscribed"] {
+  display: none;
+}
+
+.MailingListSummary .archives {
   color: #1a1a1a;
   text-decoration: none;
-  font-size: 12px;
-  display: inline;
-  font-weight: normal;
+}
+
+.MailingListSummary .archives:hover {
+  text-decoration: underline;
 }

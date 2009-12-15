@@ -221,7 +221,7 @@ def _change_list(list, headers, name, identity, status):
     for key in ['list-post', 'list-archive', 'list-help', 'list-subscribe',
                 'list-unsubscribe']:
         if key in headers:
-            val = headers[key][0]
+            val = headers[key]
             # We strip the 'list-' prefix when writing the key to the list.
             if key[5:] not in list or list[key[5:]] != val:
                 logger.debug("setting %s to %s", key[5:], val)

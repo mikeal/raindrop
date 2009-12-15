@@ -1,17 +1,28 @@
 <div class="MailingListSummary">
-  <a class="id" dojoAttachPoint="idNode"></a>
-  <div class="description" dojoAttachPoint="nameNode">${i18n.mailingList}</div>
-  <div class="tools">
-  <!--this should be moved to the summary side widget-->
-  <!--we're keeping the tools area around until we have a better notification-->
-  <!--space for the mailing list to offer messages about the unsubsrcibe status-->
-  <!--  <button dojoAttachPoint="subscriptionToolNode"-->
-  <!--     dojoAttachEvent="onclick: onSubscription"></button>-->
-  </div>
+
+  <table>
+    <tbody>
+      <tr>
+        <td><a class="id" dojoAttachPoint="idNode"></a></td>
+        <td><a target="_blank" class="archives" dojoAttachPoint="archiveNode">${i18n.mailingList.archives}</a></td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="description" dojoAttachPoint="nameNode">${i18n.mailingList.defaultName}</div>
 
   <!--this should be moved to the summary side widget-->
-  <!--<div class="other">-->
-  <!--<a class="email" dojoAttachPoint="emailNode"></a>-->
-  <!--  <a class="archives" dojoAttachPoint="archiveNode"></a>-->
-  <!--</div>-->
+  <table>
+    <tbody>
+      <tr>
+        <td>
+          <abbr title="this should be moved to the summary side widget" class="status" dojoAttachPoint="subscriptionStatusNode"/></abbr>
+        </td>
+        <td><button class="action" title="this should be moved to the summary side widget"
+                    dojoAttachPoint="subscriptionActionNode"
+                    dojoAttachEvent="onclick: onSubscription"></button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
 </div>

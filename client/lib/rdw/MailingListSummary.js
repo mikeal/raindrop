@@ -97,8 +97,8 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
   _updateView: function() {
     //ID is required
     rd.escapeHtml(this.doc.id, this.idNode, "only");
-    this.idNode.href = this.doc.post;
-    this.idNode.title = this.doc.post.replace(/^mailto:/,"");
+    this.idNode.href = this.doc.post.filter(function(e,i,a) { return(e.match("^mailto:")); })[0]
+    this.idNode.title = this.doc.post.filter(function(e,i,a) { return(e.match("^mailto:")); })[0].replace(/^mailto:/,"");
 
     //Name is not a required field so we check for it
     if (this.doc.name)
@@ -106,9 +106,11 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
 
      //Archive is not a required field, check for it
     if (this.doc.archive) {
-      rd.escapeHtml(this.doc.archive, this.archiveNode, "only");
-      this.archiveNode.href = this.doc.archive;
+      this.archiveNode.href = this.doc.archive[0];
     }
+
+    dojo.attr(this.subscriptionStatusNode, "status", this.doc.status);
+    dojo.attr(this.subscriptionActionNode, "status", this.doc.status);
 
     // TODO: make this localizable.
     switch(this.doc.status) {
@@ -117,13 +119,14 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
           window.clearInterval(this._intervalID);
           this._intervalID = null;
         }
-        rd.escapeHtml("Unsubscribe", this.subscriptionToolNode, "only");
-        this.subscriptionToolNode.className = "button";
+        rd.escapeHtml("Subscribed", this.subscriptionStatusNode, "only");
+        rd.escapeHtml("Unsubscribe", this.subscriptionActionNode, "only");
         break;
       case "unsubscribe-pending":
       case "unsubscribe-confirmed":
-        rd.escapeHtml("Unsubscribe Pending", this.subscriptionToolNode, "only");
-        this.subscriptionToolNode.className = "message";
+        rd.escapeHtml("Unsubscribe Pending", this.subscriptionStatusNode, "only");
+        //XXX Future
+        //rd.escapeHtml("Cancel Unsubscribe", this.subscriptionActionNode, "only");
         if (!this._intervalID) {
           this._intervalID =
             window.setInterval(dojo.hitch(this, this._refresh), 10000);
@@ -134,8 +137,9 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
           window.clearInterval(this._intervalID);
           this._intervalID = null;
         }
-        rd.escapeHtml("Unsubscribed", this.subscriptionToolNode, "only");
-        this.subscriptionToolNode.className = "message";
+        rd.escapeHtml("Unsubscribed", this.subscriptionStatusNode, "only");
+        //XXX Future
+        //rd.escapeHtml("Re-Subscribe", this.subscriptionActionNode, "only");
         break;
     }
   },

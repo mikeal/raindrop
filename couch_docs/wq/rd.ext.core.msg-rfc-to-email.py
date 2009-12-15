@@ -153,7 +153,16 @@ def doc_from_bytes(docid, rdkey, b):
                 # into a list here because why not.
                 headers[hn.lower()] = [extract_message_ids(vals[0])]
             else:
-                headers[hn.lower()] = [unquote(v) for v in vals]
+                # for single line headers /len(vals) == 1/ it's possible to have
+                # a multi-value comma separated string which needs to be broken out
+                # into separate values for later use.
+                # A common example of this is the Google Groups List-Post header which
+                # delivers a value looking like this:
+                # List-Post: <http://groups.google.com/group/mozilla-labs-jetpack/post?hl=>,  \n\t<mailto:mozilla-labs-jetpack@googlegroups.com>
+                if len(vals) == 1 and re.match(r"<.+>,",vals[0]):
+                    headers[hn.lower()] = [unquote(v.strip()) for v in vals[0].split(",")]
+                else:
+                    headers[hn.lower()] = [unquote(v) for v in vals]
             # a sanity check and to help debug an obscure bug which seemed to
             # cause the wrong 'source' doc being passed!
             if __debug__ and rdkey[0]=='email' and hn.lower()=='message-id':

@@ -41,7 +41,10 @@
   groupTitle: "You and multiple other people are discussing",
   less: "less",
   loading: "loading...",
-  mailingList: "Mailing List",
+  mailingList: {
+    defaultName : "Mailing List",
+    archives : "archives"
+  },
   messageSingular: "message",
   messagePlural: "messages",
   more: "more",
