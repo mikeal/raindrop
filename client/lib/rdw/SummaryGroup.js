@@ -54,7 +54,7 @@ dojo.declare("rdw.SummaryGroup", [rdw._Base], {
     var topic = rd.getFragIdTopic(value);
     var funcName = this.topics[topic.name];
     if (funcName) {
-      this[funcName](this.topics.data);
+      this[funcName](topic.data);
     }
   },
 

@@ -21,104 +21,45 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.MailingListSummary");
+dojo.provide("rdw.ext.mailingList.SummaryGroup");
 
 dojo.require("rd.api");
 dojo.require("rdw._Base");
 
-rd.addStyle("rdw.css.MailingListSummary");
+rd.addStyle("rdw.ext.mailingList.SummaryGroup");
 
-dojo.declare("rdw.MailingListSummary", [rdw._Base], {
+dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
   // The ID of the mailing list.  This must be passed to the constructor
   // so postCreate can use it to retrieve the document from the datastore.
-  id: null,
+  mlId: null,
 
-  // The CouchDB document for the mailing list.  Retrieved upon postCreate.
-  // Warning: this is a prototype property; be sure to set it per instance.
-  doc: {},
-
-  // Nodes in the template.  Attached to instances via dojoAttachPoint.
-  // Commented out because it isn't clear if they can/should be declared.
-  //titleNode: null,
-  //subscriptionToolNode: null,
-
-  templatePath: dojo.moduleUrl("rdw.templates", "MailingListSummary.html"),
-
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method before template is created.
-    this.inherited("postMixInProperties", arguments);
-  },
+  templatePath: dojo.moduleUrl("rdw.ext.mailingList", "SummaryGroup.html"),
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
-    this._refresh();
+    this.inherited("postCreate", arguments);
+    rdw.ext.mailingList.model.register(this.mlId, this);
+  },
+  
+  destroy: function() {
+    //summary: dijit lifecycle method, when destroying the dijit.
+    rdw.ext.mailingList.model.unregister(this.mlId, this);
+    this.inherited("destroy", arguments);
   },
 
-  _log: function(message) {
-    console.log("rdw.MailingListSummary: " + message);
-  },
+  onMailingListSummaryUpdate: function(doc) {
+    this.doc = doc;
+    dojo.attr(this.subscriptionStatusNode, "status", doc.status);
+    dojo.attr(this.subscriptionActionNode, "status", doc.status);
 
-  /**
-   * Whether or not we are currently in the process of getting the document
-   * in order to refresh the widget.  Locks invokation of the asynchronous
-   * _get method so we don't try to get the document again before the previous
-   * request has concluded.
-   */
-  _refreshLock: false,
-
-  _refresh: function() {
-    if (this._refreshLock) {
-      this._log("refresh invoked before previous one finished; ignoring");
-      return;
+    //Archive is not a required field, check for it
+    if (doc.archive) {
+        this.archiveNode.href = doc.archive[0];
     }
-
-    var startTime = new Date();
-    this._refreshLock = true;
-    this._get(
-      dojo.hitch(this, function() {
-        this._refreshLock = false;
-        this._log("refresh took " + (new Date() - startTime) + "ms");
-        this._updateView();
-      }),
-      dojo.hitch(this, function(error) {
-        this._refreshLock = false;
-        // XXX Display some message to the user about the error retrieving
-        // the mailing list from the datastore?
-      })
-    );
-  },
-
-  /**
-   * The ID of the periodic timer that refreshes the widget while an unsubscribe
-   * operation is pending.
-   */
-  _intervalID: null,
-
-  _updateView: function() {
-    //ID is required
-    rd.escapeHtml(this.doc.id, this.idNode, "only");
-    this.idNode.href = this.doc.post.filter(function(e,i,a) { return(e.match("^mailto:")); })[0]
-    this.idNode.title = this.doc.post.filter(function(e,i,a) { return(e.match("^mailto:")); })[0].replace(/^mailto:/,"");
-
-    //Name is not a required field so we check for it
-    if (this.doc.name)
-      rd.escapeHtml(this.doc.name, this.nameNode, "only");
-
-     //Archive is not a required field, check for it
-    if (this.doc.archive) {
-      this.archiveNode.href = this.doc.archive[0];
-    }
-
-    dojo.attr(this.subscriptionStatusNode, "status", this.doc.status);
-    dojo.attr(this.subscriptionActionNode, "status", this.doc.status);
 
     // TODO: make this localizable.
-    switch(this.doc.status) {
+    switch(doc.status) {
       case "subscribed":
-        if (this._intervalID) {
-          window.clearInterval(this._intervalID);
-          this._intervalID = null;
-        }
         rd.escapeHtml("Subscribed", this.subscriptionStatusNode, "only");
         rd.escapeHtml("Unsubscribe", this.subscriptionActionNode, "only");
         break;
@@ -127,16 +68,8 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
         rd.escapeHtml("Unsubscribe Pending", this.subscriptionStatusNode, "only");
         //XXX Future
         //rd.escapeHtml("Cancel Unsubscribe", this.subscriptionActionNode, "only");
-        if (!this._intervalID) {
-          this._intervalID =
-            window.setInterval(dojo.hitch(this, this._refresh), 10000);
-        }
         break;
       case "unsubscribed":
-        if (this._intervalID) {
-          window.clearInterval(this._intervalID);
-          this._intervalID = null;
-        }
         rd.escapeHtml("Unsubscribed", this.subscriptionStatusNode, "only");
         //XXX Future
         //rd.escapeHtml("Re-Subscribe", this.subscriptionActionNode, "only");
@@ -144,45 +77,7 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
     }
   },
 
-  /**
-   * Get the mailing list document from the datastore.
-   *
-   * @param callback {Function} success callback. Will receive an object.
-   * @param errback {Function} optional error callback. Will receive an error
-   * object as an argument, but that error object is not strictly defined.
-   */
-  _get: function(/*Function*/callback, /*Function*/errback) {
-    var api = rd.api().megaview({
-      key: ['rd.mailing-list', 'id', this.id],
-      reduce: false,
-      include_docs: true
-    })
-    .ok(this, function(json) {
-      // ??? Should we pass the doc to the callback rather than assigning it
-      // to a property of this object here?
-      if (json.rows.length > 0)
-        this.doc = json.rows[0].doc;
-      callback();
-    });
-    if (errback) {
-      api.error(errback);
-    }
-  },
-
-  /**
-   * Put the mailing list document into the datastore.
-   *
-   * @param callback {Function} success callback. Will receive an object.
-   * @param errback {Function} optional error callback. Will receive an error
-   * object as an argument, but that error object is not strictly defined.
-   */
-  _put: function(/*Function*/callback, /*Function*/errback) {
-    // XXX Do we have to update our copy of the document in the callback
-    // because its _rev has changed?
-    dojo.store.put(this.doc, callback, errback);
-  },
-
-  /**
+ /**
    * Get a regex that matches URLs in text.  It correctly excludes punctuation
    * at the ends of URLs, so in the text "See http://example.com." it matches
    * "http://example.com", not "http://example.com.".  It is based on the regex
@@ -308,11 +203,5 @@ dojo.declare("rdw.MailingListSummary", [rdw._Base], {
         // TODO: set the list's status back to "subscribed".
       })
     );
-  },
-
-  destroy: function() {
-    //summary: dijit lifecycle method.
-    this.inherited("destroy", arguments);
   }
-
 });

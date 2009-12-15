@@ -41,6 +41,12 @@ if (typeof JSON != "undefined" && JSON.parse) {
   }
 }
 
+//Add ok and error as aliases for methods on dojo.Deferred.
+if (dojo.Deferred) {
+  dojo.Deferred.prototype.ok = dojo.Deferred.prototype.addCallback;
+  dojo.Deferred.prototype.error = dojo.Deferred.prototype.addErrback;
+}
+
 //Override a function in dojo so that we can cancel publish calls by returning false
 //from a listener.
 dojo._listener.getDispatcher = function(){

@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MailingList");
+dojo.provide("rdw.ext.mailingList.ext");
 
 //Only require inflow if this is the inflow app.
 dojo.requireIf(rd.appName == "inflow", "inflow");
@@ -32,15 +32,17 @@ dojo.require("rd.MegaviewStore");
 dojo.require("rdw.DataSelector");
 dojo.require("rdw.Organizer");
 dojo.require("rdw.Summary");
+dojo.require("rdw.SummaryGroup");
 dojo.require("rdw.Conversations");
 dojo.require("rdw.Widgets");
 
 dojo.require("rd.tag");
 dojo.require("rd.api");
-dojo.require("rdw.MailingListSummary");
+dojo.require("rdw.ext.mailingList.Summary");
+dojo.require("rdw.ext.mailingList.SummaryGroup");
 
 //Allow a "mailingList" method on the rd.conversation data API.
-rd.applyExtension("rdw.ext.MailingList", "rd.conversation", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rd.conversation", {
   add: {
     mailingList: function(/*String*/listId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
       //summary: gets the most recent mailing list messages up to limit, then pulls
@@ -65,7 +67,7 @@ rd.applyExtension("rdw.ext.MailingList", "rd.conversation", {
 });
 
 //Allow mailingList queries via the rd.MegaviewStore dojo.data store.
-rd.applyExtension("rd.ext.MailingList", "rd.MegaviewStore", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rd.MegaviewStore", {
   addToPrototype: {
     schemaQueryTypes: [
       "mailingList"
@@ -111,7 +113,7 @@ rd.applyExtension("rd.ext.MailingList", "rd.MegaviewStore", {
 
 //Allow DataSelector to use mailingList in the all selector, and to
 //handle mailingList selections.
-rd.applyExtension("rdw.ext.MailingList", "rdw.DataSelector", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.DataSelector", {
   addToPrototype: {
     allType: [
       "mailingList"
@@ -125,7 +127,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.DataSelector", {
 });
 
 //Apply a modification to the Organizer to show mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Organizer", {
   addToPrototype: {
     listOrder: [
       "listMailingList"
@@ -156,19 +158,36 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Organizer", {
 
 //Modify rdw.Summary to allow showing a summary
 //for mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Summary", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Summary", {
   addToPrototype: {
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
-      this.addSupporting(new rdw.MailingListSummary({
-          id: listId
+      this.addSupporting(new rdw.ext.mailingList.Summary({
+          mlId: listId
+        }, dojo.create("div", null, this.domNode)));
+    }
+  }
+});
+
+//Modify rdw.Summary to allow showing a summary
+//for mailing lists.
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.SummaryGroup", {
+  addToPrototype: {
+    topics: {
+      "rd-protocol-mailingList": "mailingList"
+    },
+
+    mailingList: function(/*String*/listId) {
+      //summary: responds to rd-protocol-mailingList topic.
+      this.addSupporting(new rdw.ext.mailingList.SummaryGroup({
+          mlId: listId
         }, dojo.create("div", null, this.domNode)));
     }
   }
 });
 
 //Modify rdw.Conversations to allow loading mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Conversations", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Conversations", {
   addToPrototype: {
     topics: {
       "rd-protocol-mailingList": "mailingList"
@@ -187,7 +206,7 @@ rd.applyExtension("rdw.ext.MailingList", "rdw.Conversations", {
 });
 
 //Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.MailingList", "rdw.Widgets", {
+rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Widgets", {
   addToPrototype: {
     convoModules: [
       "rdw.conversation.MailingList"
