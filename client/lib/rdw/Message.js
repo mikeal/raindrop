@@ -104,8 +104,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
             //XXX hacky first name grabber, will aslo grab titles like "Mr."
             var name = msgDoc.to_display[i], first_name = msgDoc.to_display[i].split(" ")[0];
             var display = first_name || username;
-            console.log("to: " + i + " - " + name + " - " + username);
-            dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <"+email+">" }, this.recipientsNode);
+            dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <"+email+">" }, this.toRecipientsNode);
           }
         }
       }
@@ -118,7 +117,7 @@ dojo.declare("rdw.Message", [rdw._Base], {
             //XXX hacky first name grabber, will aslo grab titles like "Mr."
             var name = msgDoc.cc_display[i], first_name = msgDoc.cc_display[i].split(" ")[0];
             var display = first_name || username;
-            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <"+email+">" }, this.recipientsNode);
+            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <"+email+">" }, this.ccRecipientsNode);
           }
         }
       }

@@ -51,37 +51,41 @@
   text-decoration: none;
 }
 
-.rdwMessage > .message  > .header > .recipients {
+.rdwMessage > .message  > .header > .allRecipients > .recipients {
+  display: inline;
   list-style: none;
   font-size: 10px;
 }
 
-.rdwMessage > .message  > .header > .recipients:empty {
+.rdwMessage > .message  > .header > .allRecipients > .recipients:empty {
   display: none;
 }
 
-.rdwMessage > .message  > .header > .recipients > .recipient {
+.rdwMessage > .message  > .header > .allRecipients > .recipients > .recipient {
   display: inline;
-}
-
-.rdwMessage > .message  > .header > .recipients > .recipient.to {
   color: #888;
 }
 
-.rdwMessage > .message  > .header > .recipients > .recipient.cc {
-  color: #888;
-}
+.rdwMessage > .message  > .header > .allRecipients .recipient.to { }
+.rdwMessage > .message  > .header > .allRecipients .recipient.cc { }
 
-.rdwMessage > .message  > .header > .recipients > .recipient:after {
+.rdwMessage > .message  > .header > .allRecipients .recipient:after {
   content: ", ";
 }
 
-.rdwMessage > .message  > .header > .recipients > .recipient:last-child:after {
+.rdwMessage > .message  > .header > .allRecipients .recipient:last-child:after {
   content: "";
 }
 
-.rdwMessage > .message  > .header > .recipients > .recipient:first-child:before {
-  content: "sent to: ";
+/*i18n: We might need this content translated*/
+.rdwMessage > .message  > .header > .allRecipients > .recipients.to:before {
+  content: "to: ";
+  color: #1a1a1a;
+}
+
+/*i18n: We might need this content translated*/
+.rdwMessage > .message  > .header > .allRecipients > .recipients.cc:before {
+  content: "cc: ";
   color: #1a1a1a;
 }
 

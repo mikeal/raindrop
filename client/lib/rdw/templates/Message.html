@@ -9,7 +9,10 @@
           <abbr class="friendly value" title="${localeTime}">${friendlyTime}</abbr>
           <abbr class="additional value" title="${utcTime}">${additionalTime}</abbr>
         </span>
-        <ol dojoAttachPoint="recipientsNode" class="recipients"></ol>
+        <div class="allRecipients">
+          <ol dojoAttachPoint="toRecipientsNode" class="recipients to"></ol>
+          <ol dojoAttachPoint="ccRecipientsNode" class="recipients cc"></ol>
+        </div>
       </div>
     <div class="content">${message}</div>
   </div>

@@ -49,7 +49,7 @@
   messagePlural: "messages",
   more: "more",
   moreMessages: "${count} more ${messagePlural}...",
-  newCount: "${count} new from",
+  newCount: "${count} new",
   poundCount: "(${count})",
   recent: "Recent searches:",
   reply: "reply",
