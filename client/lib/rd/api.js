@@ -125,6 +125,37 @@ dojo._mixin(rd.api, {
     rd.api.extend(o);
   },
 
+  _serverSubs: {},
+  _serverCache: {},
+
+  /**
+   * Subscribe to a server API call. If the server API call has happened in the
+   * past, then the subscriber will get the last call's result right after
+   * subscribing.
+   */
+  subscribe: function (topic, context, method) {
+    var callback = dojo.hitch(context, method),
+        handle = [topic, dojo._listener.add(rd.api._serverSubs, topic, callback)],
+        cache = rd.api._serverCache[topic];
+    if (cache) {
+      callback(cache);
+    }
+    return handle;
+  },
+
+  unsubscribe: function(handle) {
+    if (handle) {
+      dojo._listener.remove(rd.api._serverSubs, handle[0], handle[1]);
+    }
+  },
+
+  publish: function(topic, response){
+    rd.api._serverCache[topic] = response;
+    var f = rd.api._serverSubs[topic];
+    if(f){
+      f.apply(this, [response]);
+    }
+  },
 
   /**
    * Constructs a function that automatically creates a new rd.api
@@ -254,10 +285,13 @@ rd.api.prototype = {
    * directly, but rather through the rd.api() call.
    */
   serverApi: function(args) {
+    var origUrl = args.url;
     args = dojo.delegate(args);
     args.url = this.dbPath(args) + "_api/" + args.url;
     args.contentType = " ";
-    return this.xhr(args);
+    return this.xhr(args).ok(function(response) {
+      rd.api.publish(origUrl, response);
+    });
   },
 
   /**

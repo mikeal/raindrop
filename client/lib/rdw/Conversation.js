@@ -214,7 +214,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
       rd.escapeHtml(rd.hyperlink.add(rd.escapeHtml(this.conversation.subject || "")), this.subjectNode, "only");
     }
 
-    dojo.addClass(this.domNode, (this.conversation.unread != 0)? "read" : "unread");
+    dojo.addClass(this.domNode, (this.conversation.unread ? "unread" : "read"));
 
     //Create the messages, first by loading the module responsible for showing
     //them.

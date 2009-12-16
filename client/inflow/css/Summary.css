@@ -55,4 +55,12 @@
   -moz-border-radius-topleft: 0px;
   -webkit-border-bottom-left-radius: 0px;
   -webkit-border-top-left-radius: 0px;
-} 
+}
+
+.rdwInflowSummaryGroup ul {
+  list-style: none;
+}
+
+.rdwInflowSummaryGroup .count {
+  font-weight: bold;
+}

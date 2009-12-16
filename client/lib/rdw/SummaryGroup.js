@@ -25,6 +25,7 @@ dojo.provide("rdw.SummaryGroup");
 
 dojo.require("rdw._Base");
 dojo.require("rd.onHashChange");
+dojo.require("rdw.InflowSummaryGroup");
 
 dojo.declare("rdw.SummaryGroup", [rdw._Base], {
   templateString: '<div class="rdwSummaryGroup WidgetBox"></div>',
@@ -68,7 +69,8 @@ dojo.declare("rdw.SummaryGroup", [rdw._Base], {
   //start topic subscription endpoints
   //**************************************************
   home: function() {
-      this.domNode.innerHTML = "Inflow";
+    this.addSupporting(new rdw.InflowSummaryGroup({
+    }, dojo.create("div", null, this.domNode)));
   }
   //**************************************************
   //end topic subscription endpoints

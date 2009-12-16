@@ -33,7 +33,7 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
   // so postCreate can use it to retrieve the document from the datastore.
   listId: null,
 
-  templatePath: dojo.moduleUrl("rdw.ext.mailingList", "SummaryGroup.html"),
+  templateString: dojo.cache("rdw.ext.mailingList", "SummaryGroup.html"),
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
