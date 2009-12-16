@@ -259,7 +259,7 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
 #conversations {
   position: relative;
   z-index: 2;
-  padding-top: 16px;
+  padding-top: 24px;
   width: 640px;
   background-color: #f2f2f2;
 }

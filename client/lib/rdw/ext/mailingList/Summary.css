@@ -37,5 +37,6 @@
 
 .rdwExtMailingListSummary .description {
   font-size: 10px;
+  font-weight: normal;
   color: #888;
 }

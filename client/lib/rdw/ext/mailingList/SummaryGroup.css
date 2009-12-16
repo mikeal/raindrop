@@ -29,6 +29,19 @@
   list-style: none;
 }
 
+.rdwExtMailingListSummaryGroup ul li {
+  padding: 7px 0 0 0;
+  margin: 0 0 7px 0;
+  background-image: url("../../../../inflow/i/new/rd_widget_header_bg.png");
+  background-repeat: repeat-x;
+}
+
+.rdwExtMailingListSummaryGroup ul li:first-child {
+  border-top: none;
+  padding: 0;
+  background-image: none;
+}
+
 .rdwExtMailingListSummaryGroup .status {
   /* Put styles here that affect tools when they are in a message state,
    * meaning they display an informative message rather than being a control
@@ -38,9 +51,7 @@
 }
 
 .rdwExtMailingListSummaryGroup .status[status="subscribed"] {
-  font-size: xx-small;
   text-transform: lowercase;
-  color: #999;
 }
 
 .rdwExtMailingListSummaryGroup .status[status="unsubscribe-pending"] {
@@ -74,6 +85,7 @@
 .rdwExtMailingListSummaryGroup .archives {
   color: #1a1a1a;
   text-decoration: none;
+  font-weight: bold;
 }
 
 .rdwExtMailingListSummaryGroup .archives:hover {

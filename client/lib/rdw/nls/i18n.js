@@ -43,7 +43,7 @@
   loading: "loading...",
   mailingList: {
     defaultName : "Mailing List",
-    archives : "archives"
+    archives : "Mailing list summary"
   },
   messageSingular: "message",
   messagePlural: "messages",
