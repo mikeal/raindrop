@@ -4,6 +4,7 @@
       "exts": {
         "rdw.Summary": "rdw.ext.twitter.ext",
         "rdw.SummaryGroup": "rdw.ext.twitter.ext",
+        "rdw.InflowSummaryGroup": "rdw.ext.twitter.ext",
         "rdw.Conversations": "rdw.ext.twitter.ext",
         "rdw.Widgets": "rdw.ext.twitter.ext"
       }

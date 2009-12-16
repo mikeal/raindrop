@@ -25,6 +25,7 @@ dojo.provide("rdw.ext.twitter.ext");
 
 dojo.require("rdw.Summary");
 dojo.require("rdw.SummaryGroup");
+dojo.require("rdw.InflowSummaryGroup");
 dojo.require("rdw.Conversations");
 dojo.require("rdw.Widgets");
 dojo.require("rdw.ext.twitter.Group");
@@ -46,6 +47,36 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.SummaryGroup", {
 
     twitter: function() {
       this.domNode.innerHTML = "Twitter Timeline";
+    }
+  }
+});
+
+rd.applyExtension("rdw.ext.twitter.ext", "rdw.InflowSummaryGroup", {
+  before: {
+    //Do this before the rd.api.subscribe call happens.
+    postCreate: function() {
+      this.twitterCountNode = dojo.create("li", null, this.containerNode);
+    },
+
+  },
+  after: {
+    //TODO: this might need to be done differently. Instead of looping
+    //over all conversations again, maybe have InflowSummaryGroup call a
+    //method for each convo in conversations, but that path has lots of
+    //function calls, so may be faster just to iterate over the whole list again.
+    onApiUpdate: function(conversations) {
+      var i, j, convo, id, unread = 0;
+      if (conversations && conversations.length) {
+        for (i = 0; (convo = conversations[i]); i++) {
+          for (j = 0; (id = convo.message_ids[j]); j++) {
+            if (id[0] === "tweet") {
+              unread += 1;
+            }
+          }
+        }
+      }
+      //TODO: not localized.
+      dojo.place('<span class="count">' + unread + '</span> new tweet' + (unread != 1 ? 's' : ''), this.twitterCountNode, "only");
     }
   }
 });
