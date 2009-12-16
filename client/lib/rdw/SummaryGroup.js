@@ -50,6 +50,7 @@ dojo.declare("rdw.SummaryGroup", [rdw._Base], {
   },
 
   onHashChange: function(value) {
+    value = value || "rd:home";
     this.clear();
     var topic = rd.getFragIdTopic(value);
     var funcName = this.topics[topic.name];

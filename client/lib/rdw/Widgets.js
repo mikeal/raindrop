@@ -24,6 +24,7 @@
 dojo.provide("rdw.Widgets");
 
 dojo.require("rdw._Base");
+dojo.require("rd.onHashChange");
 dojo.require("rd.api");
 dojo.require("rd.api.message");
 dojo.require("rdw.conversation.Broadcast");
@@ -58,7 +59,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
-
+    rd.sub("rd.onHashChange", this, "onHashChange");
     this.home();
   },
 
@@ -447,7 +448,15 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
       //Inject nodes all at once for best performance.
       this.domNode.appendChild(frag);
+
+      //Update the state of widgets based on hashchange. Important for
+      //first load of this widget, to account for current page state.
+      this.onHashChange(rd.onHashChange.value);
     });
+  },
+
+  onHashChange: function(hash) {
+    //Just a placeholder function to allow extensions to grab on to it.    
   },
 
   createHomeConversation: function(conversation) {

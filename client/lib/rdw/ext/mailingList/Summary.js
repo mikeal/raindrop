@@ -35,19 +35,19 @@ rd.addStyle("rdw.ext.mailingList.Summary");
 dojo.declare("rdw.ext.mailingList.Summary", [rdw._Base], {
     // The ID of the mailing list.  This must be passed to the constructor
     // so postCreate can use it to retrieve the document from the datastore.
-    id: null,
+    listId: null,
   
     templatePath: dojo.moduleUrl("rdw.ext.mailingList", "Summary.html"),
   
     postCreate: function () {
         //summary: dijit lifecycle method after template insertion in the DOM.
         this.inherited("postCreate", arguments);
-        rdw.ext.mailingList.model.register(this.mlId, this);
+        rdw.ext.mailingList.model.register(this.listId, this);
     },
     
     destroy: function () {
         //summary: dijit lifecycle method, when destroying the dijit.
-        rdw.ext.mailingList.model.unregister(this.mlId, this);
+        rdw.ext.mailingList.model.unregister(this.listId, this);
         this.inherited("destroy", arguments);
     },
 

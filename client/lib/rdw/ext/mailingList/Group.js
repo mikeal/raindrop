@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.MailingList");
+dojo.provide("rdw.ext.mailingList.Group");
 
 dojo.require("rdw.Conversation");
 dojo.require("rdw.fx.wiper");
@@ -29,7 +29,7 @@ dojo.require("rdw.fx.wiper");
 /**
  * Groups twitter broadcast messages into one "conversation"
  */
-dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
+dojo.declare("rdw.ext.mailingList.Group", [rdw.Conversation, rdw.fx.wiper], {
   templateString: '<div class="WidgetBox rdwConversationMailingList"> \
                      <div class="WidgetHeader hbox"> \
                       <a href="#" dojoAttachPoint="nameNode" class="title boxFlex"></a> \
@@ -45,7 +45,7 @@ dojo.declare("rdw.conversation.MailingList", [rdw.Conversation, rdw.fx.wiper], {
   /**
    * The name of the module to use for showing individual messages.
    */
-  messageCtorName: "rdw.conversation.MailingListMessage",
+  messageCtorName: "rdw.ext.mailingList.GroupMessage",
 
   /**
    * The relative importance of this group widget. 0 is most important.

@@ -163,7 +163,7 @@ rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Summary", {
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
       this.addSupporting(new rdw.ext.mailingList.Summary({
-          mlId: listId
+          listId: listId
         }, dojo.create("div", null, this.domNode)));
     }
   }
@@ -180,7 +180,7 @@ rd.applyExtension("rdw.ext.mailingList.ext", "rdw.SummaryGroup", {
     mailingList: function(/*String*/listId) {
       //summary: responds to rd-protocol-mailingList topic.
       this.addSupporting(new rdw.ext.mailingList.SummaryGroup({
-          mlId: listId
+          listId: listId
         }, dojo.create("div", null, this.domNode)));
     }
   }
@@ -209,7 +209,22 @@ rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Conversations", {
 rd.applyExtension("rdw.ext.mailingList.ext", "rdw.Widgets", {
   addToPrototype: {
     convoModules: [
-      "rdw.conversation.MailingList"
+      "rdw.ext.mailingList.Group"
     ]
+  },
+
+  after: {
+    onHashChange: function(value) {
+      //Hide the twitter group widgets when viewing the twitter stream,
+      //otherwise make sure they are visible.
+      var widgets = dijit.registry.byClass("rdw.ext.mailingList.Group"),
+          parts = value.split(":"),
+          isList = parts[1] === "mailingList",
+          listId = parts[2];
+
+      widgets.forEach(function(widget) {
+        widget.domNode.style.display = (isList && widget.listId === listId ? "none" : "");
+      });
+    }
   }
 });

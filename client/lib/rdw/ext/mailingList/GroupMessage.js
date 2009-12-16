@@ -21,12 +21,12 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.MailingListMessage");
+dojo.provide("rdw.ext.mailingList.GroupMessage");
 
 dojo.require("rdw.Message");
 
-dojo.declare("rdw.conversation.MailingListMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.conversation.templates", "MailingListMessage.html"),
+dojo.declare("rdw.ext.mailingList.GroupMessage", [rdw.Message], {
+  templateString: dojo.cache("rdw.ext.mailingList", "GroupMessage.html"),
   
   postMixInProperties: function() {
     this.inherited("postMixInProperties", arguments);
