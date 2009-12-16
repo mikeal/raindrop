@@ -284,25 +284,25 @@ class ImapProvider(object):
     # process them - 'special' ones first in a special order, then remaining
     # top-level folders the order they appear, then sub-folders in the order
     # they appear...
-    special_flags = [r'\Inbox', r'\Sent', r'\Drafts'] # indexes into special
-    special = [None] * len(special_flags) # None means 'not found'
+    todo_special_folders = []
     todo_top = []
     todo_sub = []
 
     if 'XLIST' in caps:
       for flags, delim, name in folders_use:
         folder_info = (delim, name)
-        special_index = None
+        # see if this is a special folder 
         for flag in flags:
-          try:
-            ndx = special_flags.index(flag)
-          except ValueError:
-            pass
-          else:
-            special[ndx] = folder_info
+          if flag == r'\Inbox':
+            # Don't use the localized inbox name when talking to the server.
+            # Gmail doesn't like this, for example.
+            todo_special_folders.insert(0, (delim, "INBOX"))
+            break
+          elif flag in (r'\Sent', r'\Drafts'):
+            todo_special_folders.append(folder_info)
             break
         else:
-          # for loop wasn't broken - no special tags...
+          # for loop wasn't broken - not a special folder
           if delim in name:
             todo_sub.append(folder_info)
           else:
@@ -317,8 +317,8 @@ class ImapProvider(object):
           todo_top.insert(0, folder_info)
         else:
           todo_top.append(folder_info)
-
-    todo = [n for n in special if n is not None] + todo_top + todo_sub
+    
+    todo = todo_special_folders + todo_top + todo_sub
     try:
       _ = yield self._updateFolders(conn, todo)
     except:
