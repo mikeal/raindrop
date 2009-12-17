@@ -131,7 +131,7 @@ rdw.ext.mailingList.model = {
         //Now keep checking if the status is one that is in transition.
         if (doc.status === "unsubscribe-pending" || doc.status === "unsubscribe-confirmed") {
             setTimeout(dojo.hitch(this, function () {
-                this.get(listId).ok(this, function (doc) {
+                this._get(listId).ok(this, function (doc) {
                     this._checkStatus(listId, doc);
                 });       
             }), 10000);
