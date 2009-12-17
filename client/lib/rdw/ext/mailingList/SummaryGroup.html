@@ -1,7 +1,28 @@
-<div class="rdwExtSummaryGroup">
+<div class="rdwExtSummaryGroup rdwExtMailingListSummaryGroup">
+  <strong>${i18n.mailingList.summary}</strong>
+  <abbr class="identity" dojoAttachPoint="identityNode"></abbr>
   <ul>
-    <li><a target="_blank" class="archives" dojoAttachPoint="archiveNode">${i18n.mailingList.archives}</a></li>
-    <li><abbr title="" class="status" dojoAttachPoint="subscriptionStatusNode"/></abbr></li>
-    <li><button class="action" dojoAttachPoint="subscriptionActionNode" dojoAttachEvent="onclick: onSubscription"></button></li>
+    <li>
+        <button dojoAttachPoint="postEmailNode" class="action">${i18n.mailingList.post.email}</button>
+        <a target="_blank" style="float:right;" class="post http"  dojoAttachPoint="postHttpNode">${i18n.mailingList.post.http}</a>
+    </li>
+    <li style="text-align:right;">
+      <a target="_blank" class="archives http" dojoAttachPoint="archiveHttpNode">${i18n.mailingList.archives}</a>
+    </li>
+    <li>
+      <div class="hbox" style="width: 100%">
+        <div class="boxFlex">
+          <button class="help email action" dojoAttachPoint="helpEmailNode">${i18n.mailingList.help.email}</button>
+        </div>
+        <a target="_blank" class="help http"  dojoAttachPoint="helpHttpNode">${i18n.mailingList.help.http}</a>
+      </div>
+    </li>
+    <li>
+      <div class="hbox" style="width: 100%">
+        <span class="title">${i18n.mailingList.status}</span>
+        <abbr class="status boxFlex" dojoAttachPoint="subscriptionStatusNode"></abbr>
+        <button class="action" dojoAttachPoint="subscriptionActionNode" dojoAttachEvent="onclick: onSubscription"></button>
+      </div>
+    </li>
   </ul>
 </div>

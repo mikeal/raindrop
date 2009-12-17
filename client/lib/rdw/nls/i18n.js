@@ -43,7 +43,11 @@
   loading: "loading...",
   mailingList: {
     defaultName : "Mailing List",
-    archives : "Mailing list summary"
+    summary : "Mailing List Summary",
+    status : "Status",
+    archives : "Online Archives",
+    help : { http : "Find help online", email : "Email List for Help" },
+    post : { http : "Post online", email : "Compose Email to List" }
   },
   messageSingular: "message",
   messagePlural: "messages",

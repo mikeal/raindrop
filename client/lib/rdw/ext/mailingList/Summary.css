@@ -27,12 +27,7 @@
 
 .rdwExtMailingListSummary .id {
   font-weight: bold;
-  text-decoration: none;
   color: inherit;
-}
-
-.rdwExtMailingListSummary .id:hover {
-  text-decoration: underline;
 }
 
 .rdwExtMailingListSummary .description {

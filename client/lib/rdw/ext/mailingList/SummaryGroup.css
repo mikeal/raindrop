@@ -27,6 +27,7 @@
 
 .rdwExtSummaryGroup ul {
   list-style: none;
+  margin-top: 7px;
 }
 
 .rdwExtSummaryGroup ul li {
@@ -82,12 +83,23 @@
   display: none;
 }
 
-.rdwExtSummaryGroup .archives {
+.rdwExtMailingListSummaryGroup > .identity {
+  display: block;
+  font-size: x-small;
+  color: #3a3a3a;
+  text-indent: 1em;
+}
+
+.rdwExtSummaryGroup li span.title:after {
+  content: ": ";
+}
+
+.rdwExtSummaryGroup li a {
   color: #1a1a1a;
   text-decoration: none;
   font-weight: bold;
 }
 
-.rdwExtSummaryGroup .archives a:hover {
+.rdwExtSummaryGroup li a:hover {
   text-decoration: underline;
 }

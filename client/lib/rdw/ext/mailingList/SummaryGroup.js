@@ -53,9 +53,37 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     dojo.attr(this.subscriptionStatusNode, "status", doc.status);
     dojo.attr(this.subscriptionActionNode, "status", doc.status);
 
+    rd.escapeHtml(doc.identity[1], this.identityNode, "only");
+
     //Archive is not a required field, check for it
-    if (doc.archive) {
-        this.archiveNode.href = doc.archive[0];
+    if (doc.archive && doc.archive.http) {
+        this.archiveHttpNode.href = doc.archive.http;
+    }
+
+    //Post is not a required field and is often only an email
+    if (doc.post) {
+      if (doc.post.http)
+        this.postHttpNode.href = doc.post.http;
+      else
+        this.postHttpNode.style.display = "none";
+
+      if (doc.post.mailto)
+        this.postEmailNode.href = doc.post.mailto;
+      else
+        this.postEmailNode.style.display = "none";
+    }
+
+    //Help is not a required field, check for it
+    if (doc.help) {
+      if (doc.help.http)
+        this.helpHttpNode.href = doc.help.http;
+      else
+        this.helpHttpNode.style.display = "none";
+
+      if (doc.help.mailto)
+        this.helpEmailNode.href = doc.help.mailto;
+      else
+        this.helpEmailNode.style.display = "none";
     }
 
     // TODO: make this localizable.
@@ -78,53 +106,15 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     }
   },
 
- /**
-   * Get a regex that matches URLs in text.  It correctly excludes punctuation
-   * at the ends of URLs, so in the text "See http://example.com." it matches
-   * "http://example.com", not "http://example.com.".  It is based on the regex
-   * described in http://www.perl.com/doc/FMTEYEWTK/regexps.html.
-   *
-   * XXX Put this somewhere more general, as it isn't specific to mailing lists.
-   *
-   * @param schemes {Array} an optional array of protocol schemes to match.
-   * If absent, the regex will match http and https.
-   *
-   * @private
-   */
-  _getLinkExtractorRegex: function(schemes) {
-    schemes = schemes ? schemes : ["http", "https"];
-
-    var scheme = "(?:" + schemes.join("|") + ")";
-    var ltrs = '\\w';
-    var gunk = '/#~:.?+=&%@!\\-';
-    var punc = '.:?\\-';
-    var any  = ltrs + gunk + punc;
-
-    return new RegExp(
-      "\\b(" + scheme + ":[" + any + "]+?)(?=[" + punc + "]*[^" + any + "]|$)",
-      "gi"
-    );
-  },
-
   /**
    * Unsubscribe from a mailing list.
    *
-   * This method parses the List-Unsubscribe headers of email messages
-   * from lists to determine how to issue the unsubscription request.  Here are
-   * some examples of the kinds of headers it should know how to handle
-   * (backslash escape characters represent literal characters in the headers):
+   * This method uses the parsed List-Unsubscribe headers of email messages
+   * from lists to determine how to issue the unsubscription request. The
+   * Mailing List headers should have been properly parsed in the mailing list
+   * extension.  Any errors found here should likely be logged with support
+   * tickets so we can update the extension for better parsing.
    *
-   * Mailman: <http://sqlite.org:8080/cgi-bin/mailman/listinfo/sqlite-users>, \n\t
-   *          <mailto:sqlite-users-request@sqlite.org?subject=unsubscribe>
-   *
-   * W3C: <mailto:www-style-request@w3.org?subject=unsubscribe>
-   *
-   * Google Groups: <http://googlegroups.com/group/raindrop-core/subscribe>, \n\t
-   *                <mailto:raindrop-core+unsubscribe@googlegroups.com>
-   *
-   * Majordomo2: ?
-   *
-   * @param list {object} the list from which to unsubscribe
    */
   onSubscription: function() {
     // Don't do anything unless the user is subscribed to the list.
@@ -135,13 +125,8 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     // whether or not we understand how to unsubscribe from this mailing list
     // right from the start and can enable/disable the UI accordingly.
     // TODO: If we can't unsubscribe the user, explain it to them nicely.
-    if (!this.doc.unsubscribe)
+    if (!this.doc.unsubscribe && !this.doc.unsubscribe.mailto)
       throw "can't unsubscribe from mailing list; no unsubscribe info";
-    var regex = this._getLinkExtractorRegex(["mailto"]);
-    var match = regex.exec(this.doc.unsubscribe);
-    if (match == null)
-      throw "can't unsubscribe from mailing list; no mailto: URL";
-    //alert("unsubscribe URL: " + match[0]);
 
     if (!confirm("Are you sure you want to unsubscribe from " + this.doc.id + "?  " +
                  "You won't receive messages from the mailing list anymore, " +
@@ -155,8 +140,7 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     this.doc.status = "unsubscribe-pending";
     rdw.ext.mailingList.model.put(this.doc)
     .ok(this, function(doc) {
-      this._updateView();
-      this._unsubscribe(match[0]);
+      this._unsubscribe(this.doc.unsubscribe.mailto);
     })
     .error(this, function(error) {
       // TODO: update the UI to notify the user about the problem.

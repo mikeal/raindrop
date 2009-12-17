@@ -108,16 +108,16 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         # The document should have the expected properties/values.
         expected_doc = {
             'changed_timestamp': 1251344732,
-            'help': ['mailto:test-request@lists.example.com?subject=help'],
+            'help': {'mailto' : 'mailto:test-request@lists.example.com?subject=help'},
             'id': 'test.lists.example.com',
             'identity': ['email', 'raindrop_test_user@mozillamessaging.com'],
             'name': 'test list',
-            'post': ['mailto:test@lists.example.com'],
+            'post': { 'mailto' : 'mailto:test@lists.example.com'},
             'status': 'subscribed',
-            'subscribe': ['https://lists.example.com/listinfo/test' ,
-                'mailto:test-request@lists.example.com?subject=subscribe'],
-            'unsubscribe': ['https://lists.example.com/options/test',
-                'mailto:test-request@lists.example.com?subject=unsubscribe'],
+            'subscribe': { 'http' : 'https://lists.example.com/listinfo/test',
+                'mailto' : 'mailto:test-request@lists.example.com?subject=subscribe'},
+            'unsubscribe': { 'http' : 'https://lists.example.com/options/test',
+                'mailto' : 'mailto:test-request@lists.example.com?subject=unsubscribe'},
         }
         self.ensure_doc(doc, expected_doc)
 
@@ -158,18 +158,18 @@ class TestSimpleCorpus(TestCaseWithCorpus):
         # should have been updated to the date of the second message.
         #
         expected_doc = {
-            'archive': ['https://lists.example.com/archive/thetest'],
+            'archive': { 'http' : 'https://lists.example.com/archive/thetest'},
             'changed_timestamp': 1251401696,
-            'help': ['mailto:test-request@lists.example.com?subject=help'],
+            'help': { 'mailto' : 'mailto:test-request@lists.example.com?subject=help'},
             'id': 'test.lists.example.com',
             'identity': ['email', 'raindrop_test_user@mozillamessaging.com'],
             'name': 'the test list',
-            'post': ['mailto:test@lists.example.com'],
+            'post': { 'mailto' : 'mailto:test@lists.example.com'},
             'status': 'subscribed',
-            'subscribe': ['https://lists.example.com/listinfo/thetest', 
-                'mailto:thetest-request@lists.example.com?subject=subscribe'],
-            'unsubscribe': ['https://lists.example.com/options/thetest',
-                'mailto:thetest-request@lists.example.com?subject=unsubscribe'],
+            'subscribe': { 'http' : 'https://lists.example.com/listinfo/thetest',
+                'mailto' : 'mailto:thetest-request@lists.example.com?subject=subscribe'},
+            'unsubscribe': { 'http' : 'https://lists.example.com/options/thetest',
+                'mailto' : 'mailto:thetest-request@lists.example.com?subject=unsubscribe'},
         }
         self.ensure_doc(doc, expected_doc)
 

@@ -54,12 +54,6 @@ dojo.declare("rdw.ext.mailingList.Summary", [rdw._Base], {
     onMailingListSummaryUpdate: function (doc) {
         //ID is required
         rd.escapeHtml(doc.id, this.idNode, "only");
-        this.idNode.href = dojo.filter(doc.post, function (e, i, a) {
-            return e.match("^mailto:");
-        })[0];
-        this.idNode.title = dojo.filter(doc.post, function (e, i, a) {
-            return e.match("^mailto:");
-        })[0].replace(/^mailto:/, "");
 
         //Name is not a required field so we check for it
         if (doc.name) {

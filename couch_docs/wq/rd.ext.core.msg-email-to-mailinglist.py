@@ -225,7 +225,13 @@ def _change_list(list, headers, name, identity, status):
             # We strip the 'list-' prefix when writing the key to the list.
             if key[5:] not in list or list[key[5:]] != val:
                 logger.debug("setting %s to %s", key[5:], val)
-                list[key[5:]] = val
+                try:
+                    # take the mailto: or http(s): schema
+                    # we remove the 's' such that we can always expect http for a schema
+                    list[key[5:]] = dict([(v[:v.index(":")].rstrip('s'), v) for v in val])
+                # v.index will throw ValueError if this isn't a "proto:stuff" value
+                except ValueError:
+                    list[key[5:]]  = val
                 changed = True
 
     # Update the name (derived from the list-id header).
