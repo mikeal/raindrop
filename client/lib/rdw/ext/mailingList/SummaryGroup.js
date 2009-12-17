@@ -53,7 +53,8 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     dojo.attr(this.subscriptionStatusNode, "status", doc.status);
     dojo.attr(this.subscriptionActionNode, "status", doc.status);
 
-    rd.escapeHtml(doc.identity[1], this.identityNode, "only");
+    if(doc.identity)
+      rd.escapeHtml(doc.identity[1], this.identityNode, "only");
 
     //Archive is not a required field, check for it
     if (doc.archive && doc.archive.http) {
