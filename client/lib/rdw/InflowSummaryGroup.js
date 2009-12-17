@@ -28,7 +28,7 @@ dojo.require("rdw._Base");
 rd.addStyle("rdw.InflowSummaryGroup");
 
 dojo.declare("rdw.InflowSummaryGroup", [rdw._Base], {
-  templateString: '<div class="rdwInflowSummaryGroup"><h3>Inflow Summary</h3><ul dojoAttachPoint="containerNode"><li dojoAttachPoint="totalCountNode"></li></ul></div>',
+  templateString: '<div class="rdwExtSummaryGroup"><ul dojoAttachPoint="containerNode"><li class="archives">Inflow Summary</li><li dojoAttachPoint="totalCountNode"></li></ul></div>',
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.

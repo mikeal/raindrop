@@ -21,28 +21,28 @@
  * Contributor(s):
  * */
 
-.rdwExtMailingListSummaryGroup {
+.rdwExtSummaryGroup {
   padding: 0;
 }
 
-.rdwExtMailingListSummaryGroup ul {
+.rdwExtSummaryGroup ul {
   list-style: none;
 }
 
-.rdwExtMailingListSummaryGroup ul li {
+.rdwExtSummaryGroup ul li {
   padding: 7px 0 0 0;
   margin: 0 0 7px 0;
   background-image: url("../../../../inflow/i/new/rd_widget_header_bg.png");
   background-repeat: repeat-x;
 }
 
-.rdwExtMailingListSummaryGroup ul li:first-child {
+.rdwExtSummaryGroup ul li:first-child {
   border-top: none;
   padding: 0;
   background-image: none;
 }
 
-.rdwExtMailingListSummaryGroup .status {
+.rdwExtSummaryGroup .status {
   /* Put styles here that affect tools when they are in a message state,
    * meaning they display an informative message rather than being a control
    * users can manipulate, like the subscription tool when the user is in
@@ -50,44 +50,44 @@
   font-size: small;
 }
 
-.rdwExtMailingListSummaryGroup .status[status="subscribed"] {
+.rdwExtSummaryGroup .status[status="subscribed"] {
   text-transform: lowercase;
 }
 
-.rdwExtMailingListSummaryGroup .status[status="unsubscribe-pending"] {
+.rdwExtSummaryGroup .status[status="unsubscribe-pending"] {
 
 }
 
-.rdwExtMailingListSummaryGroup .status[status="unsubscribe-confirmed"] {
+.rdwExtSummaryGroup .status[status="unsubscribe-confirmed"] {
 
 }
 
-.rdwExtMailingListSummaryGroup .status[status="unsubscribed"] {
+.rdwExtSummaryGroup .status[status="unsubscribed"] {
 
 }
 
-.rdwExtMailingListSummaryGroup .action[status="subscribed"] {
+.rdwExtSummaryGroup .action[status="subscribed"] {
 
 }
 
-.rdwExtMailingListSummaryGroup .action[status="unsubscribe-pending"] {
+.rdwExtSummaryGroup .action[status="unsubscribe-pending"] {
   display: none;
 }
 
-.rdwExtMailingListSummaryGroup .action[status="unsubscribe-confirmed"] {
+.rdwExtSummaryGroup .action[status="unsubscribe-confirmed"] {
   display: none;
 }
 
-.rdwExtMailingListSummaryGroup .action[status="unsubscribed"] {
+.rdwExtSummaryGroup .action[status="unsubscribed"] {
   display: none;
 }
 
-.rdwExtMailingListSummaryGroup .archives {
+.rdwExtSummaryGroup .archives {
   color: #1a1a1a;
   text-decoration: none;
   font-weight: bold;
 }
 
-.rdwExtMailingListSummaryGroup .archives:hover {
+.rdwExtSummaryGroup .archives a:hover {
   text-decoration: underline;
 }
