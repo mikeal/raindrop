@@ -25,6 +25,7 @@ dojo.provide("rdw.ext.mailingList.SummaryGroup");
 
 dojo.require("rd.api");
 dojo.require("rdw._Base");
+dojo.require("rdw.ext.mailingList.model");
 
 rd.addStyle("rdw.ext.mailingList.SummaryGroup");
 
@@ -152,16 +153,15 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
     // is still "subscribed" and we're still able to unsubscribe from it.
 
     this.doc.status = "unsubscribe-pending";
-    this._put(
-      dojo.hitch(this, function(doc) {
-        this._updateView();
-        this._unsubscribe(match[0]);
-      }),
-      dojo.hitch(this, function(error) {
-        // TODO: update the UI to notify the user about the problem.
-        //alert("error updating list: " + error);
-      })
-    );
+    rdw.ext.mailingList.model.put(this.doc)
+    .ok(this, function(doc) {
+      this._updateView();
+      this._unsubscribe(match[0]);
+    })
+    .error(this, function(error) {
+      // TODO: update the UI to notify the user about the problem.
+      //alert("error updating list: " + error);
+    });
   },
 
   _unsubscribe: function(/*String*/spec) {
@@ -175,33 +175,31 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
 
     var params = url.query ? dojo.queryToObject(url.query) : {};
 
-    var message = {
+    rd.api().createSchemaItem({
       //TODO: make a better rd_key.
       rd_key: ["manually_created_doc", (new Date()).getTime()],
       rd_schema_id: "rd.msg.outgoing.simple",
-      from: this.doc.identity,
-      // TODO: use the user's name in the from_display.
-      from_display: this.doc.identity[1],
-      to: [["email", url.path]],
-      to_display: [url.path],
-      // Hopefully the mailto: URL has provided us with the necessary subject
-      // and body.  If not, we guess "subscribe" for both subject and body.
-      // TODO: make better guesses based on knowledge of the mailing list
-      // software being used to run the mailing list.
-      subject: params.subject ? params.subject : "unsubscribe",
-      body: params.body ? params.body : "unsubscribe",
-      outgoing_state: "outgoing"
-    };
-
-    dojo.store.put(
-      message,
-      dojo.hitch(this, function(message) {
-        //alert("unsubscribe request sent");
-      }),
-      dojo.hitch(this, function(error) {
-        alert("error sending unsubscribe request: " + error);
-        // TODO: set the list's status back to "subscribed".
-      })
-    );
+      items: {
+        from: this.doc.identity,
+        // TODO: use the user's name in the from_display.
+        from_display: this.doc.identity[1],
+        to: [["email", url.path]],
+        to_display: [url.path],
+        // Hopefully the mailto: URL has provided us with the necessary subject
+        // and body.  If not, we guess "subscribe" for both subject and body.
+        // TODO: make better guesses based on knowledge of the mailing list
+        // software being used to run the mailing list.
+        subject: params.subject ? params.subject : "unsubscribe",
+        body: params.body ? params.body : "unsubscribe",
+        outgoing_state: "outgoing"
+      }
+    })
+    .ok(this, function(message) {
+      //alert("unsubscribe request sent");
+    })
+    .error(this, function(error) {
+      alert("error sending unsubscribe request: " + error);
+      // TODO: set the list's status back to "subscribed".
+    });
   }
 });
