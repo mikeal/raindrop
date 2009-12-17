@@ -152,10 +152,10 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
 
 #top {
   width: 100%;
-  padding: 16px 10px 9px 10px;
-  -moz-border-image: url("i/new/rd_header_bg.png") 1 1 6 1;
-  -webkit-border-image: url("i/new/rd_header_bg.png") 1 1 6 1;
-  border-width: 1px 1px 6px 1px;
+  padding: 16px 10px;
+  background-image: url("i/new/rd_top_header_white.png");
+  background-repeat: repeat-x;
+  background-position: bottom;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   position: fixed;

@@ -193,8 +193,8 @@
 /* ### BROADCAST ### */
 
 .rdwConversationBroadcast {
-  -moz-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
-  -webkit-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 1;
+  -moz-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
   border-width: 1px 9px 12px 1px; 
 }
 
