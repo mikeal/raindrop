@@ -56,9 +56,9 @@ rd.applyExtension("rdw.ext.twitter.ext", "rdw.InflowSummaryGroup", {
     //Do this before the rd.api.subscribe call happens.
     postCreate: function() {
       this.twitterCountNode = dojo.create("li", null, this.containerNode);
-    },
-
+    }
   },
+
   after: {
     //TODO: this might need to be done differently. Instead of looping
     //over all conversations again, maybe have InflowSummaryGroup call a
