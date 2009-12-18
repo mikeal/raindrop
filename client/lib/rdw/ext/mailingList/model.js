@@ -46,7 +46,9 @@ rdw.ext.mailingList.model = {
         }
         if (!doc) {
             this._ids[listId] = "needsUpdate";
-            this._get(listId);
+            this._get(listId).ok(this, function(doc) {
+               this._checkStatus(listId, doc); 
+            });
         } else {
             if (doc !== "needsUpdate") {
                 obj.onMailingListSummaryUpdate(doc);
@@ -72,26 +74,62 @@ rdw.ext.mailingList.model = {
     },
 
     put: function (doc) {
-        return rd.api().put({
+        var dfd = new dojo.Deferred();
+        rd.api().put({
             doc: doc
-        }).ok(this, function (upDoc) {
+        })
+        .ok(this, function (upDoc) {
             var listId = doc.id;
-      
+
             //Update the rev.
             doc._rev = doc._rev;
-      
+
             //Update the cache
             this._ids[listId] = doc;
-      
+
+            //Trigger an unsubscribe email.
+            var url = new dojo._Url(doc.unsubscribe.mailto);
+            //alert("scheme: " + url.scheme + "; authority: " + url.authority +
+            //      "; path: " + url.path +   "; query: " + url.query +
+            //      "; fragment " + url.fragment);
+        
+            // url.path == the email address
+            // url.query == can contain subject and/or body parameters
+            var params = url.query ? dojo.queryToObject(url.query) : {};
+
+            rd.api().put({
+              doc: {
+                //TODO: make a better rd_key.
+                rd_key: ["manually_created_doc", (new Date()).getTime()],
+                rd_schema_id: "rd.msg.outgoing.simple",
+                from: doc.identity,
+                // TODO: use the user's name in the from_display.
+                from_display: doc.identity[1],
+                to: [["email", url.path]],
+                to_display: [url.path],
+                // Hopefully the mailto: URL has provided us with the necessary subject
+                // and body.  If not, we guess "subscribe" for both subject and body.
+                // TODO: make better guesses based on knowledge of the mailing list
+                // software being used to run the mailing list.
+                subject: params.subject ? params.subject : "unsubscribe",
+                body: params.body ? params.body : "unsubscribe",
+                outgoing_state: "outgoing"
+              }
+            })
+            .ok(dfd)
+            .error(dfd);
+
             //If the status is a pending one, then watch for changes.
             this._checkStatus(listId, doc);
         });
+
+        return dfd;
     },
 
-    _get: function (listId) {
+    _get: function (listId, force) {
         var doc = this._ids[listId],
             dfd = new dojo.Deferred();
-        if (doc === "needsUpdate") {
+        if (doc === "needsUpdate" || force) {
             rd.api().megaview({
                 key: ['rd.mailing-list', 'id', listId],
                 reduce: false,
@@ -124,14 +162,18 @@ rdw.ext.mailingList.model = {
         }
     },
 
+    _isTempStatus: function(status) {
+        return status === "unsubscribe-pending" || status === "unsubscribe-confirmed";
+    },
+
     _checkStatus: function (listId, doc) {
         //First, update listeners with the doc.
         this._callUpdate(listId, doc);
     
         //Now keep checking if the status is one that is in transition.
-        if (doc.status === "unsubscribe-pending" || doc.status === "unsubscribe-confirmed") {
+        if (this._isTempStatus(doc.status)) {
             setTimeout(dojo.hitch(this, function () {
-                this._get(listId).ok(this, function (doc) {
+                this._get(listId, true).ok(this, function (doc) {
                     this._checkStatus(listId, doc);
                 });       
             }), 10000);
