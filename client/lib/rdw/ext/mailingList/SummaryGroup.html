@@ -6,9 +6,6 @@
         <button dojoAttachPoint="postEmailNode" class="action">${i18n.mailingList.post.email}</button>
         <a target="_blank" style="float:right;" class="post http"  dojoAttachPoint="postHttpNode">${i18n.mailingList.post.http}</a>
     </li>
-    <li style="text-align:right;">
-      <a target="_blank" class="archives http" dojoAttachPoint="archiveHttpNode">${i18n.mailingList.archives}</a>
-    </li>
     <li>
       <div class="hbox" style="width: 100%">
         <div class="boxFlex">
@@ -17,11 +14,14 @@
         <a target="_blank" class="help http"  dojoAttachPoint="helpHttpNode">${i18n.mailingList.help.http}</a>
       </div>
     </li>
+    <li style="text-align:right;">
+      <a target="_blank" class="archives http" dojoAttachPoint="archiveHttpNode">${i18n.mailingList.archives}</a>
+    </li>
     <li>
       <div class="hbox" style="width: 100%">
-        <span class="title">${i18n.mailingList.status}</span>
-        <abbr class="status boxFlex" dojoAttachPoint="subscriptionStatusNode"></abbr>
         <button class="action" dojoAttachPoint="subscriptionActionNode" dojoAttachEvent="onclick: onSubscription"></button>
+        <span class="title boxFlex" style="text-align:right;">${i18n.mailingList.status}</span>
+        <abbr class="status" dojoAttachPoint="subscriptionStatusNode"></abbr>
       </div>
     </li>
   </ul>
