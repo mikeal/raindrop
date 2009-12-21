@@ -97,11 +97,23 @@ rdw.ext.mailingList.model = {
             // url.query == can contain subject and/or body parameters
             var params = url.query ? dojo.queryToObject(url.query) : {};
 
+            //Needed by back-end to correctly process the schema.
+            var schemaItems = {};
+            schemaItems[rd.uiExtId] = {
+                rd_source: [
+                    doc._id,
+                    doc._rev
+                ],
+                schema: null
+            };
+
             rd.api().put({
               doc: {
                 //TODO: make a better rd_key.
                 rd_key: ["manually_created_doc", (new Date()).getTime()],
                 rd_schema_id: "rd.msg.outgoing.simple",
+                rd_schema_provider: rd.uiExtId,
+                rd_schema_items: schemaItems,
                 from: doc.identity,
                 // TODO: use the user's name in the from_display.
                 from_display: doc.identity[1],
