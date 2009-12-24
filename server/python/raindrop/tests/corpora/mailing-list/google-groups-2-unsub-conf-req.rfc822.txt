@@ -1,0 +1,31 @@
+Delivered-To: mykmelez@example2.com
+Received: by 10.142.204.9 with SMTP id b9cs720514wfg;
+        Mon, 21 Dec 2009 13:21:04 -0800 (PST)
+Return-Path: <mozilla-labs-personas+noreply@googlegroups.com>
+Received-SPF: pass (google.com: domain of mozilla-labs-personas+noreply@googlegroups.com designates 10.142.3.31 as permitted sender) client-ip=10.142.3.31;
+Authentication-Results: mr.google.com; spf=pass (google.com: domain of mozilla-labs-personas+noreply@googlegroups.com designates 10.142.3.31 as permitted sender) smtp.mail=mozilla-labs-personas+noreply@googlegroups.com
+Received: from mr.google.com ([10.142.3.31])
+        by 10.142.3.31 with SMTP id 31mr660412wfc.5.1261430464756 (num_hops = 1);
+        Mon, 21 Dec 2009 13:21:04 -0800 (PST)
+Received: by 10.142.3.31 with SMTP id 31mr660412wfc.5.1261430464755;
+        Mon, 21 Dec 2009 13:21:04 -0800 (PST)
+MIME-Version: 1.0
+X-BeenThere: mozilla-labs-personas@googlegroups.com
+From: mozilla-labs-personas <mozilla-labs-personas+unsubconfirm@googlegroups.com>
+To: Myk <mykmelez@example2.com>
+Subject: Unsubscribe request for mozilla-labs-personas [{EMDNv9kEWruyYemrb080}]
+Message-ID: <00504502cbfdc2b479047b43aab4@google.com>
+Date: Mon, 21 Dec 2009 21:21:04 +0000
+
+Hello mykmelez@example2.com,
+
+We have received your request to unsubscribe from mozilla-labs-personas. In order for us to complete the request, please reply to this email or visit the following confirmation URL:
+
+http://groups.google.com/group/mozilla-labs-personas/subscribe?hl=en
+
+If you have questions related to this or any other Google group, visit the Help Center at http://groups.google.com/support/?hl=en.
+
+Thanks,
+
+google groups
+

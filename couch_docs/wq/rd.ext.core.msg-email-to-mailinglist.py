@@ -19,7 +19,7 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
-#
+#   Myk Melez <myk@mozilla.org>
 
 # This extension extracts information about a mailing list through which
 # a message has been sent.  It creates rd.mailing-list docs for the mailing
@@ -62,6 +62,15 @@
 # the detectors into a set of declarations (such that detectors can be simpler
 # extensions of this extension) or to define a standard mechanism that we get
 # mailing list software vendors to adopt.
+
+# Currently, we support Raindrop-assisted list unsubscription for the following
+# server software:
+#   Google Groups version 1 (before around 2009 November/December)
+#   Google Groups version 2 (after around 2009 November/December)
+#     (Google Groups changed the format of its unsubscribe confirm requests
+#      and unsubscription confirmations around 2009 November or December.
+#      These version numbers are our arbitrary designation for the formats.)
+#   Mailman
 
 # Life cycle of Raindrop-assisted unsubscription:
 #
@@ -253,8 +262,10 @@ def _change_list(list, headers, name, identity, status):
 
     return changed
 
-def _handle_unsubscribe_confirm_request_google_groups(list, message, identity):
-    logger.debug('Google Groups unsubscribe confirm request')
+# Handle Google Groups version 1 unsubscribe confirm requests.
+def _handle_unsubscribe_confirm_request_google_groups_1(list, message,
+                                                        identity):
+    logger.debug('Google Groups version 1 unsubscribe confirm request')
 
     if list['status'] != 'unsubscribe-pending':
         logger.debug('list status is "%s", not "unsubscribe-pending"; ignoring',
@@ -263,8 +274,8 @@ def _handle_unsubscribe_confirm_request_google_groups(list, message, identity):
 
     logger.debug('list status is "unsubscribe-pending"; confirming')
 
-    # Confirmation entails responding to the address in the Reply-To
-    # header, which contains the confirmation token, f.e.:
+    # Confirmation entails responding to the address in the Reply-To header,
+    # which contains the confirmation token, f.e.:
     #   mozilla-labs-personas+unsubconfirm-ttVMSQwAAAAyzbmfKdXzOjrwK-0FmDri@googlegroups.com
     confirmation = {
       'from': identity,
@@ -283,6 +294,45 @@ def _handle_unsubscribe_confirm_request_google_groups(list, message, identity):
 
     return 'unsubscribe-confirmed'
 
+# Handle Google Groups version 2 unsubscribe confirm requests.
+def _handle_unsubscribe_confirm_request_google_groups_2(list, message,
+                                                        identity):
+    logger.debug('Google Groups version 2 unsubscribe confirm request')
+
+    if list['status'] != 'unsubscribe-pending':
+        logger.debug('list status is "%s", not "unsubscribe-pending"; ignoring',
+                     list['status'])
+        return None
+
+    logger.debug('list status is "unsubscribe-pending"; confirming')
+
+    match = re.search('<(.*)>', message['headers']['from'][0]);
+    to_address = match.group(1)
+
+    # Confirmation entails responding to the address in the From header
+    # and including the subject of the request in the subject of the response,
+    # as it contains the confirmation token, f.e.:
+    #   Unsubscribe request for mozilla-labs-personas [{EMDNv9kEWruyYemrb080}]
+    confirmation = {
+      'from': identity,
+      # TODO: use the user's name in the from_display.
+      'from_display': identity[1],
+      'to': [['email', to_address]],
+      'to_display': [''],
+      'subject': 'Re: ' + message['headers']['subject'][0],
+      'body': '',
+      'outgoing_state': 'outgoing'
+    };
+
+    # TODO: make a better rd_key.
+    emit_schema('rd.msg.outgoing.simple', confirmation,
+                rd_key=['manually_created_doc', time.time()])
+
+    return 'unsubscribe-confirmed'
+
+# Handle Google Groups unsubscribe confirmations.  This function can handle
+# both Google Groups version 1 and Google Groups version 2 confirmations,
+# since their differences don't matter for its purposes.
 def _handle_unsubscribe_confirmation_google_groups(list, timestamp):
     logger.debug('Google Groups unsubscribe confirmation')
 
@@ -427,11 +477,15 @@ def handler(message):
 
         logger.debug("LIST ID %s from list-id header", list_id)
 
-    # This is a Google Groups unsubscribe confirm request message whose list
-    # is identified by the part of the Reply-To header before the plus sign
-    # followed by ".googlegroups.com".  For example, based on the following
-    # header the ID is mozilla-labs-personas.googlegroups.com:
+    # This is a Google Groups version 1 unsubscribe confirm request
+    # whose list ID is identified by the part of the Reply-To header before
+    # the plus sign followed by ".googlegroups.com".
+    #
+    # For example, given the following Reply-To header:
     #   Reply-To: mozilla-labs-personas+unsubconfirm-ttVMSQwAAAAyzbmfKdXzOjrwK-0FmDri@googlegroups.com
+    # The list ID is:
+    #   mozilla-labs-personas.googlegroups.com:
+    #
     elif 'from' in message['headers'] and \
             message['headers']['from'][0] == "noreply@googlegroups.com" and \
             'x-google-loop' in message['headers'] and \
@@ -442,13 +496,18 @@ def handler(message):
         logger.debug(
           "LIST ID %s from Google Groups unsubscribe confirm request", list_id)
 
-    # This is a Google Groups unsubscribe confirmation whose list is identified
-    # by the part of the Subject header after the English text "Google Groups:
-    # You have unsubscribed from " followed by ".googlegroups.com".
-    # For example, based on the following header, the list ID would be
-    # mozilla-labs-personas.googlegroups.com:
+    # This is a Google Groups version 1 unsubscribe confirmation whose list
+    # ID is identified by the part of the Subject header after the English text
+    # "Google Groups: You have unsubscribed from " followed by
+    # ".googlegroups.com".
+    #
+    # For example, given the following Subject header:
     #   Subject: Google Groups: You have unsubscribed from mozilla-labs-personas
+    # The list ID is:
+    #   mozilla-labs-personas.googlegroups.com
+    #
     # TODO: figure out how to extract the list ID from a localized subject.
+    #
     elif 'from' in message['headers'] and \
             message['headers']['from'][0] == "noreply@googlegroups.com" and \
             'x-google-loop' in message['headers'] and \
@@ -456,6 +515,38 @@ def handler(message):
         list_id = message['headers']['subject'][0]. \
                   split('Google Groups: You have unsubscribed from ', 1)[1] + \
                   '.googlegroups.com'
+        logger.debug(
+          "LIST ID %s from Google Groups unsubscribe confirmation", list_id)
+
+    # This is a Google Groups version 2 unsubscribe confirm request
+    # or unsubscribe confirmation.  It doesn't contain a List-ID header,
+    # but we can derive the list ID from the address in the From header.
+    #
+    # The From header looks like "ID_PART <ID_PART+ACTION@googlegroups.com>",
+    # where ID_PART is the first part of the list ID (the part that is unique
+    # to Google Groups), while ACTION is either unsubconfirm (for unsubscribe
+    # confirm requests) or noreply (for unsubscribe confirmations).
+    #
+    # The list ID is the ID_PART followed by ".googlegroups.com".
+    #
+    # For example, given the following From header:
+    #   From: example <example+unsubconfirm@googlegroups.com>
+    # The list ID is:
+    #   example.googlegroups.com
+    #
+    # XXX Currently, we only extract list IDs for messages whose ACTION
+    # is either unsubconfirm or noreply.  Should we do so for any ACTION?
+    #
+    elif 'from' in message['headers'] and \
+            re.search('\+(unsubconfirm|noreply)@googlegroups\.com>$',
+                      message['headers']['from'][0]):
+        match = re.search('.*<(.+)\+(unsubconfirm|noreply)@googlegroups\.com>',
+                          message['headers']['from'][0])
+        list_id_part = match.group(1)
+        list_id = list_id_part + ".googlegroups.com"
+        action = match.group(2)
+        logger.debug(
+          "LIST ID %s from Google Groups %S message", list_id, action)
 
     if not list_id:
         logger.debug("NO LIST ID; ignoring message %s", message_id)
@@ -468,7 +559,7 @@ def handler(message):
 
     status = None
 
-    # Google Groups Step 2 (List Requests Confirmation) Detector
+    # Google Groups Version 1 Step 2 (List Requests Confirmation) Detector
     # A request is a message from the address "noreply@googlegroups.com"
     # with an "X-Google-Loop: unsub_requested" header.
     if 'from' in message['headers'] and \
@@ -476,17 +567,41 @@ def handler(message):
             'x-google-loop' in message['headers'] and \
             message['headers']['x-google-loop'][0] == 'unsub_requested' and \
             'reply-to' in message['headers']:
-        status = _handle_unsubscribe_confirm_request_google_groups(list,
-                                                                   message,
-                                                                   identity)
+        status = _handle_unsubscribe_confirm_request_google_groups_1(list,
+                                                                     message,
+                                                                     identity)
 
-    # Google Groups Step 3 (User is Unsubscribed) Detector
+    # Google Groups Version 2 Step 2 (List Requests Confirmation) Detector
+    # A Google Groups unsubscribe confirm request is a message from an address
+    # ending in '+unsubconfirm@googlegroups.com', for example the address
+    # 'mozilla-labs-personas+unsubconfirm@googlegroups.com'.
+    if 'from' in message['headers'] and \
+            re.search('\+unsubconfirm@googlegroups\.com>$',
+                      message['headers']['from'][0]):
+        status = _handle_unsubscribe_confirm_request_google_groups_2(list,
+                                                                     message,
+                                                                     identity)
+
+    # Google Groups Version 1 Step 3 (User is Unsubscribed) Detector
     # A request is a message from the address "noreply@googlegroups.com"
     # with an "X-Google-Loop: unsub_success" header.
     elif 'from' in message['headers'] and \
             message['headers']['from'][0] == "noreply@googlegroups.com" and \
             'x-google-loop' in message['headers'] and \
             message['headers']['x-google-loop'][0] == 'unsub_success':
+        status = _handle_unsubscribe_confirmation_google_groups(list, timestamp)
+
+    # Google Groups Version 2 Step 3 (User is Unsubscribed) Detector
+    # A request is a message from the address "ID_PART+noreply@googlegroups.com"
+    # with a subject that reads "Your unsubscription to ID_PART was successful."
+    # TODO: handle localized messages whose subjects aren't in English.
+    elif 'from' in message['headers'] and \
+            re.search('\+noreply@googlegroups\.com>$',
+                      message['headers']['from'][0]) and \
+            'subject' in message['headers'] and \
+            message['headers']['subject'][0] == "Your unsubscription to " + \
+                                                list_id.split(".")[0] + \
+                                                " was successful.":
         status = _handle_unsubscribe_confirmation_google_groups(list, timestamp)
 
     # Mailman Step 2 (List Requests Confirmation) Detector
