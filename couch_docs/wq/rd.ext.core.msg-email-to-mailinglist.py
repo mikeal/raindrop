@@ -133,7 +133,7 @@ def _get_subscribed_identity(headers):
     # subscribed to the list using the Delivered-To header, which lists will
     # sometimes set to the subscribed email address.
     # TODO: figure out what to do if there are multiple Delivered-To headers.
-    if 'delivered_to' in headers:
+    if 'delivered-to' in headers:
         logger.debug("Delivered-To headers: %s", headers['delivered-to']);
         if headers['delivered-to'][0] in email_identities_by_address:
             identity = email_identities_by_address[headers['delivered-to'][0]]
