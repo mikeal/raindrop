@@ -54,7 +54,7 @@
   background-image: url("../i/new/rd_input_bg.png");
   background-position: top;
   background-repeat: repeat-x;
-  background-color: #f2f2f2;
+  background-color: #fff;
 } 
 
 .rdwConversation > .newImpersonal > .impersonalOptions {
@@ -182,8 +182,8 @@
   font-family: droid-serif, georgia, times, serif;
   font-style: italic;
   font-size: 10px;
-  visibility: hidden;
   width: 608px;
+  visibility: visible;
 }
 
 /*### twitter actions ###*/
@@ -193,6 +193,7 @@
   right: 0;
   float: right;
   width: auto;
+  visibility: hidden;
 }
 
 /*### end twitter actions ###*/

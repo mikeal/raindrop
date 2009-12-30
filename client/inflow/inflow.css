@@ -195,9 +195,8 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
 
 #notices > .notice {
   font-family: "droid-sans", Helvetica, Arial, Sans-serif;
-  padding: 7px;
+  padding: 14px 7px 7px;
   margin: 0;
-  border: 1px solid #0066dd;
   background-color: Highlight;
   color: HighlightText;
 }
