@@ -27,7 +27,7 @@ dojo.provide("rd.api");
  * Creates a new API object that can be used for chainable API operations.
  * @constructor
  *
- * @param args {Object} the arguments to configure the API calls. This argument
+ * @param {Object} args the arguments to configure the API calls. This argument
  * may be modified by this object.
  * @param {String} [args.dbPath] The URL of the CouchDB database to use.
  *

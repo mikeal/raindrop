@@ -198,6 +198,7 @@ dojo.declare("rdw.Conversation", [rdw._Base], {
     if (targetName && this.typeNode) {
       rd.escapeHtml(targetName, this.typeNode, "only");
       dojo.addClass(this.typeNode, target);
+      dojo.addClass(this.domNode, target);
     }
 
     //Set up the link for the full conversation view action, and set the subject.
