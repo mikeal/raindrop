@@ -23,15 +23,7 @@
 
 //Modified from couchdb's jquery.couch.js file.
 
-//xdomain loading wrapper. Can be inserted by a build process, but manually doing it for now.
-window[(typeof (djConfig)!="undefined"&&djConfig.scopeMap&&djConfig.scopeMap[0][1])||"dojo"]._xdResourceLoaded(function(dojo, dijit, dojox){
-  return {
-  depends:[["provide","couch"]],defineResource:function(dojo, dijit, dojox){
-
-//Main module definition
-dojo.provide("couch");
-
-;(function(){
+run("couch", ["dojo"], function (dojo) {
   function _handle(response, ioArgs) {
     //Used as the callback for XHR calls. Figure out what options method to call.
     var options = ioArgs.args;
@@ -126,7 +118,7 @@ dojo.provide("couch");
     });
   }
 
-couch = {
+var couch = {
     allDbs: function(options) {
       return _call("GET", "/_all_dbs", options);
     },
@@ -265,6 +257,6 @@ couch = {
     }
 
   }
-})();
-
-}}});
+  
+  return couch;
+});
