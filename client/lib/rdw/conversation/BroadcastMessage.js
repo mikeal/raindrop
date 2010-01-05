@@ -21,10 +21,13 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.BroadcastMessage");
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
-
-dojo.declare("rdw.conversation.BroadcastMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.conversation.templates", "BroadcastMessage.html")
+run("rdw/conversation/BroadcastMessage",
+["dojo", "rdw/Message", "text!rdw/conversation/templates/BroadcastMessage!html"],
+function (dojo, Message, template) {
+    return dojo.declare("rdw.conversation.BroadcastMessage", [Message], {
+        templateString: template
+    });
 });

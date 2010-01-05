@@ -21,47 +21,53 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.Account");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw._Base");
-dojo.require("rd.api.me");
+run("rdw/Account",
+["rd", "dojo", "rdw/_Base", "rd/api", "rd/api/me"],
+function (rd, dojo, Base, api, me) {
 
-dojo.declare("rdw.Account", [rdw._Base], {
-  templateString: '<div class="rdwAccount" dojoAttachEvent="onclick: onClick"> \
-                    <span class="name" dojoAttachPoint="nameNode"></span> \
-                    <a class="logout" href="#">&mdash;logout</a> \
-                    <a class="settings" href="#rd:account-settings">settings</a> \
-                   </div>',
+    return dojo.declare("rdw.Account", [Base], {
+        templateString: '<div class="rdwAccount" dojoAttachEvent="onclick: onClick">' +
+                          '    <span class="name" dojoAttachPoint="nameNode"></span>' +
+                          '    <a class="logout" href="#">&mdash;logout</a>' +
+                          '    <a class="settings" href="#rd:account-settings">settings</a>' +
+                          '</div>',
 
-  postCreate: function() {
-    //summary: dijit lifecycle method, after template is in the DOM.
-    rd.api().me().ok(this, function(idtys) {
-      var name = "";
-      for (var i = 0, idty; idty = idtys[i]; i++) {
-        if (i == 0) {
-          name = idty.rd_key[1][1];
+        /** dijit lifecycle method, after template is in the DOM. */
+        postCreate: function () {
+            api().me().ok(this, function (idtys) {
+                var name = "", i, idty;
+                for (i = 0; (idty = idtys[i]); i++) {
+                    if (i === 0) {
+                        name = idty.rd_key[1][1];
+                    }
+                    //First identity with a name wins until there is a contact
+                    //written for all identities.
+                    if (idty.name) {
+                        name = idty.name;
+                        break;
+                    }
+                }
+                rd.escapeHtml(name, this.nameNode);
+            });
+        },
+
+        /**
+         * Handles delegated click events.
+         * @param {Event} evt
+         */
+        onClick: function (evt) {
+            //Do not want protocol links going out for this widget.
+            var href = evt.target.href;
+            if (href && (href = href.split("#")[1])) {
+                if (href.indexOf("rd:") === 0) {
+                    rd.dispatchFragId(href);
+                    evt.preventDefault();
+                }
+            }
         }
-        //First identity with a name wins until there is a contact
-        //written for all identities.
-        if (idty.name) {
-          name = idty.name;
-          break;
-        }
-      }
-      rd.escapeHtml(name, this.nameNode);
     });
-  },
-
-  onClick: function(evt) {
-    //summary: handles click events.
-    
-    //Do not want protocol links going out for this widget.
-    var href = evt.target.href;
-    if (href && (href = href.split("#")[1])) {
-      if (href.indexOf("rd:") == 0) {
-        rd.dispatchFragId(href);
-        evt.preventDefault();
-      }
-    }
-  }
 });

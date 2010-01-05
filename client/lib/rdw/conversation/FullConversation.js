@@ -21,18 +21,21 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.FullConversation");
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Conversation");
-dojo.require("rdw.conversation.FullMessage");
+run("rdw/conversation/FullConversation",
+["dojo", "rdw/Conversation", "rdw/conversation/FullMessage",
+ "text!rdw/conversation/templates/FullConversation!html"],
+function (dojo, Conversation, FullMessage, template) {
+    return dojo.declare("rdw.conversation.FullConversation", [Conversation], {
+        //The name of the constructor function (module) that should be used
+        //to show individual messages.
+        messageCtorName: "rdw/conversation/FullMessage",
 
-dojo.declare("rdw.conversation.FullConversation", [rdw.Conversation], {
-  //The name of the constructor function (module) that should be used
-  //to show individual messages.
-  messageCtorName: "rdw.conversation.FullMessage",
+        //A style to add to any messages that are replies.
+        replyStyle: "",
 
-  //A style to add to any messages that are replies.
-  replyStyle: "",
-
-  templateString: dojo.cache("rdw.conversation.templates", "FullConversation.html")
+        templateString: template
+    });
 });

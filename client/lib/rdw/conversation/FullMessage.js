@@ -21,19 +21,22 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.conversation.FullMessage");
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run("rdw/conversation/FullMessage",
+["dojo", "rdw/Message", "text!rdw/conversation/templates/FullMessage!html"],
+function (dojo, Message, template) {
+    return dojo.declare("rdw.conversation.FullMessage", [Message], {
+        templateString: template,
 
-dojo.declare("rdw.conversation.FullMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.conversation.templates", "FullMessage.html"),
-
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postMixInProperties", arguments);
-
-    //Collapse quote regions in the text and hyperlink things.
-    //TODO: make message transforms extensionized.
-    this.message = this.formatQuotedBody();
-  }
+        postMixInProperties: function () {
+            //summary: dijit lifecycle method
+            this.inherited("postMixInProperties", arguments);
+  
+            //Collapse quote regions in the text and hyperlink things.
+            //TODO: make message transforms extensionized.
+            this.message = this.formatQuotedBody();
+        }
+    });
 });

@@ -47,7 +47,7 @@ function (rd, dojo, api) {
                 errback
             );
         },
-    
+
         /**
          * Gets a list of mailing lists.
          *
@@ -99,6 +99,6 @@ function (rd, dojo, api) {
             }
         }
     };
-    
+
     return tag;
 });

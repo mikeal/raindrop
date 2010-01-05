@@ -21,75 +21,88 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw._Base");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("dojo.cache");
-dojo.require("dojo.string");
-dojo.require("dijit._Widget");
-dojo.require("dijit._Templated");
+run("rdw/_Base",
+["rd", "dojo", "dijit/_Widget", "dijit/_Templated", "i18n!rdw/nls/i18n"],
+function (rd, dojo, Widget, Templated, i18n) {
+    /**
+     * Base "class" for all rdw widgets.
+     */
+    return dojo.declare("rdw._Base", [Widget, Templated], {
+        /** dijit lifecycle method, before template is in the DOM */
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+    
+            //Set default i18n bundle
+            this.i18n = i18n;
+        },
 
-dojo.require("rd");
+        /**
+         * Pulls off the fragment ID of a link on the target element,
+         * if there is one.
+         * @param {Event} evt
+         * @returns {String}
+         */
+        getFragmentId: function (evt) {
+            //summary: 
+            var frag = evt.target.href;
+            if (frag) {
+                frag = frag.split("#")[1];
+            }
+            return frag;
+        },
 
-//TODO: remove the ROOT call to allow dynamic locale determination
-dojo.requireLocalization("rdw", "i18n", "ROOT");
-
-//Base "class" for all rdw widgets.
-dojo.declare("rdw._Base", [dijit._Widget, dijit._Templated], {
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postMixInProperties", arguments);
-
-    //Set default i18n bundle
-    //TODO: remove the ROOT call to allow dynamic locale determination
-    this.i18n = dojo.i18n.getLocalization("rdw", "i18n");
-  },
-
-  getFragmentId: function(/*Event*/evt) {
-    //summary: pulls off the fragment ID of a link on the target element,
-    //if there is one.
-    var frag = evt.target.href;
-    if (frag) {
-      frag = frag.split("#")[1];
-    }
-    return frag;
-  },
-
-  addSupporting: function(/*Object*/widget) {
-    //summary: adds a supporting widget to the supportingWidgets array,
-    //to assist with proper widget cleanup.
-    if (!this._supportingWidgets) {
-      this._supportingWidgets = []
-    }
-
-    this._supportingWidgets.push(widget);
-    return widget;
-  },
-
-  removeSupporting: function(/*Object*/widget) {
-    //summary: removes a supporting widget from the supporting widgets
-    //array. Useful if the supporting widget is destroyed before this
-    //widget is destroyed.
-    if (!this._supportingWidgets) {
-      var index = dojo.indexOf(this._supportingWidgets, widget);
-      if (index > -1) {
-        this._supportingWidgets.splice(index, 1);
-      }
-    }
-  },
-
-  destroyAllSupporting: function(/*Object?*/skipTypes) {
-    //summary: destroys all supporting widgets, and removes them
-    //from the _supportingWidgets array.
-    var supporting = this._supportingWidgets;
-    skipTypes = skipTypes || {};
-    if (supporting && supporting.length) {
-      var widget;
-      for (var i = supporting.length - 1, widget; widget = supporting[i]; i--) {
-        if (!skipTypes[widget.declaredClass]) {
-          widget.destroy();
-          supporting.splice(i, 1);
-        } 
-      }
-    }
-  }
+        /**
+         * Adds a supporting widget to the supportingWidgets array,
+         * to assist with proper widget cleanup. Returns the same widget
+         * as passed in to this function.
+         * 
+         * @param {dijit/_Widget} widget
+         * @param {dijit/_Widget}
+         */
+        addSupporting: function (widget) {
+            if (!this._supportingWidgets) {
+                this._supportingWidgets = [];
+            }
+    
+            this._supportingWidgets.push(widget);
+            return widget;
+        },
+    
+        /**
+         * Removes a supporting widget from the supporting widgets
+         * array. Useful if the supporting widget is destroyed before this
+         * widget is destroyed.
+         * @param {dijit/_Widget} widget
+         */
+        removeSupporting: function (widget) {
+            if (!this._supportingWidgets) {
+                var index = dojo.indexOf(this._supportingWidgets, widget);
+                if (index > -1) {
+                    this._supportingWidgets.splice(index, 1);
+                }
+            }
+        },
+    
+        /**
+         * destroys all supporting widgets, and removes them
+         * from the _supportingWidgets array.
+         * @param {Object} [skipTypes] property list of widget names to not remove.
+         */
+        destroyAllSupporting: function (skipTypes) {
+            var supporting = this._supportingWidgets, widget, i;
+            skipTypes = skipTypes || {};
+            if (supporting && supporting.length) {
+                for (i = supporting.length - 1; (widget = supporting[i]); i--) {
+                    if (!skipTypes[widget.declaredClass]) {
+                        widget.destroy();
+                        supporting.splice(i, 1);
+                    } 
+                }
+            }
+        }
+    });
 });
