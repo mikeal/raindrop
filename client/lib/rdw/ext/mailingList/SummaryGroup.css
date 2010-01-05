@@ -95,9 +95,8 @@
 
 .rdwExtMailingListSummaryGroup > .identity {
   display: block;
-  font-size: x-small;
+  font-size: 10px;
   color: #3a3a3a;
-  text-indent: 1em;
 }
 
 .rdwExtSummaryGroup li span.title:after {

@@ -177,6 +177,11 @@
   border: 1px solid #ccc;
 }
 
+.rdwConversation.group .replyTextArea,
+.rdwConversation.broadcast .replyTextArea {
+  display: none;
+}
+
 .rdwConversation > .actions {
   margin: 5px;
   font-family: droid-serif, georgia, times, serif;
