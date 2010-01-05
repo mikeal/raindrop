@@ -21,24 +21,28 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.gravatar");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("dojox.encoding.digests.MD5");
+run("rdw/gravatar",
+["rd", "dojox", "dojox.encoding.digests.MD5"],
+function (rd, dojox) {
+    var digests = dojox.encoding.digests;
 
-;(function(){
-  var digests = dojox.encoding.digests;
-  
-  rdw.gravatar = {
-    _store: {},
+    return {
+        _store: {},
 
-    get: function(/*String*/email) {
-      //summary: gets the gravatar URL given an email address.
-      var digest = this._store[email];
-      if (!digest) {
-        digest = this._store[email] = digests.MD5(email, digests.outputTypes.Hex);
-      }
-      return "http://www.gravatar.com/avatar/" + digest + ".jpg?d=wavatar&s=48";
-    }
-  };
-
-})();
+        /**
+         * Gets the gravatar URL given an email address.
+         * @param {String} email
+         */
+        get: function (email) {
+            var digest = this._store[email];
+            if (!digest) {
+                digest = this._store[email] = digests.MD5(email, digests.outputTypes.Hex);
+            }
+            return "http://www.gravatar.com/avatar/" + digest + ".jpg?d=wavatar&s=48";
+        }
+    };
+});

@@ -21,140 +21,161 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.DataSelector");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("dojo.DeferredList");
-dojo.require("rdw._Base");
-dojo.require("rd.MegaviewStore");
+run("rdw/DataSelector",
+["run", "rd", "dojo", "dojo.DeferredList", "rdw/_Base", "rd.MegaviewStore"],
+function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
 
-dojo.declare("rdw.DataSelector", [rdw._Base], {
-  templateString: '<div class="rdwDataSelector dijitReset dijitInlineTable dijitLeft"><div dojoAttachPoint="selectorNode"></div></div>',
+    return dojo.declare("rdw.DataSelector", [Base], {
+        templateString: '<div class="rdwDataSelector dijitReset dijitInlineTable dijitLeft"><div dojoAttachPoint="selectorNode"></div></div>',
+    
+        comboWidget: "dijit/form/ComboBox",
+    
+        //type can have values of "identityContact", "contact", or "locationTag"
+        //by default. Extensions can add other types by creating a typeLoaded function
+        //on this widget.
+        type: "identityContact",
+    
+        //If type is set to "all", this is the list of data stores
+        //to aggregate together. Extensions can add other types by pushing
+        //new values to this array. Note that this is an array on the prototype for
+        //this widget. Just reassign this property to a new array on an instance
+        //just to affect that instance's list.
+        allType: ["contact", "locationTag"],
+    
+        //Restrict the type of records further. Useful in the default case only
+        //for type: "identityContact".
+        //values are like "twitter", "email", in other words, the first array
+        //value of the identity ID.
+        subType: "",
+    
+        //An initial value that will be used after
+        //the person docs from the couch have loaded.
+        initialValue: "",
 
-  comboWidget: "dijit.form.ComboBox",
+        /** Dijit lifecycle method run before template evaluated */
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+        },
 
-  //type can have values of "identityContact", "contact", or "locationTag"
-  //by default. Extensions can add other types by creating a typeLoaded function
-  //on this widget.
-  type: "identityContact",
+        /** Dijit lifecycle method run after template HTML is in DOM */
+        postCreate: function () {
+            //Declare array to use for items found from data sources.
+            this.items = [];
+    
+            //Figure out what data sources to use.
+            this.sources = this.allType;
+            if (this.type !== "all") {
+                this.sources = [this.type];
+            }
+    
+            this.createWidget();
+        },
 
-  //If type is set to "all", this is the list of data stores
-  //to aggregate together. Extensions can add other types by pushing
-  //new values to this array. Note that this is an array on the prototype for
-  //this widget. Just reassign this property to a new array on an instance
-  //just to affect that instance's list.
-  allType: ["contact", "locationTag"],
+        /**
+         * creates the widget that will use the data in this.items. Each object
+         * entry in items should have an "id" and a "name" property.
+         */
+        createWidget: function () {
+            //sort by name
+            this.items.sort(function (a, b) {
+                return a.name > b.name ? 1 : -1;
+            });
+    
+            //Load the code for the widget then create and initialize it.
+            run([this.comboWidget], dojo.hitch(this, function (Ctor) {
+                //Create the selector widget.
+                this.selectorInstance = new Ctor({
+                    store: new MegaviewStore({
+                        schemaQueryTypes: this.sources,
+                        subType: this.subType
+                    }),
+                    onChange: dojo.hitch(this, "onSelectorChange")            
+                }, this.selectorNode);
+    
+                //Pass initial value to selector if it was set.
+                if (this.initialValue) {
+                    this.selectorInstance.attr("value", this.initialValue);
+                }
+        
+                //Add to supporting widgets so widget destroys do the right thing.
+                this.addSupporting(this.selectorInstance);
+            }));
+        },
 
-  //Restrict the type of records further. Useful in the default case only
-  //for type: "identityContact".
-  //values are like "twitter", "email", in other words, the first array
-  //value of the identity ID.
-  subType: "",
+        /**
+         * Triggered when the selector's value changes. value should be
+         * type:id.
+         * @param {String} value
+         */
+        onSelectorChange: function (value) {
+            var item = this.selectorInstance.item;
+            if (!item) {
+                return;
+            }
+    
+            //Dispatch to idSelected method on this instance.
+            this[item.type + "Selected"](item.id);
+    
+            this.onDataSelected({
+                type: item.type,
+                id: item.id,
+                value: item.name
+            });
+        },
 
-  //An initial value that will be used after
-  //the person docs from the couch have loaded.
-  initialValue: "",
+        /**
+         * Connection point for other code, that signals when data is selected.
+         * @param {Object} data
+         * @param {String} data.type the type of data selected (from what data source)
+         * @param {String} data.id the id of the data for that type of data source.
+         * @param {String} data.value the visible value for the data selected.
+         */
+        onDataSelected: function (/*Object*/data) {
+        },
 
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method run before template evaluated
-    this.inherited("postMixInProperties", arguments);
-  },
+        /**
+         * Allows instance.attr("value") to work.
+         */
+        _getValueAttr: function () {
+            return this.selectorInstance ? this.selectorInstance.attr("value") : this.initialValue;
+        },
 
-  postCreate: function() {
-    //summary: dijit lifecycle method run after template HTML is in DOM
+        /**
+         * Allows instance.attr("value", value) to work.
+         */
+        _setValueAttr: function (/*String*/ value, /*Boolean?*/ priorityChange) {
+            return this.selectorInstance ?
+                    this.selectorInstance.attr("value", value, priorityChange)
+                :
+                    this.initialValue = value;
+        },
 
-    //Declare array to use for items found from data sources.
-    this.items = [];
+        /**
+         * Dispatch function when a contact is selected.
+         * @param {String} contactId
+         */
+        contactSelected: function (contactId) {
+            rd.setFragId("rd:contact:" + contactId);    
+        },
 
-    //Figure out what data sources to use.
-    this.sources = this.allType;
-    if (this.type != "all") {
-      this.sources = [this.type];
-    }
-
-    this.createWidget();
-  },
-
-  createWidget: function() {
-    //summary: creates the widget that will use the data in this.items. Each object
-    //entry in items should have an "id" and a "name" property.
-
-    //sort by name
-    this.items.sort(function(a, b) {
-      a.name > b.name ? 1 : -1;
+        /**
+         * Dispatch function when an identity is selected.
+         * @param {String} identityId
+         */
+        identitySelected: function (identityId) {
+            rd.setFragId("rd:identity:" + identityId);
+        },
+    
+        /**
+         * Dispatch function when a locationTag is selected.
+         * @param {String} location
+         */
+        locationTagSelected: function (location) {
+            rd.setFragId("rd:locationTag:" + location);
+        }
     });
-
-    //Load the code for the widget then create and initialize it.
-    dojo["require"](this.comboWidget);
-    dojo.addOnLoad(dojo.hitch(this, function(){
-      //Create the selector widget.
-      this.selectorInstance = new (dojo.getObject(this.comboWidget))({
-        store: new rd.MegaviewStore({
-          schemaQueryTypes: this.sources,
-          subType: this.subType
-        }),
-        onChange: dojo.hitch(this, "onSelectorChange")      
-      }, this.selectorNode);
-
-      //Pass initial value to selector if it was set.
-      if (this.initialValue) {
-        this.selectorInstance.attr("value", this.initialValue);
-      }
-  
-      //Add to supporting widgets so widget destroys do the right thing.
-      this.addSupporting(this.selectorInstance);
-    }));
-  },
-
-  onSelectorChange: function(/*String*/value) {
-    //summary: triggered when the selector's value changes. value should be
-    //type:id.
-    var item = this.selectorInstance.item;
-    if (!item) {
-      return;
-    }
-
-    //Dispatch to idSelected method on this instance.
-    this[item.type + "Selected"](item.id);
-
-    this.onDataSelected({
-      type: item.type,
-      id: item.id,
-      value: item.name
-    });
-  },
-
-  onDataSelected: function(/*Object*/data) {
-    //summary: connection point for other code. data will have the following properties,
-    //type: the type of data selected (from what data source)
-    //id: the id of the data for that type of data source.
-    //value: the visible value for the data selected.
-  },
-
-  _getValueAttr: function(){
-    //summary: allows instance.attr("value") to work.
-    return this.selectorInstance ? this.selectorInstance.attr("value") : this.initialValue;
-  },
-
-  _setValueAttr: function(/*String*/ value, /*Boolean?*/ priorityChange){
-    //summary: allows instance.attr("value", value) to work.
-    return this.selectorInstance ?
-        this.selectorInstance.attr("value", value, priorityChange)
-      :
-        this.initialValue = value;
-  },
-
-  contactSelected: function(/*String*/contactId) {
-    //summary: dispatch function when a contact is selected.
-    rd.setFragId("rd:contact:" + contactId);  
-  },
-
-  identitySelected: function(/*String*/identityId) {
-    //summary: dispatch function when an identity is selected.
-    rd.setFragId("rd:identity:" + identityId);
-  },
-
-  locationTagSelected: function(/*String*/location) {
-    //summary: dispatch function when a locationTag is selected.
-    rd.setFragId("rd:locationTag:" + location);
-  }
 });
