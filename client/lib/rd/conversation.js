@@ -21,44 +21,50 @@
  * Contributor(s):
  * */
 
-dojo.provide("rd.conversation");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rd.api");
+run("rd/conversation",
+["rd", "dojo", "rd/api"],
+function (rd, dojo, api) {
+    var conversation = {
+        //Gets conversations based on message IDs passed in. ids can be one string
+        //message document ID or an array of string message document IDs.
+        messageKey: function (/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
+            var apiInst = rd.api({
+                url: 'inflow/conversations/with_messages',
+                keys: ids
+            });
+            if (callback) {
+                apiInst.ok(callback);
+            }
+            if (errback) {
+                apiInst.error(errback);
+            }
+        },
 
-rd.conversation = {
-  messageKey: function(/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
-    //summary: gets conversations based on message IDs passed in. ids can be one string
-    //message document ID or an array of string message document IDs.
-    var api = rd.api({
-      url: 'inflow/conversations/with_messages',
-      keys: ids
-    });
-    if (callback) {
-      api.ok(callback);
-    }
-    if (errback) {
-      api.error(errback);
-    }
-  },
+        //Gets the most recent messages up to a limit for a given imap folder
+        //location ID, then pulls the conversations associated with those messages.
+        //Conversation with the most recent message will be first.
+        location: function (/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
+            api().megaview({
+                key: ["rd.msg.location", "location", locationId],
+                reduce: false,
+                limit: limit
+            })
+            .ok(this, function (json) {
+                //Get message keys
+                var keys = [], i, row;
+                for (i = 0; (row = json.rows[i]); i++) {
+                    keys.push(row.value.rd_key);
+                }
 
-  location: function(/*Array*/locationId, /*Number*/limit, /*Function*/callback, /*Function*/errback) {
-    //summary: gets the most recent messages up to a limit for a given imap folder
-    //location ID, then pulls the conversations associated with those messages.
-    //Conversation with the most recent message will be first.
-    rd.api().megaview({
-      key: ["rd.msg.location", "location", locationId],
-      reduce: false,
-      limit: limit
-    })
-    .ok(this, function(json) {
-      //Get message keys
-      var keys = [];
-      for (var i = 0, row; row = json.rows[i]; i++) {
-        keys.push(row.value.rd_key);
-      }
+                this.messageKey(keys, callback, errback);
+            });
+        }
+    };
 
-      this.messageKey(keys, callback, errback);
-    });
-  }
-};
+    return conversation;
+});
 

@@ -44,7 +44,7 @@ dojo.declare("rdw.SummaryGroup", [rdw._Base], {
 
     //Register for hashchange events so widget can update its state to
     //reflect the hash state.
-    rd.sub("rd.onHashChange", this, "onHashChange");
+    rd.sub("rd/onHashChange", this, "onHashChange");
 
     //Be sure to grab the latest value.
     this.onHashChange(rd.onHashChange.value || "rd:home");

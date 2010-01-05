@@ -59,7 +59,7 @@ dojo.declare("rdw.Widgets", [rdw._Base], {
 
   postCreate: function() {
     //summary: dijit lifecycle method after template insertion in the DOM.
-    rd.sub("rd.onHashChange", this, "onHashChange");
+    rd.sub("rd/onHashChange", this, "onHashChange");
     this.home();
   },
 

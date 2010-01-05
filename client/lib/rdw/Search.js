@@ -76,7 +76,7 @@ dojo.declare("rdw.Search", [rdw._Base], {
   onPrefSaveError: function(/*Object*/error) {
     //summary: handles errors when saving prefs. Most likely error
     //is an out of data prefs document.
-    if (error && error.message == "rd.docOutOfDate") {
+    if (error && error.message == "rd/docOutOfDate") {
       //Out of date, try to merge data best we can.
       var history = this.prefs.history;
       rd.api().pref({

@@ -21,22 +21,25 @@
  * Contributor(s):
  * */
 
-dojo.provide("rd.onHashChange");
+/*jslint plusplus: false */
+/*global run: false, location: false, setInterval: false, setTimeout: false */
+"use strict";
 
 //Simple utility that watches for hash changes and then publishes changes.
+run("rd/onHashChange", ["rd", "dojo"], function (rd, dojo) {
+    var value = location.href.split("#")[1] || "", interval,
+        onHashChange = { value: value };
+    interval = setInterval(function () {
+        var newValue = location.href.split("#")[1] || "";
+        if (newValue !== value) {
+            onHashChange.value = value = newValue;
+            //Use a set timeout so an error on a subscriber does
+            //not stop the polling.
+            setTimeout(function () {
+                dojo.publish("rd/onHashChange", [value]);
+            }, 10);
+        }
+    }, 300);
 
-;(function(){
-  var value = location.href.split("#")[1] || "";
-  rd.onHashChange.value = value;
-  var interval = setInterval(function(){
-    var newValue = location.href.split("#")[1] || "";
-    if (newValue != value) {
-      rd.onHashChange.value = value = newValue;
-      //Use a set timeout so an error on a subscriber does
-      //not stop the polling.
-      setTimeout(function() {
-        dojo.publish("rd.onHashChange", [value]);
-      }, 10);
-    }
-  }, 300);
-})();
+    return onHashChange;
+});
