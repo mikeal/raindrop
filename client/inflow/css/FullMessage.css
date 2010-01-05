@@ -48,7 +48,7 @@
 .rdwConversationFullMessage > .message > .header > .author > .from {
   display: table;
   font-size: 13px;
-  color: #ff5959;
+  color: #1a1a1a;
   margin: 3px 0 0 0;
 }
 
