@@ -21,58 +21,60 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.SummaryGroup");
+/*jslint nomen: false, plusplus: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw._Base");
-dojo.require("rd.onHashChange");
-dojo.require("rdw.InflowSummaryGroup");
+run("rdw/SummaryGroup",
+["rd", "dojo", "rdw/_Base", "rd/onHashChange", "rdw/InflowSummaryGroup"],
+function (rd, dojo, Base, onHashChange, InflowSummaryGroup) {
 
-dojo.declare("rdw.SummaryGroup", [rdw._Base], {
-  templateString: '<div class="rdwSummaryGroup WidgetBox"></div>',
+    return dojo.declare("rdw.SummaryGroup", [Base], {
+        templateString: '<div class="rdwSummaryGroup WidgetBox"></div>',
+    
+        //List of topics to listen to and modify contents based
+        //on those topics being published. Note that this is an object
+        //on the rdw.SummaryGroup prototype, so modifying it will affect
+        //all instances. Reassign the property to a new object to affect
+        //only one instance.
+        topics: {
+            "rd-protocol-home": "home"
+        },
 
-  //List of topics to listen to and modify contents based
-  //on those topics being published. Note that this is an object
-  //on the rdw.SummaryGroup prototype, so modifying it will affect
-  //all instances. Reassign the property to a new object to affect
-  //only one instance.
-  topics: {
-    "rd-protocol-home": "home"
-  },
+        /** Dijit lifecycle method after template insertion in the DOM. */
+        postCreate: function () {
+            //Register for hashchange events so widget can update its state to
+            //reflect the hash state.
+            rd.sub("rd/onHashChange", this, "onHashChange");
 
-  postCreate: function() {
-    //summary: dijit lifecycle method after template insertion in the DOM.
+            //Be sure to grab the latest value.
+            this.onHashChange(onHashChange.value || "rd:home");
+        },
 
-    //Register for hashchange events so widget can update its state to
-    //reflect the hash state.
-    rd.sub("rd/onHashChange", this, "onHashChange");
+        onHashChange: function (value) {
+            value = value || "rd:home";
+            this.clear();
+            var topic = rd.getFragIdTopic(value),
+                funcName = this.topics[topic.name];
+            if (funcName) {
+                this[funcName](topic.data);
+            }
+        },
 
-    //Be sure to grab the latest value.
-    this.onHashChange(rd.onHashChange.value || "rd:home");
-  },
+        clear: function () {
+            this.destroyAllSupporting();
+            this.domNode.innerHTML = "";     
+        },
 
-  onHashChange: function(value) {
-    value = value || "rd:home";
-    this.clear();
-    var topic = rd.getFragIdTopic(value);
-    var funcName = this.topics[topic.name];
-    if (funcName) {
-      this[funcName](topic.data);
-    }
-  },
-
-  clear: function() {
-    this.destroyAllSupporting();
-    this.domNode.innerHTML = "";   
-  },
-
-  //**************************************************
-  //start topic subscription endpoints
-  //**************************************************
-  home: function() {
-    this.addSupporting(new rdw.InflowSummaryGroup({
-    }, dojo.create("div", null, this.domNode)));
-  }
-  //**************************************************
-  //end topic subscription endpoints
-  //**************************************************
+        //**************************************************
+        //start topic subscription endpoints
+        //**************************************************
+        home: function () {
+            this.addSupporting(new InflowSummaryGroup({
+            }, dojo.create("div", null, this.domNode)));
+        }
+        //**************************************************
+        //end topic subscription endpoints
+        //**************************************************
+    });
 });

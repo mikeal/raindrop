@@ -21,168 +21,187 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.Message");
+/*jslint nomen: false, plusplus: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw._Base");
-dojo.require("rd.friendly");
-dojo.require("rd.hyperlink");
-dojo.require("rd.api");
+run("rdw/Message",
+["rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api",
+ "text!rdw/templates/Message!html"],
+function (rd, dojo, Base, friendly, hyperlink, api, template) {
 
-dojo.declare("rdw.Message", [rdw._Base], {
-  //Suggested values for type are "topic" and "reply"
-  type: "topic",
-
-  //Allows the message to have focus.
-  tabIndex: 0,
-
-  //Holds the aggregated message object.
-  //Warning: this is a prototype property: be sure to
-  //set it per instance.
-  msg: null,
-
-  templateString: dojo.cache("rdw.templates", "Message.html"),
-
-  //The link for the expanding to full conversation.
-  expandLink: "",
-
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postMixInProperties", arguments);
-
-    //Set the properties for this widget based on msg
-    //properties.
-    var schemas = this.msg.schemas;
-    var msgDoc = schemas['rd.msg.body'];
-
-    this.fromId = (msgDoc.from && msgDoc.from[1]) || "";
-    this.fromName = msgDoc.from_display || this.fromId;
-    this.subject = rd.hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
-
-    //TODO: make message transforms extensionized.
-    this.message = rd.hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
-
-    this.time = msgDoc.timestamp;
-
-    /* XXX this timestamp needs a lot more thought to show the right kind of 
-       time info and we probably also want to some standard the hCard formatting */
-    var fTime = rd.friendly.timestamp(msgDoc.timestamp);
-    this.utcTime = fTime["utc"];
-    this.localeTime = fTime["locale"];
-    this.friendlyTime = fTime["friendly"];
-    this.additionalTime = fTime["additional"];
-
-    //Determine if the sender is known and switch templates if necessary.
-    var known = !!schemas["rd.msg.ui.known"];
-    if (!known && this.fromNode) {
-      //This identity is unknown. Try to make a suggestion for who it might be.
-      dojo.addClass(this.fromNode, "unknown");
-    }
-
-    //Set up the link for the full conversation view action.
-    this.convoId = schemas
-      && schemas["rd.msg.conversation"]
-      && schemas["rd.msg.conversation"].conversation_id;
-    if (this.convoId) {
-      this.expandLink = "rd:conversation:" + dojo.toJson(this.convoId);
-    }
-  },
-
-  postCreate: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postCreate", arguments);
-
-    var msgDoc = this.msg.schemas['rd.msg.body'];
-
-    rd.api().me().ok(this, function(idtys) {
-      myself = idtys.map(function(idty) { return idty.rd_key[1][1]; });
-
-      if (msgDoc.to) {
-        for (var i = 0; i < msgDoc.to.length; i++) {
-          var email = msgDoc.to[i][1];
-          if (! myself.some(function(e) { return e == email; })) {
-            var username = email.slice(0, email.indexOf("@"));
-            //XXX hacky first name grabber, will aslo grab titles like "Mr."
-            var name = msgDoc.to_display[i], first_name = msgDoc.to_display[i].split(" ")[0];
-            var display = first_name || username;
-            dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <"+email+">" }, this.toRecipientsNode);
-          }
-        }
-      }
-
-      if (msgDoc.cc) {
-        for (var i = 0; i < msgDoc.cc.length; i++) {
-          var email = msgDoc.cc[i][1];
-          if (! myself.some(function(e) { return e == email; })) {
-            var username = email.slice(0, email.indexOf("@"));
-            //XXX hacky first name grabber, will aslo grab titles like "Mr."
-            var name = msgDoc.cc_display[i], first_name = msgDoc.cc_display[i].split(" ")[0];
-            var display = first_name || username;
-            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <"+email+">" }, this.ccRecipientsNode);
-          }
-        }
-      }
-
-    });
-
-  },
-
-  onClick: function(evt) {
-    //summary: handles clicks. Uses event
-    //delegation to publish the right action.
-    var target = evt.target;
-    var href = target.href;
-    if (href && (href = href.split("#")[1])) {
-      if (href == "quote") {
-        if (dojo.hasClass(target, "collapsed")) {
-          rd.escapeHtml(this.i18n.hideQuotedText, target, "only");
-          dojo.query(target).next(".quote").style({
-            display: "block"
-          });
-          dojo.removeClass(target, "collapsed");
-        } else {
-          rd.escapeHtml(this.i18n.showQuotedText, target, "only");
-          dojo.query(target).next(".quote").style({
-            display: "none"
-          });
-          dojo.addClass(target, "collapsed");          
-        }
-        dojo.stopEvent(evt);
-      }
-    }
-  },
-
-  formatQuotedBody: function() {
-    //Looks at the rd.msg.body.quoted schema for quoted blocks and formats them.
-    //If no rd.msg.body.quoted exists, the message body will be used.
-    var quoted = this.msg.schemas["rd.msg.body.quoted"];
+    return dojo.declare("rdw.Message", [Base], {
+        //Suggested values for type are "topic" and "reply"
+        type: "topic",
     
-    //No quoted, fallback to body text.
-    if (!quoted) {
-      var text = this.prepBodyPart(this.msg.schemas["rd.msg.body"].body);
-    } else {
-      var parts = quoted.parts || [];
-      text = "";
-      for (var i = 0, part; part = parts[i]; i++) {
-        if (part.type == "quote") {
-          //Add in a collapsible wrapper around the text.
-          //The awkward use of single quotes for attributes is to
-          //get around encoding issue with dijit.
-          text += "<a href='#quote' class='quoteToggle collapsed'>" + this.i18n.showQuotedText + "</a>"
-               + "<div class='quote' style='display: none'>"
-               + this.prepBodyPart(part.text)
-               + "</div>";
-        } else {
-          text += this.prepBodyPart(part.text);
+        //Allows the message to have focus.
+        tabIndex: 0,
+
+        //Holds the aggregated message object.
+        //Warning: this is a prototype property: be sure to
+        //set it per instance.
+        msg: null,
+    
+        templateString: template,
+    
+        //The link for the expanding to full conversation.
+        expandLink: "",
+
+        /** Dijit lifecycle method, before template is generated */
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+    
+            //Set the properties for this widget based on msg
+            //properties.
+            var schemas = this.msg.schemas,
+                msgDoc = schemas['rd.msg.body'],
+                fTime, known;
+    
+            this.fromId = (msgDoc.from && msgDoc.from[1]) || "";
+            this.fromName = msgDoc.from_display || this.fromId;
+            this.subject = hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
+    
+            //TODO: make message transforms extensionized.
+            this.message = hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
+    
+            this.time = msgDoc.timestamp;
+    
+            /* XXX this timestamp needs a lot more thought to show the right kind of 
+                 time info and we probably also want to some standard the hCard formatting */
+            fTime = friendly.timestamp(msgDoc.timestamp);
+            this.utcTime = fTime.utc;
+            this.localeTime = fTime.locale;
+            this.friendlyTime = fTime.friendly;
+            this.additionalTime = fTime.additional;
+    
+            //Determine if the sender is known and switch templates if necessary.
+            known = !!schemas["rd.msg.ui.known"];
+            if (!known && this.fromNode) {
+                //This identity is unknown. Try to make a suggestion for who it might be.
+                dojo.addClass(this.fromNode, "unknown");
+            }
+    
+            //Set up the link for the full conversation view action.
+            this.convoId = schemas &&
+                           schemas["rd.msg.conversation"] &&
+                           schemas["rd.msg.conversation"].conversation_id;
+            if (this.convoId) {
+                this.expandLink = "rd:conversation:" + dojo.toJson(this.convoId);
+            }
+        },
+
+        /** Dijit lifecycle method, after template in DOM */
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+    
+            var msgDoc = this.msg.schemas['rd.msg.body'];
+    
+            api().me().ok(this, function (idtys) {
+                var myself = idtys.map(function (idty) {
+                        return idty.rd_key[1][1];
+                    }),
+                    i, email, username, name, display, first_name,
+                    emailTest = function (e) {
+                        return e === email;
+                    };
+    
+                if (msgDoc.to) {
+                    for (i = 0; i < msgDoc.to.length; i++) {
+                        email = msgDoc.to[i][1];
+                        if (!myself.some(emailTest)) {
+                            username = email.slice(0, email.indexOf("@"));
+                            //XXX hacky first name grabber, will aslo grab titles like "Mr."
+                            name = msgDoc.to_display[i];
+                            first_name = msgDoc.to_display[i].split(" ")[0];
+                            display = first_name || username;
+                            dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <" + email + ">" }, this.toRecipientsNode);
+                        }
+                    }
+                }
+    
+                if (msgDoc.cc) {
+                    for (i = 0; i < msgDoc.cc.length; i++) {
+                        email = msgDoc.cc[i][1];
+                        if (!myself.some(emailTest)) {
+                            username = email.slice(0, email.indexOf("@"));
+                            //XXX hacky first name grabber, will aslo grab titles like "Mr."
+                            name = msgDoc.cc_display[i];
+                            first_name = msgDoc.cc_display[i].split(" ")[0];
+                            display = first_name || username;
+                            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <" + email + ">" }, this.ccRecipientsNode);
+                        }
+                    }
+                }
+    
+            });
+    
+        },
+
+        /**
+         * handles clicks. Uses event
+         * delegation to publish the right action.
+         * @param {Event} evt
+         */
+        onClick: function (evt) {
+            var target = evt.target,
+                href = target.href;
+            if (href && (href = href.split("#")[1])) {
+                if (href === "quote") {
+                    if (dojo.hasClass(target, "collapsed")) {
+                        rd.escapeHtml(this.i18n.hideQuotedText, target, "only");
+                        dojo.query(target).next(".quote").style({
+                            display: "block"
+                        });
+                        dojo.removeClass(target, "collapsed");
+                    } else {
+                        rd.escapeHtml(this.i18n.showQuotedText, target, "only");
+                        dojo.query(target).next(".quote").style({
+                            display: "none"
+                        });
+                        dojo.addClass(target, "collapsed");                    
+                    }
+                    dojo.stopEvent(evt);
+                }
+            }
+        },
+    
+        formatQuotedBody: function () {
+            //Looks at the rd.msg.body.quoted schema for quoted blocks and formats them.
+            //If no rd.msg.body.quoted exists, the message body will be used.
+            var quoted = this.msg.schemas["rd.msg.body.quoted"],
+                text, parts, i, part;
+            
+            //No quoted, fallback to body text.
+            if (!quoted) {
+                text = this.prepBodyPart(this.msg.schemas["rd.msg.body"].body);
+            } else {
+                parts = quoted.parts || [];
+                text = "";
+                for (i = 0; (part = parts[i]); i++) {
+                    if (part.type === "quote") {
+                        //Add in a collapsible wrapper around the text.
+                        //The awkward use of single quotes for attributes is to
+                        //get around encoding issue with dijit.
+                        text += "<a href='#quote' class='quoteToggle collapsed'>" + this.i18n.showQuotedText + "</a>" +
+                                "<div class='quote' style='display: none'>" +
+                                this.prepBodyPart(part.text) +
+                                "</div>";
+                    } else {
+                        text += this.prepBodyPart(part.text);
+                    }
+                }
+            }
+    
+            return text;
+        },
+
+        /**
+         * Does final formatting of a body part for display, HTML sanitation/transforms.
+         * @param {String} text
+         */
+        prepBodyPart: function (text) {
+            //TODO: make this extensible, or pull out hyperlinking as an extension?
+            return hyperlink.add(rd.escapeHtml(text).replace(/\n/g, "<br>"));
         }
-      }
-    }
-
-    return text;
-  },
-
-  prepBodyPart: function(/*String*/text) {
-    //summary: does final formatting of a body part for display, HTML sanitation/transforms.
-    //TODO: make this extensible, or pull out hyperlinking as an extension?
-    return rd.hyperlink.add(rd.escapeHtml(text).replace(/\n/g, "<br>"));
-  }
+    });
 });

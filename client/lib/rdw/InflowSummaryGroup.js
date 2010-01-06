@@ -21,38 +21,42 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.InflowSummaryGroup");
+/*jslint nomen: false, plusplus: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw._Base");
+run("rdw/InflowSummaryGroup",
+["rd", "dojo", "rdw/_Base", "rd/api"],
+function (rd, dojo, Base, api) {
 
-rd.addStyle("rdw.InflowSummaryGroup");
+    rd.addStyle("rdw.InflowSummaryGroup");
 
-dojo.declare("rdw.InflowSummaryGroup", [rdw._Base], {
-  templateString: '<div class="rdwExtSummaryGroup"><strong>Inflow Summary</strong><ul dojoAttachPoint="containerNode"><li dojoAttachPoint="totalCountNode"></li></ul></div>',
+    return dojo.declare("rdw.InflowSummaryGroup", [Base], {
+        templateString: '<div class="rdwExtSummaryGroup"><strong>Inflow Summary</strong><ul dojoAttachPoint="containerNode"><li dojoAttachPoint="totalCountNode"></li></ul></div>',
+  
+        /** Dijit lifecycle method after template insertion in the DOM. */
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+            this.apiHandle = api.subscribe("inflow/conversations/personal", this, "onApiUpdate");
+        },
+  
+        /** Dijit lifecycle method. */
+        destroy: function () {
+            api.unsubscribe(this.apiHandle);
+            this.inherited("destroy", arguments);
+        },
 
-  postCreate: function() {
-    //summary: dijit lifecycle method after template insertion in the DOM.
-    this.inherited("postCreate", arguments);
-    this.apiHandle = rd.api.subscribe("inflow/conversations/personal", this, "onApiUpdate");
-  },
-
-  destroy: function() {
-    //summary: dijit lifecycle method.
-    rd.api.unsubscribe(this.apiHandle);
-    this.inherited("destroy", arguments);
-  },
-
-  onApiUpdate: function(conversations) {
-    var i, convo;
-    if (!conversations || conversations.length == 0) {
-      this.domNode.innerHTML = "No conversations";
-    } else {
-      var unread = 0;
-      for (i = 0; (convo = conversations[i]); i++) {
-        unread += convo.unread || 0;
-      }
-      //TODO: not localized.
-      dojo.place('<span class="count">' + unread + '</span> unread message' + (unread != 1 ? 's' : ''), this.totalCountNode, "only");
-    }
-  }
+        onApiUpdate: function (conversations) {
+            var i, convo, unread = 0;
+            if (!conversations || conversations.length === 0) {
+                this.domNode.innerHTML = "No conversations";
+            } else {
+                for (i = 0; (convo = conversations[i]); i++) {
+                    unread += convo.unread || 0;
+                }
+                //TODO: not localized.
+                dojo.place('<span class="count">' + unread + '</span> unread message' + (unread !== 1 ? 's' : ''), this.totalCountNode, "only");
+            }
+        }
+    });
 });

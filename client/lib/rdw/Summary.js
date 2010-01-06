@@ -21,85 +21,104 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.Summary");
+/*jslint nomen: false, plusplus: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw._Base");
-dojo.require("rd.api.contact");
+run("rdw/Summary",
+["rd", "dojo", "rdw/_Base", "rd/api", "rd/api/contact"],
+function (rd, dojo, Base, api, contact) {
 
-dojo.declare("rdw.Summary", [rdw._Base], {
-  templateString: '<div class="rdwSummary"></div>',
+    return dojo.declare("rdw.Summary", [Base], {
+        templateString: '<div class="rdwSummary"></div>',
 
-  clear: function() {
-    //summary: clears the summary display.
-    this.destroySupportingWidgets();
-    this.domNode.className = "rdwSummary";
-    this.domNode.innerHTML = "";
-  },
+        /** Clears the summary display */
+        clear: function () {
+            this.destroySupportingWidgets();
+            this.domNode.className = "rdwSummary";
+            this.domNode.innerHTML = "";
+        },
 
-  destroySupportingWidgets: function() {
-    //summary: removes the supporting widgets
-    if (this._supportingWidgets && this._supportingWidgets.length) {
-      var supporting;
-      while((supporting = this._supportingWidgets.shift())) {
-        supporting.destroy();
-      }
-    }
-  },
+        /** Removes the supporting widgets */
+        destroySupportingWidgets: function () {
+            if (this._supportingWidgets && this._supportingWidgets.length) {
+                var supporting;
+                while ((supporting = this._supportingWidgets.shift())) {
+                    supporting.destroy();
+                }
+            }
+        },
+    
+        //**************************************************
+        //start topic subscription endpoints
+        //**************************************************
+        /** Responds to rd-protocol-home topic. */
+        home: function () {
+            this.domNode.innerHTML = "<strong>Inflow</strong>";
+        },
 
-  //**************************************************
-  //start topic subscription endpoints
-  //**************************************************
-  home: function() {
-    //summary: responds to rd-protocol-home topic.
-    this.domNode.innerHTML = "<strong>Inflow</strong>";
-  },
+        /**
+         * Responds to showing a full conversation.
+         * @param {Object} conversation
+         */
+        conversation: function (conversation) {
+            var title = conversation.subject || "",
+                html = rd.escapeHtml(title) + '<div class="actions"><button name="archive">archive</button><button name="delete">delete</button></div>';
+            this.domNode.innerHTML = html;
+            dojo.addClass(this.domNode, "conversation");
+        },
 
-  conversation: function(/*Object*/ conversation) {
-    //summary: responds to showing a full conversation.
-    var title = conversation.subject || "";
-    var html = rd.escapeHtml(title) + '<div class="actions"><button name="archive">archive</button><button name="delete">delete</button></div>';
-    this.domNode.innerHTML = html;
-    dojo.addClass(this.domNode, "conversation");
-  },
+        /**
+         * Responds to rd-protocol-contact topic
+         * @param {String} contactId
+         */
+        contact: function (contactId) {
+            api().contact({
+                ids: [contactId]
+            }).ok(this, function (contacts) {
+                //Use megaview to select all messages based on the identity
+                //IDs.
+                var contact = contacts[0],
+                    keys = dojo.map(contact.identities, dojo.hitch(this, function (identity) {
+                        rd.escapeHtml("Person: " + contact.name + identity.rd_key[1], this.domNode);
+                    }));
+            });
+        },
 
-  contact: function(/*String*/contactId) {
-    //summary: responds to rd-protocol-contact topic.
-    rd.api().contact({
-      ids: [contactId]
-    }).ok(this, function(contacts) {
-      //Use megaview to select all messages based on the identity
-      //IDs.
-      var contact = contacts[0];
-      var keys = rd.map(contact.identities, dojo.hitch(this, function(identity) {
-            rd.escapeHtml("Person: " + contact.name + identity.rd_key[1], this.domNode);
-      }));
+        /** Responds to rd-protocol-direct topic. */
+        direct: function () {
+        },
+
+        /** Responds to rd-protocol-group topic. */
+        group: function () {
+            rd.escapeHtml("Recent group conversations", this.domNode);
+        },
+
+        /**
+         * Responds to rd-protocol-locationTag topic.
+         * @param {String} locationId
+         */
+        locationTag: function (locationId) {
+            rd.escapeHtml("Folder location: " + locationId, this.domNode);
+        },
+    
+        /**
+         * Responds to rd-protocol-locationTag starred.
+         * @param {String} locationId
+         */
+        starred: function (/*String*/locationId) {
+            rd.escapeHtml("Starred Messages (unimplemented)", this.domNode);
+        },
+    
+        /**
+         * Responds to rd-protocol-sent topic.
+         * @param {String} locationId
+         */
+        sent: function (/*String*/locationId) {
+            rd.escapeHtml("Sent Messages", this.domNode);
+        }
+        //**************************************************
+        //end topic subscription endpoints
+        //**************************************************
     });
-  },
-
-  direct: function() {
-    //summary: responds to rd-protocol-direct topic.
-  },
-
-  group: function() {
-    //summary: responds to rd-protocol-group topic.
-    rd.escapeHtml("Recent group conversations", this.domNode);
-  },
-
-  locationTag: function(/*String*/locationId) {
-    //summary: responds to rd-protocol-locationTag topic.
-    rd.escapeHtml("Folder location: " + locationId, this.domNode);
-  },
-
-  starred: function(/*String*/locationId) {
-    //summary: responds to rd-protocol-starred topic.
-    rd.escapeHtml("Starred Messages (unimplemented)", this.domNode);
-  },
-
-  sent: function(/*String*/locationId) {
-    //summary: responds to rd-protocol-sent topic.
-    rd.escapeHtml("Sent Messages", this.domNode);
-  }
-  //**************************************************
-  //end topic subscription endpoints
-  //**************************************************
 });

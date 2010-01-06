@@ -21,90 +21,100 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ReplyForward");
+/*jslint nomen: false, plusplus: false */
+/*global run: false, setTimeout: false */
+"use strict";
 
-dojo.require("dijit.form.Textarea");
-dojo.require("rdw.QuickCompose");
+run("rdw/ReplyForward",
+["rd", "dojo", "rdw/QuickCompose", "dijit/form/Textarea"],
+function (rd, dojo, QuickCompose, Textarea) {
 
-dojo.declare("rdw.ReplyForward", [rdw.QuickCompose], {
-  //Valid replyTypes: "reply" and "forward"
-  replyType: "reply",
+    return dojo.declare("rdw.ReplyForward", [QuickCompose], {
+        //Valid replyTypes: "reply" and "forward"
+        replyType: "reply",
+    
+        //Owner widget that is showing this instance.
+        //Used to tell owner if we destroy ourselves.
+        owner: null,
 
-  //Owner widget that is showing this instance.
-  //Used to tell owner if we destroy ourselves.
-  owner: null,
+        /**
+         * Dijit lifecycle method, before template generated
+         */
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+            this.sendButtonText = this.i18n[this.replyType];
+        },
 
-  postMixInProperties: function() {
-    //summary: dijit lifecycle method.
-    this.inherited("postMixInProperties", arguments);
-    this.sendButtonText = this.i18n[this.replyType];
-  },
+        /** Dijit lifecycle method, after template in DOM */
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+    
+            //Add an extra class for specific styling as well as a class name
+            //to identify the widget.
+            dojo.addClass(this.domNode, "rdwReplyForward");
+            dojo.addClass(this.domNode, this.replyType);
+    
+            //Make the textarea expand to fit its content.
+            this.textArea = this.addSupporting(new Textarea({}, this.textAreaNode));
+            this.textAreaNode = this.textArea.domNode;
+        },
 
-  postCreate: function() {
-    //summary: dijit lifecycle method.
-    this.inherited("postCreate", arguments);
+        /**
+         * Override of QuickCompose method. Set the to, subject and
+         * body appropriately here.
+         * @param {String} sender
+         */
+        updateFields: function (sender) {
+            this.inherited("updateFields", arguments);
+    
+            var body = this.msg.schemas["rd.msg.body"], subject;
+    
+            //Set To field
+            this.defaultFromAddr = body.from[1];
+    
+            //Set Subject
+            subject = body.subject;
+            if (subject) {
+                subject = this.i18n[this.replyType + "SubjectPrefix"] + subject;
+            } else {
+                dojo.style(this.subjectInputNode, "display", "none");
+            }
+            rd.escapeHtml(subject || "", this.subjectInputNode);
+        
+            //Set body.
+            //TODO: this is really hacky. Need a nice, localized time with
+            //the person's name, better quoting, etc... the \n\n is bad too.
+            //this.textAreaNode.value = body.body.replace(/^/g, "> ").replace(/\n/g, "\n> ") + "\n\n";
+            //For now just set to empty for quick reply, but probably need quoting for full message view.
+            this.textAreaNode.value = "";
+            setTimeout(dojo.hitch(this, function () {
+                this.onFocusTextArea();
+                this.textAreaNode.focus();
+            }));
+    
+            //TODO: do we need to store mail headers in the outgoing document to get
+            //replies to thread correctly in other email clients?
+        },
 
-    //Add an extra class for specific styling as well as a class name
-    //to identify the widget.
-    dojo.addClass(this.domNode, "rdwReplyForward");
-    dojo.addClass(this.domNode, this.replyType);
+        /** Override of QuickCompose, so the to can be preset. */
+        initToSelector: function () {
+            this.inherited("initToSelector", arguments);
+            this.toSelectorWidget.attr("value", this.defaultFromAddr);
+        },
 
-    //Make the textarea expand to fit its content.
-    this.textArea = this.addSupporting(new dijit.form.Textarea({}, this.textAreaNode));
-    this.textAreaNode = this.textArea.domNode;
-  },
-
-  updateFields: function(/*String*/sender) {
-    //summary: override of QuickCompose method. Set the to, subject and
-    //body appropriately here.
-    this.inherited("updateFields", arguments);
-
-    var body = this.msg.schemas["rd.msg.body"];
-
-    //Set To field
-    this.defaultFromAddr = body.from[1];
-
-    //Set Subject
-    var subject = body.subject;
-    if (subject) {
-      subject = this.i18n[this.replyType + "SubjectPrefix"] + subject;
-    } else {
-      dojo.style(this.subjectInputNode, "display", "none");
-    }
-    rd.escapeHtml(subject || "", this.subjectInputNode);
-  
-    //Set body.
-    //TODO: this is really hacky. Need a nice, localized time with
-    //the person's name, better quoting, etc... the \n\n is bad too.
-    //this.textAreaNode.value = body.body.replace(/^/g, "> ").replace(/\n/g, "\n> ") + "\n\n";
-    //For now just set to empty for quick reply, but probably need quoting for full message view.
-    this.textAreaNode.value = "";
-    setTimeout(dojo.hitch(this, function() {
-      this.onFocusTextArea();
-      this.textAreaNode.focus();
-    }));
-
-    //TODO: do we need to store mail headers in the outgoing document to get
-    //replies to thread correctly in other email clients?
-  },
-
-  initToSelector: function() {
-    //summary: override of QuickCompose, so the to can be preset.
-    this.inherited("initToSelector", arguments);
-    this.toSelectorWidget.attr("value", this.defaultFromAddr);
-  },
-
-  onCloseClick: function(evt) {
-    //summary: handles clicks to close icon, destroying this widget.
-
-    //Tell cooperating widget so this widget is displayed properly.
-    if (this.owner) {
-      this.owner.responseClosed();
-    }
-
-    this.destroy();
-
-    dojo.stopEvent(evt);
-  }
+        /**
+         * Handles clicks to close icon, destroying this widget.
+         * @param {Event} evt
+         */
+        onCloseClick: function (evt) {
+            //Tell cooperating widget so this widget is displayed properly.
+            if (this.owner) {
+                this.owner.responseClosed();
+            }
+    
+            this.destroy();
+    
+            dojo.stopEvent(evt);
+        }
+    });
 });
-
