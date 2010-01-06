@@ -32,18 +32,17 @@ dojo.declare("rdw.ext.mailingList.GroupMessage", [rdw.Message], {
     this.inherited("postMixInProperties", arguments);
     this.convoFromDisplay = this.msg.convoFromDisplay.join(", ");
     this.unreadDisplay = "";
-    if (this.msg.convoUnreadCount) {
+    if (this.msg.convoUnreadCount && this.msg.convoUnreadCount > 1) {
       this.unreadDisplay = rd.template(this.i18n.newCount, {
         count: this.msg.convoUnreadCount
       });
+    } else {
+      // in the future we should add a friendly date as there is only one new
+      // message that has arrived in this conversation
     }
   },
   
   postCreate: function() {
     this.inherited("postCreate", arguments);
-    if (!this.msg.convoUnreadCount) {
-      this.unreadCountNode.style.display = "none";
-      this.separatorNode.style.display = "none";
-    }
   }
 });

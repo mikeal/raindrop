@@ -270,3 +270,15 @@
 .rdwWidgets.start .rdwMessage > .message > .unreadCount {
   font-weight: bold;
 }
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:empty {
+  display: none;
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:after {
+  content: " - ";
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:empty:after {
+  content: "";
+}
