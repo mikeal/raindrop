@@ -23,6 +23,7 @@
 
 .rdwMessage > .message > .content > .username[type='twitter'] {
   font-weight: bold;
+  color: #ff5959;
 }
 .rdwMessage > .message > .content > .tag[type='twitter'] {
 
