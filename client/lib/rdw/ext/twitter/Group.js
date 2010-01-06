@@ -52,7 +52,7 @@ dojo.declare("rdw.ext.twitter.Group", [rdw.Conversation, rdw.fx.wiper], {
   /**
    * The limit of tweets to use.
    */
-  unreadReplyLimit: 1,
+  unreadReplyLimit: 2,
 
   /**
    * Do not format messages greater than the first one as replies

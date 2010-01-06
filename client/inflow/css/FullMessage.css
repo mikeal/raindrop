@@ -24,6 +24,9 @@
 .rdwConversationFullMessage {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
   border: 1px solid #e6e6e6;
   background-color: #fff;
   margin: 0 0 20px 0;
