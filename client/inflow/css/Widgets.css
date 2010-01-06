@@ -120,6 +120,7 @@
   background-repeat: no-repeat;
   background-position: right;
   padding-right: 24px;
+  display: none;
 }
 
 .WidgetBox > .WidgetHeader > .actions > .broadcastCount {
