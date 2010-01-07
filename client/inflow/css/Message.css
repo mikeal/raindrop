@@ -148,24 +148,21 @@
 
 /* ### ATTACHMENTS ### */
 .rdwConversation .rdwMessage .message .attachments {
-  margin: 24px -2px 10px 10px;
+  margin: 24px 5px 10px;
   padding: 8px 5px;
-  background-color: #fff;
-  -moz-box-shadow: 0px 1px 2px #c0c0c0;
-  -webkit-box-shadow: 0px 1px 2px #c0c0c0;
-  border-top: 1px solid #e1e1e1;
   display: inherit;
   position: relative;
-  background-image: url("../i/new/rd_message_bg.png");
-  background-repeat: repeat-x;
+  -moz-border-image: url("../i/new/rd_attachments_bg.png") 3 6 2 2;
+  -webkit-border-image: url("../i/new/rd_attachments_bg.png") 3 6 2 2;
+  border-width: 3px 6px 2px 2px;
 }
 
 .rdwConversation .rdwMessage.reply .message .attachments {
-  margin: 24px -2px 10px 5px;
+  margin: 24px 5px 10px;
 }
  
 .rdwExtTwitterConversation .rdwMessage .message .attachments {
-  margin: 24px .5px 10px 0;
+  margin: 24px 5px 10px 0;
 }
 
 .rdwConversation .rdwMessage .message .attachments:empty {
