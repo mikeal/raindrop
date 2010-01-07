@@ -174,4 +174,6 @@ function (run, dojo, dijit, rd, parser) {
             }
         });
     });
+    
+    return inflow;
 });

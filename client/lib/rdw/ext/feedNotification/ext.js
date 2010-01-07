@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/feedNotification/ext",
+run.modify("rdw/Widgets", "rdw/ext/feedNotification/ext",
 ["rd", "rdw/Widgets", "rdw/ext/feedNotification/Group"],
 function (rd, Widgets, Group) {
 

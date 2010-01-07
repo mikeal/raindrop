@@ -331,9 +331,9 @@ function (rd, dojo, api) {
          */
         identity: function (args) {
             if (args && args.ids) {
-                api.identity._identity(this._deferred, args, args.ids);
+                identity._identity(this._deferred, args, args.ids);
             } else {
-                this.addParentCallback(dojo.hitch(api.identity, "_identity", this._deferred, args));
+                this.addParentCallback(dojo.hitch(identity, "_identity", this._deferred, args));
             }
             return this;
         },

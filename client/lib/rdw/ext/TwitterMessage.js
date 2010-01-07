@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/TwitterMessage",
+run.modify("rdw/Message", "rdw/ext/TwitterMessage",
 ["rd", "dojo", "rdw/Message", "rd/hyperlink"],
 function (rd, dojo, Message, hyperlink) {
 
