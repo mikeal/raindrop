@@ -32,7 +32,7 @@ function (run, dojo, dijit, dojox) {
     /*
     This file provides some basic environment services running in raindrop.
     */
-    
+
     //Delegate to native JSON parsing where available.
     if (typeof JSON !== "undefined" && JSON.parse) {
         dojo.fromJson = function (text) {
@@ -82,7 +82,7 @@ function (run, dojo, dijit, dojox) {
         extSubs = {}, subObj,
         extSubHandles = {},
         empty = {},
-        topic, ext, reqExts, requireOld;
+        topic, ext, reqExts, reqExt, prop, modifier;
 
     dojo.mixin(rd, {
         //Set path to the raindrop database
@@ -257,7 +257,6 @@ function (run, dojo, dijit, dojox) {
             //summary: 
             var url = run.nameToUrl(modulePath, ".css"), link;
             //Adjust URL a bit so we get dojo.require-like behavior
-            url = url.substring(0, url.length - 1) + ".css";
             link = dojo.create("link", {
                 type: "text/css",
                 rel: "stylesheet",
@@ -727,24 +726,25 @@ function (run, dojo, dijit, dojox) {
         }
     }
 
-    //Change dojo.require to load modules that want to extend
-    //the targeted modules
-    //TODORUN: switch to run.modify?
+    //Call run.modify to set up all extensions that might alter some other code.
     reqExts = run.config.rd.exts;
-    requireOld = dojo.require;
-    dojo.require = function (resourceName) {
-        //Ask the extensions to be loaded.
-        var exts = reqExts[resourceName], i, ret;
-        if (exts) {
-            for (i = 0; (ext = exts[i]); i++) {
-                dojo["require"](ext);
+    
+    if (reqExts) {
+        for (i = 0; (reqExt = reqExts[i]); i++) {
+            for (prop in reqExt) {
+                //TODO: take out the dot indexOf check some time down the road,
+                //just leaving it in there for now so we do not register old
+                //ui extension schema data (so people do not have to dump their
+                //DB right away). Just keep it in for a while until everyone has
+                //had a chance to delete their DB for other reasons.
+                if (!(prop in empty) && prop.indexOf(".") === -1) {
+                    modifier = {};
+                    modifier[prop] = reqExt[prop];
+                    run.modify(modifier);
+                }
             }
         }
-
-        //Do the normal dojo.require work.
-        ret = requireOld.apply(dojo, arguments);
-        return ret;
-    };
+    }
 
     run.ready(function () {
         //Register an onclick handler on the body to handle "#rd:" protocol URLs.

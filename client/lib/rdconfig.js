@@ -56,7 +56,7 @@
     dojoPrefix = prefix + "../dojo/";
 
     djConfig = {
-        parseOnLoad: true
+        parseOnLoad: false
     };
 
     run = {

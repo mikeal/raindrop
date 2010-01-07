@@ -87,7 +87,7 @@ function (rd, dojo, api, identity) {
          * Retrieves identities associated with current user account.
          */
         me: function () {
-            api.me._load(this._deferred);
+            me._load(this._deferred);
             return this;
         }
     });

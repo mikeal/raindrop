@@ -96,8 +96,8 @@ function (rd, dojo) {
        *
        * @param {String} funcName the function on obj that does the real work.
        *
-       *    @param {String|Array} argProp: the property on the args object that
-       *    qualifies for calling the function specified via funcName.
+       * @param {String|Array} argProp: the property on the args object that
+       * qualifies for calling the function specified via funcName.
        */
       addMethod: function(chainName, obj, funcName, argProp) {
           var o = {};

@@ -26,7 +26,7 @@
 "use strict";
 
 run("rdw/DataSelector",
-["run", "rd", "dojo", "dojo.DeferredList", "rdw/_Base", "rd.MegaviewStore"],
+["run", "rd", "dojo", "dojo/DeferredList", "rdw/_Base", "rd/MegaviewStore"],
 function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
 
     return dojo.declare("rdw.DataSelector", [Base], {

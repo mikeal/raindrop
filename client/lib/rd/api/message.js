@@ -339,7 +339,7 @@ function (rd, dojo, api, identity) {
         }
     };
     
-    dojo._mixin(api.message, {
+    dojo._mixin(message, {
         _seen: dojo.hitch(message, "_schemaTrue", "rd.msg.seen", "seen", null),
         _archive: dojo.hitch(message, "_schemaTrue", "rd.msg.archived", "archived", function (dfd, args, ids) {
             api().seen({
@@ -348,7 +348,7 @@ function (rd, dojo, api, identity) {
             .ok(dfd)
             .error(dfd);
         }),
-        _del: dojo.hitch(api.message, "_schemaTrue", "rd.msg.deleted", "deleted", null)
+        _del: dojo.hitch(message, "_schemaTrue", "rd.msg.deleted", "deleted", null)
     });
     
     api.extend({

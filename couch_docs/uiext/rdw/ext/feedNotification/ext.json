@@ -2,7 +2,7 @@
   "schemas" : {
     "rd.ext.uiext" : {
       "exts": {
-        "inflow": "rdw.ext.metrics"
+        "rdw/Conversations": "rdw/ext/feedNotification/ext"
       }
     }
   }

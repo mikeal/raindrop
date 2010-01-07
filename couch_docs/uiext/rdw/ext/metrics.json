@@ -1,9 +1,8 @@
 {
   "schemas" : {
     "rd.ext.uiext" : {
-      "disabled": true,
       "exts": {
-        "rdw.Message": "rdw.ext.MessageDebug"
+        "inflow": "rdw/ext/metrics"
       }
     }
   }

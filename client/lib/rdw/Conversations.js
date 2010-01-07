@@ -141,7 +141,8 @@ function (run, rd, dojo, dijit, Base, Conversation, FullConversation, Summary, a
         },
     
         destroyIgnore: {
-            "rdw/Summary": 1
+            "rdw/Summary": 1,
+            "rdw.Summary": 1
         },
     
         //elements to ignore for click selection.

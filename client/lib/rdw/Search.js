@@ -30,6 +30,8 @@ run("rdw/Search",
  "text!rdw/templates/Search!html"],
 function (rd, dojo, Base, DataSelector, api, pref, template) {
 
+console.log("@@@@@@@@@@@@@@@@@SEARCH IS NOW DEFINED");
+
     return dojo.declare("rdw.Search", [Base], {
         templateString: template,
         widgetsInTemplate: true,

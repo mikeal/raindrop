@@ -36,7 +36,7 @@ function (run, rd, dojo, DeferredList, api) {
     //Should _items be placed on the Request object? How does that work
     //for fetchByIdentity?
 
-    var MegaviewStore = dojo.declare({
+    var MegaviewStore = dojo.declare("rd.MegaviewStore", null, {
         //The types of schema queries to perform. Assumes there is a xQuery
         //method defined on an instance of this store for each type. So if
         //"contact" is in schemaQueryTypes, then there should be a contactQuery

@@ -28,6 +28,7 @@
 run("inflow",
 [
     "run", "dojo", "dijit", "rd",
+    "dojo/parser",
     "dijit/Dialog",
     "rd/onHashChange",
     "rdw/Loading",
@@ -41,7 +42,7 @@ run("inflow",
     "rd/engine",
     "rd/conversation"
 ],
-function (run, dojo, dijit, rd) {
+function (run, dojo, dijit, rd, parser) {
     var inflow = {};
 
     dojo.mixin(inflow, {
@@ -118,52 +119,61 @@ function (run, dojo, dijit, rd) {
 
     //Do onload work that shows the initial display.
     run.ready(function () {
-        //inflow.hideQuickCompose();
+        console.log("INFLOW GOT READY CALLBACK!");
 
-        //Trigger the first list of items to show. Favor a fragment ID on the URL.
-        var fragId = location.href.split("#")[1], autoSync = 0,
-            args = location.href.split("#")[0].split("?")[1];
-        if (fragId) {
-            rd.dispatchFragId(fragId);
-        } else {
-            rd.pub("rd-protocol-home");
-        }
+        //Start page parsing of widgets.
+        parser.parse();
 
-        //Listen for hash changes but only if the hash value is empty,
-        //which means do our default action (view home)
-        rd.sub("rd/onHashChange", function (val) {
-            if (!val) {
+        //In case parsing triggered loading of other widgets, wait for other widgets
+        //to be defined before triggering the rest of this work.
+        run(function () {
+            //inflow.hideQuickCompose();
+
+            //Trigger the first list of items to show. Favor a fragment ID on the URL.
+            var fragId = location.href.split("#")[1], autoSync = 0,
+                args = location.href.split("#")[0].split("?")[1];
+            if (fragId) {
+                rd.dispatchFragId(fragId);
+            } else {
                 rd.pub("rd-protocol-home");
             }
-        });
-
-        //Listen for completion for the addAccount frame.
-        window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
-
-        //Listen for quick compose open calls        
-        //dojo.query(".quickComposeLaunch").onclick(function(evt) {
-        //    inflow.showQuickCompose();
-        //    dojo.stopEvent(evt);
-        //})
-
-        //Listen for quick compose close calls.
-        //rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
-
-        //Start up the autosyncing if desired, time is in seconds.
-        if (args) {
-            args = dojo.queryToObject(args);
-            if (args.autosync) {
-                if (args.autosync === "off") {
-                    autoSync = 0;
-                } else {
-                    autoSync = parseInt(args.autosync, 10);
+    
+            //Listen for hash changes but only if the hash value is empty,
+            //which means do our default action (view home)
+            rd.sub("rd/onHashChange", function (val) {
+                if (!val) {
+                    rd.pub("rd-protocol-home");
+                }
+            });
+    
+            //Listen for completion for the addAccount frame.
+            window.addEventListener("message", dojo.hitch(inflow, "onAccountFrameMessage"), false);
+    
+            //Listen for quick compose open calls        
+            //dojo.query(".quickComposeLaunch").onclick(function(evt) {
+            //    inflow.showQuickCompose();
+            //    dojo.stopEvent(evt);
+            //})
+    
+            //Listen for quick compose close calls.
+            //rd.sub("rd-QuickCompose-closed", inflow, "hideQuickCompose");
+    
+            //Start up the autosyncing if desired, time is in seconds.
+            if (args) {
+                args = dojo.queryToObject(args);
+                if (args.autosync) {
+                    if (args.autosync === "off") {
+                        autoSync = 0;
+                    } else {
+                        autoSync = parseInt(args.autosync, 10);
+                    }
                 }
             }
-        }
-
-        //watch for auto sync
-        if (autoSync) {
-            rd.engine.autoSync(autoSync);
-        }
+    
+            //watch for auto sync
+            if (autoSync) {
+                rd.engine.autoSync(autoSync);
+            }
+        });
     });
 });

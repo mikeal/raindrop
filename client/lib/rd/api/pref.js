@@ -148,7 +148,21 @@ function (rd, dojo, api) {
     });
     
     //Add pref to rd.api.
-    api.addMethod("pref", api, "pref", "id");
+    api.extend({
+        /**
+         * @lends rd.api
+         * Sets or gets a pref schema. It will use the previous call's results,
+         * or, optionally pass an args.id which is pref schema ID.
+         */
+        pref: function (args) {
+            if (args && args.id) {
+                pref(this._deferred, args, args.id);
+            } else {
+                this.addParentCallback(dojo.hitch(null, pref, this._deferred, args));
+            }
+            return this;
+        }
+    });
 
     return pref;
 });

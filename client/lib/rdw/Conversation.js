@@ -108,7 +108,7 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
                     //Dynamically load the module that will handle
                     //the Reply/Forward action.
                     module = this[href + "Widget"];
-                    run([module], function (Ctor) {
+                    run([module], dojo.hitch(this, function (Ctor) {
                         //If we have an existing response widget, despose of it properly.
                         if (this.responseWidget) {
                             this.removeSupporting(this.responseWidget);
@@ -126,7 +126,7 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
 
                         //Put the response widget in the toolDisplay
                         this.responseWidget.placeAt(this.toolDisplayNode);
-                    });
+                    }));
                     evt.preventDefault();
                 } else if (href === "archive" || href === "delete" || href === "spam") {
                     rd.pub("rdw/Conversation/" + href, this, this.conversation);
@@ -224,7 +224,7 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
     
             //Create the messages, first by loading the module responsible for showing
             //them.
-            run([this.messageCtorName], function (Ctor) {
+            run([this.messageCtorName], dojo.hitch(this, function (Ctor) {
                 //Set the limit to fetch. Always show the first message, that is why there is
                 //a -1 for the this.conversation.messages.length branch.
                 var limit = this.msgs.length,
@@ -290,7 +290,7 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
                         dojo.place(html, lastWidget.actionsNode, 2);
                     }
                 }
-            });
+            }));
         },
 
         /**

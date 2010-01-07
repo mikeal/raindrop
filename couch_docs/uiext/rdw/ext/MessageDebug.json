@@ -1,8 +1,9 @@
 {
   "schemas" : {
     "rd.ext.uiext" : {
+      "disabled": true,
       "exts": {
-        "rdw.Widgets": "rdw.ext.facebook.ext"
+        "rdw/Message": "rdw/ext/MessageDebug"
       }
     }
   }
