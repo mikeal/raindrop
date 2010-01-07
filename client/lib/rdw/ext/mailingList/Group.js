@@ -157,6 +157,6 @@ dojo.declare("rdw.ext.mailingList.Group", [rdw.Conversation, rdw.fx.wiper], {
 
     //Update the title.
     rd.escapeHtml(this.listName, this.nameNode, "only");
-    dojo.attr(this.nameNode, "href", "#rd:mailingList:" + encodeURIComponent(this.listId));
+    dojo.attr(this.nameNode, "href", "#rd:mailingList:" + (this.listId));
   }
 });
