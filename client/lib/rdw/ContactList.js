@@ -26,8 +26,8 @@
 "use strict";
 
 run("rdw/ContactList",
-["rd", "dojo", "dijit", "dojo.string", "dojo/dnd/Source", "rdw/_Base", "rd/contact"],
-function (rd, dojo, dijit, string, Source, Base, contact) {
+["run", "rd", "dojo", "dijit", "dojo.string", "dojo/dnd/Source", "rdw/_Base", "rd/contact"],
+function (run, rd, dojo, dijit, string, Source, Base, contact) {
 
     return dojo.declare("rdw.ContactList", [Base], {
         //Array of contacts to show.

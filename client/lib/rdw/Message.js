@@ -26,9 +26,9 @@
 "use strict";
 
 run("rdw/Message",
-["rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api",
+["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api",
  "text!rdw/templates/Message!html"],
-function (rd, dojo, Base, friendly, hyperlink, api, template) {
+function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
 
     return dojo.declare("rdw.Message", [Base], {
         //Suggested values for type are "topic" and "reply"

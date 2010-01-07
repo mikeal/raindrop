@@ -102,7 +102,7 @@ run("couch", ["dojo"], function (dojo) {
 
     //First, convert extension string names to actual functions.    
     extensions = dojo.map(extensions, function (extension) {
-      return dojo.getObject(extension);
+      return run.get(extension);
     });
 
     //All extensions must return true for the row to be returned.

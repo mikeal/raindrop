@@ -26,9 +26,12 @@
 "use strict";
 
 run("rdw/Widgets",
-["rd", "dojo", "rdw/_Base", "rd/onHashChange", "rd/api", "rd/api/message",
+["rd", "dojo", "dojox", "rdw/_Base", "rd/onHashChange", "rd/api", "rd/api/message",
  "rdw/conversation/Broadcast", "rdw/SummaryGroup", "dojo/fx", "dojox/fx/scroll"],
-function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, fx, fxScroll) {
+function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryGroup, fx, fxScroll) {
+
+    //Reassign fxScroll to be the real function, that module does something non-standard.
+    fxScroll = dojox.fx.smoothScroll;
 
     return dojo.declare("rdw.Widgets", [Base], {
         //Array of conversations to show.

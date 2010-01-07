@@ -29,10 +29,10 @@ run("rdw/ext/mailingList/ext",
 ["rd", "dojo", "dijit", "rd/conversation", "rd/MegaviewStore", "rdw/DataSelector",
  "rdw/Organizer", "rdw/Summary", "rdw/SummaryGroup", "rdw/Conversations",
  "rdw/Widgets", "rd/tag", "rd/api", "rdw/ext/mailingList/Summary",
- "rdw/ext/mailingList/SummaryGroup"],
+ "rdw/ext/mailingList/SummaryGroup", "rdw/ext/mailingList/Group"],
 function (rd, dojo, dijit, conversation, MegaViewStore, DataSelector, Organizer,
           Summary, SummaryGroup, Conversations, Widgets, tag, api, MlSummary,
-          MlSummaryGroup) {
+          MlSummaryGroup, MlGroup) {
 
     //Allow a "mailingList" method on the rd.conversation data API.
     rd.applyExtension("rdw/ext/mailingList/ext", "rd/conversation", {

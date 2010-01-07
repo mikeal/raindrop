@@ -81,22 +81,6 @@
 
     run.rd.appName = appName;
 
-    //Adjust djConfig.rd.exts to be structured differently.
-    exts = run.rd.exts;
-    if (exts) {
-        extNew = {};
-        empty = {};
-        for (i = 0; (ext = exts[i]); i++) {
-            for (prop in ext) {
-                if (!(prop in empty)) {
-                    extList = extNew[prop] || (extNew[prop] = []);
-                    extList.push(ext[prop]);
-                }
-            }
-        }
-        run.rd.exts = extNew;
-    }
-
     document.write('<script src="' + dojoPrefix + 'dojo.js"></script>' +
                    '<script src="' + prefix + 'jquery-1.3.2.js"></script>' +
                    '<script>run(["rd"]);</script>');

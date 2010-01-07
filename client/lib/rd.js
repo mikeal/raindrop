@@ -531,7 +531,7 @@ function (run, dojo, dijit, dojox) {
          * @param {Object} extension
          */
         applyExtension: function (extName, moduleName, extension) {
-            var module = dojo.getObject(moduleName),
+            var module = run.get(moduleName),
                 extKey = extName + ":" + moduleName,
                 existing = rd._exts[extKey] || {},
                 empty = {},
@@ -737,7 +737,7 @@ function (run, dojo, dijit, dojox) {
                 //ui extension schema data (so people do not have to dump their
                 //DB right away). Just keep it in for a while until everyone has
                 //had a chance to delete their DB for other reasons.
-                if (!(prop in empty) && prop.indexOf(".") === -1) {
+                if (!(prop in empty) && reqExt[prop].indexOf(".") === -1) {
                     modifier = {};
                     modifier[prop] = reqExt[prop];
                     run.modify(modifier);

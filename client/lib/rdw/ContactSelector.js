@@ -26,8 +26,8 @@
 "use strict";
 
 run("rdw/ContactSelector",
-["rd", "dojo", "rdw/_Base", "dojo/string", "rd/contact"],
-function (rd, dojo, Base, string, contact) {
+["run", "rd", "dojo", "rdw/_Base", "dojo/string", "rd/contact"],
+function (run, rd, dojo, Base, string, contact) {
 
     return dojo.declare("rdw.ContactSelector", [Base], {
         templateString: '<div class="rdwContactSelector" dojoAttachEvent="onclick: onClick">' +

@@ -119,8 +119,6 @@ function (run, dojo, dijit, rd, parser) {
 
     //Do onload work that shows the initial display.
     run.ready(function () {
-        console.log("INFLOW GOT READY CALLBACK!");
-
         //Start page parsing of widgets.
         parser.parse();
 

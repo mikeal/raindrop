@@ -26,8 +26,8 @@
 "use strict";
 
 run("rdw/ext/twitter/Message",
-["rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
-function (rd, dojo, Message, contact, template) {
+["run", "rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
+function (run, rd, dojo, Message, contact, template) {
 
     return dojo.declare("rdw.ext.twitter.Message", [Message], {
         templateString: template,
