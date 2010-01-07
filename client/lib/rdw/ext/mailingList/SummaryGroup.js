@@ -58,7 +58,9 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
 
     //Archive is not a required field, check for it
     if (doc.archive && doc.archive.http) {
-        this.archiveHttpNode.href = doc.archive.http;
+      this.archiveHttpNode.href = doc.archive.http;
+    } else {
+      this.archiveNode.style.display = "none";
     }
 
     //Post is not a required field and is often only an email
@@ -72,6 +74,8 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
         this.postEmailNode.href = doc.post.mailto;
       else
         this.postEmailNode.style.display = "none";
+    } else {
+      this.postNode.style.display = "none";
     }
 
     //Help is not a required field, check for it
@@ -85,6 +89,8 @@ dojo.declare("rdw.ext.mailingList.SummaryGroup", [rdw._Base], {
         this.helpEmailNode.href = doc.help.mailto;
       else
         this.helpEmailNode.style.display = "none";
+    } else {
+        this.helpNode.style.display = "none";
     }
 
     // TODO: make this localizable.
