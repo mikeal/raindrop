@@ -48,10 +48,10 @@
 
 .rdwConversationsSwipe.conversation {
   background-image: url("../i/swipe_right.png");
-  display: block;
+  display: none;
 }
 
 .rdwConversationsSwipe.summary {
   background-image: url("../i/swipe_left.png");
-  display: block;
+  display: none;
 }
