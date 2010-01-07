@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body.quoted.hyperlinks"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Uses the flickr REST API to get additional meta data on flickr URLs."
+    }
+  }
+}
