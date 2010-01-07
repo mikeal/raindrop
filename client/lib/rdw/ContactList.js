@@ -50,7 +50,7 @@ function (rd, dojo, dijit, string, Source, Base, contact) {
                           '    </ul>' +
                           '</li>',
     
-        blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
+        blankImgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
 
         /** dijit lifecycle method, after template inserted in DOM */
         postCreate: function () {

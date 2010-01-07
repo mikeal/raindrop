@@ -21,58 +21,63 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.feedNotification.Group");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.conversation.GenericGroup");
+run("rdw/ext/feedNotification/Group",
+["rd", "dojo", "rdw/conversation/GenericGroup"],
+function (rd, dojo, GenericGroup) {
 
-dojo.declare("rdw.ext.feedNotification.Group", [rdw.conversation.GenericGroup], {
-  /**
-   * The relative importance of this group widget. 0 is most important.
-   */
-  groupSort: 10,
-
-  /**
-   * Holds on to the ID for the feed.
-   */
-  feedId: "",
-
-  /**
-   * pulls the feed ID out of the msg's rss-entry schema.
-   */
-  getFeedId: function(msg) {
-    return msg.schemas["rd.msg.rss-feed"] && msg.schemas["rd.msg.rss-feed"].feed_id;
-  },
-
-  /**
-   * Determines if conversation is supported.
-   *
-   * @param conversation {object} the conversation API object
-   */
-  canHandle: function(conversation) {
-    var feedId = this.getFeedId(conversation.messages[0]);
-    return (feedId && !this.feedId) || (this.feedId == feedId);
-  },
-
-  postMixInProperties: function() {
-    this.inherited("postMixInProperties", arguments);
-    if (this.conversation) {
-      var msg = this.conversation.messages[0];
-      this.setTitle(msg);
-      if (!this.feedId) {
-        this.feedId = this.getFeedId(msg);
-      }
-    }
-  },
-
-  /**
-   * Sets the title given a message.
-   *
-   * @param {Object} msg the messsage object.
-   */
-  setTitle: function(msg) {
-    var schema = msg && msg.schemas["rd.msg.rss-feed"];
-    if (schema) {
-      this.groupTitle = schema.title || "";
-    }
-  }
+    return dojo.declare("rdw/ext/feedNotification/Group", [GenericGroup], {
+        /**
+         * The relative importance of this group widget. 0 is most important.
+         */
+        groupSort: 10,
+    
+        /**
+         * Holds on to the ID for the feed.
+         */
+        feedId: "",
+    
+        /**
+         * pulls the feed ID out of the msg's rss-entry schema.
+         */
+        getFeedId: function (msg) {
+            return msg.schemas["rd.msg.rss-feed"] && msg.schemas["rd.msg.rss-feed"].feed_id;
+        },
+    
+        /**
+         * Determines if conversation is supported.
+         *
+         * @param conversation {object} the conversation API object
+         */
+        canHandle: function (conversation) {
+            var feedId = this.getFeedId(conversation.messages[0]);
+            return (feedId && !this.feedId) || (this.feedId === feedId);
+        },
+    
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+            if (this.conversation) {
+                var msg = this.conversation.messages[0];
+                this.setTitle(msg);
+                if (!this.feedId) {
+                    this.feedId = this.getFeedId(msg);
+                }
+            }
+        },
+    
+        /**
+         * Sets the title given a message.
+         *
+         * @param {Object} msg the messsage object.
+         */
+        setTitle: function (msg) {
+            var schema = msg && msg.schemas["rd.msg.rss-feed"];
+            if (schema) {
+                this.groupTitle = schema.title || "";
+            }
+        }
+    });
 });

@@ -21,16 +21,20 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.facebook.ext");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Widgets");
-dojo.require("rdw.ext.facebook.Group");
+run("rdw/ext/facebook/ext",
+["rd", "rdw/Widgets", "rdw/ext/facebook/Group"],
+function (rd, Widgets, Group) {
 
-//Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.facebook.ext", "rdw.Widgets", {
-  addToPrototype: {
-    convoModules: [
-      "rdw.ext.facebook.Group"
-    ]
-  }
+    //Modify rdw/Widgets to allow showing mailing lists.
+    rd.applyExtension("rdw/ext/facebook/ext", "rdw/Widgets", {
+        addToPrototype: {
+            convoModules: [
+                "rdw/ext/facebook/Group"
+            ]
+        }
+    });
 });

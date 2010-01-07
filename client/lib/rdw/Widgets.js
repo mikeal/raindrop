@@ -22,7 +22,7 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false */
+/*global run: false, setTimeout: false */
 "use strict";
 
 run("rdw/Widgets",
@@ -71,12 +71,12 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
          */
         transition: function (viewType) {
             //If showing another summary type, then clear out the saved summary
-            if (!this.viewType || viewType == this.viewType && viewType == "summary") {
+            if (!this.viewType || viewType === this.viewType && viewType === "summary") {
                 this.summaryScrollHeight = 0;
             }
     
             //If transitioning away from summary, hold on to old activeNode
-            if (viewType == "summary") {
+            if (viewType === "summary") {
                 if (this.summaryActiveNode) {
                     this._setActiveNode(this.summaryActiveNode, "summary", true);
                 }
@@ -89,12 +89,11 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
                 //Set the view type so next calls know the type.
                 this.viewType = viewType;
                 this._postRender = true;
-                console.log("transition: end, no animation.");
                 this.checkTransitionEnd();
                 return;
             }
     
-            if (this.viewType == viewType) {
+            if (this.viewType === viewType) {
                 this.checkTransitionEnd();
             } else {
                 if (!this.switchNode) {
@@ -106,124 +105,124 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
     
                 //Do the transition in a timeout, to give the DOM a chance to render,
                 //so DOM rendering work is not happening while the transition is going.
-                setTimeout(dojo.hitch(this, function() {
-                        //For summary view going to conversation view, remember the vertical scroll
-                        //to restore it when switching back.
-                        if (this.viewType != "conversation") {
-                            this.summaryScrollHeight = dojo.global.scrollY;
-                        }
-    
-                        //Create a div used for scrolling.
-                        if (!this._scrollNode) {
-                            this._scrollNode = dojo.create("div", { "class": "scrollArea"});
-                        }
-            
-                        //Fix the widths of divs for the scroll effect to work.
-                        var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth,
-                            oldDomNodeWidth = this.domNode.style.width,
-                            oldListNodeWidth, oldConvoNodeWidth, x, scrollHorizAnim,
-                            scrollHeight, position, scrollVertAnim, chain;
-                        this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
-                        oldListNodeWidth = this.listNode.style.width;
-                        this.listNode.style.width = newDomNodeWidth + "px";
-                        oldConvoNodeWidth = this.convoNode.style.width;
-                        this.convoNode.style.width = newDomNodeWidth + "px";
-         
-                        //Use the scrollNode as the parent, to make things easy to scroll.
-                        this._scrollNode.appendChild(this.listNode);
-                        this._scrollNode.appendChild(this.convoNode);
-                        this.domNode.appendChild(this._scrollNode);
-             
-                        //Make sure both lists are visible.
-                        this.listNode.style.display = "";
-                        this.convoNode.style.display = "";
-            
-                        if (viewType == "conversation") {
-                            this.domNode.scrollLeft = 0;
-                            x = newDomNodeWidth;
-                        } else {
-                            this.domNode.scrollLeft = newDomNodeWidth;
-                            x = 0;
-                        }
+                setTimeout(dojo.hitch(this, function () {
+                    //For summary view going to conversation view, remember the vertical scroll
+                    //to restore it when switching back.
+                    if (this.viewType !== "conversation") {
+                        this.summaryScrollHeight = dojo.global.scrollY;
+                    }
+
+                    //Create a div used for scrolling.
+                    if (!this._scrollNode) {
+                        this._scrollNode = dojo.create("div", { "class": "scrollArea"});
+                    }
         
-                        //Create the args for the scroll over effect.
-                        scrollHorizAnim = fxScroll({
-                            win: this.domNode,
-                            target: { x: x, y: 0},
+                    //Fix the widths of divs for the scroll effect to work.
+                    var newDomNodeWidth, newListNodeWidth, newConvoNodeWidth,
+                        oldDomNodeWidth = this.domNode.style.width,
+                        oldListNodeWidth, oldConvoNodeWidth, x, scrollHorizAnim,
+                        scrollHeight, position, scrollVertAnim, chain;
+                    this.domNode.style.width = (newDomNodeWidth = dojo.marginBox(this.domNode).w) + "px";
+                    oldListNodeWidth = this.listNode.style.width;
+                    this.listNode.style.width = newDomNodeWidth + "px";
+                    oldConvoNodeWidth = this.convoNode.style.width;
+                    this.convoNode.style.width = newDomNodeWidth + "px";
+     
+                    //Use the scrollNode as the parent, to make things easy to scroll.
+                    this._scrollNode.appendChild(this.listNode);
+                    this._scrollNode.appendChild(this.convoNode);
+                    this.domNode.appendChild(this._scrollNode);
+         
+                    //Make sure both lists are visible.
+                    this.listNode.style.display = "";
+                    this.convoNode.style.display = "";
+        
+                    if (viewType === "conversation") {
+                        this.domNode.scrollLeft = 0;
+                        x = newDomNodeWidth;
+                    } else {
+                        this.domNode.scrollLeft = newDomNodeWidth;
+                        x = 0;
+                    }
+    
+                    //Create the args for the scroll over effect.
+                    scrollHorizAnim = fxScroll({
+                        win: this.domNode,
+                        target: { x: x, y: 0},
+                        easing: this.animEasing,
+                        duration: 600
+                    });
+    
+                    if (viewType === "conversation") {
+                        //Pick a vertical position that is at the top of the Conversations widget,
+                        //if current scroll position is less.
+                        scrollHeight = dojo.global.scrollY;
+                        position = dojo.position(this.domNode, true).y;
+                        if (position < scrollHeight) {
+                            scrollHeight = position;
+                        }
+
+                        //Set up vertical animation.
+                        scrollVertAnim = fxScroll({
+                            win: dojo.global,
+                            target: { x: 0, y: scrollHeight},
                             easing: this.animEasing,
                             duration: 600
                         });
-        
-                        if (viewType == "conversation") {
-                            //Pick a vertical position that is at the top of the Conversations widget,
-                            //if current scroll position is less.
-                            scrollHeight = dojo.global.scrollY;
-                            position = dojo.position(this.domNode, true).y;
-                            if (position < scrollHeight) {
-                                scrollHeight = position;
-                            }
-    
-                            //Set up vertical animation.
-                            scrollVertAnim = fxScroll({
-                                win: dojo.global,
-                                target: { x: 0, y: scrollHeight},
-                                easing: this.animEasing,
-                                duration: 600
-                            });
-    
-                            //Going to conversation. scroll vertical then horizontal.
-                            chain = fx.chain([
-                                scrollHorizAnim,
-                                scrollVertAnim
-                            ]);
+
+                        //Going to conversation. scroll vertical then horizontal.
+                        chain = fx.chain([
+                            scrollHorizAnim,
+                            scrollVertAnim
+                        ]);
+                    } else {
+                        //Set up vertical animation.
+                        scrollVertAnim = fxScroll({
+                            win: dojo.global,
+                            target: { x: 0, y: this.summaryScrollHeight},
+                            easing: this.animEasing,
+                            duration: 600
+                        });
+                        //Going back to summary view. Scroll horizontal, then vertical
+                        chain = fx.chain([
+                            scrollHorizAnim,
+                            scrollVertAnim
+                        ]);
+                    }
+
+                    //Bind to the end of the fx chain, then play the chain.
+                    dojo.connect(chain, "onEnd", dojo.hitch(this, function () {
+                        //Reset the DOM nodes after the animation is done.
+                        //Only show the correct node.
+                        if (viewType === "conversation") {
+                            this.listNode.style.display = "none";
+                            this.convoNode.style.display = "";
                         } else {
-                            //Set up vertical animation.
-                            scrollVertAnim = fxScroll({
-                                win: dojo.global,
-                                target: { x: 0, y: this.summaryScrollHeight},
-                                easing: this.animEasing,
-                                duration: 600
-                            });
-                            //Going back to summary view. Scroll horizontal, then vertical
-                            chain = fx.chain([
-                                scrollHorizAnim,
-                                scrollVertAnim
-                            ]);
+                            this.listNode.style.display = "";
+                            this.convoNode.style.display = "none";
                         }
     
-                        //Bind to the end of the fx chain, then play the chain.
-                        dojo.connect(chain, "onEnd", dojo.hitch(this, function() {
-                            //Reset the DOM nodes after the animation is done.
-                            //Only show the correct node.
-                            if (viewType == "conversation") {
-                                this.listNode.style.display = "none";
-                                this.convoNode.style.display = "";
-                            } else {
-                                this.listNode.style.display = "";
-                                this.convoNode.style.display = "none";
-                            }
-        
-                            //Pull the nodes out scrollNode
-                            this.domNode.removeChild(this._scrollNode);
-                            this.domNode.appendChild(this.listNode);
-                            this.domNode.appendChild(this.convoNode);
-        
-                            //Remove fixed widths on the nodes.
-                            this.domNode.style.width = oldDomNodeWidth;
-                            this.listNode.style.width = oldListNodeWidth;
-                            this.convoNode.style.width = oldConvoNodeWidth;
-                            
-                            //Reset scroll.
-                            this.domNode.scrollLeft = 0;
+                        //Pull the nodes out scrollNode
+                        this.domNode.removeChild(this._scrollNode);
+                        this.domNode.appendChild(this.listNode);
+                        this.domNode.appendChild(this.convoNode);
     
-                            this.onTransitionEnd();
-                        }));
-                        chain.play();
-    
-                        //Set current state of the viewType. Do it here and not in
-                        //onTransitionEnd in case user causes an action before the
-                        //animation is done.
-                        this.viewType = viewType;
+                        //Remove fixed widths on the nodes.
+                        this.domNode.style.width = oldDomNodeWidth;
+                        this.listNode.style.width = oldListNodeWidth;
+                        this.convoNode.style.width = oldConvoNodeWidth;
+                        
+                        //Reset scroll.
+                        this.domNode.scrollLeft = 0;
+
+                        this.onTransitionEnd();
+                    }));
+                    chain.play();
+
+                    //Set current state of the viewType. Do it here and not in
+                    //onTransitionEnd in case user causes an action before the
+                    //animation is done.
+                    this.viewType = viewType;
                 }), 100);
             }
         },
@@ -234,7 +233,7 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
          * @param {Decimal} [n]
          */
         animEasing: function (n) {
-            return (n == 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+            return (n === 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
         },
   
 
@@ -254,7 +253,7 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
             //Hide the swipe indicator
             this.switchNode.className = "rdwConversationsSwipe";
     
-            if (this.viewType == "summary") {
+            if (this.viewType === "summary") {
                 if (this.summaryActiveNode) {
                     this._setActiveNode(this.summaryActiveNode, null, true);
                 }
@@ -276,7 +275,7 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
         /** Checks for an action to run after the end of the transition. */
         checkTransitionEnd: function () {
             if (this.onTransitionEndCallback) {
-                setTimeout(dojo.hitch(this, function() {
+                setTimeout(dojo.hitch(this, function () {
                     this.onTransitionEndCallback();
                     delete this.onTransitionEndCallback;
                 }), 15);
@@ -289,9 +288,9 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
          * refresh the displayed list of items.
          */
         configureFirstActiveItem: function () {
-            this.onTransitionEndCallback = dojo.hitch(this, function() {
+            this.onTransitionEndCallback = dojo.hitch(this, function () {
                 //Select the first element in the list.
-                setTimeout(dojo.hitch(this, function() {
+                setTimeout(dojo.hitch(this, function () {
                     this.onKeyPress({
                         keyCode: this.navKeys.down,
                         forceFirstActiveItem: true,
@@ -342,13 +341,13 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
     
             //First, animate it out.
             node.style.overflow = "hidden";
-            dojo.anim(node, { height: 0}, 800, this.removeAnimEasing, dojo.hitch(this, function() {
+            dojo.anim(node, { height: 0}, 800, this.removeAnimEasing, dojo.hitch(this, function () {
                 //Then destroy it.
                 this.removeSupporting(convoWidget);
                 convoWidget.destroy();
     
                 //select next node. Use a timeout for smoothness.
-                setTimeout(dojo.hitch(this, function() {
+                setTimeout(dojo.hitch(this, function () {
                     if (nextNode) {
                         this._setActiveNode(nextNode);
                     }
@@ -369,11 +368,10 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
     
             if (!this.convoWidgets) {
                 run(this.convoModules, (dojo.hitch(this, function () {
-                    console.log("finished loading group modules.");
                     this.convoWidgets = [];
                     var i, module, mod;
                     for (i = 0; (module = this.convoModules[i]); i++) {
-                        var mod = run.get(module);
+                        mod = run.get(module);
                         this.convoWidgets.push(mod);
                     }
                     this.destroyAllSupporting();
@@ -384,31 +382,29 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
                 this._renderHome();
             }
         },
-    
-        _renderHome: function() {
-            //summary: does the actual display of the home view.
-            console.log("_renderHome start");
+
+        /** Does the actual display of the home view. */
+        _renderHome: function () {
             api({
                 url: 'inflow/conversations/impersonal',
                 limit: this.conversationLimit,
                 message_limit: this.messageLimit 
-            }).ok(this, function(conversations) {
-                console.log("_renderHome conversations received");
+            }).ok(this, function (conversations) {
                 //The home view groups messages by type. So, for each message in each conversation,
                 //figure out where to put it.
                 if (conversations && conversations.length) {
                     this.conversations.push.apply(this.conversations, conversations);
-    
-    
-                    var leftOver = [];
-                    for (var i = 0, convo; convo = conversations[i]; i++) {
+
+                    var leftOver = [], i, convo, Handler, widget,
+                         frag, zIndex, SummaryWidgetCtor, summaryWidget, group;
+                    for (i = 0; (convo = conversations[i]); i++) {
                         //Feed the message to existing created groups.
                         if (!this._groupHandled(convo)) {
                             //Existing group could not handle it, see if there is a new group
                             //handler that can handle it.
-                            var handler = this._getHomeGroup(convo);
-                            if (handler) {
-                                var widget = new handler({
+                            Handler = this._getHomeGroup(convo);
+                            if (Handler) {
+                                widget = new Handler({
                                     conversation: convo,
                                     displayOnCreate: false
                                 }, dojo.create("div"));
@@ -424,26 +420,26 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
                     //If any messsages not handled by a group in a conversation
                     //are left over, create a regular conversation for them.
                     if (leftOver.length) {
-                        for (var i = 0, convo; convo = leftOver[i]; i++) {
-                            var widget = this.createHomeConversation(convo);
+                        for (i = 0; (convo = leftOver[i]); i++) {
+                            widget = this.createHomeConversation(convo);
                             this._groups.push(widget);
                             this.addSupporting(widget);
                         }
                     }
                 }
     
-                this._groups.sort(function(a, b) {
+                this._groups.sort(function (a, b) {
                     var aSort = "groupSort" in a ? a.groupSort : 100,
                             bSort = "groupSort" in b ? b.groupSort : 100;
                     return aSort > bSort;
                 });
     
-                var frag = dojo.doc.createDocumentFragment();
-                var zIndex = this._groups.length;
+                frag = dojo.doc.createDocumentFragment();
+                zIndex = this._groups.length;
     
                 //Create summary group widget and add it first to the fragment.
-                var summaryWidgetCtor = run.get(this.summaryGroupCtorName);
-                var summaryWidget = new summaryWidgetCtor();
+                SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
+                summaryWidget = new SummaryWidgetCtor();
                 //Want summary widget to be the highest, add + 1 since group work
                 //below uses i starting at 0.
                 summaryWidget.domNode.style.zIndex = zIndex + 1;
@@ -451,42 +447,53 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
                 summaryWidget.placeAt(frag);
     
                 //Add all the widgets to the DOM and ask them to display.
-                for (var i = 0, group; group = this._groups[i]; i++) {
+                for (i = 0; (group = this._groups[i]); i++) {
                     group.domNode.style.zIndex = zIndex - i;
                     group.placeAt(frag);
                     group.display();
                 }
-    
+
                 //Inject nodes all at once for best performance.
                 this.domNode.appendChild(frag);
-    
+
                 //Update the state of widgets based on hashchange. Important for
                 //first load of this widget, to account for current page state.
                 this.onHashChange(onHashChange.value);
             });
         },
-    
-        onHashChange: function(hash) {
-            //Just a placeholder function to allow extensions to grab on to it.
+
+        /**
+         * Just a placeholder function to allow extensions to grab on to it.
+         * @param {String} hash
+         */
+        onHashChange: function (hash) {
         },
-    
-        createHomeConversation: function(conversation) {
-            //summary: creates a Conversation widget for the Home view. The Conversation widget
-            //should not display itself immediately since prioritization of the home
-            //widgets still needs to be done. Similarly, it should not try to attach
-            //to the document's DOM yet. Override for more custom behavior/subclasses.
+
+        /**
+         * Creates a Conversation widget for the Home view. The Conversation widget
+         * should not display itself immediately since prioritization of the home
+         * widgets still needs to be done. Similarly, it should not try to attach
+         * to the document's DOM yet. Override for more custom behavior/subclasses.
+         * @param {Object} conversation
+         * @returns {rdw/Conversation} an rdw/Conversation or a subclass of it.
+         */ 
+        createHomeConversation: function (conversation) {
             return new (run.get(this.conversationCtorName))({
                 conversation: conversation,
                 unreadReplyLimit: 1,
                 displayOnCreate: false,
                 allowReplyMessageFocus: false
-            }, dojo.create("div")); //rdw/Conversation
+            }, dojo.create("div"));
         },
-    
-        _groupHandled: function(/*Object*/conversation) {
-            //summary: if a group in the groups array can handle the conversation, give
-            //it to that group and return true.
-            for (var i = 0, group; group = this._groups[i]; i++) {
+
+        /**
+         * If a group in the groups array can handle the conversation, give
+         * it to that group and return true.
+         * @param {Object} conversation
+         * @returns {Boolean}
+         */
+        _groupHandled: function (conversation) {
+            for (var i = 0, group; (group = this._groups[i]); i++) {
                 if (group.canHandle && group.canHandle(conversation)) {
                     group.addConversation(conversation);
                     return true;
@@ -494,10 +501,14 @@ function (rd, dojo, Base, onHashChange, api, message, Broadcast, SummaryGroup, f
             }
             return false;
         },
-    
-        _getHomeGroup: function(/*Object*/conversation) {
-            //summary: determines if there is a home group that can handle the conversation.
-            for (var i = 0, module; module = this.convoWidgets[i]; i++) {
+
+        /**
+         * Determines if there is a home group that can handle the conversation.
+         * @param {Object} conversation
+         * @returns {rdw/Conversation} can return null
+         */
+        _getHomeGroup: function (/*Object*/conversation) {
+            for (var i = 0, module; (module = this.convoWidgets[i]); i++) {
                 if (module.prototype.canHandle(conversation)) {
                     return module;
                 }

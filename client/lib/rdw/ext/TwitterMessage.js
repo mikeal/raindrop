@@ -21,25 +21,27 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.TwitterMessage");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
-dojo.require("rd.hyperlink");
+run("rdw/ext/TwitterMessage",
+["rd", "dojo", "rdw/Message", "rd/hyperlink"],
+function (rd, dojo, Message, hyperlink) {
 
-/*
-  Treat the Twitter messages differently than Email
-*/
+    rd.addStyle("rdw/ext/css/TwitterMessage");
 
-rd.applyExtension("rdw.ext.TwitterMessage", "rdw.Message", {
-  after: {
-    postMixInProperties: function() {
-      var body = this.msg.schemas['rd.msg.body'];
-      if(body.from && body.from[0] == "twitter") {
-        this.message = rd.hyperlink.addTwitterUsers(this.message);
-        this.message = rd.hyperlink.addTwitterTags(this.message);
-      }
-    }
-  }
+    //Treat the Twitter messages differently than Email
+    rd.applyExtension("rdw/ext/TwitterMessage", "rdw/Message", {
+        after: {
+            postMixInProperties: function () {
+                var body = this.msg.schemas['rd.msg.body'];
+                if (body.from && body.from[0] === "twitter") {
+                    this.message = hyperlink.addTwitterUsers(this.message);
+                    this.message = hyperlink.addTwitterTags(this.message);
+                }
+            }
+        }
+    });
 });
 
-rd.addStyle("rdw.ext.css.TwitterMessage");

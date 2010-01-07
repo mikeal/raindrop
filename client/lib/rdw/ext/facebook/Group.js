@@ -21,36 +21,41 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.facebook.Group");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.conversation.GenericGroup");
+run("rdw/ext/facebook/Group",
+["rd", "dojo", "rdw/conversation/GenericGroup"],
+function (rd, dojo, GenericGroup) {
 
-dojo.declare("rdw.ext.facebook.Group", [rdw.conversation.GenericGroup], {
-  /**
-   * The relative importance of this group widget. 0 is most important.
-   */
-  groupSort: 1,
-
-  /**
-   * Determines if message is supported.
-   *
-   * @param conversation {object} the conversation API object.
-   */
-  canHandle: function(conversation) {
-    var msg = conversation.messages[0];
-    var notification = msg.schemas["rd.msg.notification"];
-
-    return notification && notification.type == "facebook";
-  },
-  
-  postMixInProperties: function() {
-    this.inherited("postMixInProperties", arguments);
-    this.groupTitle = "Facebook Notifications";
-  },
-
-  postCreate: function() {
-    this.inherited("postCreate", arguments);
-    dojo.removeClass(this.domNode, "rdwConversationGenericGroup");
-    dojo.addClass(this.domNode, "rdwExtAccountGroup rdwExtFacebookGroup");
-  }
+    return dojo.declare("rdw.ext.facebook.Group", [GenericGroup], {
+        /**
+         * The relative importance of this group widget. 0 is most important.
+         */
+        groupSort: 1,
+    
+        /**
+         * Determines if message is supported.
+         *
+         * @param conversation {object} the conversation API object.
+         */
+        canHandle: function (conversation) {
+            var msg = conversation.messages[0],
+                notification = msg.schemas["rd.msg.notification"];
+    
+            return notification && notification.type === "facebook";
+        },
+        
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+            this.groupTitle = "Facebook Notifications";
+        },
+    
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+            dojo.removeClass(this.domNode, "rdwConversationGenericGroup");
+            dojo.addClass(this.domNode, "rdwExtAccountGroup rdwExtFacebookGroup");
+        }
+    });
 });

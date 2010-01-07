@@ -255,7 +255,7 @@ function (run, dojo, dijit, dojox) {
          */
         addStyle: function (modulePath) {
             //summary: 
-            var url = dojo.moduleUrl(modulePath).toString(), link;
+            var url = run.nameToUrl(modulePath, ".css"), link;
             //Adjust URL a bit so we get dojo.require-like behavior
             url = url.substring(0, url.length - 1) + ".css";
             link = dojo.create("link", {
@@ -369,7 +369,6 @@ function (run, dojo, dijit, dojox) {
          * Also refreshes target instances if they are being used in the page.
          * @param {String} extName
          * @param {Array} targets
-         * TODORUN dot/slash paths and reloading a module?
          */
         _updateExtModule: function (extName, targets) {        
             //targets could be an array from another window. In that case, the targets
@@ -380,7 +379,7 @@ function (run, dojo, dijit, dojox) {
 
             //If a subscription extension, unsub since reloading the extension
             //will cause a resubscribe.
-            var i, key, url, target;
+            var i, key, target, context;
             for (i = 0; (target = targets[i]); i++) {
                 key = extName + ":" + target;
                 if (rd._extSubArgs[key]) {
@@ -388,13 +387,9 @@ function (run, dojo, dijit, dojox) {
                 }
             }
 
-            //Force the module reload by tweaking dojo loader interals.
-            delete dojo._hasResource[extName];
-            delete dojo._loadedModules[extName];
-    
-            url = dojo._getModuleSymbols(extName).join("/") + '.js';
-            url = ((url.charAt(0) === '/' || url.match(/^\w+:/)) ? "" : dojo.baseUrl) + url;
-            delete dojo._loadedUrls[url];
+            //Force the module reload by tweaking run interals.
+            delete run.context.specified[extName];
+            delete run.context.defined[extName];
 
             run([extName], function () {
                 //Update instances of targets as appropriate.
@@ -418,14 +413,13 @@ function (run, dojo, dijit, dojox) {
          * If the the module is something that can be instantiated
          * and is being shown in the page, update those instances to the new code.
          * @param {String} moduleName
-         * TODORUN dot/slash paths?
          */
         _updateInstances: function (moduleName) {
             var instances, module;
             if (dijit && dijit.registry &&
-                (instances = dijit.registry.byClass(moduleName)) &&
+                (instances = dijit.registry.byClass(moduleName.replace(/\//g, "."))) &&
                 instances.length) {
-                module = dojo.getObject(moduleName);
+                module = run.get(moduleName);
 
                 instances.forEach(dojo.hitch(this, function (instance) {
                     this._updateInstance(instance, module);
@@ -505,7 +499,6 @@ function (run, dojo, dijit, dojox) {
                 //rd.checkLoadExtension could load code asynchronously,
                 //so do the following work after waiting for any modules
                 //to load.
-                //TODORUN: make sure this actually works.
                 run(dojo.hitch(this, function () {
                     //Update instances of the module.
                     rd._updateInstances(moduleName);

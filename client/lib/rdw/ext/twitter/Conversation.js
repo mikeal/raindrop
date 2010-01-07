@@ -21,29 +21,33 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.twitter.Conversation");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Conversation");
-dojo.require("rdw.ext.twitter.Message");
-dojo.require("dojo.cache");
+run("rdw/ext/twitter/Conversation",
+["rd", "dojo", "rdw/Conversation", "rdw/ext/twitter/Message",
+ "text!rdw/ext/twitter/Conversation!html"],
+function (rd, dojo, Conversation, Message, template) {
 
-/**
- * Groups twitter broadcast messages into one "conversation"
- */
-dojo.declare("rdw.ext.twitter.Conversation", [rdw.Conversation], {
-  //The name of the constructor function (module) that should be used
-  //to show individual messages.
-  messageCtorName: "rdw.ext.twitter.Message",
+    /**
+     * Groups twitter broadcast messages into one "conversation"
+     */
+    return dojo.declare("rdw.ext.twitter.Conversation", [Conversation], {
+        //The name of the constructor function (module) that should be used
+        //to show individual messages.
+        messageCtorName: "rdw/ext/twitter/Message",
 
-  templateString: dojo.cache("rdw.ext.twitter", "Conversation.html"),
+        templateString: template,
 
-  /**
-   * Determines if the widget can support this conversation.
-   *
-   * @param conversation {object} the conversation API object.
-   */
-  canHandle: function(conversation) {
-    var msg = conversation.messages[0];
-    return !this.conversation && conversation.message_ids[0][0] === "tweet";
-  }
+        /**
+         * Determines if the widget can support this conversation.
+         *
+         * @param conversation {object} the conversation API object.
+         */
+        canHandle: function (conversation) {
+            var msg = conversation.messages[0];
+            return !this.conversation && conversation.message_ids[0][0] === "tweet";
+        }
+    });
 });

@@ -48,7 +48,7 @@ function (rd, dojo, Base, string, contact) {
         //Array of preferred contacts to show.
         preferred: null,
     
-        blankImgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
+        blankImgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
     
         /** dijit lifecycle method, called after template is inserted in DOM. */
         postCreate: function () {

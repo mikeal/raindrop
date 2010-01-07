@@ -29,7 +29,7 @@ dojo.require("extender.util");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
-rd.addStyle("extender.css.Editor");
+rd.addStyle("extender/css/Editor");
 
 dojo.declare("extender.Editor", [rdw._Base], {
   //The type of extension: possible values are "ext" or "sub"

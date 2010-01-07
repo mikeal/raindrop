@@ -25,7 +25,7 @@ dojo.provide("extender.widgetSelectorHelper");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
-rd.addStyle("extender.css.widgetSelectorHelper");
+rd.addStyle("extender/css/widgetSelectorHelper");
 
 extender.widgetSelectorHelper = {
   //Holds on to instance of WidgetSelector to notify of a selection.

@@ -21,16 +21,20 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.feedNotification.ext");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Widgets");
-dojo.require("rdw.ext.feedNotification.Group");
+run("rdw/ext/feedNotification/ext",
+["rd", "rdw/Widgets", "rdw/ext/feedNotification/Group"],
+function (rd, Widgets, Group) {
 
-//Modify rdw.Widgets to allow showing mailing lists.
-rd.applyExtension("rdw.ext.feedNotification.ext", "rdw.Widgets", {
-  addToPrototype: {
-    convoModules: [
-      "rdw.ext.feedNotification.Group"
-    ]
-  }
+    //Modify rdw.Widgets to allow showing mailing lists.
+    rd.applyExtension("rdw/ext/feedNotification/ext", "rdw/Widgets", {
+        addToPrototype: {
+            convoModules: [
+                "rdw/ext/feedNotification/Group"
+            ]
+        }
+    });
 });

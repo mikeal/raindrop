@@ -3,7 +3,7 @@ dojo.provide("ext.${extName}");
 dojo.require("${targetModule}");
 
 //Adds the style sheet for this extension.
-//rd.addStyle("ext.${extName}.css.main");
+//rd.addStyle("ext/${extName}/css/main");
 
 rd.applyExtension("ext.${extName}", "${targetModule}", {
   //"after" is the type of extension. It means attach these methods

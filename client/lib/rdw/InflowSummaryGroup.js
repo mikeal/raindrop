@@ -29,7 +29,7 @@ run("rdw/InflowSummaryGroup",
 ["rd", "dojo", "rdw/_Base", "rd/api"],
 function (rd, dojo, Base, api) {
 
-    rd.addStyle("rdw.InflowSummaryGroup");
+    rd.addStyle("rdw/InflowSummaryGroup");
 
     return dojo.declare("rdw.InflowSummaryGroup", [Base], {
         templateString: '<div class="rdwExtSummaryGroup"><strong>Inflow Summary</strong><ul dojoAttachPoint="containerNode"><li dojoAttachPoint="totalCountNode"></li></ul></div>',

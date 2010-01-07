@@ -30,7 +30,7 @@ dojo.require("extender.Editor");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
-rd.addStyle("extender.css.WidgetSelector");
+rd.addStyle("extender/css/WidgetSelector");
 
 dojo.declare("extender.WidgetSelector", [rdw._Base], {
   templatePath: dojo.moduleUrl("extender.templates", "WidgetSelector.html"),

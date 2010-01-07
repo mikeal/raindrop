@@ -21,43 +21,43 @@
  * Contributor(s):
  * */
 
-/*jslint nomen: false, plusplus: false */
-/*global dojo: false, rdw: false, rd: false */
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
 "use strict";
 
-dojo.provide("rdw.ext.mailingList.Summary");
+run("rdw/ext/mailingList/Summary",
+["rd", "dojo", "rdw/_Base", "rdw/ext/mailingList/model", "text!rdw/ext/mailingList/Summary!html"],
+function (rd, dojo, Base, model, template) {
 
-dojo.require("rdw._Base");
-dojo.require("rdw.ext.mailingList.model");
+    rd.addStyle("rdw/ext/mailingList/Summary");
 
-rd.addStyle("rdw.ext.mailingList.Summary");
+    return dojo.declare("rdw.ext.mailingList.Summary", [Base], {
+        // The ID of the mailing list. This must be passed to the constructor
+        // so postCreate can use it to retrieve the document from the datastore.
+        listId: null,
 
-dojo.declare("rdw.ext.mailingList.Summary", [rdw._Base], {
-    // The ID of the mailing list.  This must be passed to the constructor
-    // so postCreate can use it to retrieve the document from the datastore.
-    listId: null,
-  
-    templatePath: dojo.moduleUrl("rdw.ext.mailingList", "Summary.html"),
-  
-    postCreate: function () {
-        //summary: dijit lifecycle method after template insertion in the DOM.
-        this.inherited("postCreate", arguments);
-        rdw.ext.mailingList.model.register(this.listId, this);
-    },
-    
-    destroy: function () {
-        //summary: dijit lifecycle method, when destroying the dijit.
-        rdw.ext.mailingList.model.unregister(this.listId, this);
-        this.inherited("destroy", arguments);
-    },
+        templatePath: template,
 
-    onMailingListSummaryUpdate: function (doc) {
-        //ID is required
-        rd.escapeHtml(doc.id, this.idNode, "only");
+        /** Dijit lifecycle method after template insertion in the DOM. */
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+            model.register(this.listId, this);
+        },
 
-        //Name is not a required field so we check for it
-        if (doc.name) {
-            rd.escapeHtml(doc.name, this.nameNode, "only");
+        /** Dijit lifecycle method, when destroying the dijit. */
+        destroy: function () {
+            model.unregister(this.listId, this);
+            this.inherited("destroy", arguments);
+        },
+
+        onMailingListSummaryUpdate: function (doc) {
+            //ID is required
+            rd.escapeHtml(doc.id, this.idNode, "only");
+
+            //Name is not a required field so we check for it
+            if (doc.name) {
+                rd.escapeHtml(doc.name, this.nameNode, "only");
+            }
         }
-    }
+    });
 });

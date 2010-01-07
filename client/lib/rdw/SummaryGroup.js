@@ -31,7 +31,7 @@ function (rd, dojo, Base, onHashChange, InflowSummaryGroup) {
 
     return dojo.declare("rdw.SummaryGroup", [Base], {
         templateString: '<div class="rdwSummaryGroup WidgetBox"></div>',
-    
+
         //List of topics to listen to and modify contents based
         //on those topics being published. Note that this is an object
         //on the rdw.SummaryGroup prototype, so modifying it will affect

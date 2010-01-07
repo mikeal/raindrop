@@ -312,7 +312,7 @@ function (run, rd, dojo, dijit, Base, Conversation, FullConversation, Summary, a
                     pos = dojo.position(animNode, true);
     
                 //Create the args for the scroll over effect.
-                this.activeNodeAnim = fxScroll.smoothScroll({
+                this.activeNodeAnim = fxScroll({
                     win: dojo.global,
                     target: { x: 0, y: Math.min(Math.abs(pos.y - 8), pos.y)},
                     easing: this.animEasing,
@@ -562,7 +562,7 @@ function (run, rd, dojo, dijit, Base, Conversation, FullConversation, Summary, a
                     }
     
                     //Create the args for the scroll over effect.
-                    scrollHorizAnim = fxScroll.smoothScroll({
+                    scrollHorizAnim = fxScroll({
                         win: this.domNode,
                         target: { x: x, y: 0},
                         easing: this.animEasing,
@@ -579,7 +579,7 @@ function (run, rd, dojo, dijit, Base, Conversation, FullConversation, Summary, a
                         }
 
                         //Set up vertical animation.
-                        scrollVertAnim = fxScroll.smoothScroll({
+                        scrollVertAnim = fxScroll({
                             win: dojo.global,
                             target: { x: 0, y: scrollHeight},
                             easing: this.animEasing,
@@ -593,7 +593,7 @@ function (run, rd, dojo, dijit, Base, Conversation, FullConversation, Summary, a
                         ]);
                     } else {
                         //Set up vertical animation.
-                        scrollVertAnim = fxScroll.smoothScroll({
+                        scrollVertAnim = fxScroll({
                             win: dojo.global,
                             target: { x: 0, y: this.summaryScrollHeight},
                             easing: this.animEasing,

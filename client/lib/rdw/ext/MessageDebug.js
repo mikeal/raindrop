@@ -21,39 +21,47 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MessageDebug");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run("rdw/ext/MessageDebug",
+["rd", "dojo", "rdw/Message"],
+function (rd, dojo, Message) {
 
-rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
-  after: {
-    postCreate: function() {
-      //summary: adds debug links to show documents associated with message
-      //NOTE: the "this" in this function is the instance of rdw.Message.
+    rd.addStyle("rdw/ext/css/MessageDebug");
 
-      //Create a node to hold the debug links
-      var debugNode = dojo.create("div", {
-        "class": "debug"
-      });
+    rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
+        after: {
+            /** Adds debug links to show documents associated with message */
+            postCreate: function () {
+                //NOTE: the "this" in this function is the instance of rdw.Message.
 
-      //Loop over the sources and add links for each kind.
-      for(var prop in this.msg.schemas) {
-        var schema = this.msg.schemas[prop];
-        var sch_id = schema.rd_schema_id; // XXX - include schema in the link?
-        id = schema._id;
-        dojo.create("a", {
-          "class": "tag",
-          target: "_blank",
-          title: schema.rd_ext_id,
-          href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
-          innerHTML: sch_id.replace(/rd\.msg\./,'')
-        }, debugNode);
-      }
+                //Create a node to hold the debug links
+                var debugNode = dojo.create("div", {
+                        "class": "debug"
+                    }),
+                    prop, schema, schemaId, id;
 
-      //Attach the debug div to the Messsage.
-      dojo.query(".message", this.domNode).addContent(debugNode);
-    }
-  }
+                //Loop over the sources and add links for each kind.
+                for (prop in this.msg.schemas) {
+                    if (this.msg.schemas.hasOwnProperty(prop)) {
+                        schema = this.msg.schemas[prop];
+                        schemaId = schema.rd_schema_id; // XXX - include schema in the link?
+                        id = schema._id;
+                        dojo.create("a", {
+                            "class": "tag",
+                            target: "_blank",
+                            title: schema.rd_ext_id,
+                            href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
+                            innerHTML: schemaId.replace(/rd\.msg\./, '')
+                        }, debugNode);
+                    }
+                }
+
+                //Attach the debug div to the Messsage.
+                dojo.query(".message", this.domNode).addContent(debugNode);
+            }
+        }
+    });
 });
-
-rd.addStyle("rdw.ext.css.MessageDebug");

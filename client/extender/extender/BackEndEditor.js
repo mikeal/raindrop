@@ -29,7 +29,7 @@ dojo.require("couch");
 
 //Uses script-added styles to allow loading on demand at the cost of a
 //custom build that would load all styles at the beginning.
-rd.addStyle("extender.css.BackEndEditor");
+rd.addStyle("extender/css/BackEndEditor");
 
 dojo.declare("extender.BackEndEditor", [rdw._Base], {
   //The couchdb document for the extension.

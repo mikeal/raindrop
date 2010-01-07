@@ -21,29 +21,34 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.mailingList.GroupMessage");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run("rdw/ext/mailingList/GroupMessage",
+["rd", "dojo", "rdw/Message", "text!rdw/ext/mailingList/GroupMessage!html"],
+function (rd, dojo, Message, template) {
 
-dojo.declare("rdw.ext.mailingList.GroupMessage", [rdw.Message], {
-  templateString: dojo.cache("rdw.ext.mailingList", "GroupMessage.html"),
-  
-  postMixInProperties: function() {
-    this.inherited("postMixInProperties", arguments);
-    this.convoFromDisplay = this.msg.convoFromDisplay.join(", ");
-    this.unreadDisplay = "";
-    if (this.msg.convoUnreadCount) {
-      this.unreadDisplay = rd.template(this.i18n.newCount, {
-        count: this.msg.convoUnreadCount
-      });
-    }
-  },
-  
-  postCreate: function() {
-    this.inherited("postCreate", arguments);
-    if (!this.msg.convoUnreadCount) {
-      this.unreadCountNode.style.display = "none";
-      this.separatorNode.style.display = "none";
-    }
-  }
+    return dojo.declare("rdw.ext.mailingList.GroupMessage", [Message], {
+        templateString: template,
+
+        postMixInProperties: function () {
+            this.inherited("postMixInProperties", arguments);
+            this.convoFromDisplay = this.msg.convoFromDisplay.join(", ");
+            this.unreadDisplay = "";
+            if (this.msg.convoUnreadCount) {
+                this.unreadDisplay = rd.template(this.i18n.newCount, {
+                    count: this.msg.convoUnreadCount
+                });
+            }
+        },
+
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
+            if (!this.msg.convoUnreadCount) {
+                this.unreadCountNode.style.display = "none";
+                this.separatorNode.style.display = "none";
+            }
+        }
+    });
 });

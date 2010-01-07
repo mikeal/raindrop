@@ -21,27 +21,30 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.twitter.Message");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
-dojo.require("rd.contact");
+run("rdw/ext/twitter/Message",
+["rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
+function (rd, dojo, Message, contact, template) {
 
-dojo.declare("rdw.ext.twitter.Message", [rdw.Message], {
-  templateString: dojo.cache("rdw.ext.twitter", "Message.html"),
+    return dojo.declare("rdw.ext.twitter.Message", [Message], {
+        templateString: template,
 
-  imgUrl: dojo.moduleUrl("rdw.resources", "blank.png"),
+        imgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
 
-  postCreate: function() {
-    //summary: dijit lifecycle method
-    this.inherited("postCreate", arguments);
+        postCreate: function () {
+            this.inherited("postCreate", arguments);
 
-    //Load the twitter picture for the sender.
-    rd.contact.byIdentity(this.msg.schemas["rd.msg.body"].from, dojo.hitch(this, function(contact) {
-      contact = contact[0];
-      var url = contact && contact.twitter && contact.twitter.image;
-      if (url) {
-        this.pictureNode.src = url;
-      }
-    }));
-  }
+            //Load the twitter picture for the sender.
+            contact.byIdentity(this.msg.schemas["rd.msg.body"].from, dojo.hitch(this, function (contact) {
+                contact = contact[0];
+                var url = contact && contact.twitter && contact.twitter.image;
+                if (url) {
+                    this.pictureNode.src = url;
+                }
+            }));
+        }
+    });
 });
