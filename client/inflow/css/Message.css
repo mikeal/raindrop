@@ -152,9 +152,9 @@
   padding: 8px 5px;
   display: inherit;
   position: relative;
-  -moz-border-image: url("../i/new/rd_attachments_bg.png") 3 6 2 2;
-  -webkit-border-image: url("../i/new/rd_attachments_bg.png") 3 6 2 2;
-  border-width: 3px 6px 2px 2px;
+  -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  -webkit-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  border-width: 10px 14px 3px 2px;
 }
 
 .rdwConversation .rdwMessage.reply .message .attachments {
