@@ -32,7 +32,7 @@ import re
 import urllib2, json
 
 # Grab the hash code from links
-bitly_regex = re.compile('http://bit.ly/(\S+)')
+bitly_regex = re.compile('bit.ly/(\w+)')
 
 # Creates 'rd.msg.attachment' for bit.ly urls from 'rd.msg.body.quoted.hyperlinks'
 def handler(doc):
