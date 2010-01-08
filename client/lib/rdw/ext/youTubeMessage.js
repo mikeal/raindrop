@@ -25,7 +25,7 @@
 /*global run: false, console:false */
 "use strict";
 
-run.modify("rdw/Message", "rdw/ext/youTubeMessage",
+run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
 ["rd", "dojo", "rdw/Message", "dojo/fx"],
 function (rd, dojo, Message, fx) {
 

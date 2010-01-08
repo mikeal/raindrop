@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run.modify("rdw.Message", "rdw/ext/MessageDebug",
+run.modify("rdw.Message", "rdw/ext/MessageDebug-rdw/Message",
 ["rd", "dojo", "rdw/Message"],
 function (rd, dojo, Message) {
 

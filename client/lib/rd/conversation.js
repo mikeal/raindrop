@@ -32,7 +32,7 @@ function (rd, dojo, api) {
         //Gets conversations based on message IDs passed in. ids can be one string
         //message document ID or an array of string message document IDs.
         messageKey: function (/*String|Array*/ids, /*Function*/callback, /*Function*/errback) {
-            var apiInst = rd.api({
+            var apiInst = api({
                 url: 'inflow/conversations/with_messages',
                 keys: ids
             });

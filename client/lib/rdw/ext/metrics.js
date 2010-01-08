@@ -112,7 +112,7 @@ function (run, rd, dojo, traverse, api, pref) {
 
     //Only hook in to rd.api for the inflow app, do not burden other apps
     //with these metrics.
-    run.modify("inflow", "rdw/ext/metrics", ["inflow"], function (inflow) {
+    run.modify("inflow", "rdw/ext/metrics-inflow", ["inflow"], function (inflow) {
         //Register extension for API calls.
         rd.applyExtension("rdw/ext/metrics", "rd/api", {
             after: {

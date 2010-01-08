@@ -62,6 +62,7 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
   
         /** Dijit lifecycle method after template insertion in the DOM. */
         postCreate: function () {
+console.log("@@@CREATED: rdw.Widgets");
             rd.sub("rd/onHashChange", this, "onHashChange");
             this.home();
         },
@@ -434,7 +435,7 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
                 this._groups.sort(function (a, b) {
                     var aSort = "groupSort" in a ? a.groupSort : 100,
                             bSort = "groupSort" in b ? b.groupSort : 100;
-                    return aSort > bSort;
+                    return aSort > bSort ? 1 : -1;
                 });
     
                 frag = dojo.doc.createDocumentFragment();

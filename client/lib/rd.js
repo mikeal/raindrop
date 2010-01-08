@@ -25,6 +25,31 @@
 /*global run: false, setTimeout: false, location: false, console: false */
 "use strict";
 
+//This block needs to be outside the run() call so that modifiers are set up
+//before any dependency resolution is attempted.
+(function () {
+    //Call run.modify to set up all extensions that might alter some other code.
+    //THIS CODE ASSUMES IT IS TIED TO THE DEFAULT run CONTEXT.
+    var reqExts = run.s.contexts._.config.rd.exts, i, reqExt, prop, modifier, empty = {};
+
+    if (reqExts) {
+        for (i = 0; (reqExt = reqExts[i]); i++) {
+            for (prop in reqExt) {
+                //TODO: take out the dot indexOf check some time down the road,
+                //just leaving it in there for now so we do not register old
+                //ui extension schema data (so people do not have to dump their
+                //DB right away). Just keep it in for a while until everyone has
+                //had a chance to delete their DB for other reasons.
+                if (!(prop in empty) && reqExt[prop].indexOf(".") === -1) {
+                    modifier = {};
+                    modifier[prop] = reqExt[prop];
+                    run.modify(modifier);
+                }
+            }
+        }
+    }
+}());
+
 run("rd",
 ["run", "dojo", "dijit", "dojox", "dojo/data/ItemFileReadStore", "dojo/string",
 "dojox/encoding/base64", "dojo/NodeList-traverse", "dojo/NodeList-manipulate"],
@@ -82,7 +107,7 @@ function (run, dojo, dijit, dojox) {
         extSubs = {}, subObj,
         extSubHandles = {},
         empty = {},
-        topic, ext, reqExts, reqExt, prop, modifier;
+        topic, ext;
 
     dojo.mixin(rd, {
         //Set path to the raindrop database
@@ -721,26 +746,6 @@ function (run, dojo, dijit, dojox) {
                         extSubHandles[topic] = rd.sub(topic, dojo.hitch(rd, "onExtPublish", topic));
                     }
                     extSubs[topic].push(subObj[topic]);
-                }
-            }
-        }
-    }
-
-    //Call run.modify to set up all extensions that might alter some other code.
-    reqExts = run.config.rd.exts;
-    
-    if (reqExts) {
-        for (i = 0; (reqExt = reqExts[i]); i++) {
-            for (prop in reqExt) {
-                //TODO: take out the dot indexOf check some time down the road,
-                //just leaving it in there for now so we do not register old
-                //ui extension schema data (so people do not have to dump their
-                //DB right away). Just keep it in for a while until everyone has
-                //had a chance to delete their DB for other reasons.
-                if (!(prop in empty) && reqExt[prop].indexOf(".") === -1) {
-                    modifier = {};
-                    modifier[prop] = reqExt[prop];
-                    run.modify(modifier);
                 }
             }
         }

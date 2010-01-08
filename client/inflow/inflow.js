@@ -117,6 +117,7 @@ function (run, dojo, dijit, rd, parser) {
     rd.sub("rd.api.me.noAccounts", inflow, "showAccounts");
     rd.sub("rd-protocol-account-settings", inflow, "showAccounts");
 
+console.log("NOW CALLING run.ready in inflow.js");
     //Do onload work that shows the initial display.
     run.ready(function () {
         //Start page parsing of widgets.

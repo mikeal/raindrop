@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run.modify("rdw/Widgets", "rdw/ext/facebook/ext",
+run.modify("rdw/Widgets", "rdw/ext/facebook/ext-rdw/Widgets",
 ["rd", "rdw/Widgets", "rdw/ext/facebook/Group"],
 function (rd, Widgets, Group) {
 

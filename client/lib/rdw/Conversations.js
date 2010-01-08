@@ -131,6 +131,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
         /** Dijit lifecycle method after template insertion in the DOM. */
         postCreate: function () {
             //Register for the interesting topics
+            console.log("IN RDW.CONVERSATIONS.postCreate");
             var empty = {}, prop;
             for (prop in this.topics) {
                 if (!(prop in empty)) {
@@ -142,12 +143,13 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
             //show them.
             this.checkUpdateInfo();
         },
-    
+
         destroyIgnore: {
             "rdw/Summary": 1,
+            //TODO: can we get rid of this?
             "rdw.Summary": 1
         },
-    
+
         //elements to ignore for click selection.
         clickIgnore: {
             "input": 1,
@@ -155,7 +157,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
             "select": 1,
             "option": 1
         },
-  
+
         /**
          * handles click events, tries to select the first selectable item
          * relative to the click.
