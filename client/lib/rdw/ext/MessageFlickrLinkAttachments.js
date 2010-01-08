@@ -48,7 +48,7 @@ rd.applyExtension("rdw.ext.MessageFlickrLinkAttachments", "rdw.Message", {
 
       href = "href=\"http://www.flickr.com/" +
                 flickr_schema["owner"]["nsid"] + "/" + flickr_schema["id"] + "/\""
-      img = "<div class=\"thumbnail\"><a target=\"_blank\" " + href + "><img src=\""+
+      img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\""+
               img_src+"\" class=\"flickr\"/></a></div>";
       title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
                 flickr_schema["title"]["_content"] + "</a>";
@@ -58,8 +58,8 @@ rd.applyExtension("rdw.ext.MessageFlickrLinkAttachments", "rdw.Message", {
 
       //Create a node to hold the link object
       var linkNode = dojo.create("div", {
-        "class": "flickr photo link",
-        innerHTML: img + "<div class=\"information\">" + title + owner + desc + "</div>"
+        "class": "flickr photo link hbox",
+        innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
       });
       dojo.query(".message .attachments", this.domNode).addContent(linkNode);
       dojo.connect(linkNode, "onclick", this, "onMessageFlickrLinkAttachmentClick");
