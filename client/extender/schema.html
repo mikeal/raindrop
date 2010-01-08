@@ -50,113 +50,114 @@
 </style>
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("rd.api");
-  
-  var viewer = {
-    init: function() {
-      this.schemaId = location.href.split("#")[1];
-      
-      //Set page title
-      rd.query("p.title").addContent(rd.escapeHtml(this.schemaId));
-      document.title = this.schemaId + " schema";
-      
-      //Grab nodes for later, set up event handlers.
-      rd.query('[rdAttachPoint]').forEach(function(node) {
-        this[node.getAttribute("rdAttachPoint")] = node;
-      }, this);
-      rd.connect(this.showPrivateNode, "onclick", this, "onShowPrivateClick");
+    run(["run", "dojo", "rd", "rd/api"], function(run, dojo, rd, api) {
+        var viewer = {
+            init: function() {
+                this.schemaId = location.href.split("#")[1];
+                
+                //Set page title
+                dojo.query("p.title").addContent(rd.escapeHtml(this.schemaId));
+                document.title = this.schemaId + " schema";
+                
+                //Grab nodes for later, set up event handlers.
+                dojo.query('[rdAttachPoint]').forEach(function(node) {
+                  this[node.getAttribute("rdAttachPoint")] = node;
+                }, this);
+                dojo.connect(this.showPrivateNode, "onclick", this, "onShowPrivateClick");
+          
+                this.display();
+            },
+        
+            //The number of sample documents to use.
+            limit: 10,
+          
+            //Flag on whether to show private fields.
+            showPrivate: false,
+            
+            propTemplate: '<tr><td class="prop">${name}</th><td class="value">${value}</th></tr>',
+          
+            display: function() {
+                //Get some sample documents for this schema.
+                api().megaview({
+                    key: ["rd.core.content", "schema_id", this.schemaId],
+                    include_docs: true,
+                    reduce: false,
+                    limit: this.limit
+                })
+                .ok(this, function(json) {
+                    this.docs = [];
+                    this.example = {};
+                    this.props = [];
+                    for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+                        //Save the document, then collect properties that can exist
+                        //on this type of document. Collect the properties as an array
+                        //so we can sort and display easier.
+                
+                        //Strip off private props if necessary.
+                        doc = this.showPrivate ? doc : this._stripPrivate(doc);
+              
+                        this.docs.push(doc);
+                        var empty = {};
+                        for (var prop in doc) {
+                            if (!(prop in empty) && !(prop in this.example)) {
+                                this.example[prop] = doc[prop];
+                                this.props.push(prop);
+                            }
+                        }
+                    }
+            
+                    this.props.sort();
 
-      this.display();
-    },
-
-    //The number of sample documents to use.
-    limit: 10,
-  
-    //Flag on whether to show private fields.
-    showPrivate: false,
-    
-    propTemplate: '<tr><td class="prop">${name}</th><td class="value">${value}</th></tr>',
-  
-    display: function() {
-      //Get some sample documents for this schema.
-      rd.api().megaview({
-        key: ["rd.core.content", "schema_id", this.schemaId],
-        include_docs: true,
-        reduce: false,
-        limit: this.limit
-      })
-      .ok(this, function(json) {
-        this.docs = [];
-        this.example = {};
-        this.props = [];
-        for (var i = 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-          //Save the document, then collect properties that can exist
-          //on this type of document. Collect the properties as an array
-          //so we can sort and display easier.
-  
-          //Strip off private props if necessary.
-          doc = this.showPrivate ? doc : this._stripPrivate(doc);
-
-          this.docs.push(doc);
-          var empty = {};
-          for (var prop in doc) {
-            if (!(prop in empty) && !(prop in this.example)) {
-              this.example[prop] = doc[prop];
-              this.props.push(prop);
+                    //Show the example properties
+                    var html = '';
+                    for (var i = 0, prop; prop = this.props[i]; i++) {
+                        var value = this.example[prop] === null ? "" : this.example[prop];
+                        if (dojo.isObject(value)) {
+                            value = dojo.toJson(value);
+                        }
+                        html += rd.template(this.propTemplate, {
+                            name: prop,
+                            value: prop == "_id" ? "<a href='http://127.0.0.1:5984/_utils/document.html?raindrop/" + encodeURIComponent(value) + "' target='_blank'>" + value + "</a>" : rd.escapeHtml(value + "")
+                        });
+                    }
+                    if (html) {
+                        dojo.place(html, this.tbodyNode, "only");
+                    }
+            
+                    //Show the complete example documents.
+                    rd.escapeHtml(dojo.toJson(this.docs, true), this.exampleNode, "only");
+            
+                    //Add hyperlinks for the IDs
+                    var html = this.exampleNode.innerHTML;
+                    this.exampleNode.innerHTML = html.replace(/"_id":\s+"([^"]+)"/g, function(match, id) {
+                        return '"_id": <a href="http://127.0.0.1:5984/_utils/document.html?raindrop/' + encodeURIComponent(id) + '" target="_blank">' + id + '</a>';
+                    });
+                });
+            },
+          
+            onShowPrivateClick: function(/*Event*/evt) {
+                //summary: handles clicks to checkbox to toggle showing private fields.
+                this.showPrivate = !!this.showPrivateNode.checked;
+                this.display();
+            },
+        
+            _stripPrivate: function(/*Object*/doc) {
+                //summary: strips off the private fields from the doc, this includes
+                //couch-private and raindrop-private fields.
+                var newDoc = {};
+                var empty = {};
+                for (var prop in doc) {
+                  if (!(prop in empty) && prop.charAt(0) != "_" && prop.indexOf("rd_") != 0) {
+                    newDoc[prop] = doc[prop];
+                  }
+                }
+                return newDoc;
             }
-          }
         }
 
-        this.props.sort();
+        run.ready(dojo.hitch(viewer, "init"));
+});
 
-        //Show the example properties
-        var html = '';
-        for (var i = 0, prop; prop = this.props[i]; i++) {
-          var value = this.example[prop] === null ? "" : this.example[prop];
-          if (rd.isObject(value)) {
-            value = rd.toJson(value);
-          }
-          html += rd.template(this.propTemplate, {
-            name: prop,
-            value: prop == "_id" ? "<a href='http://127.0.0.1:5984/_utils/document.html?raindrop/" + encodeURIComponent(value) + "' target='_blank'>" + value + "</a>" : rd.escapeHtml(value + "")
-          });
-        }
-        if (html) {
-          rd.place(html, this.tbodyNode, "only");
-        }
-
-        //Show the complete example documents.
-        rd.escapeHtml(rd.toJson(this.docs, true), this.exampleNode, "only");
-
-        //Add hyperlinks for the IDs
-        var html = this.exampleNode.innerHTML;
-        this.exampleNode.innerHTML = html.replace(/"_id":\s+"([^"]+)"/g, function(match, id) {
-            return '"_id": <a href="http://127.0.0.1:5984/_utils/document.html?raindrop/' + encodeURIComponent(id) + '" target="_blank">' + id + '</a>';
-        });
-      });
-    },
-  
-    onShowPrivateClick: function(/*Event*/evt) {
-      //summary: handles clicks to checkbox to toggle showing private fields.
-      this.showPrivate = !!this.showPrivateNode.checked;
-      this.display();
-    },
-
-    _stripPrivate: function(/*Object*/doc) {
-      //summary: strips off the private fields from the doc, this includes
-      //couch-private and raindrop-private fields.
-      var newDoc = {};
-      var empty = {};
-      for (var prop in doc) {
-        if (!(prop in empty) && prop.charAt(0) != "_" && prop.indexOf("rd_") != 0) {
-          newDoc[prop] = doc[prop];
-        }
-      }
-      return newDoc;
-    }
-  }
-
-  rd.addOnLoad(rd.hitch(viewer, "init"));
 </script>
 
 </head>

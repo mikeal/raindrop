@@ -32,28 +32,29 @@
 <link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("rd.api");
-  rd.addOnLoad(function() {
-    //Fetch the schema names.
-    rd.api().megaview({
-      startkey: ["rd.core.content", "schema_id"],
-      endkey: ["rd.core.content", "schema_id", {}],
-      group: true
-    }).ok(function(json) {
-      //Generate the HTML for each schema name.
-      var html = "";
-      rd.forEach(json.rows, function(row) {
-        html += rd.template('<li><a href="schema.html#${name}">${name}</a></li>', {
-          name: row.key[2]
-        })
-      });
-
-      //Insert the HTML in the page.
-      if (html) {
-        rd.place(html, rd.byId("schemaList"), "only");
-      }
+    run(["run", "dojo", "rd", "rd/api"], function(run, dojo, rd, api) {
+        run.ready(function () {
+            //Fetch the schema names.
+            api().megaview({
+                startkey: ["rd.core.content", "schema_id"],
+                endkey: ["rd.core.content", "schema_id", {}],
+                group: true
+            }).ok(function(json) {
+                //Generate the HTML for each schema name.
+                var html = "";
+                dojo.forEach(json.rows, function(row) {
+                    html += rd.template('<li><a href="schema.html#${name}">${name}</a></li>', {
+                        name: row.key[2]
+                    })
+                });
+          
+                //Insert the HTML in the page.
+                if (html) {
+                    dojo.place(html, dojo.byId("schemaList"), "only");
+                }
+            });
+        });
     });
-  });
 </script>
 
 </head>
