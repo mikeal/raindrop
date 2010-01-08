@@ -46,7 +46,7 @@ rd.applyExtension("rdw.ext.MessageLinkAttachments", "rdw.Message", {
         //Create a node to hold the link object
         var linkNode = dojo.create("div", {
           "class": "link",
-          innerHTML: "<a href='"+ links[i] +"'>"+ links[i] +"</a>"
+          innerHTML: "<a target=\"_blank\" href='"+ links[i] +"'>"+ links[i] +"</a>"
         });
         dojo.query(".message .attachments", this.domNode).addContent(linkNode);
         dojo.connect(linkNode, "onclick", this, "onMessageLinkAttachmentClick");
