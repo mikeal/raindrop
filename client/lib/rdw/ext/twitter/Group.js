@@ -55,7 +55,7 @@ function (rd, dojo, Conversation, wiper) {
         /**
          * The limit of tweets to use.
          */
-        unreadReplyLimit: 1,
+        unreadReplyLimit: 2,
     
         /**
          * Do not format messages greater than the first one as replies

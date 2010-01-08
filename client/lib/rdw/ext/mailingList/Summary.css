@@ -28,10 +28,17 @@
 .rdwExtMailingListSummary .id {
   font-weight: bold;
   color: inherit;
+  display: inline;
+  padding: 3px 10px;
+  background-color: #ffdede;
+  -moz-border-radius: 5px;
+  -webkit-border-radius: 5px;
+  text-shadow: 0 1px 0 #fff;
 }
 
 .rdwExtMailingListSummary .description {
   font-size: 10px;
   font-weight: normal;
   color: #888;
+  padding: 4px 0 0 0;
 }

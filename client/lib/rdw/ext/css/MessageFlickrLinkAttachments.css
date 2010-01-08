@@ -21,37 +21,26 @@
  * Contributor(s):
  * */
 
-@import url("Summary.css");
-@import url("Conversation.css");
-@import url("FullConversation.css");
-
-.rdwConversations {
-  overflow: hidden;
-  width: 100%;
+.rdwMessage > .message > .attachments > .flickr .thumbnail {
+  display: inline-block;
 }
 
-.rdwConversations .scrollArea {
-  overflow: auto;
-  width: 8000px;
+.rdwMessage > .message > .attachments > .flickr .information {
+  display: inline-block;
+  vertical-align: top;
+  padding: 0 7px;
 }
 
-.rdwConversationsSwipe {
-  position: fixed;
-  bottom: 150px;
-  left: 50%;
-  margin-left: -135px;
-  width: 270px;
-  height: 150px;
-  z-index: 1;
-  display: none;
+.rdwMessage > .message > .attachments > .flickr .title {
+  display: block;
+  font-weight: bold;
 }
 
-.rdwConversationsSwipe.conversation {
-  background-image: url("../i/swipe_right.png");
-  display: none;
+.rdwMessage > .message > .attachments > .flickr .owner {
+  display: block;
+  color: #333;
 }
 
-.rdwConversationsSwipe.summary {
-  background-image: url("../i/swipe_left.png");
-  display: none;
+.rdwMessage > .message > .attachments > .flickr .description {
+  color: #666;
 }

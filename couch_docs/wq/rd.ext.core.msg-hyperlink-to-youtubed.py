@@ -22,10 +22,10 @@
 #
 
 import re
-import urllib2
-import xml.parsers.expat
+import urllib2, json
 
-yt_re = re.compile("http\:\/\/www.youtube.com\/watch\?v=(\w+)")
+# Grab the hash code from links
+youtube_regex = re.compile("youtube\.com\/watch\?v=([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
 
 # Creates 'rd.msg.body.youtubed' schemas for emails...
 def handler(doc):
@@ -33,67 +33,29 @@ def handler(doc):
     if not 'links' in doc:
         return
 
+    youtubes = []
     links = doc['links']
     for link in links:
-        match = yt_re.search(link)
-        if match:
-            videoId = match.group(1)
+        youtubes += youtube_regex.findall(link)
 
-            logger.debug("found the youtube video http://www.youtube.com/watch?v=%s ", videoId)
-            youTubeDataURL = "http://gdata.youtube.com/feeds/api/videos/%s" % videoId
-            try:
-                opener = urllib2.build_opener()
-                youTubeDataXML = opener.open(youTubeDataURL).read()
-                opener.close()
-            except urllib2.HTTPError, exc:
-                if exc.code == 404:
-                    logger.info("can't find the you tube video http://www.youtube.com/watch?v=%s",
-                                  videoId)
-                    return
-                else:
-                    logger.warn("things went really bad when looking for %s",
-                                youTubeDataURL)
-                    raise
+    if len(youtubes) == 0:
+        return
 
-            ytp = YouTubeParser(youTubeDataXML)
-            ytp.parse()
-            ret = ytp.get_return()
-            ret["video_id"] = videoId
-            ret["is_attachment"] = True
-            emit_schema('rd.msg.body.youtubed', ret)
+    logger.debug("found the following hashes: %s ", youtubes)
 
+    for hash in youtubes:
+        logger.debug("working on youtube video http://www.youtube.com/watch?v=%s ", hash)
+        gdata_api = "http://gdata.youtube.com/feeds/api/videos/%s?v=2&alt=json" % hash
+        try:
+            opener = urllib2.build_opener()
+            obj = json.load(opener.open(gdata_api))
+            opener.close()
 
-class YouTubeParser:
-    p = ""
-    ret = {}
-    _buff = ""
-
-    def __init__(self, xml_string):
-        self.xml_string = xml_string
-        self.p = xml.parsers.expat.ParserCreate()
-        self.p.StartElementHandler = self.start_element
-        self.p.EndElementHandler = self.end_element
-        self.p.CharacterDataHandler = self.char_data
-
-    def parse(self):
-        self.p.Parse(self.xml_string)
-
-    def get_return(self):
-        return self.ret
-
-    def start_element(self, name, attrs):
-        if self.ret.has_key(name):
-            if type(self.ret[name]) == list:
-                self.ret[name].append(attrs)
-            else:
-                self.ret[name] = [self.ret[name], attrs]
-        else:
-            self.ret[name] = attrs
-
-    def end_element(self, name):
-        if self._buff != "":
-            self.ret[name]["body"] = self._buff
-            self._buff = ""
-
-    def char_data(self, data):
-        self._buff += data
+            obj = obj.get("entry")
+            obj["is_attachment"] = True
+            emit_schema('rd.msg.body.youtubed', obj)
+        except urllib2.HTTPError, exc:
+            if exc.code == 404:
+                logger.debug("404 at video: http://www.youtube.com/watch?v=%s",
+                              hash)
+            pass

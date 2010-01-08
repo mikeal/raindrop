@@ -62,8 +62,10 @@ function (rd, dojo, Base, model, template) {
             //Archive is not a required field, check for it
             if (doc.archive && doc.archive.http) {
                 this.archiveHttpNode.href = doc.archive.http;
+            } else {
+                this.archiveNode.style.display = "none";
             }
-    
+
             //Post is not a required field and is often only an email
             if (doc.post) {
                 if (doc.post.http) {
@@ -77,8 +79,10 @@ function (rd, dojo, Base, model, template) {
                 } else {
                     this.postEmailNode.style.display = "none";
                 }
+            } else {
+                this.postNode.style.display = "none";
             }
-    
+
             //Help is not a required field, check for it
             if (doc.help) {
                 if (doc.help.http) {
@@ -92,6 +96,8 @@ function (rd, dojo, Base, model, template) {
                 } else {
                     this.helpEmailNode.style.display = "none";
                 }
+            } else {
+                this.helpNode.style.display = "none";
             }
 
             // TODO: make this localizable.

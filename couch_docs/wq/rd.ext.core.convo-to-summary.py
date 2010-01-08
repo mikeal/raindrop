@@ -85,10 +85,10 @@ def handler(doc):
             cur_latest = latest_by_recip_target.get(this_target, 0)
             if this_ts > cur_latest:
                 latest_by_recip_target[this_target] = this_ts
-        # last subject seen wins.
-        this_subject = msg_info['rd.msg.body'].get('subject')
-        if this_subject:
-            subject = this_subject
+        #We want the subject from the first (topic) message
+        #XXX This method doesn't guarantee the topic message but works better
+        if earliest_timestamp and earliest_timestamp == msg_info['rd.msg.body']['timestamp']:
+            subject = msg_info['rd.msg.body'].get('subject')
 
     # a couple of 'pseudo' or 'combo' recip-targets.
     if 'direct' in latest_by_recip_target or 'group' in latest_by_recip_target:

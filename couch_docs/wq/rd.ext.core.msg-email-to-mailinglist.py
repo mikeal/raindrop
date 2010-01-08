@@ -548,6 +548,24 @@ def handler(message):
         logger.debug(
           "LIST ID %s from Google Groups %S message", list_id, action)
 
+    # This is a common mailing list format used by Majordomo, SKYLIST,
+    # Yahoo Groups, and others.  Instead of an actual list id being provided
+    # all we get is the list-unsubscribe method which would at least give our
+    # users an easy way to unsubscribe from the list
+    #
+    # More information on the list unsubscribe method is available here
+    # http://www.list-unsubscribe.com/
+    #
+    elif 'list-unsubscribe' in message['headers'] and \
+            'from' in message['headers']:
+        match = re.search('([\W\w]*)\s*<(.+)>.*', message['headers']['from'][0])
+        if (match):
+            list_id = match.group(2)
+            # remove leading and trailing spaces and quotes
+            list_name = match.group(1).lstrip().rstrip().strip('\'"')
+            logger.debug("found only list-unsubscribe, created ID '%s' and name '%s'",
+                         list_id, list_name)
+
     if not list_id:
         logger.debug("NO LIST ID; ignoring message %s", message_id)
         return

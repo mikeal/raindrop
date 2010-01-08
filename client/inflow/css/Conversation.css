@@ -43,6 +43,8 @@
 
 .rdwConversation.active {
   border: 1px solid #ccc;
+  -moz-box-shadow: 0 0 10px #ccc;
+  -webkit-box-shadow: 0 0 10px #ccc;
 }
 
 /*### IMPERSONAL ###*/
@@ -148,7 +150,7 @@
 
 
 .rdwConversation > .messages {
-  padding: 5px;
+  padding: 5px 0px;
   -moz-box-sizing: border-box;
 }
 
@@ -175,6 +177,11 @@
   color: #333;
   height: 60px;
   border: 1px solid #ccc;
+}
+
+.rdwConversation.group .replyTextArea,
+.rdwConversation.broadcast .replyTextArea {
+  display: none;
 }
 
 .rdwConversation > .actions {

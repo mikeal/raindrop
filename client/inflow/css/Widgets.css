@@ -120,6 +120,7 @@
   background-repeat: no-repeat;
   background-position: right;
   padding-right: 24px;
+  display: none;
 }
 
 .WidgetBox > .WidgetHeader > .actions > .broadcastCount {
@@ -127,6 +128,7 @@
   background-repeat: no-repeat;
   background-position: right;
   padding-right: 25px;
+  display: none;
 }
 
 /* ### SUMMARY ### */
@@ -208,8 +210,8 @@
 /* ### GENERIC GROUP ### */
 
 .rdwConversationGenericGroup {
-  -moz-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
-  -webkit-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 1;
+  -moz-border-image: url("../i/new/rd_widget_border_orange.png") 1 9 12 1;
+  -webkit-border-image: url("../i/new/rd_widget_border_orange.png") 1 9 12 1;
   border-width: 1px 9px 12px 1px; 
 } 
 
@@ -266,6 +268,21 @@
   background-repeat: repeat-x;
 }
 
+.rdwWidgets.start .rdwMessage > .message > .content {
+  padding: 0;
+
 .rdwWidgets.start .rdwMessage > .message > .unreadCount {
   font-weight: bold;
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:empty {
+  display: none;
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:after {
+  content: " - ";
+}
+
+.rdwWidgets.start .rdwMessage > .message > .unreadCount:empty:after {
+  content: "";
 }

@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body.quoted.hyperlinks"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Uses the bit.ly REST API to expand and get additional information on bit.ly shortened URLs."
+    }
+  }
+}

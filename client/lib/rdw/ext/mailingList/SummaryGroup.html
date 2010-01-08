@@ -2,11 +2,11 @@
   <strong>${i18n.mailingList.summary}</strong>
   <abbr class="identity" dojoAttachPoint="identityNode"></abbr>
   <ul>
-    <li>
+    <li dojoAttachPoint="postNode">
         <button dojoAttachPoint="postEmailNode" class="action">${i18n.mailingList.post.email}</button>
         <a target="_blank" style="float:right;" class="post http"  dojoAttachPoint="postHttpNode">${i18n.mailingList.post.http}</a>
     </li>
-    <li>
+    <li dojoAttachPoint="helpNode">
       <div class="hbox" style="width: 100%">
         <div class="boxFlex">
           <button class="help email action" dojoAttachPoint="helpEmailNode">${i18n.mailingList.help.email}</button>
@@ -14,7 +14,7 @@
         <a target="_blank" class="help http"  dojoAttachPoint="helpHttpNode">${i18n.mailingList.help.http}</a>
       </div>
     </li>
-    <li style="text-align:right;">
+    <li style="text-align:right;" dojoAttachPoint="archiveNode">
       <a target="_blank" class="archives http" dojoAttachPoint="archiveHttpNode">${i18n.mailingList.archives}</a>
     </li>
     <li>

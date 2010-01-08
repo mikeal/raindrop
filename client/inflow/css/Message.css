@@ -42,7 +42,7 @@
 }
 
 .rdwMessage > .message  > .header { 
-  padding: 3px 0 4px 0;
+  padding: 3px 5px 4px;
 }
 
 .rdwMessage > .message > .header > .author > .from {
@@ -89,11 +89,13 @@
   color: #1a1a1a;
 }
 
-.rdwMessage > .message > .content { }
+.rdwMessage > .message > .content { 
+  padding: 0 5px;
+}
 
 /*Any links that appear appear in the message body */
 .rdwMessage > .message > .content a {
-  color: #ff5959;
+  color: #222;
   text-decoration: none;
 }
 
@@ -120,17 +122,6 @@
 
 /* ### REPLY ### */
 
-.rdwConversation .messages .rdwMessage.reply:nth-child(2) {
-  border-top: none;
-  background-image: url("../i/new/rd_replies_icon.png");
-  background-repeat: no-repeat;
-  padding: 8px 0 0 58px;
-}
-
-.rdwConversation .messages .rdwMessage.reply:nth-child(2) .total {
-  top: 12px;
-}
-
 .rdwMessage.reply {
   margin: 4px 0 0 0;
   padding: 0 0 0 58px;
@@ -144,5 +135,45 @@
 .rdwExtTwitterMessage .picture {
   width: 48px;
   height: 48px;
-  margin: 5px 10px 0 0;
+  margin: 5px 10px 0 5px;
+}
+
+.rdwMessage.rdwExtTwitterMessage > .message > .header {
+  padding: 3px 5px 4px 0;
+}
+
+.rdwMessage.rdwExtTwitterMessage > .message > .content {
+  padding: 0 5px 0 0;
+}
+
+/* ### ATTACHMENTS ### */
+.rdwConversation .rdwMessage .message .attachments {
+  margin: 8px 5px 10px;
+  padding: 8px 5px;
+  display: inherit;
+  position: relative;
+  -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  -webkit-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  border-width: 10px 14px 3px 2px;
+}
+
+.rdwConversation .rdwMessage.reply .message .attachments {
+  margin-left: 0;
+}
+ 
+.rdwExtTwitterConversation .rdwMessage .message .attachments {
+  margin-left: 0;
+}
+
+.rdwConversation .rdwMessage .message .attachments:empty {
+  display: none;
+}
+
+.rdwConversation .rdwMessage .message .attachments .link a {
+  color: #ff5959;
+  text-decoration: none;
+}
+
+.rdwConversation .rdwMessage .message .attachments .link a:hover {
+  text-decoration: underline;
 }

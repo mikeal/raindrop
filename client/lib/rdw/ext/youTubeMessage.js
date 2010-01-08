@@ -55,9 +55,9 @@ function (rd, dojo, Message, fx) {
                 }
 
                 /* ugh, would have been nicer if I stored the thumbnails better */
-                for (thumb in yt["media:thumbnail"]) {
+                for (thumb in yt.media$group.media$thumbnail) {
                     if (!(thumb in empty)) {
-                        url = yt["media:thumbnail"][thumb].url;
+                        url = yt.media$group.media$thumbnail[thumb].url;
                         /* we're looking for thumbnail #1 */
                         if (url.substring(url.length - 5) === "1.jpg") {
                             thumbnail = url;
@@ -71,17 +71,17 @@ function (rd, dojo, Message, fx) {
                                                '<div class="play"></div></div>';
 
                 img = rd.template(youTubeImgTemplateString, {
-                    url: yt["media:player"].url,
+                    url: yt.media$group.media$player.url,
                     thumb: thumbnail
                 });
 
                 youTubeInfoTemplateString = '<div class="info"><a href="${url}" class="title">${body}</a>' +
-                                                                                '<div class="views">${viewCount} views</div></div>';
+                                            '<div class="views">${viewCount} views</div></div>';
 
                 title = rd.template(youTubeInfoTemplateString, {
-                    url: yt["media:player"].url,
-                    body: yt["media:title"].body,
-                    viewCount: Number(yt["yt:statistics"].viewCount).toLocaleString()
+                    url: yt.media$group.media$player.url,
+                    body: yt.media$group.media$title.$t,
+                    viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
                 });
 
                 //Create a node to hold the youtube object.
@@ -112,7 +112,7 @@ function (rd, dojo, Message, fx) {
                     return;
                 }
 
-                videoId = yt.video_id;
+                videoId = yt.media$group.yt$videoid.$t;
                 /* only grab this video inside this message, it's possible there are others */
                 q = dojo.query("#" + videoId, this.domNode);
                 console.log(q);
@@ -124,9 +124,9 @@ function (rd, dojo, Message, fx) {
                     q.orphan();
                 } else {
                     videoUrl = "";
-                    for (content in yt["media:content"]) {
-                        if (yt["media:content"][content].type === "application/x-shockwave-flash") {
-                            videoUrl = yt["media:content"][content].url;
+                    for (content in yt.media$group.media$content) {
+                        if (yt.media$group.media$content[content].type === "application/x-shockwave-flash") {
+                            videoUrl = yt.media$group.media$content[content].url;
                         }
                     }
 
