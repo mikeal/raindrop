@@ -173,7 +173,9 @@
 /* ### FACEBOOK ### */
 
 .rdwExtFacebookGroup > .WidgetHeader > .title {
-  background-image: url("../i/new/rd_widget_mailinglist.png");
+  background-image: url("../i/new/rd_widget_facebook.png");
+  background-position: left 2px;
+  padding: 0 0 0 17px;
 }
 
 
@@ -216,7 +218,7 @@
 } 
 
 .rdwConversationGenericGroup > .WidgetHeader > .title {
-  padding: 0 0 0 16px;
+  padding: 0 0 0 17px;
   background-image: url("../i/new/rd_widget_rss.png");
   background-repeat: no-repeat;
   background-position: left 2px;
