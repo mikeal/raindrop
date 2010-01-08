@@ -38,7 +38,7 @@ function (run, rd, dojo, Message) {
     rd.applyExtension("rdw/ext/MessageVimeoLinkAttachments", "rdw/Message", {
         after: {
             postCreate: function () {
-                //NOTE: the "this" in this function is the instance of rdw.Message.
+                //NOTE: the "this" in this function is the instance of rdw/Message.
     
                 //Check for links found in a message
                 var vimeo_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"],

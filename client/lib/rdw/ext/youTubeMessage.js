@@ -31,7 +31,7 @@ function (rd, dojo, Message, fx) {
 
     rd.addStyle("rdw/ext/css/youTubeMessage");
 
-    //Applies a display extension to rdw.Message. Allows showing youtube videos
+    //Applies a display extension to rdw/Message. Allows showing youtube videos
     //inline with a message.
     rd.applyExtension("rdw/ext/youTubeMessage", "rdw/Message", {
         after: {
@@ -39,12 +39,12 @@ function (rd, dojo, Message, fx) {
                 //if msg has youtube data, add a
                 //display item for the data.
                 //TODO: could vary the display based on how the
-                //message is displayed. I would expect rdw.Message
+                //message is displayed. I would expect rdw/Message
                 //to have a "type" field to indicate what type of
-                //display rdw.Message would use for the message,
+                //display rdw/Message would use for the message,
                 //or a different widget would be used for the display.
 
-                //NOTE: the "this" in this function is the instance of rdw.Message.
+                //NOTE: the "this" in this function is the instance of rdw/Message.
 
                 //Check for a YouTube video
                 var yt = this.msg.schemas["rd.msg.body.youtubed"],

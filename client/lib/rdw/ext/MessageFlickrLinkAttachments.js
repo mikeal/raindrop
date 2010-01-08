@@ -37,7 +37,7 @@ function (run, rd, dojo, Message) {
     rd.applyExtension("rdw/ext/MessageFlickrLinkAttachments", "rdw/Message", {
         after: {
             postCreate: function () {
-                //NOTE: the "this" in this function is the instance of rdw.Message.
+                //NOTE: the "this" in this function is the instance of rdw/Message.
     
                 //Check for links found in a message
                 var flickr_schema = this.msg.schemas["rd.msg.body.flickr"],

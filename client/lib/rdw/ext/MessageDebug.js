@@ -25,17 +25,17 @@
 /*global run: false */
 "use strict";
 
-run.modify("rdw.Message", "rdw/ext/MessageDebug-rdw/Message",
+run.modify("rdw/Message", "rdw/ext/MessageDebug-rdw/Message",
 ["rd", "dojo", "rdw/Message"],
 function (rd, dojo, Message) {
 
     rd.addStyle("rdw/ext/css/MessageDebug");
 
-    rd.applyExtension("rdw.ext.MessageDebug", "rdw.Message", {
+    rd.applyExtension("rdw/ext/MessageDebug", "rdw/Message", {
         after: {
             /** Adds debug links to show documents associated with message */
             postCreate: function () {
-                //NOTE: the "this" in this function is the instance of rdw.Message.
+                //NOTE: the "this" in this function is the instance of rdw/Message.
 
                 //Create a node to hold the debug links
                 var debugNode = dojo.create("div", {
