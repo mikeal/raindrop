@@ -31,8 +31,12 @@
 import re
 import urllib2, json
 
+# http://www.flickr.com/services/api/misc.urls.html
+BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
+
 # Grab the hash code from links
 flickr_photo_regex = re.compile('flickr.com/photos/[\w@]+/(\d+)/.*')
+flickr_canonical_photo_regex = re.compile('flic.kr/p/(['+BASE58_ALPHABET+']+)')
 
 # Creates 'rd.msg.attachment' for bit.ly urls from 'rd.msg.body.quoted.hyperlinks'
 def handler(doc):
@@ -44,6 +48,7 @@ def handler(doc):
     links = doc['links']
     for link in links:
         flickrs += flickr_photo_regex.findall(link)
+        flickrs += [base58decode(hash) for hash in flickr_canonical_photo_regex.findall(link)]
 
     if len(flickrs) == 0:
         return
@@ -70,3 +75,13 @@ def handler(doc):
             schema = obj.get('photo')
             schema["is_attachment"] = True
             emit_schema('rd.msg.body.flickr', schema)
+
+# This function decodes the special base58 (62 - 4) flic.kr canonical urls
+def base58decode(s):
+    num = len(s)
+    decoded = 0
+    multi = 1
+    for i in reversed(range(0, num)):
+        decoded = decoded + multi * BASE58_ALPHABET.index(s[i])
+        multi = multi * len(BASE58_ALPHABET)
+    return u"%d" % decoded
