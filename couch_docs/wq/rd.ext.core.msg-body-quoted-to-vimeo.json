@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.body.quoted.hyperlinks"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Uses the Vimeo Simple API ( http://vimeo.com/api/docs/simple-api ) to get additional meta data on Video URLs."
+    }
+  }
+}
