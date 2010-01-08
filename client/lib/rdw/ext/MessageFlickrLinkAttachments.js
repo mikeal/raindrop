@@ -21,60 +21,67 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MessageFlickrLinkAttachments");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
+["run", "rd", "dojo", "rdw/Message"],
+function (run, rd, dojo, Message) {
 
-/*
-Applies a display extension to rdw.Message.
-Allows showing links included in the message as inline attachments
-*/
+    rd.addStyle("rdw/ext/css/MessageFlickrLinkAttachments");
 
-rd.applyExtension("rdw.ext.MessageFlickrLinkAttachments", "rdw.Message", {
-  after: {
-    postCreate: function() {
-      //NOTE: the "this" in this function is the instance of rdw.Message.
+    /* Applies a display extension to rdw/Message.
+    Allows showing links included in the message as inline attachments
+    */
+    rd.applyExtension("rdw/ext/MessageFlickrLinkAttachments", "rdw/Message", {
+        after: {
+            postCreate: function () {
+                //NOTE: the "this" in this function is the instance of rdw.Message.
+    
+                //Check for links found in a message
+                var flickr_schema = this.msg.schemas["rd.msg.body.flickr"],
+                    img_src, href, img, title, owner, desc, linkNode;
+                if (!flickr_schema) {
+                    return;
+                }
+    
+                // http:\/\/farm3.static.flickr.com\/2684\/4252109194_ba795640e8_s.jpg
+                img_src = "http://farm" + flickr_schema.farm + ".static.flickr.com/" +
+                                    flickr_schema.server + "/" + flickr_schema.id + "_" +
+                                    flickr_schema.secret + "_s.jpg";
+    
+                href = "href=\"http://www.flickr.com/" +
+                                    flickr_schema.owner.nsid + "/" + flickr_schema.id + "/\"";
+                img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\"" +
+                                img_src + "\" class=\"flickr\"/></a></div>";
+                title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
+                                    flickr_schema.title._content + "</a>";
+                owner = "<abbr class=\"owner\" title=\"" + flickr_schema.owner.username +
+                                    "\">" + flickr_schema.owner.realname + "</abbr>";
+                desc = "<div class=\"description\">" + flickr_schema.description._content + "</div>";
+    
+                //Create a node to hold the link object
+                linkNode = dojo.create("div", {
+                    "class": "flickr photo link hbox",
+                    innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
+                });
+                dojo.query(".message .attachments", this.domNode).addContent(linkNode);
+                dojo.connect(linkNode, "onclick", this, "onMessageFlickrLinkAttachmentClick");
+            }
+        },
 
-      //Check for links found in a message
-      var flickr_schema = this.msg.schemas["rd.msg.body.flickr"];
-      if (!flickr_schema ) {
-        return;
-      }
-
-      // http:\/\/farm3.static.flickr.com\/2684\/4252109194_ba795640e8_s.jpg
-      img_src = "http://farm" + flickr_schema["farm"] + ".static.flickr.com/" +
-                flickr_schema["server"] + "/" + flickr_schema["id"] + "_" +
-                flickr_schema["secret"] + "_s.jpg";
-
-      href = "href=\"http://www.flickr.com/" +
-                flickr_schema["owner"]["nsid"] + "/" + flickr_schema["id"] + "/\""
-      img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\""+
-              img_src+"\" class=\"flickr\"/></a></div>";
-      title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
-                flickr_schema["title"]["_content"] + "</a>";
-      owner = "<abbr class=\"owner\" title=\""+ flickr_schema["owner"]["username"] +
-                "\">" + flickr_schema["owner"]["realname"] + "</abbr>";
-      desc = "<div class=\"description\">" + flickr_schema["description"]["_content"] + "</div>";
-
-      //Create a node to hold the link object
-      var linkNode = dojo.create("div", {
-        "class": "flickr photo link hbox",
-        innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
-      });
-      dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-      dojo.connect(linkNode, "onclick", this, "onMessageFlickrLinkAttachmentClick");
-
-    }
-  },
-  addToPrototype: {
-    onMessageFlickrLinkAttachmentClick: function(evt) {
-      //summary: handles clicking anywhere on the link attachment block
-      var link_schema = this.msg.schemas["rd.msg.body.flickr"];
-      if (!link_schema ) {
-        return;
-      }
-    }
-  }
+        addToPrototype: {
+            /**
+             * Handles clicking anywhere on the link attachment block
+             */
+            onMessageFlickrLinkAttachmentClick: function (evt) {
+                var link_schema = this.msg.schemas["rd.msg.body.flickr"];
+                if (!link_schema) {
+                    return;
+                }
+            }
+        }
+    });
 });
 
-rd.addStyle("rdw.ext.css.MessageFlickrLinkAttachments");

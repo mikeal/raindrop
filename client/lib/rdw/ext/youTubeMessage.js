@@ -49,20 +49,20 @@ function (rd, dojo, Message, fx) {
                 //Check for a YouTube video
                 var yt = this.msg.schemas["rd.msg.body.youtubed"],
                     thumbnail = "", thumb, url, youTubeImgTemplateString, img,
-                    title, youTubeNode, youTubeInfoTemplateString, empty;
+                    title, youTubeNode, youTubeInfoTemplateString, empty,
+                    thumbs, thumb, i;
                 if (!yt) {
                     return;
                 }
+                thumbs = yt.media$group.media$thumbnail
 
                 /* ugh, would have been nicer if I stored the thumbnails better */
-                for (thumb in yt.media$group.media$thumbnail) {
-                    if (!(thumb in empty)) {
-                        url = yt.media$group.media$thumbnail[thumb].url;
-                        /* we're looking for thumbnail #1 */
-                        if (url.substring(url.length - 5) === "1.jpg") {
-                            thumbnail = url;
-                            break;
-                        }
+                for (i = 0; (thumb = thumbs[i]); i++) {
+                    url = thumb.url;
+                    /* we're looking for thumbnail #1 */
+                    if (url.substring(url.length - 5) === "1.jpg") {
+                        thumbnail = url;
+                        break;
                     }
                 }
 

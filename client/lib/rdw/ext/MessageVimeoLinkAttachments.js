@@ -21,55 +21,59 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MessageVimeoLinkAttachments");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
+["run", "rd", "dojo", "rdw/Message"],
+function (run, rd, dojo, Message) {
 
-/*
-Applies a display extension to rdw.Message.
-Allows showing links included in the message as inline attachments
-*/
-
-rd.applyExtension("rdw.ext.MessageVimeoLinkAttachments", "rdw.Message", {
-  after: {
-    postCreate: function() {
-      //NOTE: the "this" in this function is the instance of rdw.Message.
-
-      //Check for links found in a message
-      var vimeo_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"];
-      if (!vimeo_schema ) {
-        return;
-      }
-
-      img_src = vimeo_schema["thumbnail_small"];
-
-      href = "href=\"http://vimeo.com/" + vimeo_schema["id"] + "\""
-      img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\""+
-              img_src+"\" class=\"vimeo\"/></a></div>";
-      title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
-                vimeo_schema["title"] + "</a>";
-      owner = "<abbr class=\"owner\">" + vimeo_schema["user_name"] + "</abbr>";
-      desc = "<div class=\"description\">" + vimeo_schema["description"] + "</div>";
-
-      //Create a node to hold the link object
-      var linkNode = dojo.create("div", {
-        "class": "vimeo video link hbox",
-        innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
-      });
-      dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-      dojo.connect(linkNode, "onclick", this, "onMessageVimeoLinkAttachmentClick");
-
-    }
-  },
-  addToPrototype: {
-    onMessageVimeoLinkAttachmentClick: function(evt) {
-      //summary: handles clicking anywhere on the link attachment block
-      var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"];
-      if (!link_schema ) {
-        return;
-      }
-    }
-  }
+    /*
+    Applies a display extension to rdw/Message.
+    Allows showing links included in the message as inline attachments
+    */
+    rd.addStyle("rdw/ext/css/MessageVimeoLinkAttachments");
+    
+    rd.applyExtension("rdw/ext/MessageVimeoLinkAttachments", "rdw/Message", {
+        after: {
+            postCreate: function () {
+                //NOTE: the "this" in this function is the instance of rdw.Message.
+    
+                //Check for links found in a message
+                var vimeo_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"],
+                    img_src, href, img, title, owner, desc, linkNode;
+                if (!vimeo_schema) {
+                    return;
+                }
+    
+                img_src = vimeo_schema.thumbnail_small;
+    
+                href = "href=\"http://vimeo.com/" + vimeo_schema.id + "\"";
+                img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\"" +
+                                img_src + "\" class=\"vimeo\"/></a></div>";
+                title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
+                                    vimeo_schema.title + "</a>";
+                owner = "<abbr class=\"owner\">" + vimeo_schema.user_name + "</abbr>";
+                desc = "<div class=\"description\">" + vimeo_schema.description + "</div>";
+    
+                //Create a node to hold the link object
+                linkNode = dojo.create("div", {
+                    "class": "vimeo video link hbox",
+                    innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
+                });
+                dojo.query(".message .attachments", this.domNode).addContent(linkNode);
+                dojo.connect(linkNode, "onclick", this, "onMessageVimeoLinkAttachmentClick");
+            }
+        },
+        addToPrototype: {
+            onMessageVimeoLinkAttachmentClick: function (evt) {
+                //summary: handles clicking anywhere on the link attachment block
+                var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"];
+                if (!link_schema) {
+                    return;
+                }
+            }
+        }
+    });
 });
-
-rd.addStyle("rdw.ext.css.MessageVimeoLinkAttachments");

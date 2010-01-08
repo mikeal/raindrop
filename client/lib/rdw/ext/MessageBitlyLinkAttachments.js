@@ -21,51 +21,58 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MessageBitlyLinkAttachments");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
+["run", "rd", "dojo", "rdw/Message"],
+function (run, rd, dojo, Message) {
+    /*
+    Applies a display extension to rdw/Message.
+    Allows showing links included in the message as inline attachments
+    */
 
-/*
-Applies a display extension to rdw.Message.
-Allows showing links included in the message as inline attachments
-*/
+    rd.addStyle("rdw/ext/css/MessageBitlyLinkAttachments");
 
-rd.applyExtension("rdw.ext.MessageBitlyLinkAttachments", "rdw.Message", {
-  after: {
-    postCreate: function() {
-      //NOTE: the "this" in this function is the instance of rdw.Message.
+    rd.applyExtension("rdw/ext/MessageBitlyLinkAttachments", "rdw/Message", {
+        after: {
+            postCreate: function () {
+                //NOTE: the "this" in this function is the instance of rdw.Message.
+    
+                //Check for links found in a message
+                var bitly_schema = this.msg.schemas["rd.msg.body.bit.ly"],
+                    href, title, owner, desc, linkNode;
+                if (!bitly_schema) {
+                    return;
+                }
 
-      //Check for links found in a message
-      var bitly_schema = this.msg.schemas["rd.msg.body.bit.ly"];
-      if (!bitly_schema ) {
-        return;
-      }
+                href = "href=\"" + bitly_schema.longUrl + "\"";
+                title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
+                                    bitly_schema.htmlTitle + "</a>";
+                owner = "<abbr class=\"owner\">" + bitly_schema.shortenedByUser + "</abbr>";
+                desc = "<div class=\"description\">" + bitly_schema.longUrl + "</div>";
 
-      href = "href=\"" + bitly_schema["longUrl"] + "\""
-      title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
-                bitly_schema["htmlTitle"] + "</a>";
-      owner = "<abbr class=\"owner\">" + bitly_schema["shortenedByUser"] + "</abbr>";
-      desc = "<div class=\"description\">" + bitly_schema["longUrl"] + "</div>";
-
-      //Create a node to hold the link object
-      var linkNode = dojo.create("div", {
-        "class": "bitly link",
-        innerHTML: title + owner + desc
-      });
-      dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-      dojo.connect(linkNode, "onclick", this, "onMessageBitlyLinkAttachmentClick");
-
-    }
-  },
-  addToPrototype: {
-    onMessageBitlyLinkAttachmentClick: function(evt) {
-      //summary: handles clicking anywhere on the link attachment block
-      var link_schema = this.msg.schemas["rd.msg.body.bit.ly"];
-      if (!link_schema ) {
-        return;
-      }
-    }
-  }
+                //Create a node to hold the link object
+                linkNode = dojo.create("div", {
+                    "class": "bitly link",
+                    innerHTML: title + owner + desc
+                });
+                dojo.query(".message .attachments", this.domNode).addContent(linkNode);
+                dojo.connect(linkNode, "onclick", this, "onMessageBitlyLinkAttachmentClick");
+    
+            }
+        },
+        addToPrototype: {
+            /**
+             * Handles clicking anywhere on the link attachment block
+             */
+            onMessageBitlyLinkAttachmentClick: function (evt) {
+                var link_schema = this.msg.schemas["rd.msg.body.bit.ly"];
+                if (!link_schema) {
+                    return;
+                }
+            }
+        }
+    });
 });
-
-rd.addStyle("rdw.ext.css.MessageBitlyLinkAttachments");

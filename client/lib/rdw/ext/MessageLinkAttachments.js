@@ -21,48 +21,51 @@
  * Contributor(s):
  * */
 
-dojo.provide("rdw.ext.MessageLinkAttachments");
+/*jslint plusplus: false, nomen: false */
+/*global run: false */
+"use strict";
 
-dojo.require("rdw.Message");
+run.modify("rdw/Message", "rdw/ext/MessageLinkAttachments",
+["run", "rd", "dojo", "rdw/Message"],
+function (run, rd, dojo, Message) {
+    /*
+    Applies a display extension to rdw/Message.
+    Allows showing links included in the message as inline attachments
+    */
+    rd.addStyle("rdw/ext/css/MessageLinkAttachments");
 
-/*
-Applies a display extension to rdw.Message.
-Allows showing links included in the message as inline attachments
-*/
-
-rd.applyExtension("rdw.ext.MessageLinkAttachments", "rdw.Message", {
-  after: {
-    postCreate: function() {
-      //NOTE: the "this" in this function is the instance of rdw.Message.
-
-      //Check for links found in a message
-      var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"];
-      if (!link_schema ) {
-        return;
-      }
-      var links = link_schema["links"];
-      for (var i = 0; i < links.length; i++) {
-
-        //Create a node to hold the link object
-        var linkNode = dojo.create("div", {
-          "class": "link",
-          innerHTML: "<a target=\"_blank\" href='"+ links[i] +"'>"+ links[i] +"</a>"
-        });
-        dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-        dojo.connect(linkNode, "onclick", this, "onMessageLinkAttachmentClick");
-      }
-
-    }
-  },
-  addToPrototype: {
-    onMessageLinkAttachmentClick: function(evt) {
-      //summary: handles clicking anywhere on the link attachment block
-      var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"];
-      if (!link_schema ) {
-        return;
-      }
-    }
-  }
+    rd.applyExtension("rdw/ext/MessageLinkAttachments", "rdw/Message", {
+        after: {
+            postCreate: function () {
+                //NOTE: the "this" in this function is the instance of rdw.Message.
+    
+                //Check for links found in a message
+                var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"],
+                    links, i, linkNode;
+                if (!link_schema) {
+                    return;
+                }
+                links = link_schema.links;
+                for (i = 0; i < links.length; i++) {
+    
+                    //Create a node to hold the link object
+                    linkNode = dojo.create("div", {
+                        "class": "link",
+                        innerHTML: "<a target=\"_blank\" href='" + links[i] + "'>" + links[i] + "</a>"
+                    });
+                    dojo.query(".message .attachments", this.domNode).addContent(linkNode);
+                    dojo.connect(linkNode, "onclick", this, "onMessageLinkAttachmentClick");
+                }
+            }
+        },
+        addToPrototype: {
+            /** Handles clicking anywhere on the link attachment block */
+            onMessageLinkAttachmentClick: function (evt) {
+                var link_schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"];
+                if (!link_schema) {
+                    return;
+                }
+            }
+        }
+    });
 });
-
-rd.addStyle("rdw.ext.css.MessageLinkAttachments");
