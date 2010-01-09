@@ -33,27 +33,27 @@
 <link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    rd.require("extender.Editor");
-    rd.addOnLoad(function() {
-      //Parse all .bespin nodes and create bespin editors for the code.
-      rd.query(".bespin").forEach(function(node) {
-        //Fetch the code.
-        var code = rd._getText(rd.attr(node, "data-path"));
-        
-        var widget = new extender.Editor({
-          "class": node.className,
-          useViewportResize: false,
-          useTryMode: true,
-          moduleName: rd.attr(node, "data-modulename"),
-          targetNames: [
-            rd.attr(node, "data-targetname")
-          ],
-          content: code,
-          onEditorLoad: function() {
-            window.scrollTo(0, 0);
-          }
-        }, node);
-      });
+    run(["run", "dojo", "extender/Editor"], function (run, dojo, Editor) {
+        run.ready(function () {
+            //Parse all .bespin nodes and create bespin editors for the code.
+            dojo.query(".bespin").forEach(function (node) {
+                //Fetch the code.
+                var code = dojo._getText(dojo.attr(node, "data-path")),
+                    widget = new Editor({
+                        "class": node.className,
+                        useViewportResize: false,
+                        useTryMode: true,
+                        moduleName: dojo.attr(node, "data-modulename"),
+                        targetNames: [
+                            dojo.attr(node, "data-targetname")
+                        ],
+                        content: code,
+                        onEditorLoad: function () {
+                            window.scrollTo(0, 0);
+                        }
+                    }, node);
+            });
+        });
     });
 </script>
 

@@ -21,10 +21,17 @@
  * Contributor(s):
  * */
 
-dojo.provide("extender.util");
+/*jslint plusplus: false, nomen: false */
+/*global run: false, window: false */
+"use strict";
 
-extender.util.opener = function() {
-  //summary: tries to find the app that called this extender.
-  //TODO: need to make this more extensible for other raindrop apps.
-  return window.open(null, "raindrop");
-}
+run("extender/util",
+function () { 
+    return {
+        /** Tries to find the app that called this extender. */
+        opener: function () {
+            //TODO: need to make this more extensible for other raindrop apps.
+            return window.open(null, "raindrop");
+        }
+    };
+});

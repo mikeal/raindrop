@@ -38,24 +38,26 @@
 
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("rd.api");
-  rd.require("extender.BackEndEditor");
-  rd.addOnLoad(function(){
-    var id = location.href.split("#")[1];
-
-    rd.api().doc({
-      id: id
-    })
-    .ok(function(doc) {
-      var htmlName = rd.escapeHtml(doc.rd_key[1]);
-      rd.query("p.title").addContent(htmlName);
-      document.title = htmlName;
-
-      new extender.BackEndEditor({
-        doc: doc
-      }, dojo.byId("editor"));
-    });
-  })
+    run(["run", "rd", "dojo", "rd/api", "extender/BackEndEditor"],
+        function (run, rd, dojo, api, BackEndEditor) {
+            run.ready(function () {
+                var id = location.href.split("#")[1];
+                
+                api().doc({
+                    id: id
+                })
+                .ok(function(doc) {
+                    var htmlName = dojo.escapeHtml(doc.rd_key[1]);
+                    dojo.query("p.title").addContent(htmlName);
+                    document.title = htmlName;
+                
+                    new BackEndEditor({
+                        doc: doc
+                    }, dojo.byId("editor"));
+                });
+            });
+        }
+    );
 </script>
 
 </head>

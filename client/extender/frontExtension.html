@@ -38,59 +38,58 @@
 
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("extender.Editor");
-  rd.require("dojo.cache");
-
-  rd.addOnLoad(function(){
-    var parts = location.href.split("#")[1].split(":");
-    var moduleName = parts[0];
-    var targetNames = parts[1].split(",");
-    var action = parts[2];
-
-    var content = null;
-    if (action == "new") {
-      //Create some content for the new extension.
-      var template = rd.cache("extender.templates", "sampleObjectExtension.js");
-      var content = rd.template(template, {
-        extName: moduleName,
-        targetModule: targetNames[0]
-      });
-
-      //Make sure moduleName goes in the right place.
-      moduleName = "ext." + moduleName;
-    } else if (action == "clone") {
-      //Make sure moduleName goes in the right place.
-      moduleName = "ext." + moduleName;
-
-      //Some hackery to get .js path from Dojo code.
-      var origModuleName = parts[3];
-      var parts = origModuleName.split(".");
-      var path = rd.moduleUrl(parts.slice(0, -1).join("."), parts[parts.length - 1] + ".js").toString();
-      content = rd._getText(path + "?nocache=" + ((new Date()).getTime()));
-
-      //Replace the names.
-      var regExp = new RegExp(origModuleName, "g");
-      content = content.replace(regExp, moduleName);
-      
-      //Remove any style references, to avoid weirdness.
-      content = content.replace(/rd\.addStyle\s*\(\s*["'][^"']+["']\s*\)(\;)?/g, "");
-    }
-
-    //Set titles.
-    var htmlName = rd.escapeHtml(moduleName);
-    rd.query("p.title").addContent(htmlName);
-    document.title = htmlName;
-
-    var editor = new extender.Editor({
-      moduleName: moduleName,
-      targetNames: targetNames,
-      content: content
-    }, rd.byId("editor"));
-
-    if (action == "new" || action == "clone") {
-      editor.onSave();
-    }
-  })
+    run(["run", "rd", "dojo", "extender/Editor", "text!extender/templates/sampleObjectExtensions!js"],
+        function (run, rd, dojo, Editor, template) {
+            run.ready(function () {
+                var parts = location.href.split("#")[1].split(":"),
+                    moduleName = parts[0],
+                    targetNames = parts[1].split(","),
+                    action = parts[2], editor,
+                    content = null, origModuleName, path, regExp, htmlName;
+    
+                if (action === "new") {
+                    //Create some content for the new extension.
+                    content = rd.template(template, {
+                        extName: moduleName,
+                        targetModule: targetNames[0]
+                    });
+            
+                    //Make sure moduleName goes in the right place.
+                    moduleName = "ext." + moduleName;
+                } else if (action === "clone") {
+                    //Make sure moduleName goes in the right place.
+                    moduleName = "ext." + moduleName;
+            
+                    //Some hackery to get .js path from Dojo code.
+                    origModuleName = parts[3];
+                    path = run.nameToUrl(origModuleName, ".js?nocache=" + (new Date()).getTime());
+                    content = dojo._getText(path);
+    
+                    //Replace the names.
+                    regExp = new RegExp(origModuleName, "g");
+                    content = content.replace(regExp, moduleName);
+    
+                    //Remove any style references, to avoid weirdness.
+                    content = content.replace(/rd\.addStyle\s*\(\s*["'][^"']+["']\s*\)(\;)?/g, "");
+                }
+            
+                //Set titles.
+                htmlName = rd.escapeHtml(moduleName);
+                dojo.query("p.title").addContent(htmlName);
+                document.title = htmlName;
+            
+                editor = new Editor({
+                    moduleName: moduleName,
+                    targetNames: targetNames,
+                    content: content
+                }, dojo.byId("editor"));
+            
+                if (action === "new" || action === "clone") {
+                    editor.onSave();
+                }
+            });
+        }
+    );
 </script>
 
 </head>

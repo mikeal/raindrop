@@ -21,87 +21,102 @@
  * Contributor(s):
  * */
 
-dojo.provide("extender.widgetSelectorHelper");
+/*jslint plusplus: false, nomen: false */
+/*global run: false, document: false */
+"use strict";
 
-//Uses script-added styles to allow loading on demand at the cost of a
-//custom build that would load all styles at the beginning.
-rd.addStyle("extender/css/widgetSelectorHelper");
+run("extender/widgetSelectorHelper",
+["rd", "dojo", "dijit"],
+function (rd, dojo, dijit) {
 
-extender.widgetSelectorHelper = {
-  //Holds on to instance of WidgetSelector to notify of a selection.
-  displayWidget: null,
-  
-  start: function(/*Object*/displayWidget) {
-    //summary: starts the tracking of the mouse for widget selection and
-    //binds to a displayWidget to tell it what widget gets selected.
-    this.displayWidget = displayWidget;
+    //Uses script-added styles to allow loading on demand at the cost of a
+    //custom build that would load all styles at the beginning.
+    rd.addStyle("extender/css/widgetSelectorHelper");
 
-    this.moveHandle = dojo.connect(document.documentElement, "onmousemove", this, "onMouseMove");
-    this.clickHandle = dojo.connect(document.documentElement, "onclick", this, "onClick");
-  },
+    return {
+        //Holds on to instance of WidgetSelector to notify of a selection.
+        displayWidget: null,
 
-  stop: function() {
-    //summary: stops the tracking of the mouse for widget selection, and
-    //general cleanup.
-    this.displayWidget = null;
-    this._forgetWidget();
-    dojo.disconnect(this.moveHandle);
-    dojo.disconnect(this.clickHandle);
-  },
+        /**
+         * Starts the tracking of the mouse for widget selection and
+         * binds to a displayWidget to tell it what widget gets selected.
+         * @param {Object} displayWidget
+         */
+        start: function (displayWidget) {
+            this.displayWidget = displayWidget;
+    
+            this.moveHandle = dojo.connect(document.documentElement, "onmousemove", this, "onMouseMove");
+            this.clickHandle = dojo.connect(document.documentElement, "onclick", this, "onClick");
+        },
 
-  onMouseMove: function (evt) {
-    //summary: as the user moves the mouse, highlight appropriate widget.
+        /**
+         * Stops the tracking of the mouse for widget selection, and
+         * general cleanup.
+         */
+        stop: function () {
+            this.displayWidget = null;
+            this._forgetWidget();
+            dojo.disconnect(this.moveHandle);
+            dojo.disconnect(this.clickHandle);
+        },
 
-    //Find parent widget.
-    var widget = dijit.getEnclosingWidget(evt.target);
+        /** As the user moves the mouse, highlight appropriate widget. */
+        onMouseMove: function (evt) {
+            //Find parent widget.
+            var widget = dijit.getEnclosingWidget(evt.target);
 
-    if (widget != this.widget) {
-      this._forgetWidget();
-      this.widget = widget;
-      if (this.widget) {
-        dojo.addClass(this.widget.domNode, "widgetSelectorHelperSelected");
-        this._updateLabel();
-      }
-    }
-  },
+            if (widget !== this.widget) {
+                this._forgetWidget();
+                this.widget = widget;
+                if (this.widget) {
+                    dojo.addClass(this.widget.domNode, "widgetSelectorHelperSelected");
+                    this._updateLabel();
+                }
+            }
+        },
 
-  onClick: function(evt) {
-    //summary: as user clicks on an element, tell the displayWidget about it.
-    try {
-      this.displayWidget.select(this.widget.declaredClass);
-    } catch (e) {
-      //In some cases we might not get notified if the displayWidget's window
-      //is destroyed, so assume if an error here, then stop.
-      this.stop();
-    }
-    this._forgetWidget();
-  },
+        /** As user clicks on an element, tell the displayWidget about it. */
+        onClick: function (evt) {
+            try {
+                this.displayWidget.select(this.widget.declaredClass);
+            } catch (e) {
+                //In some cases we might not get notified if the displayWidget's window
+                //is destroyed, so assume if an error here, then stop.
+                this.stop();
+            }
+            this._forgetWidget();
+        },
 
-  _forgetWidget: function(widget) {
-    //summary: gets rid of a reference to the widget to help avoid leaks,
-    //bad refreshes of data.
-    if (this.widget) {
-      dojo.removeClass(this.widget.domNode, "widgetSelectorHelperSelected");
-      this.widget = null;
-      if (this.labelNode) {
-        this.labelNode.style.display = "none";
-      }
-    }
-  },
-  
-  _updateLabel: function() {
-    //summary: positions label about the widget in upper left corner.
-    if (!this.labelNode) {
-      this.labelNode = dojo.create("div", {
-        "class": "widgetSelectorHelperLabel"
-      }, dojo.body());
-    }
+        /**
+         * Gets rid of a reference to the widget to help avoid leaks,
+         * bad refreshes of data.
+         */
+        _forgetWidget: function (widget) {
+            if (this.widget) {
+                dojo.removeClass(this.widget.domNode, "widgetSelectorHelperSelected");
+                this.widget = null;
+                if (this.labelNode) {
+                    this.labelNode.style.display = "none";
+                }
+            }
+        },
 
-    var coords = dojo.coords(this.widget.domNode, true);
-    var style = this.labelNode.style;
-    style.top = coords.y + "px";
-    style.left = coords.x + "px";
-    this.labelNode.innerHTML = this.widget.declaredClass;
-    style.display = "block";
-  }
-}
+        /**
+         * Positions label about the widget in upper left corner.
+         */
+        _updateLabel: function () {
+            if (!this.labelNode) {
+                this.labelNode = dojo.create("div", {
+                    "class": "widgetSelectorHelperLabel"
+                }, dojo.body());
+            }
+    
+            var coords = dojo.coords(this.widget.domNode, true),
+                style = this.labelNode.style;
+            style.top = coords.y + "px";
+            style.left = coords.x + "px";
+            this.labelNode.innerHTML = this.widget.declaredClass;
+            style.display = "block";
+        }
+    };
+});
