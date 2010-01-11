@@ -32,149 +32,152 @@
 <link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-  rd.require("rd.api");
-  
-  var controller = {
-    init: function() {
-      this.extNode = rd.byId("ext");
-      this.beNode = rd.byId("be");
+    run(["run", "dojo", "rd", "rd/api"], function(run, dojo, rd, api) {
+        run.ready(function () {
+            controller.init();
+        });
+            var controller = {
+              init: function() {
+                this.extNode = dojo.byId("ext");
+                this.beNode = dojo.byId("be");
 
-      this.nameInputNode = rd.byId("nameInput");
-      this.nameInputNode.value = this.newNameDefault;
-      rd.connect(this.nameInputNode, "onclick", this, "onNameClick");
-      
-      rd.connect(rd.byId("newForm"), "onsubmit", this, "onNewSubmit");
-      this.display();
-    },
+                this.nameInputNode = dojo.byId("nameInput");
+                this.nameInputNode.value = this.newNameDefault;
+                dojo.connect(this.nameInputNode, "onclick", this, "onNameClick");
 
-    newNameDefault: "Extension name",
+                dojo.connect(dojo.byId("newForm"), "onsubmit", this, "onNewSubmit");
+                this.display();
+              },
 
-    onNameClick: function(evt) {
-      //Clear default message
-      if (this.nameInputNode.value == this.newNameDefault) {
-        this.nameInputNode.value = "";
-      }
-    },
+              newNameDefault: "Extension name",
 
-    onNewSubmit: function(evt) {
-      //Sanitize the name
-      var extName = rd.trim(this.nameInputNode.value);
-      if (!extName) {
-        alert("Please enter a name for the extension");
-      } else {
-        //Make sure extName is valid.
-        extName = extName.replace(/[^\w_]/g, "");
-  
-        location = "frontExtension.html#" + extName + ":" + "rdw.Message:new";
-      }
-      dojo.stopEvent(evt);
-    },
-
-    //Stores the backend extensions, indexed by their rd_key.
-    beExts: null,
-  
-    extTemplate: '<li><a href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
-  
-    beTemplate: '<li><a href="backExtension.html#${_id}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
-
-    postCreate: function() {
-      //summary: dijit lifecycle method, after template is in the DOM.
-    },
-  
-    display: function() {
-      rd.api().megaview({
-        keys: [
-          ["rd.core.content", "schema_id", "rd.ext.ui"],
-          ["rd.core.content", "schema_id", "rd.ext.uiext"],
-          ["rd.core.content", "schema_id", "rd.ext.workqueue"]
-        ],
-        include_docs: true,
-        reduce: false
-      })
-      .ok(this, function(json) {
-        var extKeys = [], extNames = {};
-        var subKeys = [], subNames = {};
-        var beKeys = [];
-        this.beExts = {};
-        var empty = {};
-        for (var i= 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
-          //Check for object extensions
-          if (doc.exts) {
-            for (var prop in doc.exts) {
-              if (!(prop in empty)) {
-                var key = doc.exts[prop];
-                var targets = extNames[key];
-                if (!targets) {
-                  targets = extNames[key] = [];
-                  extKeys.push(key);
+              onNameClick: function(evt) {
+                //Clear default message
+                if (this.nameInputNode.value == this.newNameDefault) {
+                  this.nameInputNode.value = "";
                 }
-                targets.push(prop);
+              },
+
+              onNewSubmit: function(evt) {
+                //Sanitize the name
+                var extName = rd.trim(this.nameInputNode.value);
+                if (!extName) {
+                  alert("Please enter a name for the extension");
+                } else {
+                  //Make sure extName is valid.
+                  extName = extName.replace(/[^\w_]/g, "");
+
+                  location = "frontExtension.html#" + extName + ":" + "rdw.Message:new";
+                }
+                dojo.stopEvent(evt);
+              },
+
+              //Stores the backend extensions, indexed by their rd_key.
+              beExts: null,
+
+              extTemplate: '<li><a href="frontExtension.html#${source}:${targets}">${source}</a> extends: ${spacedTargets}</li>',
+
+              beTemplate: '<li><a href="backExtension.html#${_id}">${rd_key.1}</a> runs after: ${source_schemas}. ${info}</li>',
+
+              postCreate: function() {
+                //summary: dijit lifecycle method, after template is in the DOM.
+              },
+
+              display: function() {
+                api().megaview({
+                  keys: [
+                    ["rd.core.content", "schema_id", "rd.ext.ui"],
+                    ["rd.core.content", "schema_id", "rd.ext.uiext"],
+                    ["rd.core.content", "schema_id", "rd.ext.workqueue"]
+                  ],
+                  include_docs: true,
+                  reduce: false
+                })
+                .ok(this, function(json) {
+                  var extKeys = [], extNames = {};
+                  var subKeys = [], subNames = {};
+                  var beKeys = [];
+                  this.beExts = {};
+                  var empty = {};
+                  for (var i= 0, row, doc; (row = json.rows[i]) && (doc = row.doc); i++) {
+                    //Check for object extensions
+                    if (doc.exts) {
+                      for (var prop in doc.exts) {
+                        if (!(prop in empty)) {
+                          var key = doc.exts[prop];
+                          var targets = extNames[key];
+                          if (!targets) {
+                            targets = extNames[key] = [];
+                            extKeys.push(key);
+                          }
+                          targets.push(prop);
+                        }
+                      }
+                    }
+
+                    //Check for topic extensions
+                    if (doc.subscriptions) {
+                      for (var prop in doc.subscriptions) {
+                        if (!(prop in empty)) {
+                          var key = doc.subscriptions[prop];
+                          var targets = subNames[key];
+                          if (!targets) {
+                            targets = subNames[key] = [];
+                            subKeys.push(key);
+                          }
+                          targets.push(prop);
+                        }
+                      }
+                    }
+
+                    //Back end extension.
+                    if (doc.rd_schema_id == "rd.ext.workqueue") {
+                        var keyName = doc.rd_key.join(",");
+                        beKeys.push(keyName);
+                        this.beExts[keyName] = doc;
+                    }
+                  }
+
+                  //Show the object and subscription extensions in the DOM.
+                  this.insertExtensionHtml("ext", extKeys, extNames, this.extNode);
+                  //TODO: subscriptions extensions disabled for now.
+                  //this.insertExtensionHtml("sub", subKeys, subNames, this.subNode);
+
+                  //Show the back end extensions.
+                  if (beKeys.length) {
+                    beKeys.sort();
+                    var html = "";
+                    for (var i = 0, key; key = beKeys[i]; i++) {
+                      html += rd.template(this.beTemplate, this.beExts[key]);
+                    }
+                    dojo.place(html, this.beNode, "only");
+                  }
+                });
+              },
+
+              insertExtensionHtml: function (/*String*/extType, /*Array*/keys, /*Object*/extNames, /*DOMNode*/parentNode) {
+                //summary: generates the HTML markup that shows each extension and inserts
+                //it into the widget.
+                if (keys.length) {
+                  keys.sort();
+                  var html = "";
+                  for (var i = 0, key; key = keys[i]; i++) {
+                    var targets = extNames[key];
+                    targets.sort();
+                    html += rd.template(this.extTemplate, {
+                      extType: extType,
+                      source: key,
+                      targets: targets.join(","),
+                      spacedTargets: targets.join(", ")
+                    })
+                  }
+                  dojo.place(html, parentNode, "only");
+                }
               }
             }
-          }
 
-          //Check for topic extensions
-          if (doc.subscriptions) {
-            for (var prop in doc.subscriptions) {
-              if (!(prop in empty)) {
-                var key = doc.subscriptions[prop];
-                var targets = subNames[key];
-                if (!targets) {
-                  targets = subNames[key] = [];
-                  subKeys.push(key);
-                }
-                targets.push(prop);
-              }
-            }          
-          }
-          
-          //Back end extension.
-          if (doc.rd_schema_id == "rd.ext.workqueue") {
-              var keyName = doc.rd_key.join(",");
-              beKeys.push(keyName);
-              this.beExts[keyName] = doc;
-          }
-        }
+    });
 
-        //Show the object and subscription extensions in the DOM.
-        this.insertExtensionHtml("ext", extKeys, extNames, this.extNode);
-        //TODO: subscriptions extensions disabled for now.
-        //this.insertExtensionHtml("sub", subKeys, subNames, this.subNode);
-
-        //Show the back end extensions.
-        if (beKeys.length) {
-          beKeys.sort();
-          var html = "";
-          for (var i = 0, key; key = beKeys[i]; i++) {
-            html += rd.template(this.beTemplate, this.beExts[key]);
-          }
-          rd.place(html, this.beNode, "only");
-        }
-      });
-    },
-  
-    insertExtensionHtml: function (/*String*/extType, /*Array*/keys, /*Object*/extNames, /*DOMNode*/parentNode) {
-      //summary: generates the HTML markup that shows each extension and inserts
-      //it into the widget.
-      if (keys.length) {
-        keys.sort();
-        var html = "";
-        for (var i = 0, key; key = keys[i]; i++) {
-          var targets = extNames[key];
-          targets.sort();
-          html += rd.template(this.extTemplate, {
-            extType: extType,
-            source: key,
-            targets: targets.join(","),
-            spacedTargets: targets.join(", ")
-          })
-        }
-        rd.place(html, parentNode, "only");
-      }
-    }
-  }
-
-  rd.addOnLoad(controller, "init");
 </script>
 
 </head>
