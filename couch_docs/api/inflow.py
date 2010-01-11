@@ -73,11 +73,19 @@ class API:
         return ret
 
     def requires_get(self, req):
-        if req['verb'] != 'GET':
+        try:
+            method = req['method'] # couch 0.11+
+        except KeyError:
+            method = req['verb'] # 0.10
+        if method != 'GET':
             raise APIErrorResponse(405, "GET required")
 
     def requires_get_or_post(self, req):
-        if req['verb'] not in ['GET', 'POST']:
+        try:
+            method = req['method'] # couch 0.11+
+        except KeyError:
+            method = req['verb'] # 0.10
+        if method not in ['GET', 'POST']:
             raise APIErrorResponse(405, "GET or POST required")
 
 
