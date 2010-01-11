@@ -108,6 +108,20 @@ with an rd.mailing-list schema.
 list_id: a string that identifies the mailing list through which a message
          is received
 
+rd.msg.recip-target:
+--------------------
+** Notes **: information about the 'target' of this message (ie, if the
+message was targetted at a group, an individual, or was broadcast to many
+people)
+
+** Fields **
+target: One of 'from', 'direct', 'broadcast' or 'group'.
+timestamp: The timestamp of the message itself.  Redundant field used
+to help make querying easier.
+target-timestamp: Combination of target and timestamp.  Redundant field used
+to help make querying easier.
+
+
 rd.msg.outgoing.smtp:
 ---------------------
 ** Fields **
@@ -231,6 +245,18 @@ contacts: A list of (contact_id, relationship_name) tuples, where
 'relationship_name' can be None or may help differentiate things like phone
 numbers or email addresses.
 
+rd.identity.recip-target
+------------------------
+** Notes **
+This is very similar to the rd.msg.recip-target schema and is used to
+determine the recip-target values for a message.  This schema is optional - if
+it does not exist, the default is to look only at the message attributes.
+
+** Fields **
+target: the recip-target value for this sender.  Valid values are the same as
+for the rd.msg.recip-target schema.
+
+might be able to fetch.
 
 rd.identity.skype:
 rd.identity.twitter:

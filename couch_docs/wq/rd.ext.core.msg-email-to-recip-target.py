@@ -33,7 +33,22 @@ def handler(src_doc):
     to = src_doc.get('to', [])
     list = src_doc.get('list', False)
     val = None
-    if src_doc.get('from') in my_identities:
+    # First check if any of the identities is marked as being 'broadcast' or
+    # 'group'
+    from_id = src_doc.get('from')
+    if from_id:
+        # We must mark the identity's recip-target as a dependency - even
+        # when it doesn't yet exist - it may be created later, at which time
+        # we need to be re-executed.
+        idty_rdkey = ['identity', from_id]
+        deps = [(idty_rdkey, 'rd.identity.recip-target')]
+        id_schema = open_schemas(deps)[0]
+    else:
+        id_schema = None
+        deps = None
+    if id_schema:
+        val = id_schema['target']
+    elif src_doc.get('from') in my_identities:
         val = 'from'
     # if we have list headers this has to be broadcast even if the message
     # looks like it's only sent to our identity.
@@ -56,4 +71,4 @@ def handler(src_doc):
              'timestamp': src_doc['timestamp'],
              'target-timestamp': [val, src_doc['timestamp']],
              }
-    emit_schema('rd.msg.recip-target', items)
+    emit_schema('rd.msg.recip-target', items, deps=deps)
