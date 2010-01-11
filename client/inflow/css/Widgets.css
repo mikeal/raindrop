@@ -131,6 +131,10 @@
   display: none;
 }
 
+.WidgetBox .attachments {
+  display: none;
+}
+
 /* ### SUMMARY ### */
 
 .rdwSummaryGroup {

@@ -21,8 +21,31 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .attachments > .flickr .thumbnail {
+.rdwMessage > .message > .attachments > .flickr > .thumbnail {
   display: inline-block;
+  background-image: url("../../../../inflow/i/new/rd_attachments_picture.png");
+  width: 110px;
+  height: 70px;
+  max-height: 70px;
+  position: relative;
+}
+
+.rdwMessage > .message > .attachments > .flickr > .thumbnail > a {
+  display: block;	
+  width: 75px;
+  height: 50px;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+  left: 18px;
+  top: 10px;
+  outline: none;
+}
+
+.rdwMessage > .message > .attachments > .flickr > .thumbnail > a > img {
+  position: absolute;
+  top: -12px;
+  left: 0px;
 }
 
 .rdwMessage > .message > .attachments > .flickr .information {

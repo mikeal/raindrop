@@ -51,7 +51,7 @@ function (run, rd, dojo, Message) {
     
                 href = "href=\"http://vimeo.com/" + vimeo_schema.id + "\"";
                 img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\"" +
-                                img_src + "\" class=\"vimeo\"/></a></div>";
+                                img_src + "\" class=\"vimeo\"/></a><div class=\"play\"></div></div></div>";
                 title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
                                     vimeo_schema.title + "</a>";
                 owner = "<abbr class=\"owner\">" + vimeo_schema.user_name + "</abbr>";

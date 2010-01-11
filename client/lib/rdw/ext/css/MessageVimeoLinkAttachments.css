@@ -21,8 +21,6 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .attachments > .vimeo .thumbnail { }
-
 .rdwMessage > .message > .attachments > .vimeo .information {
   vertical-align: top;
   padding: 0 7px;

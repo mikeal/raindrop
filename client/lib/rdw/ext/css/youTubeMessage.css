@@ -30,34 +30,62 @@
   background-repeat: repeat-x; */
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail {
+.rdwMessage > .message > .attachments > .youTube > .thumbnail,
+.rdwMessage > .message > .attachments > .vimeo > .thumbnail { 
   display: inline-block;
-  height: 75px;
-  width: 100px;
+  background-image: url("../../../../inflow/i/new/rd_attachments_video.png");
+  width: 110px;
+  height: 80px;
   position: relative;
 }
 
+.rdwMessage > .message > .attachments > .youTube > .thumbnail > a,
+.rdwMessage > .message > .attachments > .vimeo > .thumbnail > a {
+  display: block;	
+  width: 100px;
+  height: 56px;
+  max-height: 56px;
+  overflow: hidden;
+  position: absolute;
+  z-index: 1;
+  left: 5px;
+  top: 5px;
+  border: 1px solid #333;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  outline: none;
+}
+
 .rdwMessage > .message > .attachments > .youTube > .thumbnail > a > img {
-  max-width: 100px;
-  max-height: 75px;
-  opacity: 0.75;
+  position: absolute;
+  top: -20px;
+  left: -10px;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail > a > img:hover {
-  opacity: 1;
+.rdwMessage > .message > .attachments > .vimeo > .thumbnail > a > img {
+  top: -9px;
+  left: 0px;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail .play { 
+
+.rdwMessage > .message > .attachments > .youTube > .thumbnail .play,
+.rdwMessage > .message > .attachments > .vimeo > .thumbnail .play { 
   width: 22px;
   height: 13px;
   display: inline-block;
   position: absolute;
-  bottom: 5px;
-  right: 5px;
+  top: 28px;
+  left: 44px;
   background-image: url("../../../../inflow/i/new/rd_play_icon.png");
   z-index: 1;
   cursor: pointer;
+  display: none;
 } 
+
+.rdwMessage > .message > .attachments > .youTube > .thumbnail:hover .play,
+.rdwMessage > .message > .attachments > .vimeo > .thumbnail:hover .play {
+  display: block;
+}
 
 .rdwMessage > .message > .attachments > .youTube > .info {
   display: inline-block;
@@ -77,9 +105,9 @@
 }
 
 .rdwMessage > .message > .attachments > .youTube > .player {
-  margin:1em auto;
-  padding-top:1em;
-  border-top:1px dotted #EFEFEF;
+  margin: 8px auto;
+  padding-top: 8px;
+  border-top: 1px solid #e6e6e6;
   text-align:left;
   overflow: hidden;
 }
