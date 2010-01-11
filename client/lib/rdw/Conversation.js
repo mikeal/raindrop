@@ -170,6 +170,16 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
 
         /** Displays the messages in the conversation. */
         display: function () {
+            var schemas = this.msgs[0].schemas, target, targetName, convoId,
+                //Set the limit to fetch. Always show the first message, that is why there is
+                //a -1 for the this.conversation.messages.length branch.
+                limit = this.msgs.length,
+                showUnreadReplies = this.unreadReplyLimit > -1,
+                msgLimit = showUnreadReplies ? this.unreadReplyLimit + 1 : limit,
+                toShow = [0], i, msg, seen, len, refIndex, index,
+                notShownCount, lastWidget, html,
+                Ctor = run.get(this.messageCtorName);
+
             //Set the state as displayed, in case widgets are refreshed for extensions.
             this.displayOnCreate = true;
             this._displayed = true;
@@ -181,7 +191,6 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
             this.msgs.sort(this.msgSort);
     
             //Set classes based on first message state.
-            var schemas = this.msgs[0].schemas, target, targetName, convoId;
             if (schemas["rd.msg.archived"] && schemas["rd.msg.archived"].archived) {
                 dojo.addClass(this.domNode, "archived");
             } else {
@@ -221,76 +230,64 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
             }
     
             dojo.addClass(this.domNode, (this.conversation.unread ? "unread" : "read"));
-    
-            //Create the messages, first by loading the module responsible for showing
-            //them.
-            run([this.messageCtorName], dojo.hitch(this, function (Ctor) {
-                //Set the limit to fetch. Always show the first message, that is why there is
-                //a -1 for the this.conversation.messages.length branch.
-                var limit = this.msgs.length,
-                    showUnreadReplies = this.unreadReplyLimit > -1,
-                    msgLimit = showUnreadReplies ? this.unreadReplyLimit + 1 : limit,
-                    toShow = [0], i, msg, seen, len, refIndex, index,
-                    notShownCount, lastWidget, convoId, html;
 
-                //Now figure out how many replies to show. Always show the first message.
-                for (i = 1; (i < limit) && (msg = this.msgs[i]); i++) {
-                    seen = msg.schemas["rd.msg.seen"];
-                    if (!showUnreadReplies || (showUnreadReplies && toShow.length < msgLimit && (!seen || !seen.seen))) {
-                        toShow.push(i);
+            //Now figure out how many replies to show. Always show the first message.
+            for (i = 1; (i < limit) && (msg = this.msgs[i]); i++) {
+                seen = msg.schemas["rd.msg.seen"];
+                if (!showUnreadReplies || (showUnreadReplies && toShow.length < msgLimit && (!seen || !seen.seen))) {
+                    toShow.push(i);
+                }
+            }
+
+            //If the unread messages are not enough, choose some read messages.
+            if (showUnreadReplies && toShow.length < msgLimit) {
+                if (toShow.length === 1) {
+                    //All replies are read. Choose the last set of replies.
+                    len = this.msgs.length;
+                    for (i = len - 1; i > 0 && i > len - msgLimit; i--) {
+                        toShow.splice(1, 0, i);
+                    }
+                } else {
+                    //Got at least one Reply. Grab the rest by finding the first unread
+                    //reply, then working back from there.
+                    refIndex = toShow[1];
+                    for (i = refIndex - 1; i > 0 && toShow.length < msgLimit; i--) {
+                        toShow.splice(1, 0, i);
                     }
                 }
+            }
 
-                //If the unread messages are not enough, choose some read messages.
-                if (showUnreadReplies && toShow.length < msgLimit) {
-                    if (toShow.length === 1) {
-                        //All replies are read. Choose the last set of replies.
-                        len = this.msgs.length;
-                        for (i = len - 1; i > 0 && i > len - msgLimit; i--) {
-                            toShow.splice(1, 0, i);
-                        }
-                    } else {
-                        //Got at least one Reply. Grab the rest by finding the first unread
-                        //reply, then working back from there.
-                        refIndex = toShow[1];
-                        for (i = refIndex - 1; i > 0 && toShow.length < msgLimit; i--) {
-                            toShow.splice(1, 0, i);
-                        }
-                    }
-                }
+            //Now render widgets for all the messages that want to be shown.
+            for (i = 0; ((index = toShow[i]) > -1) && (msg = this.msgs[index]); i++) {
+                this.lastDisplayedMsg = msg;
+                this.addSupporting(new Ctor({
+                    msg: msg,
+                    type: index === 0 ? "" : this.replyStyle,
+                    tabIndex: index === 0 || this.allowReplyMessageFocus ? 0 : -1
+                }, dojo.create("div", null, this.containerNode)));
+            }
 
-                //Now render widgets for all the messages that want to be shown.
-                for (i = 0; ((index = toShow[i]) > -1) && (msg = this.msgs[index]); i++) {
-                    this.lastDisplayedMsg = msg;
-                    this.addSupporting(new Ctor({
-                        msg: msg,
-                        type: index === 0 ? "" : this.replyStyle,
-                        tabIndex: index === 0 || this.allowReplyMessageFocus ? 0 : -1
-                    }, dojo.create("div", null, this.containerNode)));
+            //If any left over messages, then show that info.
+            notShownCount = this.msgs.length - toShow.length;
+            if (notShownCount) {
+                //Find last widget.
+                lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
+                //Set up the link for the more action. Need the conversation ID.
+                convoId = lastWidget.msg &&
+                          lastWidget.conversation &&
+                          lastWidget.conversation.id;
+
+                if (lastWidget && lastWidget.actionsNode) {
+                    html = string.substitute(this.moreMessagesTemplate, {
+                        url: convoId ? "rd:conversation:" + dojo.toJson(convoId) : "",
+                        message: string.substitute(this.i18n.moreMessages, {
+                            count: notShownCount,
+                            messagePlural: (notShownCount === 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
+                        })
+                    });
+                    dojo.place(html, lastWidget.actionsNode, 2);
                 }
-    
-                //If any left over messages, then show that info.
-                notShownCount = len - toShow.length;
-                if (notShownCount) {
-                    //Find last widget.
-                    lastWidget = this._supportingWidgets[this._supportingWidgets.length - 1];
-                    //Set up the link for the more action. Need the conversation ID.
-                    convoId = lastWidget.msg &&
-                              lastWidget.conversation &&
-                              lastWidget.conversation.id;
-    
-                    if (lastWidget && lastWidget.actionsNode) {
-                        html = string.substitute(this.moreMessagesTemplate, {
-                            url: convoId ? "rd:conversation:" + dojo.toJson(convoId) : "",
-                            message: string.substitute(this.i18n.moreMessages, {
-                                count: notShownCount,
-                                messagePlural: (notShownCount === 1 ? this.i18n.messageSingular : this.i18n.messagePlural)
-                            })
-                        });
-                        dojo.place(html, lastWidget.actionsNode, 2);
-                    }
-                }
-            }));
+            }
         },
 
         /**
