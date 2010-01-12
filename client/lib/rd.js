@@ -186,11 +186,13 @@ function (run, dojo, dijit, dojox) {
 
         /**
          * Returns a base64 string encoding of the JS object
-         * @param {Object} obj
+         * @param {Object} obj if obj is a string, it will just be encoded,
+         * otherwise, dojo.toJson() will be used to convert the object to
+         * a string. For any value, all line returns are stripped before encoding.
          */
         toBase64: function (obj) {
-            //.
-            var byteKey = this.stringToBytes(dojo.toJson(obj).replace(/\n/g, ""));
+            var key = typeof obj === "string" ? obj : dojo.toJson(obj);
+            var byteKey = this.stringToBytes(key.replace(/\n/g, ""));
             return dojox.encoding.base64.encode(byteKey);
         },
 

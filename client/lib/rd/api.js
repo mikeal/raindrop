@@ -582,10 +582,26 @@ function (rd, dojo) {
       },
   
       _docIdForItem: function(item) {
+          //WARNING: any array value for rd_key[1] needs to have
+          //a space between array items in the stringified version.
+          //Otherwise things will break on the backend. Eventually,
+          //only the server should assign these IDs.
+          var part2 = item.rd_key[1], i, temp = "", piece;
+          if (dojo.isArray(part2)) {
+              for (i = 0; i < part2.length; i++) {
+                  piece = part2[i];
+                  temp += (i !== 0 ? ', ' : '') +
+                        //piece could be a non-string, so convert to string
+                        //and encode double quotes.
+                          '"' + (piece + "").replace(/\"/g, '\\"') + '"';
+              }
+              part2 = '[' + temp + ']';
+          }
+
           return "rc!"
                        + item.rd_key[0]
                        + "."
-                       + rd.toBase64(item.rd_key[1])
+                       + rd.toBase64(part2)
                        + "!"
                        + item.rd_schema_id;
       }
