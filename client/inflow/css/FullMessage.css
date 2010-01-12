@@ -52,7 +52,7 @@
 
 .rdwConversationFullMessage > .message > .header > .author > .from {
   display: table;
-  font-size: 13px;
+  font-size: 14px;
   color: #1a1a1a;
   margin: 3px 0 0 0;
 }
@@ -99,7 +99,6 @@
 }
 
 .rdwConversationFullMessage > .message > .actions {
-  visibility: hidden;
   display: inline-block;
   text-align: right;
   width: 100%;  
@@ -107,10 +106,6 @@
   -webkit-box-sizing: border-box;
   padding: 0 5px;
 }
-
-.rdwConversationFullMessage > .message:hover > .actions {
-  visibility: visible;
-} 
 
 .rdwConversationFullMessage > .message > .actions a.reply {
   margin-left: 4px;

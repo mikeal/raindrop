@@ -47,25 +47,29 @@
 
 /*### IMPERSONAL ###*/
 .rdwConversation > .newImpersonal {
-  margin: 5px 0;
-  padding: 10px 5px;
-  border-bottom: 1px solid #e6e6e6;
-  position: relative;
-  background-image: url("../i/new/rd_input_bg.png");
-  background-position: top;
-  background-repeat: repeat-x;
-  background-color: #fff;
+  padding: 10px;
+  position: absolute;
+  bottom: 25px;
+  left: 35px;
+  width: 260px;
+  height: 120px;
+  background-image: url("../i/new/rd_move_bg2.png");
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  z-index: 2;
 } 
 
 .rdwConversation > .newImpersonal > .impersonalOptions {
   background-image: url("../i/new/rd_move_bg.png");
   background-repeat: no-repeat;
   background-position: left center;
-  padding: 0 0 0 58px;
+  padding: 0 0 0 50px;
+  margin: 12px 0 0 0;
 }
 
 .rdwConversation > .newImpersonal > .impersonalOptions h4 {
-  font-size: 13px;
+  font-size: 12px;
+  margin-bottom: 10px;
 }
 
 /*### END IMPERSONAL ###*/
@@ -119,7 +123,7 @@
 .rdwConversation > .header > .subject {
   margin: 3px 0 0 0;
   display: block;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: bold;
   color: #FF5959;
   text-decoration: none;
