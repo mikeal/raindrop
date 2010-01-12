@@ -324,7 +324,13 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
             if (this.summaryActiveNode) {
                 delete this.summaryActiveNode;
             }
-    
+            if (this.summaryWidget) {
+                //This is also a supporting widget,
+                //so no need to destroy it, just remove
+                //the ref.
+                delete this.summaryWidget;
+            }
+
             this.inherited("destroy", arguments);
         },
 
@@ -371,7 +377,7 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
                 this.conversations.push.apply(this.conversations, conversations);
 
                 var i, convo, Handler, widget,
-                     frag, zIndex, SummaryWidgetCtor, summaryWidget, group;
+                     frag, zIndex, SummaryWidgetCtor, group;
                 for (i = 0; (convo = conversations[i]); i++) {
                     //Feed the message to existing created groups.
                     if (!this._groupHandled(convo)) {
@@ -405,15 +411,17 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
             zIndex = this._groups.length;
 
             //Create summary group widget and add it first to the fragment.
-            SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
-            summaryWidget = new SummaryWidgetCtor();
-            //Want summary widget to be the highest, add + 1 since group work
-            //below uses i starting at 0.
-            summaryWidget.domNode.style.zIndex = zIndex + 1;
-            this.addSupporting(summaryWidget);
-            summaryWidget.placeAt(frag);
+            if (!this.summaryWidget) {
+              SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
+              this.summaryWidget = new SummaryWidgetCtor();
+              //Want summary widget to be the highest, add + 1 since group work
+              //below uses i starting at 0.
+              this.addSupporting(this.summaryWidget);
+              this.summaryWidget.placeAt(frag);
+            }
 
             //Add all the widgets to the DOM and ask them to display.
+            this.summaryWidget.domNode.style.zIndex = zIndex + 1;
             for (i = 0; (group = this._groups[i]); i++) {
                 group.domNode.style.zIndex = zIndex - i;
                 group.placeAt(frag);
