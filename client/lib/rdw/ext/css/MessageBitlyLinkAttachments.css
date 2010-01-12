@@ -32,7 +32,6 @@
 }
 
 .rdwMessage > .message > .attachments > .bitly .owner {
-  display: block;
   color: #333;
   font-weight: bold;
 }

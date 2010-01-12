@@ -39,39 +39,41 @@ function (run, rd, dojo, Message) {
         after: {
             postCreate: function () {
                 //NOTE: the "this" in this function is the instance of rdw/Message.
-    
+
                 //Check for links found in a message
                 var bitly_schema = this.msg.schemas["rd.msg.body.bit.ly"],
-                    href, title, owner, desc, linkNode;
+                      linkNode, templateObj, template, titleTemplate;
                 if (!bitly_schema) {
                     return;
                 }
 
-                href = "href=\"" + bitly_schema.longUrl + "\"";
-                title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
-                                    bitly_schema.htmlTitle + "</a>";
-                owner = "<abbr class=\"owner\">" + bitly_schema.shortenedByUser + "</abbr>";
-                desc = "<div class=\"description\">" + bitly_schema.longUrl + "</div>";
+                template = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${longUrl}</a>' +
+                           '<span class="by">by</span> ' +
+                           '<abbr class="owner">${owner}</abbr>';
+
+                titleTemplate = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${title}</a>' +
+                                '<div class="description">${longUrl}</div>' +
+                                '<span class="by">by</span> ' +
+                                '<abbr class="owner">${owner}</abbr>';
+
+                templateObj = {
+                    longUrl   : bitly_schema.longUrl,
+                    shortUrl  : "http://bit.ly/" + bitly_schema.globalHash,
+                    title     : bitly_schema.htmlTitle,
+                    owner     : bitly_schema.shortenedByUser
+                };
+
+                //Check if a title is included and use the alt template
+                if (bitly_schema.htmlTitle) {
+                    template = titleTemplate;
+                }
 
                 //Create a node to hold the link object
                 linkNode = dojo.create("div", {
                     "class": "bitly link",
-                    innerHTML: title + owner + desc
+                    innerHTML: rd.template(template, templateObj)
                 });
                 dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-                dojo.connect(linkNode, "onclick", this, "onMessageBitlyLinkAttachmentClick");
-    
-            }
-        },
-        addToPrototype: {
-            /**
-             * Handles clicking anywhere on the link attachment block
-             */
-            onMessageBitlyLinkAttachmentClick: function (evt) {
-                var link_schema = this.msg.schemas["rd.msg.body.bit.ly"];
-                if (!link_schema) {
-                    return;
-                }
             }
         }
     });
