@@ -82,260 +82,259 @@
   <script src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
-    rd.require("dijit.form.Textarea");
-    rd.require("dojo.NodeList-manipulate");
-    rd.require("dojo.NodeList-traverse");
-    rd.require("dojo.cookie");
+    run(["run", "rd", "dojo", "dijit", "dojo/cookie", "dojo/parser", "dijit/form/Textarea", "dojo/NodeList-manipulate", "dojo/NodeList-traverse"], function(
+          run,   rd,   dojo,   dijit,   cookie,        parser) {
+        run.ready(function(){
+          parser.parse();
 
-    rd.addOnLoad(function(){
-
-      //Get the list of views available for querying.
-      rd.xhrGet({
-        url: rd.dbPath + "_all_docs?startkey=%22_design%2F%22&endkey=%22_design0%22&include_docs=true",
-        handleAs: "json",
-        load: function(response, ioArgs) {
-          //Get all the views from all the docs and make view URLs
-          var urls = [];
-          for (var i = 0, row, doc; (row = response.rows[i]) && (doc = row.doc); i++) {
-            for (var prop in doc.views) {
-              urls.push(doc._id + "/_view/" + prop);
-            }
-          }
-          urls.sort();
-
-
-          //Build up HTML for URLs
-          var nodes = rd.doc.createDocumentFragment();
-          var html = '<select id="url" name="url">';
-
-          //Add in all_docs option
-          urls.push("_all_docs");
-
-          //Now all the views.
-          for (var i = 0, url; url = urls[i]; i++) {
-            html += '<option value="' + url + '">' + url.replace(/^_design\//, "") + '</option>';
-          }
-          html += '</select>';
-          rd.place(html, nodes);
-
-          //Specify input controls.
-          var inputs = [
-            "key",
-            "keys",
-            "startkey",
-            "startkey_docid",
-            "endkey",
-            "endkey_docid",
-            "limit",
-            "stale",
-            "descending",
-            "skip",
-            "group",
-            "group_level",
-            "reduce",
-            "include_docs"
-          ];
-
-          var inputValues = {
-            limit: 10,
-            reduce: "false"
-          }
-
-          //Convert form controls into HTML.
-          for (var i = 0, input; input = inputs[i]; i++) {
-            var html = rd.string.substitute(
-              '<label><span class="label">${name}:</span> <input type="text" name="${name}" value="${value}" size="40"/></label>',
-              {
-                name: input,
-                value: inputValues[input] || ""
+          //Get the list of views available for querying.
+          dojo.xhrGet({
+            url: rd.dbPath + "_all_docs?startkey=%22_design%2F%22&endkey=%22_design0%22&include_docs=true",
+            handleAs: "json",
+            load: function(response, ioArgs) {
+              //Get all the views from all the docs and make view URLs
+              var urls = [];
+              for (var i = 0, row, doc; (row = response.rows[i]) && (doc = row.doc); i++) {
+                for (var prop in doc.views) {
+                  urls.push(doc._id + "/_view/" + prop);
+                }
               }
-            );
+              urls.sort();
     
-            rd.place(html, nodes);
-          }
-          rd.place(nodes, "masterForm");
-
-          //********************************************
-          function fetch(/*Object*/args) {
-            //summary: normalizes arguments and then fetches the results from server.
-
-            //Create a copy so we can modify the args below without affecting
-            //form history.
-            var oldArgs = args;
-            args = {};
-            rd.mixin(args, oldArgs);
-
-            var url = rd.dbPath + args.url;
-            delete args.url;
-
-            //Prune out empty fields, automatically JSON-escape other fields.
-            for (var prop in args) {
-              if (!args[prop]) {
-                delete args[prop];
-              } else if(!(args[prop] instanceof Array)) {
-                var value = rd.trim(args[prop]);
-                if (value != "true" && value != "false" && !value.match(/^[0-9\.]+$/) && !value.match(/^[{\["']/)) {
-                  args[prop] = '"' + value.replace(/"/g, '\\"') + '"';
+    
+              //Build up HTML for URLs
+              var nodes = dojo.doc.createDocumentFragment();
+              var html = '<select id="url" name="url">';
+    
+              //Add in all_docs option
+              urls.push("_all_docs");
+    
+              //Now all the views.
+              for (var i = 0, url; url = urls[i]; i++) {
+                html += '<option value="' + url + '">' + url.replace(/^_design\//, "") + '</option>';
+              }
+              html += '</select>';
+              dojo.place(html, nodes);
+    
+              //Specify input controls.
+              var inputs = [
+                "key",
+                "keys",
+                "startkey",
+                "startkey_docid",
+                "endkey",
+                "endkey_docid",
+                "limit",
+                "stale",
+                "descending",
+                "skip",
+                "group",
+                "group_level",
+                "reduce",
+                "include_docs"
+              ];
+    
+              var inputValues = {
+                limit: 10,
+                reduce: "false"
+              }
+    
+              //Convert form controls into HTML.
+              for (var i = 0, input; input = inputs[i]; i++) {
+                var html = rd.template(
+                  '<label><span class="label">${name}:</span> <input type="text" name="${name}" value="${value}" size="40"/></label>',
+                  {
+                    name: input,
+                    value: inputValues[input] || ""
+                  }
+                );
+        
+                dojo.place(html, nodes);
+              }
+              dojo.place(nodes, "masterForm");
+    
+              //********************************************
+              function fetch(/*Object*/args) {
+                //summary: normalizes arguments and then fetches the results from server.
+    
+                //Create a copy so we can modify the args below without affecting
+                //form history.
+                var oldArgs = args;
+                args = {};
+                dojo.mixin(args, oldArgs);
+    
+                var url = rd.dbPath + args.url;
+                delete args.url;
+    
+                //Prune out empty fields, automatically JSON-escape other fields.
+                for (var prop in args) {
+                  if (!args[prop]) {
+                    delete args[prop];
+                  } else if(!(args[prop] instanceof Array)) {
+                    var value = dojo.trim(args[prop]);
+                    if (value != "true" && value != "false" && !value.match(/^[0-9\.]+$/) && !value.match(/^[{\["']/)) {
+                      args[prop] = '"' + value.replace(/"/g, '\\"') + '"';
+                    } else {
+                      args[prop] = value;
+                    }
+                  }
+                }
+    
+                //Change pretty printing of JSON to just use two spaces.
+                dojo.toJsonIndentStr = "  ";
+                
+                var xhrArgs = {
+                  url: url,
+                  content: args,
+                  //handleAs: "json",
+                  handleAs: "text",
+                  handle: function(response, ioArgs) {
+                    if (response instanceof Error) {
+                      response = ioArgs.xhr.responseText;
+                    }
+                    //var text = dojo.toJson(response, true);
+                    //var text = response.replace(/\},/g, "},\n");
+                    var text = response;
+                    output(text);
+                  }
+                };
+    
+                //If sending keys, need to send a POST, but put some params on the
+                //querystring? This seems wrong. Should be able to pass all data in
+                //HTTP body?
+                var keys = args.keys;
+                if (keys) {
+                  delete args.keys;
+                  xhrArgs.url = xhrArgs.url + "?" + dojo.objectToQuery(args);
+                  delete xhrArgs.content;
+    
+                  xhrArgs.postData = '{"keys": ' + keys + '}';
+                }
+    
+                dojo["xhr" + (keys ? "Post" : "Get")](xhrArgs);
+              }
+    
+              var rawOutputText;
+    
+              //********************************************
+              function output(/*String*/ text) {
+                rawOutputText = text;
+                //summary: output the text, depending on formatting options.
+                var useHyperlink = dojo.byId("hyperLinkIds").checked;
+                if (arguments.length) {
+                  //Setter case
+                  if (useHyperlink) {
+                    //Hyperlink the IDs.
+                    text = rd.escapeHtml(text).replace(/("id":"([^"]+)")/g, function (txt, match, sub1) {
+                      return '"id":"<a href="/_utils/document.html?raindrop/' + sub1 + '" target="_blank">' + sub1 + '</a>"';
+                    });
+                    dijit.byId("outputText").domNode.style.display = "none";
+                    dojo.byId("outputSpan").style.display = "block";
+    
+                    dojo.byId("outputSpan").innerHTML = text;
+                  } else {
+                    dijit.byId("outputText").domNode.style.display = "block";
+                    dojo.byId("outputSpan").style.display = "none";
+    
+                    dijit.byId("outputText").attr("value", text);
+                  }
                 } else {
-                  args[prop] = value;
+                  //Getter case.
+                  return useHyperlink ? dojo.byId("outputSpan").innerHTML : dw.byId("outputText").attr("value");
                 }
               }
-            }
-
-            //Change pretty printing of JSON to just use two spaces.
-            rd.toJsonIndentStr = "  ";
-            
-            var xhrArgs = {
-              url: url,
-              content: args,
-              //handleAs: "json",
-              handleAs: "text",
-              handle: function(response, ioArgs) {
-                if (response instanceof Error) {
-                  response = ioArgs.xhr.responseText;
+    
+              dojo.query("#hyperLinkIds").onclick(function(evt) {
+                output(rawOutputText);
+              });
+    
+              //Hold history of commands.
+              historyCache = [];
+              historyIndex = 0;
+    
+              //********************************************
+              function showHistory() {
+                //summary: shows the current history index's form info
+                //and updates the output to that query.
+                var args = historyCache[historyIndex].args;
+                setForm(args);
+                fetch(args);
+              }
+    
+              //********************************************
+              function submitQuery(evt) {
+                //summary: grabs the forms fields, adds to history and submits query.
+                if (evt) {
+                  dojo.stopEvent(evt);
                 }
-                //var text = rd.toJson(response, true);
-                //var text = response.replace(/\},/g, "},\n");
-                var text = response;
-                output(text);
+    
+                var args = dojo.formToObject("masterForm");
+                historyIndex = historyCache.push({ args: args }) - 1;
+    
+                fetch(args);
               }
-            };
-
-            //If sending keys, need to send a POST, but put some params on the
-            //querystring? This seems wrong. Should be able to pass all data in
-            //HTTP body?
-            var keys = args.keys;
-            if (keys) {
-              delete args.keys;
-              xhrArgs.url = xhrArgs.url + "?" + rd.objectToQuery(args);
-              delete xhrArgs.content;
-
-              xhrArgs.postData = '{"keys": ' + keys + '}';
-            }
-
-            rd["xhr" + (keys ? "Post" : "Get")](xhrArgs);
-          }
-
-          var rawOutputText;
-
-          //********************************************
-          function output(/*String*/ text) {
-            rawOutputText = text;
-            //summary: output the text, depending on formatting options.
-            var useHyperlink = rd.byId("hyperLinkIds").checked;
-            if (arguments.length) {
-              //Setter case
-              if (useHyperlink) {
-                //Hyperlink the IDs.
-                text = rd.escapeHtml(text).replace(/("id":"([^"]+)")/g, function (txt, match, sub1) {
-                  return '"id":"<a href="/_utils/document.html?raindrop/' + sub1 + '" target="_blank">' + sub1 + '</a>"';
-                });
-                rdw.byId("outputText").domNode.style.display = "none";
-                rd.byId("outputSpan").style.display = "block";
-
-                rd.byId("outputSpan").innerHTML = text;
-              } else {
-                rdw.byId("outputText").domNode.style.display = "block";
-                rd.byId("outputSpan").style.display = "none";
-
-                rdw.byId("outputText").attr("value", text);
+    
+              //Bind to onsubmit for the form.
+              dojo.connect(dojo.byId("masterForm"), "onsubmit", submitQuery);
+    
+    
+    
+              //Bind to key events to allow going back/forward in history.
+              var ignoreNames = {
+                "input": 1,
+                "textarea": 1,
+                "select": 1,
+                "button": 1
+              };
+    
+              //********************************************
+              function setForm(args) {
+                //summary: sets the form fields based on the args.
+                var form = dojo.byId("masterForm");
+                for (var prop in args) {
+                  if (prop == "url") {
+                    dojo.query(form[prop]).val(args[prop]);
+                  } else {
+                    form[prop].value = args[prop];
+                  }
+                }
               }
-            } else {
-              //Getter case.
-              return useHyperlink ? rd.byId("outputSpan").innerHTML : dw.byId("outputText").attr("value");
-            }
-          }
-
-          rd.query("#hyperLinkIds").onclick(function(evt) {
-            output(rawOutputText);
-          });
-
-          //Hold history of commands.
-          historyCache = [];
-          historyIndex = 0;
-
-          //********************************************
-          function showHistory() {
-            //summary: shows the current history index's form info
-            //and updates the output to that query.
-            var args = historyCache[historyIndex].args;
-            setForm(args);
-            fetch(args);
-          }
-
-          //********************************************
-          function submitQuery(evt) {
-            //summary: grabs the forms fields, adds to history and submits query.
-            if (evt) {
-              rd.stopEvent(evt);
-            }
-
-            var args = rd.formToObject("masterForm");
-            historyIndex = historyCache.push({ args: args }) - 1;
-
-            fetch(args);
-          }
-
-          //Bind to onsubmit for the form.
-          rd.connect(rd.byId("masterForm"), "onsubmit", submitQuery);
-
-
-
-          //Bind to key events to allow going back/forward in history.
-          var ignoreNames = {
-            "input": 1,
-            "textarea": 1,
-            "select": 1,
-            "button": 1
-          };
-
-          //********************************************
-          function setForm(args) {
-            //summary: sets the form fields based on the args.
-            var form = rd.byId("masterForm");
-            for (var prop in args) {
-              if (prop == "url") {
-                rd.query(form[prop]).val(args[prop]);
-              } else {
-                form[prop].value = args[prop];
+    
+              dojo.connect(document.documentElement, "onkeypress", function(evt) {
+                var name = evt.target.nodeName.toLowerCase();            
+                if (ignoreNames[name]) {
+                  return;
+                }
+                //console.log(evt, evt.target, evt.currentTarget);
+    
+                if (evt.keyCode == dojo.keys.UP_ARROW) {
+                   if (historyIndex > 0) {
+                    historyIndex -= 1;
+                    showHistory();
+                  }
+               } else if (evt.keyCode == dojo.keys.DOWN_ARROW) {
+                  if (historyIndex < historyCache.length - 1) {
+                    historyIndex += 1;
+                    showHistory();
+                  }
+                }
+              });
+              
+              //Save last query in a cookie for now. Also rehydrate last query from cookie if available.
+              var oldArgs = cookie("lastQuery");
+              if (oldArgs) {
+                setForm(dojo.fromJson(oldArgs));
+                submitQuery();
               }
-            }
-          }
-
-          rd.connect(document.documentElement, "onkeypress", function(evt) {
-            var name = evt.target.nodeName.toLowerCase();            
-            if (ignoreNames[name]) {
-              return;
-            }
-            //console.log(evt, evt.target, evt.currentTarget);
-
-            if (evt.keyCode == rd.keys.UP_ARROW) {
-               if (historyIndex > 0) {
-                historyIndex -= 1;
-                showHistory();
-              }
-           } else if (evt.keyCode == rd.keys.DOWN_ARROW) {
-              if (historyIndex < historyCache.length - 1) {
-                historyIndex += 1;
-                showHistory();
-              }
+    
+              //When page is being unloaded save query to a cookie.
+              dojo.connect(window, "onbeforeunload", function(evt) {
+                var args = dojo.formToObject("masterForm");
+                cookie("lastQuery", dojo.toJson(args), { expires: 25 });
+              });
             }
           });
-          
-          //Save last query in a cookie for now. Also rehydrate last query from cookie if available.
-          var oldArgs = rd.cookie("lastQuery");
-          if (oldArgs) {
-            setForm(rd.fromJson(oldArgs));
-            submitQuery();
-          }
-
-          //When page is being unloaded save query to a cookie.
-          rd.connect(window, "onbeforeunload", function(evt) {
-            var args = rd.formToObject("masterForm");
-            rd.cookie("lastQuery", rd.toJson(args), { expires: 25 });
-          });
-        }
-      });
+        });
     });
   </script>
 </head>
