@@ -104,7 +104,8 @@ function (rd, dojo, string, Conversation, wiper, BroadcastMessage, template) {
             //If target is broadcast or notification and not associated (probably)
             //a direct prototype check, not on an instance), or if an instance that
             //already has a from that matches the conversation's from
-            return (target === "broadcast" || target === "notification") && (!this.from || this.from === from);
+            return (target === "broadcast" || target === "notification")
+                   && (!this.from || (this.from[0] === from[0] && this.from[1] === from[1]));
         },
     
         /**

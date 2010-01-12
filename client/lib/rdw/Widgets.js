@@ -62,8 +62,8 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
   
         /** Dijit lifecycle method after template insertion in the DOM. */
         postCreate: function () {
-console.log("@@@CREATED: rdw.Widgets");
-            rd.sub("rd/onHashChange", this, "onHashChange");
+            this.subscribe("rd/onHashChange", "onHashChange");
+            this.subscribe("rd-impersonal-add", "impersonalAdd");
             this.home();
         },
 
@@ -359,9 +359,71 @@ console.log("@@@CREATED: rdw.Widgets");
             }));
         },
 
-        //**************************************************
-        //start topic subscription endpoints
-        //**************************************************
+        /**
+         * Adds more conversations to the display. Called as a result of the
+         * rd-impersonal-add topic, and the home rendering on first instantiation.
+         * @param {Array} conversations
+         */
+        impersonalAdd: function (conversations) {
+            //The home view groups messages by type. So, for each message in each conversation,
+            //figure out where to put it.
+            if (conversations && conversations.length) {
+                this.conversations.push.apply(this.conversations, conversations);
+
+                var i, convo, Handler, widget,
+                     frag, zIndex, SummaryWidgetCtor, summaryWidget, group;
+                for (i = 0; (convo = conversations[i]); i++) {
+                    //Feed the message to existing created groups.
+                    if (!this._groupHandled(convo)) {
+                        //Existing group could not handle it, see if there is a new group
+                        //handler that can handle it.
+                        Handler = this._getHomeGroup(convo);
+                        if (Handler) {
+                            widget = new Handler({
+                                conversation: convo,
+                                displayOnCreate: false
+                            }, dojo.create("div"));
+                            widget._isGroup = true;
+                            this._groups.push(widget);
+                            this.addSupporting(widget);
+                        } else {
+                            widget = this.createHomeConversation(convo);
+                            this._groups.push(widget);
+                            this.addSupporting(widget);
+                        }
+                    }
+                }
+            }
+
+            this._groups.sort(function (a, b) {
+                var aSort = "groupSort" in a ? a.groupSort : 100,
+                        bSort = "groupSort" in b ? b.groupSort : 100;
+                return aSort > bSort ? 1 : -1;
+            });
+
+            frag = dojo.doc.createDocumentFragment();
+            zIndex = this._groups.length;
+
+            //Create summary group widget and add it first to the fragment.
+            SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
+            summaryWidget = new SummaryWidgetCtor();
+            //Want summary widget to be the highest, add + 1 since group work
+            //below uses i starting at 0.
+            summaryWidget.domNode.style.zIndex = zIndex + 1;
+            this.addSupporting(summaryWidget);
+            summaryWidget.placeAt(frag);
+
+            //Add all the widgets to the DOM and ask them to display.
+            for (i = 0; (group = this._groups[i]); i++) {
+                group.domNode.style.zIndex = zIndex - i;
+                group.placeAt(frag);
+                group.display();
+            }
+
+            //Inject nodes all at once for best performance.
+            this.domNode.appendChild(frag);
+        },
+
         /** Responds to rd-protocol-home topic. */
         home: function () {
             //reset stored state.
@@ -394,72 +456,7 @@ console.log("@@@CREATED: rdw.Widgets");
                 limit: this.conversationLimit,
                 message_limit: this.messageLimit 
             }).ok(this, function (conversations) {
-                //The home view groups messages by type. So, for each message in each conversation,
-                //figure out where to put it.
-                if (conversations && conversations.length) {
-                    this.conversations.push.apply(this.conversations, conversations);
-
-                    var leftOver = [], i, convo, Handler, widget,
-                         frag, zIndex, SummaryWidgetCtor, summaryWidget, group;
-                    for (i = 0; (convo = conversations[i]); i++) {
-                        //Feed the message to existing created groups.
-                        if (!this._groupHandled(convo)) {
-                            //Existing group could not handle it, see if there is a new group
-                            //handler that can handle it.
-                            Handler = this._getHomeGroup(convo);
-                            if (Handler) {
-                                widget = new Handler({
-                                    conversation: convo,
-                                    displayOnCreate: false
-                                }, dojo.create("div"));
-                                widget._isGroup = true;
-                                this._groups.push(widget);
-                                this.addSupporting(widget);
-                            } else {
-                                leftOver.push(convo);
-                            }
-                        }
-                    }
-    
-                    //If any messsages not handled by a group in a conversation
-                    //are left over, create a regular conversation for them.
-                    if (leftOver.length) {
-                        for (i = 0; (convo = leftOver[i]); i++) {
-                            widget = this.createHomeConversation(convo);
-                            this._groups.push(widget);
-                            this.addSupporting(widget);
-                        }
-                    }
-                }
-    
-                this._groups.sort(function (a, b) {
-                    var aSort = "groupSort" in a ? a.groupSort : 100,
-                            bSort = "groupSort" in b ? b.groupSort : 100;
-                    return aSort > bSort ? 1 : -1;
-                });
-    
-                frag = dojo.doc.createDocumentFragment();
-                zIndex = this._groups.length;
-    
-                //Create summary group widget and add it first to the fragment.
-                SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
-                summaryWidget = new SummaryWidgetCtor();
-                //Want summary widget to be the highest, add + 1 since group work
-                //below uses i starting at 0.
-                summaryWidget.domNode.style.zIndex = zIndex + 1;
-                this.addSupporting(summaryWidget);
-                summaryWidget.placeAt(frag);
-    
-                //Add all the widgets to the DOM and ask them to display.
-                for (i = 0; (group = this._groups[i]); i++) {
-                    group.domNode.style.zIndex = zIndex - i;
-                    group.placeAt(frag);
-                    group.display();
-                }
-
-                //Inject nodes all at once for best performance.
-                this.domNode.appendChild(frag);
-
+                this.impersonalAdd(conversations);
                 //Update the state of widgets based on hashchange. Important for
                 //first load of this widget, to account for current page state.
                 this.onHashChange(onHashChange.value);
@@ -519,8 +516,5 @@ console.log("@@@CREATED: rdw.Widgets");
             }
             return null;
         }
-        //**************************************************
-        //end topic subscription endpoints
-        //**************************************************
     });
 });

@@ -26,9 +26,9 @@
 "use strict";
 
 run("rdw/Conversation",
-["run", "rd", "dojo", "dojo/string", "rd/friendly", "rd/hyperlink", "rdw/_Base", "rdw/Message",
+["run", "rd", "dojo", "dojo/string", "rd/api", "rd/api/identity", "rd/friendly", "rd/hyperlink", "rdw/_Base", "rdw/Message",
  "text!rdw/templates/Conversation!html", "text!rdw/templates/impersonal!html"],
-function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, impersonalTemplate) {
+function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Message, template, impersonalTemplate) {
 
     return dojo.declare("rdw.Conversation", [Base], {
         //Holds the conversatino object fetched from the API.
@@ -98,7 +98,7 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
         onClick: function (evt) {
             var href = evt.target.href,
                     isButton = evt.target.nodeName.toLowerCase() === "button",
-                    module;
+                    module, bodySchema;
             if (!href && isButton) {
                 href = "#" + evt.target.name;
             }
@@ -141,7 +141,25 @@ function (run, rd, dojo, string, friendly, hyperlink, Base, Message, template, i
                     }
                     dojo.stopEvent(evt);
                 } else if (href === "createImpersonal") {
+                    //Create
+                    bodySchema = this.msgs[0].schemas["rd.msg.body"];
+                    api().identityRecipTarget({
+                        id: bodySchema.from,
+                        sourceSchema: bodySchema,
+                        target: "broadcast"
+                    })
+                    .ok(this, function () {
+                        //Notify UI listeners that there is a new impersonal
+                        //schema.
+                        rd.pub("rd-impersonal-remove-from", bodySchema.from);
+                    });
+
+                    //Do not let this action escape.
+                    dojo.stopEvent(evt);
+                } else if (href === "cancelImpersonal") {
+                    //Get rid of the impersonal UI
                     dojo.query(".newImpersonal", this.domNode).remove();
+                    //Do not let this action escape.
                     dojo.stopEvent(evt);
                 } else if (isButton) {
                     location = "#" + href;

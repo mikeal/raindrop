@@ -72,7 +72,8 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
             "rd-protocol-conversation": "conversation",
             "rdw/Conversation/archive": "archive",
             "rdw/Conversation/delete": "del",
-            "rd-notify-delete-undo": "delUndo"
+            "rd-notify-delete-undo": "delUndo",
+            "rd-impersonal-remove-from": "impersonalRemoveFrom"
         },
 
         //List of modules that can handle display of a conversation.
@@ -868,7 +869,45 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
             })
             .ok(dojo.hitch(this, "updateConversations", "summary"));
         },
-  
+
+
+        /**
+         * Responds to rd-impersonal-remove-from topic.
+         * @param {Array} identityId
+         */
+        impersonalRemoveFrom: function (identityId) {
+            //Remove any widget that has their first message from this
+            //identity ID.
+            var i, widget, msg, body, recipTarget, conversations = [];
+            for (i = this._supportingWidgets.length - 1; (widget = this._supportingWidgets[i]); i--) {
+                msg = widget.msgs && widget.msgs[0];
+                //If no message in this widget, skip it.
+                if (!msg) {
+                  continue;
+                }
+
+                body = msg.schemas["rd.msg.body"];
+                if (body.from[0] === identityId[0] && body.from[1] === identityId[1]) {
+                    //Convert conversation to a broadcast.
+                    //A bit of a hack, assumes a lot of knowledge of
+                    //the data model here.
+                    recipTarget = msg.schemas["rd.msg.recip-target"];
+                    if (recipTarget) {
+                        recipTarget.target = "broadcast";
+                        recipTarget["target-timestamp"][0] = "broadcast";
+                    }
+                    //Store the convo for the topic, and remove the widget.
+                    conversations.push(widget.conversation);                  
+                    this.removeSupporting(widget);
+                    widget.destroy();
+                }
+            }
+
+            if (conversations.length) {
+                rd.pub("rd-impersonal-add", conversations);
+            }
+        },
+
         /**
          * Responds to requests to view a conversation.
          * @param {String} convoId

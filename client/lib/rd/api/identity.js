@@ -281,6 +281,82 @@ function (rd, dojo, api) {
 
         /**
          * @private
+         *
+         * Gets or creates rd.identity.recip-target schema for a given identity ID.
+         * 
+         * @param {dojo.Deferred} dfd The deferred that should be called
+         * with the results.
+         *
+         * @param {Object} args arguments to pass to the couch calls.
+         * 
+         * @param {Array} the identity_id
+         *
+         * @param {Object} sourceSchema the schema that is the basis for this request.
+         * Must be something with an _id and _rev properties.
+         * 
+         * @param {String} [target] the target value to use, if wanting to set
+         * the schema. Leave blank to get the any existing schema
+         */
+        _recipTarget: function (dfd, args, id, sourceSchema, target) {
+            if (!target) {
+                //Just get the value.
+                api().megaview({
+                    key: ["rd.core.content", "key-schema_id", [["identity", id], "rd.identity.recip-target"]],
+                    reduce: false,
+                    include_docs: true
+                })
+                .ok(this, function (json) {
+                    var schema = null;
+                    if (json.rows && json.rows.length) {
+                        schema = json.rows[0].doc;
+                    }
+                    dfd.callback(schema);
+                })
+                .error(dfd);
+            } else {
+                //Setting the value.
+
+                //First get the value, so we use the right _rev and such.
+                args = dojo.delegate(args);
+                args.target = null;
+
+                api().identityRecipTarget(args)
+                .ok(function (schema) {
+
+                    //Generate the new schema.
+                    var schemaItems = {}, newSchema;
+                    schemaItems[rd.uiExtId] = {
+                        rd_source: null,
+                        schema: null
+                    };
+
+                    newSchema = {
+                        //TODO: make a better rd_key.
+                        rd_key: ["identity", id],
+                        rd_schema_id: "rd.identity.recip-target",
+
+                        rd_schema_items: schemaItems,
+                        rd_schema_provider: rd.uiExtId,
+
+                        target: target
+                    };
+
+                    if (schema && schema._rev) {
+                        newSchema._rev = schema._rev;
+                    }
+
+                    api().put({
+                        doc: newSchema
+                    })
+                    .ok(dfd)
+                    .error(dfd);
+                })
+                .error(dfd);
+            }
+        },
+
+        /**
+         * @private
          * helper function for getting an identity from a service store.
          *
          * @param id {Array} and identity ID
@@ -321,7 +397,7 @@ function (rd, dojo, api) {
             return idty;
         }
     };
-    
+
     api.extend({
         /**
          * @lends rd.api
@@ -370,8 +446,32 @@ function (rd, dojo, api) {
                                                  "requires an args.msg argument."));
             }
             return this;
+        },
+        
+        /**
+         * @lends rd.api
+         * Gets or creates rd.identity.recip-target schema for a given identity ID.
+         * Returns the rd.identity.recip-target schema to the ok callbacks. If
+         * target is passed in the args, then it is a set operation, otherwise
+         * this call does a get for the any existing schema for the identity.
+         *
+         * @param {Object} args options for the couchdb calls
+         * @param {Array} args.id the identity ID to use.
+         * @param {Object} args.sourceSchema the schema that is the basis for this request.
+         * Must be something with an _id and _rev properties. Required for set calls.
+         * @param {String} [args.target] the value to use for the target field
+         * in the UI. Example values, "broadcast", "direct".
+         */
+        identityRecipTarget: function (args) {
+            if (args && args.id) {
+                identity._recipTarget(this._deferred, args, args.id, args.sourceSchema, args.target);
+            } else {
+                this._deferred.errback(new Error("rd.api().identity.recipTarget " +
+                                                 "requires an args.id argument."));
+            }
+            return this;
         }
     });
-    
+
     return identity;
 });

@@ -68,22 +68,6 @@
   font-size: 13px;
 }
 
-.rdwConversation > .newImpersonal > .impersonalOptions > .impersonalFilter {
-  font-weight: bold;
-  margin: 5px 0;
-}
-
-.rdwConversation > .newImpersonal button {
-  position: absolute;
-  right: 5px;
-  top: 50%;
-  margin-top: -10px;
-}
-
-.rdwConversation > .newImpersonal label {
-  padding: 0 10px 5px 0;
-}
-
 /*### END IMPERSONAL ###*/
 
 .rdwConversation.unread > .header > .subject {
