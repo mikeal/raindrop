@@ -91,6 +91,14 @@ def get_ext_env(doc_model, context, src_doc, ext):
                     dm.db.openDoc, dm.quote_id(doc_id),
                     attachment=found, **kw)
 
+    def open_attachment(doc_id, attach_id):
+        "A function to abstract document storage requirements away..."
+        dm = doc_model
+        logger.debug("attempting to open attachment %s/%s", doc_id, attach_id)
+        return threads.blockingCallFromThread(reactor,
+                    dm.db.openDoc, dm.quote_id(doc_id),
+                    attachment=attach_id)
+
     def open_view(*args, **kw):
         context['did_query'] = True
         return threads.blockingCallFromThread(reactor,
@@ -135,6 +143,7 @@ def get_ext_env(doc_model, context, src_doc, ext):
     new_globs['emit_schema'] = emit_schema
     new_globs['emit_related_identities'] = emit_related_identities
     new_globs['find_and_emit_conversation'] = find_and_emit_conversation
+    new_globs['open_attachment'] = open_attachment
     new_globs['open_schema_attachment'] = open_schema_attachment
     new_globs['open_schemas'] = open_schemas
     new_globs['get_schema_attachment_info'] = doc_model.get_schema_attachment_info
