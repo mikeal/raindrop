@@ -41,20 +41,21 @@ function (rd, dojo, Message) {
                 var debugNode = dojo.create("div", {
                         "class": "debug"
                     }),
-                    prop, schema, schemaId, id;
+                    prop, schema;
 
                 //Loop over the sources and add links for each kind.
                 for (prop in this.msg.schemas) {
                     if (this.msg.schemas.hasOwnProperty(prop)) {
                         schema = this.msg.schemas[prop];
-                        schemaId = schema.rd_schema_id; // XXX - include schema in the link?
-                        id = schema._id;
+                        if (!schema._id) {
+                            continue;
+                        }
                         dojo.create("a", {
                             "class": "tag",
                             target: "_blank",
-                            title: schema.rd_ext_id,
-                            href: "/_utils/document.html?raindrop/" + encodeURIComponent(id),
-                            innerHTML: schemaId.replace(/rd\.msg\./, '')
+                            title: schema.rd_schema_id,
+                            href: "http://127.0.0.1:5984/_utils/document.html?raindrop/" + encodeURIComponent(schema._id),
+                            innerHTML: schema.rd_schema_id.replace(/rd\.msg\./, '')
                         }, debugNode);
                     }
                 }
