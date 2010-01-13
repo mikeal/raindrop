@@ -552,6 +552,14 @@ class DocumentModel(object):
             except KeyError:
                 # It is important we put 'None' here so the list of
                 # attachments is exactly parallel with the list of docs.
+                this_attach = None
+            else:
+                # nuke any old attachments
+                for name, a in this_attach.items():
+                    if a.get('stub'):
+                        del this_attach[name]
+
+            if not this_attach:
                 all_attachments.append(None)
             else:
                 total_bytes = 0
