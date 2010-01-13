@@ -194,14 +194,13 @@ function (run, rd, dojo, traverse, api, pref) {
                     var html =  '<div class="notice rdwExtMetrics">' +
                                 '    <div class="header">' +
                                 '        <div class="row">' +
-                                '            <span class="title">Welcome to the Raindrop Community!</span>' +
-                                '            <span class="close"><button>Close</button></span>' +
+                                '            <span class="title">&hearts; Welcome!</span>' +
                                 '        </div>' +
                                 '    </div>' +
                                 '    <div class="message">' +
                                 '        <div class="row">' +
-                                '            <span class="content">Raindrop is design, developed, and tested through a constant process of community participation and we try to ensure everyone can participate by sharing anonymous survey information.    We respect you and your privacy, to learn more <a href="https://wiki.mozilla.org/Raindrop/Community/Metrics_Survey" target="_blank">click here</a></span>' +
-                                '            <span class="action"><div><input name="metrics" type="checkbox" checked> Participating</div></span>' +
+                                '            <span class="content"><strong>Raindrop</strong> is designed, developed, and tested through a constant process of community participation and we try to ensure everyone can participate by sharing anonymous survey information.    We respect you and your privacy, to learn more <a href="https://wiki.mozilla.org/Raindrop/Community/Metrics_Survey" target="_blank">click here</a>.</span>' +
+                                '            <span class="action"><div><input name="metrics" type="checkbox" checked> Participating</div><span class="close"><button>Close</button></span></span>' +
                                 '        </div>' +
                                 '    </div>' +
                                 '</div>',

@@ -41,6 +41,10 @@
   background-color: #ffffd9;
 }
 
+.rdwConversation.rdwExtTwitterConversation.unread {
+  background-color: #fff;
+}
+
 .rdwConversation.active {
   border: 1px solid #ccc;
 }
