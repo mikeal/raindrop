@@ -75,5 +75,5 @@ def get_exif(im, items):
     items['EXIF'] = {}
 
     # GPS EXIF information is a sub block of data
-    items['exif'][ExifTags.TAGS.get(GPSINFO_TAG,GPSINFO_TAG)] = \
+    items['EXIF'][ExifTags.TAGS.get(GPSINFO_TAG,GPSINFO_TAG)] = \
         dict([(ExifTags.GPSTAGS.get(t,t),v) for t,v in exifdata.get(GPSINFO_TAG, {}).items()])
