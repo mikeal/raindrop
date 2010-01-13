@@ -88,6 +88,12 @@ class API:
         if method not in ['GET', 'POST']:
             raise APIErrorResponse(405, "GET or POST required")
 
+    def _filter_user_fields(self, doc):
+        ret = {}
+        for attr, val in doc.iteritems():
+            if not attr.startswith('rd_') and not attr.startswith('_'):
+                ret[attr] = val
+        return ret
 
 # The classes which define the API; all methods without a leading _ are public
 class ConversationAPI(API):
@@ -411,12 +417,64 @@ class ContactAPI(API):
                 log("contact has non-identity record: %s", row)
         return ret
 
+class MessageAPI(API):
+    def _fixup_attach_url(self, doc, db):
+        # The 'url' field of an attachment document may contain a 'relative'
+        # URL - where 'relative' means:
+        # * If the URL starts with './' it means the URL is specifying an
+        #   attachment in the same document - we add the
+        #   'http://.../raindrop/doc_id' prefix.
+        # * If URL starts with a '/', the URL is a fully-qualified path inside
+        #   our couchDB; we add on the 'http://.../raindrop/' prefix.
+        # * Else, the URL is not touched.
+        try:
+            url = old_url = doc['url']
+        except KeyError:
+            return
+        if url.startswith("./"):
+            # the model stores the extension ID too.  We assume the
+            # 'schema provider' is the extension
+            url = "/" + doc['_id'] + "/" + doc['rd_schema_provider'] + url[1:]
+            # note this now qualifies for the next condition
+        if url.startswith("/"):
+            # this is very very hacky...
+            host = db.connection.host
+            port = db.connection.port or 80
+            url = ("http://%s:%s" % (host, port)) + db.uri + url[1:]
+        doc['url'] = url
+
+    def attachments(self, req):
+        opts = {}
+        self.requires_get(req)
+        args = self.get_args(req, 'key', limit=30)
+        # the message key
+        msgkey = args['key']
+        db = RDCouchDB(req)
+        startkey = ['rd.core.content', 'key', ['attach', [msgkey]]]
+        endkey = ['rd.core.content', 'key', ['attach', [msgkey, {}]]]
+        result = db.megaview(startkey=startkey, endkey=endkey,
+                             limit=args['limit'], reduce=False,
+                             include_docs=True)
+
+        ret = []
+        for ardkey, items in itertools.groupby(result['rows'],
+                                               lambda row: row['doc']['rd_key']):
+            schemas = {}
+            # make a result much like messages...
+            this = {'id': ardkey, 'schemas': schemas}
+            ret.append(this)
+            for item in items:
+                doc = item['doc']
+                self._fixup_attach_url(doc, db)
+                schemas[doc['rd_schema_id']] = self._filter_user_fields(doc)
+        return ret
 
 # A mapping of the 'classes' we expose.  Each value is a class instance, and
 # all 'public' methods (ie, those without leading underscores) on the instance
 # are able to be called.
 dispatch = {
     'conversations': ConversationAPI(),
+    'message': MessageAPI(),
 }
 
 # The standard raindrop extension entry-point (which is responsible for

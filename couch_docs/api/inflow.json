@@ -4,7 +4,10 @@
     "rd.ext.api" : {
         "code" : "RDFILE: *.py",
         "content_type" : "application/x-python",
-        "endpoints" : [["inflow", "conversations"]],
+        "endpoints" : [
+                       ["inflow", "conversations"],
+                       ["inflow", "message"]
+                      ],
         "info": "Exposes the inflow REST API"
     }
   }
