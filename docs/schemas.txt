@@ -263,3 +263,47 @@ rd.identity.twitter:
 --------------------
 
 "Private" schemas - whatever the identity fetchers want to store.
+
+ATTACHMENTS
+===========
+
+Attachments are first-class raindrop items.  They have an rd_key of format
+['attachment', [parent_rdkey, attach_id]].  The parent_rdkey is the full
+rd_key of the 'owning' item - generally a message.  Attach_id is a string
+uniquely identifying the attachment.
+
+rd.attach.detail
+----------------
+** Notes **
+Contains basic information about the 'raw' attachment.
+
+** Fields **
+name: a string 'name'.  It is likely this will appear as a 'filename'
+rather than a description (ie, it is derived from the source of the
+attachment, such as the filename portion of an email attachment)
+
+visible: a boolean indicating if the attachment should be seen.
+
+content_type: The content_type of the attachment.
+
+length: The number of bytes in the attachment.
+
+url: The URL for the attachment.  This may be a 'relative' URL, although when
+this schema is accessed via the raindrop REST API, the API will have converted
+it to a fully qualified URL which can be used directly.
+
+rd.attach.preview
+rd.attach.thumbnail
+-------------------
+** Notes **
+Contains preview information about an attachment.  These 2 schemas have
+identical fields.
+
+** Fields **
+
+content_type: The content-type of the preview.  This may be different than the
+content-type of the original attachment.
+width: the width in pixels of the preview
+height: the height in pixels of the preview
+url: The URL for this rendering of the attachment.  As above, this mayh be
+a 'relative' URL but will be fully-qualified when accessed via the REST API.
