@@ -1,5 +1,9 @@
 # create thumbnails and previews for images.
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError, e:
+    import Image
+
 from cStringIO import StringIO
 
 ct_images = set("""image/jpg image/jpeg image/png image/ppm
