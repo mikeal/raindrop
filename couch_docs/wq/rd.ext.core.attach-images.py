@@ -4,6 +4,11 @@ try:
 except ImportError, e:
     import Image
 
+try:
+    from PIL import ExifTags
+except ImportError:
+    import ExifTags
+
 from cStringIO import StringIO
 
 ct_images = set("""image/jpg image/jpeg image/png image/ppm
@@ -41,7 +46,34 @@ def handler(doc):
                  # a special URL format - leading "./" means 'in this document'
                  'url': './' + name,
         }
+        get_exif(im, items)
         schema_id = "rd.attach." + name
         attachments = {name : {'content_type': 'image/png',
                                  'data': outfile.getvalue()}}
         emit_schema(schema_id, items, attachments=attachments)
+
+# This is a hard code of the GPSInfo item found in ExifTags.TAGS
+GPSINFO_TAG = 0x8825
+
+# This really only gets the GPSInfo but in the future could import much more
+# data if we had a real use for further EXIF data and somebody wanted to write
+# the code that decodes and encodes all the strings
+def get_exif(im, items):
+    if not hasattr(im, '_getexif'):
+        return;
+
+    # Image will return None if there is no EXIF data
+    exifdata = im._getexif()
+    if exifdata is None:
+        return;
+
+    # And the GPS data is really the only item we care about right now
+    if not exifdata.has_key(GPSINFO_TAG):
+        return;
+
+    # Just using this format for future expansion possibilities
+    items['EXIF'] = {}
+
+    # GPS EXIF information is a sub block of data
+    items['exif'][ExifTags.TAGS.get(GPSINFO_TAG,GPSINFO_TAG)] = \
+        dict([(ExifTags.GPSTAGS.get(t,t),v) for t,v in exifdata.get(GPSINFO_TAG, {}).items()])
