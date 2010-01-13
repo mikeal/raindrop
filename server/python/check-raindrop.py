@@ -82,6 +82,7 @@ deps = [
     ('Skype4Py', '', False),
     # ack - no 0.6 actually exists and 0.5 is missing a key feature we need.
     ('python-twitter', '>=0.6,==0.6-devel', False),
+    ('PIL', '', False),
 ]
 
 if sys.version_info < (2,6) and sys.platform=="win32":
