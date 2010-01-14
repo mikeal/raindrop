@@ -105,8 +105,7 @@ function (rd, dojo, Conversation, wiper) {
 
             return keyType === "tweet" || notifyType === "twitter";
         },
-    
-    
+
         /**
          * Adds a message to this group.
          *

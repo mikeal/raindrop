@@ -26,9 +26,8 @@
 "use strict";
 
 run("rdw/Message",
-["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api",
- "text!rdw/templates/Message!html"],
-function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
+["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api", "rdw/Attachments", "text!rdw/templates/Message!html"], function (
+  run,   rd,   dojo,   Base,        friendly,      hyperlink,      api,      Attachments,       template) {
 
     return dojo.declare("rdw.Message", [Base], {
         //Suggested values for type are "topic" and "reply"
@@ -41,9 +40,23 @@ function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
         //Warning: this is a prototype property: be sure to
         //set it per instance.
         msg: null,
-    
+
+        //Widget used to show attachments. Only created if an attachment
+        //is added by an extension.
+        attachmentWidget: "rdw/Attachments",
+
+        //Extension point for link attachment handlers. An extension that can
+        //handle link attachments should register a function with this array.
+        //The extension's function should return true if it can handle
+        //the attachment.
+        //This array is on the object's prototype, so it applies to all
+        //instances of rdw/Message.
+        linkHandlers: [],
+
+        defaultLinkHandler: function () {},
+
         templateString: template,
-    
+
         //The link for the expanding to full conversation.
         expandLink: "",
 
@@ -93,9 +106,31 @@ function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
         /** Dijit lifecycle method, after template in DOM */
         postCreate: function () {
             this.inherited("postCreate", arguments);
-    
-            var msgDoc = this.msg.schemas['rd.msg.body'];
-    
+
+            var msgDoc = this.msg.schemas['rd.msg.body'],
+                linkSchema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"],
+                i, link, j, ext, handled;
+
+            //Set up attachments.
+            if (linkSchema && linkSchema.links && linkSchema.links.length) {
+                for (i = 0; (link = linkSchema.links[i]); i++) {
+                    handled = false;
+                    for (j = 0; (ext = this.linkHandlers[j]); j++) {
+                        if ((handled = ext.call(this, link))) {
+                            break;
+                        }
+                    }
+                    if (!handled) {
+                        this.defaultLinkHandler(link);
+                    }
+                }
+            }
+
+            //Render attachments, if they exist.
+            if (this.attachments) {
+                this.attachments.display();
+            }
+
             api().me().ok(this, function (idtys) {
                 var myself = idtys.map(function (idty) {
                         return idty.rd_key[1][1];
@@ -132,9 +167,23 @@ function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
                         }
                     }
                 }
-    
             });
-    
+        },
+
+        /**
+         * A callback for extensions that adding attachments.
+         * @param {String} html: the HTML for showing the attachment.
+         * @param {String} type the type of attachment. Either "link" or "file".
+         */
+        addAttachment: function (html, type) {
+            //Only create an attachment widget if attachments will be shown.
+            if (this.attachmentNode) {
+                if (!this.attachments) {
+                    this.attachments = new (run.get(this.attachmentWidget))({
+                    }, this.attachmentNode);
+                }
+                this.attachments.add(html, type);
+            }
         },
 
         /**
@@ -164,13 +213,13 @@ function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
                 }
             }
         },
-    
+
         formatQuotedBody: function () {
             //Looks at the rd.msg.body.quoted schema for quoted blocks and formats them.
             //If no rd.msg.body.quoted exists, the message body will be used.
             var quoted = this.msg.schemas["rd.msg.body.quoted"],
                 text, parts, i, part;
-            
+
             //No quoted, fallback to body text.
             if (!quoted) {
                 text = this.prepBodyPart(this.msg.schemas["rd.msg.body"].body);
@@ -191,7 +240,7 @@ function (run, rd, dojo, Base, friendly, hyperlink, api, template) {
                     }
                 }
             }
-    
+
             return text;
         },
 

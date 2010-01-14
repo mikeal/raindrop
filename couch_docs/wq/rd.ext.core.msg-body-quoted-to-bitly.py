@@ -63,4 +63,5 @@ def handler(doc):
         if obj.get('errorCode') == 0:
             schema = obj.get('results').get(hash)
             schema["is_attachment"] = True
+            schema["ref_link"] = hash
             emit_schema('rd.msg.body.bit.ly', schema)

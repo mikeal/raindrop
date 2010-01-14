@@ -35,6 +35,8 @@ import urllib2, json
 BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 
 # Grab the hash code from links
+# TODO: make these regexps better: they could match parts of a malicious
+# link.
 flickr_photo_regex = re.compile('flickr.com/photos/[\w@]+/(\d+)/.*')
 flickr_canonical_photo_regex = re.compile('flic.kr/p/(['+BASE58_ALPHABET+']+)')
 
@@ -44,19 +46,26 @@ def handler(doc):
     if not 'links' in doc:
         return
 
-    flickrs = []
+    flickrs = {}
     links = doc['links']
     for link in links:
-        flickrs += flickr_photo_regex.findall(link)
-        flickrs += [base58decode(hash) for hash in flickr_canonical_photo_regex.findall(link)]
+        # Check for normal flickr urls and only add to list if not
+        # already in the list.
+        match = flickr_photo_regex.search(link)
+        if match and match.group(1):
+            if not link in flickrs:
+                flickrs[link] = match.group(1)
+        else:
+            # Try the shortened flickr URL service.
+            match = flickr_canonical_photo_regex.search(link)
+            if match and match.group(1):
+                if not link in flickrs:
+                    flickrs[link] = base58decode(match.group(1))
 
     if len(flickrs) == 0:
         return
 
-    # uniquify this list
-    flickrs = set(flickrs)
-
-    for photo_id in flickrs:
+    for link, photo_id in flickrs.items():
         # http://www.flickr.com/services/api/response.json.html
         options = {
             "method"       : "flickr.photos.getInfo",
@@ -73,7 +82,8 @@ def handler(doc):
 
         if obj.get('stat') == "ok":
             schema = obj.get('photo')
-            schema["is_attachment"] = True
+            schema['is_attachment'] = True
+            schema['ref_link'] = link
             emit_schema('rd.msg.body.flickr', schema)
 
 # This function decodes the special base58 (62 - 4) flic.kr canonical urls

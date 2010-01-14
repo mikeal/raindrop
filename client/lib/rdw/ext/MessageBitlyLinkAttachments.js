@@ -26,21 +26,27 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"],
-function (run, rd, dojo, Message) {
+["run", "rd", "dojo", "rdw/Message"], function (
+  run,   rd,   dojo,   Message) {
     /*
     Applies a display extension to rdw/Message.
     Allows showing links included in the message as inline attachments
     */
 
     rd.addStyle("rdw/ext/css/MessageBitlyLinkAttachments");
-
+/*
     rd.applyExtension("rdw/ext/MessageBitlyLinkAttachments", "rdw/Message", {
         after: {
-            postCreate: function () {
+            linkHandlers: function (link) {
                 //NOTE: the "this" in this function is the instance of rdw/Message.
 
                 //Check for links found in a message
+                var schema = this.msg.schemas["rd.msg.body.bit.ly"],
+                    href, title, owner, desc, linkNode;
+                if (!schema) {
+                    return false;
+
+                //FAVOR THIS VERSION
                 var bitly_schema = this.msg.schemas["rd.msg.body.bit.ly"],
                       linkNode, templateObj, template, titleTemplate;
                 if (!bitly_schema) {
@@ -73,8 +79,10 @@ function (run, rd, dojo, Message) {
                     "class": "bitly link",
                     innerHTML: rd.template(template, templateObj)
                 });
-                dojo.query(".message .attachments", this.domNode).addContent(linkNode);
+
+                return true;
             }
         }
     });
+*/
 });

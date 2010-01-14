@@ -272,7 +272,7 @@ Attachments are first-class raindrop items.  They have an rd_key of format
 rd_key of the 'owning' item - generally a message.  Attach_id is a string
 uniquely identifying the attachment.
 
-rd.attach.detail
+rd.attach.details
 ----------------
 ** Notes **
 Contains basic information about the 'raw' attachment.
@@ -296,7 +296,7 @@ rd.attach.preview
 rd.attach.thumbnail
 -------------------
 ** Notes **
-Contains preview information about an attachment.  These 2 schemas have
+Contains preview infi ormation about an attachment.  These 2 schemas have
 identical fields.
 
 ** Fields **

@@ -30,7 +30,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
 function (rd, dojo, Message, fx) {
 
     rd.addStyle("rdw/ext/css/youTubeMessage");
-
+/*
     //Applies a display extension to rdw/Message. Allows showing youtube videos
     //inline with a message.
     rd.applyExtension("rdw/ext/youTubeMessage", "rdw/Message", {
@@ -56,10 +56,10 @@ function (rd, dojo, Message, fx) {
                 }
                 thumbs = yt.media$group.media$thumbnail
 
-                /* ugh, would have been nicer if I stored the thumbnails better */
+                //ugh, would have been nicer if I stored the thumbnails better
                 for (i = 0; (thumb = thumbs[i]); i++) {
                     url = thumb.url;
-                    /* we're looking for thumbnail #1 */
+                    //we're looking for thumbnail #1
                     if (url.substring(url.length - 5) === "1.jpg") {
                         thumbnail = url;
                         break;
@@ -104,7 +104,9 @@ function (rd, dojo, Message, fx) {
         },
 
         addToPrototype: {
-            /** Handles clicking anywhere on the youtube attachment block */
+*/
+//            /** Handles clicking anywhere on the youtube attachment block */
+/*
             onYouTubeClick: function (evt) {
                 var yt = this.msg.schemas["rd.msg.body.youtubed"], videoId, q,
                     videoUrl, content, objTemplateString, obj, player;
@@ -113,7 +115,7 @@ function (rd, dojo, Message, fx) {
                 }
 
                 videoId = yt.media$group.yt$videoid.$t;
-                /* only grab this video inside this message, it's possible there are others */
+                //only grab this video inside this message, it's possible there are others
                 q = dojo.query("#" + videoId, this.domNode);
                 console.log(q);
                 if (q.length > 0) {
@@ -141,7 +143,7 @@ function (rd, dojo, Message, fx) {
                         url: videoUrl
                     });
 
-                    /* XXX The videoId is necessarily going to be unique in this page */
+                    //XXX The videoId is necessarily going to be unique in this page
                     player = dojo.create("div", {
                         "class": "player",
                         "id" : videoId,
@@ -160,5 +162,6 @@ function (rd, dojo, Message, fx) {
             }
         }
     });
+*/
 });
 

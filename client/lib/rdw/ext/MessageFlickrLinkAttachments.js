@@ -26,8 +26,8 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"],
-function (run, rd, dojo, Message) {
+["run", "rd", "dojo", "rdw/Message"], function (
+  run,   rd,   dojo,   Message) {
 
     rd.addStyle("rdw/ext/css/MessageFlickrLinkAttachments");
 
@@ -35,52 +35,53 @@ function (run, rd, dojo, Message) {
     Allows showing links included in the message as inline attachments
     */
     rd.applyExtension("rdw/ext/MessageFlickrLinkAttachments", "rdw/Message", {
-        after: {
-            postCreate: function () {
-                //NOTE: the "this" in this function is the instance of rdw/Message.
-    
-                //Check for links found in a message
-                var flickr_schema = this.msg.schemas["rd.msg.body.flickr"],
-                    img_src, href, img, title, owner, desc, linkNode;
-                if (!flickr_schema) {
-                    return;
-                }
-    
-                // http:\/\/farm3.static.flickr.com\/2684\/4252109194_ba795640e8_s.jpg
-                img_src = "http://farm" + flickr_schema.farm + ".static.flickr.com/" +
-                                    flickr_schema.server + "/" + flickr_schema.id + "_" +
-                                    flickr_schema.secret + "_s.jpg";
-    
-                href = "href=\"http://www.flickr.com/" +
-                                    flickr_schema.owner.nsid + "/" + flickr_schema.id + "/\"";
-                img = "<div class=\"thumbnail boxFlex0\"><a target=\"_blank\" " + href + "><img src=\"" +
-                                img_src + "\" class=\"flickr\"/></a></div>";
-                title = "<a target=\"_blank\" class=\"title\" " + href + "\">" +
-                                    flickr_schema.title._content + "</a>";
-                owner = "<abbr class=\"owner\" title=\"" + flickr_schema.owner.username +
-                                    "\">" + flickr_schema.owner.realname + "</abbr>";
-                desc = "<div class=\"description\">" + flickr_schema.description._content + "</div>";
-    
-                //Create a node to hold the link object
-                linkNode = dojo.create("div", {
-                    "class": "flickr photo link hbox",
-                    innerHTML: img + "<div class=\"information boxFlex1\">" + title + owner + desc + "</div>"
-                });
-                dojo.query(".message .attachments", this.domNode).addContent(linkNode);
-                dojo.connect(linkNode, "onclick", this, "onMessageFlickrLinkAttachmentClick");
-            }
-        },
-
         addToPrototype: {
-            /**
-             * Handles clicking anywhere on the link attachment block
-             */
-            onMessageFlickrLinkAttachmentClick: function (evt) {
-                var link_schema = this.msg.schemas["rd.msg.body.flickr"];
-                if (!link_schema) {
-                    return;
+            linkHandlers: [
+                function (link) {
+                    //NOTE: the "this" in this function is the instance of rdw/Message.
+    
+                    //See if link matches the schema on message.
+                    var schema = this.msg.schemas["rd.msg.body.flickr"],
+                        html, imgUrl, handled = false, href;
+                    if (!schema || schema.ref_link !== link) {
+                        return false;
+                    }
+    
+                    //If URL does not match the flickr url then kick it out.
+                    handled = dojo.some(schema.urls.url, function (url) {
+                        return link === url._content;
+                    });
+                    if (!handled) {
+                        return false;
+                    }
+    
+                    // http:\/\/farm3.static.flickr.com\/2684\/4252109194_ba795640e8_s.jpg
+                    imgUrl = "http://farm" + schema.farm + ".static.flickr.com/" +
+                                        schema.server + "/" + schema.id + "_" +
+                                        schema.secret + "_s.jpg";
+    
+                    href = 'http://www.flickr.com/' + schema.owner.nsid + '/' + schema.id + '/';
+    
+                    html = '<div class="flickr photo link hbox">' +
+                           '    <div class="thumbnail boxFlex0">' +
+                           '        <a target="_blank" href="' + href + '"><img src="' +
+                                        imgUrl +
+                                    '" class="flickr"></a>' +
+                           '    </div>' +
+                           '    <div class="information boxFlex1">' +
+                                    '<a target="_blank" class="title" ' + href + '">' +
+                                        schema.title._content + '</a>' +
+                                    '<abbr class="owner" title="' + schema.owner.username +
+                                        '">' + schema.owner.realname + '</abbr>' +
+                                        '<div class="description">' + schema.description._content + '</div>' +
+                           '    </div>' +
+                           '</div>';
+    
+                    this.addAttachment(html, 'link');
+    
+                    return true;
                 }
-            }
+            ]
         }
     });
 });
