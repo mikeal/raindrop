@@ -25,6 +25,7 @@ import re
 import urllib2, json
 
 # Grab the hash code from links
+# TODO: make this more robust to malicious use.
 youtube_regex = re.compile("youtube\.com\/watch\?v=([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
 
 # Creates 'rd.msg.body.youtubed' schemas for emails...
@@ -33,17 +34,21 @@ def handler(doc):
     if not 'links' in doc:
         return
 
-    youtubes = []
+
+    youtubes = {}
     links = doc['links']
     for link in links:
-        youtubes += youtube_regex.findall(link)
+        # Check for normal flickr urls and only add to list if not
+        # already in the list.
+        match = youtube_regex.search(link)
+        if match and match.group(1):
+            if not link in youtubes:
+                youtubes[link] = match.group(1)
 
     if len(youtubes) == 0:
         return
 
-    logger.debug("found the following hashes: %s ", youtubes)
-
-    for hash in youtubes:
+    for link, hash in youtubes.items():
         logger.debug("working on youtube video http://www.youtube.com/watch?v=%s ", hash)
         gdata_api = "http://gdata.youtube.com/feeds/api/videos/%s?v=2&alt=json" % hash
         try:
@@ -53,6 +58,7 @@ def handler(doc):
 
             obj = obj.get("entry")
             obj["is_attachment"] = True
+            obj['ref_link'] = link
             emit_schema('rd.msg.body.youtubed', obj)
         except urllib2.HTTPError, exc:
             if exc.code == 404:

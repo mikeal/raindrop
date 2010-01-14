@@ -32,6 +32,7 @@ import re
 import urllib2, json
 
 # Grab the numeric video code from links
+# TODO make this regexp strongly against malicious link use.
 vimeo_video_regex = re.compile('vimeo.com/(\d+)')
 
 # Creates 'rd.msg.attachment' for bit.ly urls from 'rd.msg.body.quoted.hyperlinks'
@@ -40,18 +41,20 @@ def handler(doc):
     if not 'links' in doc:
         return
 
-    vimeos = []
+    vimeos = {}
     links = doc['links']
     for link in links:
-        vimeos += vimeo_video_regex.findall(link)
+        # Check for normal flickr urls and only add to list if not
+        # already in the list.
+        match = vimeo_video_regex.search(link)
+        if match and match.group(1):
+            if not link in vimeos:
+                vimeos[link] = match.group(1)
 
     if len(vimeos) == 0:
         return
 
-    # uniquify this list
-    vimeos = set(vimeos)
-
-    for video_id in vimeos:
+    for link, video_id in vimeos.items():
         # http://vimeo.com/api/docs/simple-api
         info_api = "http://vimeo.com/api/v2/video/%s.json" % video_id
 
@@ -64,4 +67,5 @@ def handler(doc):
         # Vimeo always returns a list and we only asked for one video
         schema = obj.pop()
         schema["is_attachment"] = True
+        schema['ref_link'] = link
         emit_schema('rd.msg.body.quoted.hyperlinks.vimeo', schema)

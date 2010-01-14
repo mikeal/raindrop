@@ -44,7 +44,7 @@ run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
                     //See if link matches the schema on message.
                     var schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"],
                         html;
-                    if (!schema || link.indexOf('vimeo.com/' + schema.id) === -1) {
+                    if (!schema || schema.ref_link !== link) {
                         return false;
                     }
     
