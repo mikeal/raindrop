@@ -1,0 +1,23 @@
+.rdwAttachments {
+}
+
+.rdwAttachments .attachTabs {
+    z-index: 10;
+    margin: 0 0 0 20px;
+}
+
+.rdwAttachments .attachTab {
+    display: inline-block;
+    border: 1px solid gray;
+    border-bottom: 0 none transparent;
+    z-index: 10;
+    background: white;
+    margin-bottom: -1px;
+}
+
+.rdwAttachments .attachContents {
+    width: 100%;
+    background: white;
+    border-top: 1px solid gray;
+    border-bottom: 1px solid gray;
+}

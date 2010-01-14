@@ -134,10 +134,7 @@ function (rd, dojo, api) {
                 if (!prefs.rd_schema_id) {
                     prefs.rd_schema_id = doc.rd_schema_id || "rd.pref";
                 }
-                if (!prefs.rd_ext_id) {
-                    prefs.rd_ext_id = doc.rd_ext_id;
-                }
-    
+
                 //Save the pref.
                 api().put({
                     doc: prefs

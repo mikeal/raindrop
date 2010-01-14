@@ -26,18 +26,39 @@
 "use strict";
 
 run("rdw/Attachments",
-["rd", "dojo", "rdw/_Base"],
-function (rd, dojo, Base) {
+["rd", "dojo", "rdw/_Base", "text!rdw/templates/Attachments!html"],
+function (rd, dojo, Base, template) {
 
     return dojo.declare("rdw.Attachments", [Base], {
-        templateString: '<div class="rdwAttachments"></div>',
+        templateString: template,
 
+        /**
+         * @private tracks if the attachments have been displayed
+         */
         _displayed: false,
+
+        /**
+         * The order in which to group the attachment types.
+         */
+        tabTypes: [
+            "video",
+            "photo",
+            "file",
+            "link"
+        ],
+
+        /**
+         * The object dictionary to hold on to attachments based on type.
+         * Set via postCreate.
+         */
+        types: null,
+
+        /** The total count of attachments. */
+        count: 0,
 
         postCreate: function () {
             this.inherited("postCreate", arguments);
-            this.links = [];
-            this.files = [];
+            this.types = {};
         },
 
         /**
@@ -49,11 +70,14 @@ function (rd, dojo, Base) {
          * @param {String} type the type of attachment, "link" or "file".
          */
         add: function (html, type) {
-            if (type === "link") {
-                this.links.push(html);
-            } else if (type === "file") {
-                this.files.push(html);
+            var list = this.types[type];
+            if (!list) {
+                list = this.types[type] = [];
             }
+
+            list.push(html);
+            this.count += 1;
+
             if (this._displayed) {
                 this.display();
             }
@@ -69,33 +93,39 @@ function (rd, dojo, Base) {
         display: function () {
             //First clear out any existing display.
             if (this._displayed) {
-                this.domNode.innerHTML = "";
+                this.displayNode.innerHTML = "";
             }
             this._displayed = true;
 
-            var files = this.files, links = this.links, html = "";
+            var files = this.files, links = this.links, tabHtml = "", html = "",
+                i, type, list;
 
-            //Nothing to see here. Move along.
-            if (!files.length && !links.length) {
-                return;
-            }
+            for (i = 0; (type = this.tabTypes[i]); i++) {
+                list = this.types[type];
+                if (!list || !list.length) {
+                    continue;
+                }
 
-            //Generate the tabs for types of attachments
-            //TODO
+                //Generate the tabs for types of attachments
+                tabHtml += '<div class="attachTab" data-type="' + type + '" data-count="' + list.length + '">' +
+                           this.i18n["attachTab_" + type] +
+                           '</div>';
 
-            //Generate the stack for each tab.
-            if (links.length) {
-                html += '<div class="tabContent links">' +
-                        this.links.join('') +
+                html += '<div class="attachContent ' + type + '">' +
+                        list.join('') +
                         '</div>';
             }
-            if (files.length) {
-                html += '<div class="tabContent files">' +
-                        this.links.join('') +
-                        '</div>';
-            }
+
+            this.tabsNode.innerHTML = tabHtml;
+            this.displayNode.innerHTML = html;
+        },
+
+        onPrevious: function (evt) {
             
-            this.domNode.innerHTML = html;
+        },
+
+        onNext: function (evt) {
+            
         }
     });
 });

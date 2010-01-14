@@ -322,21 +322,12 @@ function (rd, dojo, api) {
 
                 api().identityRecipTarget(args)
                 .ok(function (schema) {
-
-                    //Generate the new schema.
-                    var schemaItems = {}, newSchema;
-                    schemaItems[rd.uiExtId] = {
-                        rd_source: null,
-                        schema: null
-                    };
-
-                    newSchema = {
+                    var newSchema = {
                         //TODO: make a better rd_key.
                         rd_key: ["identity", id],
                         rd_schema_id: "rd.identity.recip-target",
 
                         rd_schema_items: schemaItems,
-                        rd_schema_provider: rd.uiExtId,
 
                         target: target
                     };

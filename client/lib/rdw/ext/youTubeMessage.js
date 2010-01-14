@@ -30,83 +30,73 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
 function (rd, dojo, Message, fx) {
 
     rd.addStyle("rdw/ext/css/youTubeMessage");
-/*
+
     //Applies a display extension to rdw/Message. Allows showing youtube videos
     //inline with a message.
     rd.applyExtension("rdw/ext/youTubeMessage", "rdw/Message", {
-        after: {
-            postCreate: function () {
-                //if msg has youtube data, add a
-                //display item for the data.
-                //TODO: could vary the display based on how the
-                //message is displayed. I would expect rdw/Message
-                //to have a "type" field to indicate what type of
-                //display rdw/Message would use for the message,
-                //or a different widget would be used for the display.
-
-                //NOTE: the "this" in this function is the instance of rdw/Message.
-
-                //Check for a YouTube video
-                var yt = this.msg.schemas["rd.msg.body.youtubed"],
-                    thumbnail = "", thumb, url, youTubeImgTemplateString, img,
-                    title, youTubeNode, youTubeInfoTemplateString, empty,
-                    thumbs, thumb, i;
-                if (!yt) {
-                    return;
-                }
-                thumbs = yt.media$group.media$thumbnail
-
-                //ugh, would have been nicer if I stored the thumbnails better
-                for (i = 0; (thumb = thumbs[i]); i++) {
-                    url = thumb.url;
-                    //we're looking for thumbnail #1
-                    if (url.substring(url.length - 5) === "1.jpg") {
-                        thumbnail = url;
-                        break;
-                    }
-                }
-
-                youTubeImgTemplateString = '<div class="thumbnail"><a href="${url}">' +
-                                               '<img src="${thumb}" class="thumbnail"/></a>' +
-                                               '<div class="play"></div></div>';
-
-                img = rd.template(youTubeImgTemplateString, {
-                    url: yt.media$group.media$player.url,
-                    thumb: thumbnail
-                });
-
-                youTubeInfoTemplateString = '<div class="info"><a href="${url}" class="title">${body}</a>' +
-                                            '<div class="views">${viewCount} views</div></div>';
-
-                title = rd.template(youTubeInfoTemplateString, {
-                    url: yt.media$group.media$player.url,
-                    body: yt.media$group.media$title.$t,
-                    viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
-                });
-
-                //Create a node to hold the youtube object.
-                youTubeNode = dojo.create("div", {
-                    "class": "youTube",
-                    "style" : "display: none;",
-                    innerHTML: img + title
-                });
-
-                //Attach the you tube HTML to the message.
-                dojo.query(".message .attachments", this.domNode).addContent(youTubeNode);
-
-                dojo.connect(youTubeNode, "onclick", this, "onYouTubeClick");
-
-                fx.wipeIn({
-                    node: youTubeNode,
-                    duration: 300
-                }).play(300);
-            }
-        },
-
         addToPrototype: {
-*/
-//            /** Handles clicking anywhere on the youtube attachment block */
-/*
+            linkHandlers: [
+                function (link) {
+                    //if msg has youtube data, add a
+                    //display item for the data.
+                    //TODO: could vary the display based on how the
+                    //message is displayed. I would expect rdw/Message
+                    //to have a "type" field to indicate what type of
+                    //display rdw/Message would use for the message,
+                    //or a different widget would be used for the display.
+    
+                    //NOTE: the "this" in this function is the instance of rdw/Message.
+    
+                    //Check for a YouTube video
+                    var yt = this.msg.schemas["rd.msg.body.youtubed"],
+                        thumbnail = "", thumb, url, youTubeImgTemplateString, img,
+                        title, youTubeNode, youTubeInfoTemplateString, empty,
+                        thumbs, thumb, i;
+                    if (!yt || yt.ref_link !== link) {
+                        return false;
+                    }
+    
+                    thumbs = yt.media$group.media$thumbnail
+    
+                    //ugh, would have been nicer if I stored the thumbnails better
+                    for (i = 0; (thumb = thumbs[i]); i++) {
+                        url = thumb.url;
+                        //we're looking for thumbnail #1
+                        if (url.substring(url.length - 5) === "1.jpg") {
+                            thumbnail = url;
+                            break;
+                        }
+                    }
+    
+                    youTubeImgTemplateString = '<div class="thumbnail"><a href="${url}">' +
+                                                   '<img src="${thumb}" class="thumbnail"/></a>' +
+                                                   '<div class="play"></div></div>';
+    
+                    img = rd.template(youTubeImgTemplateString, {
+                        url: yt.media$group.media$player.url,
+                        thumb: thumbnail
+                    });
+    
+                    youTubeInfoTemplateString = '<div class="info"><a href="${url}" class="title">${body}</a>' +
+                                                '<div class="views">${viewCount} views</div></div>';
+    
+                    title = rd.template(youTubeInfoTemplateString, {
+                        url: yt.media$group.media$player.url,
+                        body: yt.media$group.media$title.$t,
+                        viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
+                    });
+    
+                    this.addAttachment('<div class="youTube">' + img + title + '</div>', "link");
+    
+                    //If user clicks on this link area, open up a fuller view.
+                    dojo.connect(this.attachmentNode, "onclick", this, "onYouTubeClick");
+    
+                    return true;
+                }
+            ],
+
+            // Handles clicking anywhere on the youtube attachment block
+
             onYouTubeClick: function (evt) {
                 var yt = this.msg.schemas["rd.msg.body.youtubed"], videoId, q,
                     videoUrl, content, objTemplateString, obj, player;
@@ -162,6 +152,5 @@ function (rd, dojo, Message, fx) {
             }
         }
     });
-*/
 });
 
