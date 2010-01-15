@@ -61,7 +61,7 @@ run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
                            '    </div>' +
                            '</div>';
     
-                    this.addAttachment(html, 'link');
+                    this.addAttachment(html, 'video');
     
                     return true;
                 }

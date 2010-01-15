@@ -17,7 +17,45 @@
 
 .rdwAttachments .attachContents {
     width: 100%;
-    background: white;
+    height: 120px;
+    margin-top: -1px;
     border-top: 1px solid gray;
     border-bottom: 1px solid gray;
+    background: white;
+}
+
+.rdwAttachments .attachContents > div {
+    display: inline-block;
+    height: 120px;
+}
+
+.rdwAttachments .attachNext,
+.rdwAttachments .attachPrev {
+    width: 60px;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.rdwAttachments .attachDisplay {
+    width: 488px;
+    overflow: hidden;
+}
+
+.rdwMessage.reply .rdwAttachments .attachDisplay {
+    width: 428px;
+}
+
+.rdwAttachments .attachScroll {
+    width: 10000px;
+    height: 100%;
+}
+
+.rdwAttachments .attachScroll > div {
+    display: inline-block;
+    width: 488px;
+    height: 100%;
+}
+
+.rdwMessage.reply .rdwAttachments .attachScroll > div {
+    width: 428px;
 }

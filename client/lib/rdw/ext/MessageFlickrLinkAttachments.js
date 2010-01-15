@@ -77,7 +77,7 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                            '    </div>' +
                            '</div>';
     
-                    this.addAttachment(html, 'link');
+                    this.addAttachment(html, 'photo');
     
                     return true;
                 }

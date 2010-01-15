@@ -98,7 +98,7 @@ function (rd, dojo, Base, template) {
             this._displayed = true;
 
             var files = this.files, links = this.links, tabHtml = "", html = "",
-                i, type, list;
+                i, type, list, width, node;
 
             for (i = 0; (type = this.tabTypes[i]); i++) {
                 list = this.types[type];
@@ -111,13 +111,11 @@ function (rd, dojo, Base, template) {
                            this.i18n["attachTab_" + type] +
                            '</div>';
 
-                html += '<div class="attachContent ' + type + '">' +
-                        list.join('') +
-                        '</div>';
+                html += list.join('');
             }
 
             this.tabsNode.innerHTML = tabHtml;
-            this.displayNode.innerHTML = html;
+            this.scrollNode.innerHTML = html;
         },
 
         onPrevious: function (evt) {
