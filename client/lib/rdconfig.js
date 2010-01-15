@@ -23,9 +23,10 @@
 
 //evil is for the doc.write at the end of this script.
 /*jslint evil: true, plusplus: false */
-/*global run: true, djConfig: true, document: false */
+/*global document: false */
 "use strict";
 
+var djConfig, run;
 (function () {
     //Find raindrop location
     var scripts = document.getElementsByTagName("script"), prefix = "", i,
