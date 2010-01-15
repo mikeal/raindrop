@@ -67,7 +67,7 @@ run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
                         template = titleTemplate;
                     }
 
-                    this.addAttachment('<div class="bitly link>' + rd.template(template, templateObj) + '</div>', 'link');
+                    this.addAttachment('<div class="bitly link">' + rd.template(template, templateObj) + '</div>', 'link');
                     return true;
                 }
             ]
