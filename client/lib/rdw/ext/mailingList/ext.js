@@ -262,7 +262,7 @@ run.modify("rdw/Widgets", "rdw/ext/mailingList/ext-rdw/Widgets",
                 onHashChange: function (value) {
                     //Hide the twitter group widgets when viewing the twitter stream,
                     //otherwise make sure they are visible.
-                    var widgets = dijit.registry.byClass("rdw/ext/mailingList/Group"),
+                    var widgets = dijit.registry.byClass("rdw.ext.mailingList.Group"),
                             parts = value.split(":"),
                             isList = parts[1] === "mailingList",
                             listId = parts[2];
