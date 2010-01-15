@@ -111,24 +111,26 @@ run("rdw/Message",
                 linkSchema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"],
                 i, link, j, ext, handled;
 
-            //Set up attachments.
-            if (linkSchema && linkSchema.links && linkSchema.links.length) {
-                for (i = 0; (link = linkSchema.links[i]); i++) {
-                    handled = false;
-                    for (j = 0; (ext = this.linkHandlers[j]); j++) {
-                        if ((handled = ext.call(this, link))) {
-                            break;
+            //Set up attachments, if an attachment widget is configured.
+            if (this.attachmentWidget) {
+                if (linkSchema && linkSchema.links && linkSchema.links.length) {
+                    for (i = 0; (link = linkSchema.links[i]); i++) {
+                        handled = false;
+                        for (j = 0; (ext = this.linkHandlers[j]); j++) {
+                            if ((handled = ext.call(this, link))) {
+                                break;
+                            }
+                        }
+                        if (!handled) {
+                            this.defaultLinkHandler(link);
                         }
                     }
-                    if (!handled) {
-                        this.defaultLinkHandler(link);
-                    }
                 }
-            }
-
-            //Render attachments, if they exist.
-            if (this.attachments) {
-                this.attachments.display();
+    
+                //Render attachments, if they exist.
+                if (this.attachments) {
+                    this.attachments.display();
+                }
             }
 
             api().me().ok(this, function (idtys) {

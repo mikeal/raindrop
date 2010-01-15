@@ -46,12 +46,20 @@ function (rd, dojo, Conversation, wiper) {
                         '        <div class="tweetList" dojoAttachPoint="containerNode"></div>' +
                         '    </div>' +
                         '</div>',
-    
+
         /**
          * The relative importance of this group widget. 0 is most important.
          */
         groupSort: 1,
-    
+
+        /**
+         * Do not want attachments to show up in this view so set the attachment
+         * ctor name for Message instances to null.
+         */
+        messageCtorArgs: {
+            attachmentWidget: null
+        },
+
         /**
          * The limit of tweets to use.
          */

@@ -42,7 +42,13 @@ function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Messa
         //The name of the constructor function (module) that should be used
         //to show individual messages.
         messageCtorName: "rdw/Message",
-    
+  
+        /** Optional set of default args to be used when creating instances of
+         *  messageCtorName.
+         *  @param {Object}
+         */
+        messageCtorArgs: null,
+
         //Limit to number of unread replies to show. If value is -1, then it means
         //show all replies, read and unread.
         unreadReplyLimit: -1,
@@ -278,11 +284,15 @@ function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Messa
             //Now render widgets for all the messages that want to be shown.
             for (i = 0; ((index = toShow[i]) > -1) && (msg = this.msgs[index]); i++) {
                 this.lastDisplayedMsg = msg;
-                this.addSupporting(new Ctor({
+                ctorArgs = {
                     msg: msg,
                     type: index === 0 ? "" : this.replyStyle,
                     tabIndex: index === 0 || this.allowReplyMessageFocus ? 0 : -1
-                }, dojo.create("div", null, this.containerNode)));
+                };
+                if (this.messageCtorArgs) {
+                    dojo._mixin(ctorArgs, this.messageCtorArgs);
+                }
+                this.addSupporting(new Ctor(ctorArgs, dojo.create("div", null, this.containerNode)));
             }
 
             //If any left over messages, then show that info.
