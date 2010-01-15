@@ -50,12 +50,6 @@
   -webkit-box-sizing: border-box;
 }
 
-.rdwAttachments .attachAction {
-    position: absolute;
-    top: 7px;
-    right: -7px;
-}
-
 .rdwAttachments .attachDisplay {
     width: 463px;
     height: 120px;
@@ -79,4 +73,14 @@
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
     width: 398px;
+}
+
+.rdwAttachments .attachAction {
+    position: absolute;
+    top: 7px;
+    right: -7px;
+}
+
+.rdwAttachments .attachAction button[disabled] {
+    color: white;
 }

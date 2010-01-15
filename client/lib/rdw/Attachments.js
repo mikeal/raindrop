@@ -26,8 +26,11 @@
 "use strict";
 
 run("rdw/Attachments",
-["rd", "dojo", "rdw/_Base", "text!rdw/templates/Attachments!html"],
-function (rd, dojo, Base, template) {
+["rd", "dojo", "dojox", "rdw/_Base", "text!rdw/templates/Attachments!html", "dojox/fx/scroll"], function (
+  rd,   dojo,   dojox,   Base,        template,                              fxScroll) {
+
+    //Reassign fxScroll to be the real function, that module does something non-standard.
+    fxScroll = dojox.fx.smoothScroll;
 
     return dojo.declare("rdw.Attachments", [Base], {
         templateString: template,
@@ -55,6 +58,9 @@ function (rd, dojo, Base, template) {
 
         /** The total count of attachments. */
         count: 0,
+
+        /** The index of attachments to start on */
+        attachIndex: 0,
 
         postCreate: function () {
             this.inherited("postCreate", arguments);
@@ -116,14 +122,75 @@ function (rd, dojo, Base, template) {
 
             this.tabsNode.innerHTML = tabHtml;
             this.scrollNode.innerHTML = html;
+            this.updateButtons();
         },
 
+        /**
+         * Easing function for animations. This is a copy of
+         * dojo.fx.easing.expoOut
+         * @param {Decimal} [n]
+         */
+        animEasing: function (n) {
+            return (n === 1) ? 1 : (-1 * Math.pow(2, -10 * n) + 1);
+        },
+
+        /**
+         * Handles actions in the action area, like next/previous.
+         * @param {Event} evt
+         */
         onAction: function (evt) {
-            
+            var target = evt.target, name = target.name, scrollTarget, marginBox;
+
+            if (name === "rdwAttachmentsPrev" || name === "rdwAttachmentsNext") {
+                if (name === "rdwAttachmentsPrev") {
+                    this.attachIndex -= 1;
+                    if (this.attachIndex < 0) {
+                        this.attachIndex = 0;
+                    }
+                } else {
+                    this.attachIndex += 1;
+                    if (this.attachIndex > this.count - 1) {
+                        this.attachIndex = this.count - 1;
+                    }
+                }
+
+                marginBox = dojo.marginBox(this.displayNode);
+                scrollTarget = this.attachIndex * marginBox.w;
+
+                //Also stop any in-process animation for active node.
+                if (this.anim) {
+                    this.anim.stop();
+                    this.anim = null;
+                }
+
+                this.anim = fxScroll({
+                    win: this.displayNode,
+                    target: { x: scrollTarget, y: 0},
+                    easing: this.animEasing,
+                    duration: 500,
+                    onEnd: dojo.hitch(this, function () {
+                        this.anim = null;
+                    })
+                });
+                this.anim.play();
+
+                this.updateButtons();
+                dojo.stopEvent(evt);
+            }
         },
 
-        onNext: function (evt) {
-            
+        /**
+         * Change the action buttons to reflect the right state.
+         */
+        updateButtons: function () {
+            dojo.removeAttr(this.prevNode, "disabled");
+            dojo.removeAttr(this.nextNode, "disabled");
+            if (this.attachIndex === 0) {
+                dojo.attr(this.prevNode, "disabled", "disabled");
+            }
+            if (this.attachIndex === this.count - 1) {
+                dojo.attr(this.nextNode, "disabled", "disabled");
+            }
         }
     });
 });
