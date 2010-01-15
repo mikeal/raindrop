@@ -53,7 +53,7 @@ run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
                            '    <img src="' + schema.thumbnail_small + '" class="vimeo"></a>' +
                            '    <div class="play"></div>' +
                            '    </div>' +
-                           '    <div class=\"information boxFlex1\">' +
+                           '    <div class=\"info boxFlex1\">' +
                            '        <a target="_blank" class="title" href="http://vimeo.com/' + schema.id + '">' +
                                     schema.title + '</a>' +
                            '        <abbr class="owner">' + schema.user_name + '</abbr>' +

@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .attachments > .flickr > .thumbnail {
+.rdwMessage > .message > .rdwAttachments .flickr > .thumbnail {
   display: inline-block;
   background-image: url("../../../../inflow/i/new/rd_attachments_picture.png");
   width: 110px;
@@ -30,7 +30,7 @@
   position: relative;
 }
 
-.rdwMessage > .message > .attachments > .flickr > .thumbnail > a {
+.rdwMessage > .message > .rdwAttachments .flickr > .thumbnail > a {
   display: block;	
   width: 75px;
   height: 50px;
@@ -42,28 +42,28 @@
   outline: none;
 }
 
-.rdwMessage > .message > .attachments > .flickr > .thumbnail > a > img {
+.rdwMessage > .message > .rdwAttachments .flickr > .thumbnail > a > img {
   position: absolute;
   top: -12px;
   left: 0px;
 }
 
-.rdwMessage > .message > .attachments > .flickr .information {
+.rdwMessage > .message > .rdwAttachments .flickr .information {
   display: inline-block;
   vertical-align: top;
   padding: 0 7px;
 }
 
-.rdwMessage > .message > .attachments > .flickr .title {
+.rdwMessage > .message > .rdwAttachments .flickr .title {
   display: block;
   font-weight: bold;
 }
 
-.rdwMessage > .message > .attachments > .flickr .owner {
+.rdwMessage > .message > .rdwAttachments .flickr .owner {
   display: block;
   color: #333;
 }
 
-.rdwMessage > .message > .attachments > .flickr .description {
+.rdwMessage > .message > .rdwAttachments .flickr .description {
   color: #666;
 }

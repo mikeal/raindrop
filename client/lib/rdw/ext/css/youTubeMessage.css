@@ -79,16 +79,19 @@
   cursor: pointer;
 } 
 
-.rdwMessage > .message > .rdwAttachments .youTube > .info {
+.rdwMessage > .message > .rdwAttachments .youTube > .info,
+.rdwMessage > .message > .rdwAttachments .vimeo > .info {
   display: inline-block;
   vertical-align: top;
   margin-left: 5px;
 }
 
-.rdwMessage > .message > .rdwAttachments .youTube > .info > a.title {
+.rdwMessage > .message > .rdwAttachments .youTube > .info > a.title,
+.rdwMessage > .message > .rdwAttachments .vimeo > .info > a.title {
   font-weight: bold;
   text-decoration: none;
-  color: #22262e;
+  color: #ff5959;
+  display: block;
 }
 
 .rdwMessage > .message > .rdwAttachments .youTube > .info > .views {

@@ -16,21 +16,31 @@
 }
 
 .rdwAttachments .attachTabs {
-    z-index: 10;
-    margin: 0 0 0 20px;
+  z-index: 10;
+  margin: 0 0 0 10px;
 }
 
 .rdwAttachments .attachTab {
-    display: inline-block;
-    border: 1px solid gray;
-    border-bottom: 0 none transparent;
-    z-index: 10;
-    background: white;
-    margin-bottom: -1px;
+  color: #666;
+  display: inline-block;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e6e6e6 #ccc transparent;
+  z-index: 10;
+  background: white;
+  margin-bottom: -1px;
+  padding: 0 10px;
+  -moz-border-radius-topleft: 5px;
+  -moz-border-radius-topright: 5px;
+  -webkit-border-top-left-radius: 5px;
+  -webkit-border-top-right-radius: 5px;
+  font-size: 10px;
+  background-image: url("../i/new/rd_tab_bg.png");
+  background-repeat: repeat-x;
 }
 
 .rdwAttachments .attachContents {
-  margin: -7px 5px 10px 0;
+  margin: -7px 5px 10px 5px;
   padding: 8px 5px;
   position: relative;
   -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
@@ -42,8 +52,8 @@
 
 .rdwAttachments .attachAction {
     position: absolute;
-    top: 10%;
-    right: 0;
+    top: 7px;
+    right: -7px;
 }
 
 .rdwAttachments .attachDisplay {
