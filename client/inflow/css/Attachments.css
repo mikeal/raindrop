@@ -1,4 +1,18 @@
 .rdwAttachments {
+    margin: 8px 0;
+}
+
+.rdwAttachments:empty {
+  display: none;
+}
+
+.rdwAttachments .link a {
+  color: #ff5959;
+  text-decoration: none;
+}
+
+.rdwAttachments .link a:hover {
+  text-decoration: underline;
 }
 
 .rdwAttachments .attachTabs {
@@ -16,12 +30,15 @@
 }
 
 .rdwAttachments .attachContents {
-    width: 100%;
-    height: 120px;
-    margin-top: -1px;
-    border-top: 1px solid gray;
-    border-bottom: 1px solid gray;
-    background: white;
+  margin: -7px 5px 10px 0;
+  padding: 8px 5px;
+  display: inherit;
+  position: relative;
+  -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  -webkit-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
+  border-width: 10px 14px 3px 2px;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
 }
 
 .rdwAttachments .attachContents > div {
@@ -31,18 +48,18 @@
 
 .rdwAttachments .attachNext,
 .rdwAttachments .attachPrev {
+    position: relative;
     width: 60px;
     text-align: center;
-    vertical-align: middle;
 }
 
 .rdwAttachments .attachDisplay {
-    width: 488px;
+    width: 458px;
     overflow: hidden;
 }
 
 .rdwMessage.reply .rdwAttachments .attachDisplay {
-    width: 428px;
+    width: 398px;
 }
 
 .rdwAttachments .attachScroll {
@@ -52,10 +69,10 @@
 
 .rdwAttachments .attachScroll > div {
     display: inline-block;
-    width: 488px;
+    width: 458px;
     height: 100%;
 }
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
-    width: 428px;
+    width: 398px;
 }

@@ -146,35 +146,3 @@
 .rdwMessage.rdwExtTwitterMessage > .message > .content {
   padding: 0 5px 0 0;
 }
-
-/* ### ATTACHMENTS ### */
-.rdwConversation .rdwMessage .message .attachments {
-  margin: 8px 5px 10px;
-  padding: 8px 5px;
-  display: inherit;
-  position: relative;
-  -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
-  -webkit-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
-  border-width: 10px 14px 3px 2px;
-}
-
-.rdwConversation .rdwMessage.reply .message .attachments {
-  margin-left: 0;
-}
- 
-.rdwExtTwitterConversation .rdwMessage .message .attachments {
-  margin-left: 0;
-}
-
-.rdwConversation .rdwMessage .message .attachments:empty {
-  display: none;
-}
-
-.rdwConversation .rdwMessage .message .attachments .link a {
-  color: #ff5959;
-  text-decoration: none;
-}
-
-.rdwConversation .rdwMessage .message .attachments .link a:hover {
-  text-decoration: underline;
-}

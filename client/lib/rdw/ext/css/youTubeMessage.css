@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .attachments > .youTube {
+.rdwMessage > .message > .rdwAttachments .youTube {
 /*  min-width: 290px;
   margin: 8px 0 0 0;
   padding: 16px 0 0 0;
@@ -30,8 +30,8 @@
   background-repeat: repeat-x; */
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail,
-.rdwMessage > .message > .attachments > .vimeo > .thumbnail { 
+.rdwMessage > .message > .rdwAttachments .youTube > .thumbnail,
+.rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail { 
   display: inline-block;
   background-image: url("../../../../inflow/i/new/rd_attachments_video.png");
   width: 110px;
@@ -39,8 +39,8 @@
   position: relative;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail > a,
-.rdwMessage > .message > .attachments > .vimeo > .thumbnail > a {
+.rdwMessage > .message > .rdwAttachments .youTube > .thumbnail > a,
+.rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail > a {
   display: block;	
   width: 80px;
   height: 44px;
@@ -53,21 +53,21 @@
   outline: none;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail > a > img {
+.rdwMessage > .message > .rdwAttachments .youTube > .thumbnail > a > img {
   position: absolute;
   width: 100%;
   top: -8px;
 }
 
-.rdwMessage > .message > .attachments > .vimeo > .thumbnail > a > img {
+.rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail > a > img {
   position: absolute;
   width: 100%;
   top: -8px;
 }
 
 
-.rdwMessage > .message > .attachments > .youTube > .thumbnail .play,
-.rdwMessage > .message > .attachments > .vimeo > .thumbnail .play { 
+.rdwMessage > .message > .rdwAttachments .youTube > .thumbnail .play,
+.rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail .play { 
   width: 22px;
   height: 13px;
   display: inline-block;
@@ -79,24 +79,24 @@
   cursor: pointer;
 } 
 
-.rdwMessage > .message > .attachments > .youTube > .info {
+.rdwMessage > .message > .rdwAttachments .youTube > .info {
   display: inline-block;
   vertical-align: top;
   margin-left: 5px;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .info > a.title {
+.rdwMessage > .message > .rdwAttachments .youTube > .info > a.title {
   font-weight: bold;
   text-decoration: none;
   color: #22262e;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .info > .views {
+.rdwMessage > .message > .rdwAttachments .youTube > .info > .views {
   color: #888;
   font-size: 10px;
 }
 
-.rdwMessage > .message > .attachments > .youTube > .player {
+.rdwMessage > .message > .rdwAttachments .youTube > .player {
   margin: 8px auto;
   padding-top: 8px;
   border-top: 1px solid #e6e6e6;
