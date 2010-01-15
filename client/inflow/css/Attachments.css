@@ -1,5 +1,5 @@
 .rdwAttachments {
-  margin: 8px 0;
+    margin: 8px 0;
 }
 
 .rdwAttachments:empty {
@@ -16,29 +16,22 @@
 }
 
 .rdwAttachments .attachTabs {
-  z-index: 10;
-  margin: 0 0 0 20px;
+    z-index: 10;
+    margin: 0 0 0 20px;
 }
 
 .rdwAttachments .attachTab {
-  display: inline-block;
-  border: 1px solid #ccc;
-  border-bottom: 0 none transparent;
-  z-index: 10;
-  background: white;
-  margin-bottom: -1px;
-  padding: 0 5px;
-  -moz-border-radius-topleft: 5px;
-  -moz-border-radius-topright: 5px;
-  -webkit-border-top-left-radius: 5px;
-  -webkit-border-top-right-radius: 5px;
-  font-size: 10px;
+    display: inline-block;
+    border: 1px solid gray;
+    border-bottom: 0 none transparent;
+    z-index: 10;
+    background: white;
+    margin-bottom: -1px;
 }
 
 .rdwAttachments .attachContents {
-  margin: -7px 5px 10px;
+  margin: -7px 5px 10px 0;
   padding: 8px 5px;
-  display: inherit;
   position: relative;
   -moz-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
   -webkit-border-image: url("../i/new/rd_attachments_bg2.png") 10 14 3 2;
@@ -47,38 +40,33 @@
   -webkit-box-sizing: border-box;
 }
 
-.rdwAttachments .attachContents > div {
-  display: inline-block;
-  height: 120px;
-}
-
-.rdwAttachments .attachNext,
-.rdwAttachments .attachPrev {
-  position: relative;
-  width: 60px;
-  text-align: center;
+.rdwAttachments .attachAction {
+    position: absolute;
+    top: 10%;
+    right: 0;
 }
 
 .rdwAttachments .attachDisplay {
-  width: 458px;
-  overflow: hidden;
+    width: 463px;
+    height: 120px;
+    overflow: hidden;
 }
 
 .rdwMessage.reply .rdwAttachments .attachDisplay {
-  width: 398px;
+    width: 398px;
 }
 
 .rdwAttachments .attachScroll {
-  width: 10000px;
-  height: 100%;
+    width: 10000px;
+    height: 100%;
 }
 
 .rdwAttachments .attachScroll > div {
-  display: inline-block;
-  width: 458px;
-  height: 100%;
+    display: inline-block;
+    width: 463px;
+    height: 100%;
 }
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
-  width: 398px;
+    width: 398px;
 }

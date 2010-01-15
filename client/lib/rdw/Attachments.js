@@ -118,7 +118,7 @@ function (rd, dojo, Base, template) {
             this.scrollNode.innerHTML = html;
         },
 
-        onPrevious: function (evt) {
+        onAction: function (evt) {
             
         },
 

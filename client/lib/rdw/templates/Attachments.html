@@ -2,15 +2,13 @@
     <div class="attachTabs" dojoAttachPoint="tabsNode">
     </div>
     <div class="attachContents">
-        <div class="attachPrev" dojoAttachEvent="onclick: onPrevious">
-            <button name="rdwAttachmentsPrev" class="prev">Previous</button>
-        </div>
         <div class="attachDisplay" dojoAttachPoint="displayNode">
             <div class="attachScroll" dojoAttachPoint="scrollNode">
                 
             </div>
         </div>
-        <div class="attachNext" dojoAttachEvent="onclick: onNext">
+        <div class="attachAction" dojoAttachEvent="onclick: onAction">
+            <button name="rdwAttachmentsPrev" class="prev">Previous</button>
             <button name="rdwAttachmentsNext" class="next">Next</button>
         </div>
     </div>
