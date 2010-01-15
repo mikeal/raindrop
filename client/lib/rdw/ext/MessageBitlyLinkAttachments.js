@@ -34,55 +34,43 @@ run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
     */
 
     rd.addStyle("rdw/ext/css/MessageBitlyLinkAttachments");
-/*
+
     rd.applyExtension("rdw/ext/MessageBitlyLinkAttachments", "rdw/Message", {
-        after: {
-            linkHandlers: function (link) {
-                //NOTE: the "this" in this function is the instance of rdw/Message.
+        addToPrototype: {
+            linkHandlers: [
+                function (link) {
+                    //NOTE: the "this" in this function is the instance of rdw/Message.
+                    var schema = this.msg.schemas["rd.msg.body.bit.ly"],
+                          linkNode, templateObj, template, titleTemplate;
+                    if (!schema || schema.ref_link !== link) {
+                        return false;
+                    }
+    
+                    template = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${longUrl}</a>' +
+                               '<span class="by">by</span> ' +
+                               '<abbr class="owner">${owner}</abbr>';
+    
+                    titleTemplate = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${title}</a>' +
+                                    '<div class="description">${longUrl}</div>' +
+                                    '<span class="by">by</span> ' +
+                                    '<abbr class="owner">${owner}</abbr>';
+    
+                    templateObj = {
+                        longUrl   : schema.longUrl,
+                        shortUrl  : "http://bit.ly/" + schema.globalHash,
+                        title     : schema.htmlTitle,
+                        owner     : schema.shortenedByUser
+                    };
+    
+                    //Check if a title is included and use the alt template
+                    if (schema.htmlTitle) {
+                        template = titleTemplate;
+                    }
 
-                //Check for links found in a message
-                var schema = this.msg.schemas["rd.msg.body.bit.ly"],
-                    href, title, owner, desc, linkNode;
-                if (!schema) {
-                    return false;
-
-                //FAVOR THIS VERSION
-                var bitly_schema = this.msg.schemas["rd.msg.body.bit.ly"],
-                      linkNode, templateObj, template, titleTemplate;
-                if (!bitly_schema) {
-                    return;
+                    this.addAttachment('<div class="bitly link>' + rd.template(template, templateObj) + '</div>', 'link');
+                    return true;
                 }
-
-                template = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${longUrl}</a>' +
-                           '<span class="by">by</span> ' +
-                           '<abbr class="owner">${owner}</abbr>';
-
-                titleTemplate = '<a target="_blank" class="title" title="${longUrl}" href="${shortUrl}">${title}</a>' +
-                                '<div class="description">${longUrl}</div>' +
-                                '<span class="by">by</span> ' +
-                                '<abbr class="owner">${owner}</abbr>';
-
-                templateObj = {
-                    longUrl   : bitly_schema.longUrl,
-                    shortUrl  : "http://bit.ly/" + bitly_schema.globalHash,
-                    title     : bitly_schema.htmlTitle,
-                    owner     : bitly_schema.shortenedByUser
-                };
-
-                //Check if a title is included and use the alt template
-                if (bitly_schema.htmlTitle) {
-                    template = titleTemplate;
-                }
-
-                //Create a node to hold the link object
-                linkNode = dojo.create("div", {
-                    "class": "bitly link",
-                    innerHTML: rd.template(template, templateObj)
-                });
-
-                return true;
-            }
+            ]
         }
     });
-*/
 });

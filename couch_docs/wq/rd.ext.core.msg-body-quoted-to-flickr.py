@@ -40,7 +40,6 @@ BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 flickr_photo_regex = re.compile('flickr.com/photos/[\w@]+/(\d+)/.*')
 flickr_canonical_photo_regex = re.compile('flic.kr/p/(['+BASE58_ALPHABET+']+)')
 
-# Creates 'rd.msg.attachment' for bit.ly urls from 'rd.msg.body.quoted.hyperlinks'
 def handler(doc):
 
     if not 'links' in doc:
