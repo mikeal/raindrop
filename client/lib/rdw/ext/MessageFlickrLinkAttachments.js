@@ -39,14 +39,14 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
             linkHandlers: [
                 function (link) {
                     //NOTE: the "this" in this function is the instance of rdw/Message.
-    
+
                     //See if link matches the schema on message.
                     var schema = this.msg.schemas["rd.msg.body.flickr"],
-                        html, imgUrl, handled = false, href;
+                        template, templateObj, handled = false;
                     if (!schema || schema.ref_link !== link) {
                         return false;
                     }
-    
+
                     //If URL does not match the flickr url then kick it out.
                     handled = dojo.some(schema.urls.url, function (url) {
                         return link === url._content;
@@ -55,11 +55,12 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                         return false;
                     }
     
-                    // http:\/\/farm3.static.flickr.com\/2684\/4252109194_ba795640e8_s.jpg
+                    // http://farm{farm-id}.static.flickr.com/{server-id}/{id}_{secret}_[mstb].jpg
                     imgUrl = "http://farm" + schema.farm + ".static.flickr.com/" +
                                         schema.server + "/" + schema.id + "_" +
                                         schema.secret + "_s.jpg";
     
+                    // http://www.flickr.com/services/api/misc.urls.html
                     href = 'http://www.flickr.com/' + schema.owner.nsid + '/' + schema.id + '/';
 
                     html = rd.template(this.photoAttachTemplate, {
@@ -74,7 +75,7 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                     });
 
                     this.addAttachment(html, 'photo');
-    
+
                     return true;
                 }
             ]
