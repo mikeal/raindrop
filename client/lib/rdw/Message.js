@@ -26,8 +26,10 @@
 "use strict";
 
 run("rdw/Message",
-["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink", "rd/api", "rdw/Attachments", "text!rdw/templates/Message!html"], function (
-  run,   rd,   dojo,   Base,        friendly,      hyperlink,      api,      Attachments,       template) {
+["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink",
+ "rd/api", "rdw/Attachments", "text!rdw/templates/Message!html", "text!rdw/templates/MessagePhotoAttach!html"], function (
+  run,   rd,   dojo,   Base,        friendly,      hyperlink,
+  api,      Attachments,       template,                          photoAttachTemplate) {
 
     return dojo.declare("rdw.Message", [Base], {
         //Suggested values for type are "topic" and "reply"
@@ -44,6 +46,8 @@ run("rdw/Message",
         //Widget used to show attachments. Only created if an attachment
         //is added by an extension.
         attachmentWidget: "rdw/Attachments",
+
+        photoAttachTemplate: photoAttachTemplate,
 
         //Extension point for link attachment handlers. An extension that can
         //handle link attachments should register a function with this array.
@@ -67,21 +71,21 @@ run("rdw/Message",
             //Set the properties for this widget based on msg
             //properties.
             var schemas = this.msg.schemas,
-                msgDoc = schemas['rd.msg.body'],
+                bodySchema = schemas['rd.msg.body'],
                 fTime, known;
     
-            this.fromId = (msgDoc.from && msgDoc.from[1]) || "";
-            this.fromName = msgDoc.from_display || this.fromId;
-            this.subject = hyperlink.add(rd.escapeHtml(msgDoc.subject || ""));
+            this.fromId = (bodySchema.from && bodySchema.from[1]) || "";
+            this.fromName = bodySchema.from_display || this.fromId;
+            this.subject = hyperlink.add(rd.escapeHtml(bodySchema.subject || ""));
     
             //TODO: make message transforms extensionized.
-            this.message = hyperlink.add(rd.escapeHtml(msgDoc.body_preview));
+            this.message = hyperlink.add(rd.escapeHtml(bodySchema.body_preview));
     
-            this.time = msgDoc.timestamp;
+            this.time = bodySchema.timestamp;
     
             /* XXX this timestamp needs a lot more thought to show the right kind of 
                  time info and we probably also want to some standard the hCard formatting */
-            fTime = friendly.timestamp(msgDoc.timestamp);
+            fTime = friendly.timestamp(bodySchema.timestamp);
             this.utcTime = fTime.utc;
             this.localeTime = fTime.locale;
             this.friendlyTime = fTime.friendly;
@@ -107,29 +111,37 @@ run("rdw/Message",
         postCreate: function () {
             this.inherited("postCreate", arguments);
 
-            var msgDoc = this.msg.schemas['rd.msg.body'],
-                linkSchema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"],
-                i, link, j, ext, handled;
+            var bodySchema = this.msg.schemas['rd.msg.body'],
+                emailSchema = this.msg.schemas["rd.msg.email"], attachments,
+                prop, needFiles = false;
 
             //Set up attachments, if an attachment widget is configured.
             if (this.attachmentWidget) {
-                if (linkSchema && linkSchema.links && linkSchema.links.length) {
-                    for (i = 0; (link = linkSchema.links[i]); i++) {
-                        handled = false;
-                        for (j = 0; (ext = this.linkHandlers[j]); j++) {
-                            if ((handled = ext.call(this, link))) {
+                //Determine if there are any file attachments that we need
+                //metadata about.
+
+                attachments = emailSchema && emailSchema._attachments;
+                if (attachments) {
+                    for (prop in attachments) {
+                        if (attachments.hasOwnProperty(prop)) {
+                            if (prop.indexOf("subpart") === -1) {
+                                needFiles = true;
                                 break;
                             }
                         }
-                        if (!handled) {
-                            this.defaultLinkHandler(link);
-                        }
                     }
                 }
-    
-                //Render attachments, if they exist.
-                if (this.attachments) {
-                    this.attachments.display();
+                if (needFiles) {
+                    api({
+                        url: 'inflow/message/attachments',
+                        key: dojo.toJson(bodySchema.rd_key)
+                    })
+                    .ok(this, function(json) {
+                       this.msg.fileAttachments = json;
+                       this.showAttachments(); 
+                    });
+                } else {
+                    this.showAttachments(); 
                 }
             }
 
@@ -142,28 +154,28 @@ run("rdw/Message",
                         return e === email;
                     };
     
-                if (msgDoc.to) {
-                    for (i = 0; i < msgDoc.to.length; i++) {
-                        email = msgDoc.to[i][1];
+                if (bodySchema.to) {
+                    for (i = 0; i < bodySchema.to.length; i++) {
+                        email = bodySchema.to[i][1];
                         if (!myself.some(emailTest)) {
                             username = email.slice(0, email.indexOf("@"));
                             //XXX hacky first name grabber, will aslo grab titles like "Mr."
-                            name = msgDoc.to_display[i];
-                            first_name = msgDoc.to_display[i].split(" ")[0];
+                            name = bodySchema.to_display[i];
+                            first_name = bodySchema.to_display[i].split(" ")[0];
                             display = first_name || username;
                             dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <" + email + ">" }, this.toRecipientsNode);
                         }
                     }
                 }
     
-                if (msgDoc.cc) {
-                    for (i = 0; i < msgDoc.cc.length; i++) {
-                        email = msgDoc.cc[i][1];
+                if (bodySchema.cc) {
+                    for (i = 0; i < bodySchema.cc.length; i++) {
+                        email = bodySchema.cc[i][1];
                         if (!myself.some(emailTest)) {
                             username = email.slice(0, email.indexOf("@"));
                             //XXX hacky first name grabber, will aslo grab titles like "Mr."
-                            name = msgDoc.cc_display[i];
-                            first_name = msgDoc.cc_display[i].split(" ")[0];
+                            name = bodySchema.cc_display[i];
+                            first_name = bodySchema.cc_display[i].split(" ")[0];
                             display = first_name || username;
                             dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <" + email + ">" }, this.ccRecipientsNode);
                         }
@@ -186,6 +198,74 @@ run("rdw/Message",
                 }
                 this.attachments.add(html, type);
             }
+        },
+
+
+        /**
+         * Shows the attachments by creating an attachment widget. Should
+         * be called after fetching any file attachment metadata.
+         */
+        showAttachments: function () {
+            var linkSchema = this.msg.schemas["rd.msg.body.quoted.hyperlinks"],
+                i, j, link, ext, handled, file,
+                fileAttachments = this.msg.fileAttachments;
+            if (linkSchema && linkSchema.links && linkSchema.links.length) {
+                //Do links first
+                for (i = 0; (link = linkSchema.links[i]); i++) {
+                    handled = false;
+                    for (j = 0; (ext = this.linkHandlers[j]); j++) {
+                        if ((handled = ext.call(this, link))) {
+                            break;
+                        }
+                    }
+                    if (!handled) {
+                        this.defaultLinkHandler(link);
+                    }
+                }                
+            }
+
+            //Handle files now.
+            if (fileAttachments) {
+                for (i = 0; (file = fileAttachments[i]); i++) {
+                    this.defaultFileHandler(file);
+                }
+            }
+
+            //Render attachments, if they exist.
+            if (this.attachments) {
+                this.attachments.display();
+            }
+        },
+
+        /**
+         * Handles displaying each file attachment.
+         * @param {Object} file json object for a file attachment,
+         * from the inflow/message/attachments API
+         */
+        defaultFileHandler: function(file) {
+            var schemas = file.schemas,
+                bodySchema = this.msg.schemas["rd.msg.body"],
+                thumb = schemas["rd.attach.thumbnail"],
+                details = schemas["rd.attach.details"],
+                html;
+
+            if (thumb) {
+                html = rd.template(this.photoAttachTemplate, {
+                    extraClass: "",
+                    imgUrl: thumb.url,
+                    imgClass: "",
+                    href: details.url,
+                    title: details.name || "",
+                    userName: bodySchema.from[1] || "",
+                    realName: bodySchema.fromDisplay || "",
+                    description: details.content_type
+                });
+            } else {
+                html = '<div class="file"><a target="_blank" href="'
+                       + details.url + '">' + (details.name || details.content_type) + '</a></div>';
+            }
+
+            this.addAttachment(html, "file");
         },
 
         /**

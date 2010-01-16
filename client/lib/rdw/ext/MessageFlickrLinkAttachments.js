@@ -61,22 +61,18 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                                         schema.secret + "_s.jpg";
     
                     href = 'http://www.flickr.com/' + schema.owner.nsid + '/' + schema.id + '/';
-    
-                    html = '<div class="flickr photo link hbox">' +
-                           '    <div class="thumbnail boxFlex0">' +
-                           '        <a target="_blank" href="' + href + '"><img src="' +
-                                        imgUrl +
-                                    '" class="flickr"></a>' +
-                           '    </div>' +
-                           '    <div class="information boxFlex1">' +
-                                    '<a target="_blank" class="title" ' + href + '">' +
-                                        schema.title._content + '</a>' +
-                                    '<abbr class="owner" title="' + schema.owner.username +
-                                        '">' + schema.owner.realname + '</abbr>' +
-                                        '<div class="description">' + schema.description._content + '</div>' +
-                           '    </div>' +
-                           '</div>';
-    
+
+                    html = rd.template(this.photoAttachTemplate, {
+                        extraClass: "flickr",
+                        imgUrl: imgUrl,
+                        imgClass: "flickr",
+                        href: href,
+                        title: schema.title._content,
+                        userName: schema.owner.username,
+                        realName: schema.owner.realname,
+                        description: schema.description._content
+                    });
+
                     this.addAttachment(html, 'photo');
     
                     return true;

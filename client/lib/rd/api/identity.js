@@ -326,9 +326,6 @@ function (rd, dojo, api) {
                         //TODO: make a better rd_key.
                         rd_key: ["identity", id],
                         rd_schema_id: "rd.identity.recip-target",
-
-                        rd_schema_items: schemaItems,
-
                         target: target
                     };
 
