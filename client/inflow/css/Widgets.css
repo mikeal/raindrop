@@ -23,6 +23,10 @@
 
 /* CSS for the various default Widgets we display */
 
+.rdwWidgets .rdwAttachments {
+  display: none;
+}
+
 .WidgetBox,
 .rdwWidgets.start .rdwConversation {
   width: 310px;

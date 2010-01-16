@@ -67,7 +67,7 @@ function (rd, dojo, string, Conversation, wiper, BroadcastMessage, template) {
             this.totalCount = 0;
     
             var body = this.conversation.messages[0].schemas["rd.msg.body"];
-            this.from = body.from;
+            this.from = body.from || (body.rd_key[0] === "rss-entry" && body.rd_key[1]);
             this.fromDisplay = body.from_display;
         },
     
@@ -99,7 +99,7 @@ function (rd, dojo, string, Conversation, wiper, BroadcastMessage, template) {
             target = target && target.target;
     
             from = msg.schemas["rd.msg.body"];
-            from = from.from;
+            from = from.from || (from.rd_key[0] === "rss-entry" && from.rd_key[1]);
     
             //If target is broadcast or notification and not associated (probably)
             //a direct prototype check, not on an instance), or if an instance that

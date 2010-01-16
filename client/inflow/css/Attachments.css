@@ -28,7 +28,7 @@
   border-color: #e6e6e6 #ccc transparent;
   z-index: 10;
   background: white;
-  margin-bottom: -1px;
+  margin: 0 1px -1px 0;
   padding: 0 10px;
   -moz-border-radius-topleft: 5px;
   -moz-border-radius-topright: 5px;
@@ -52,7 +52,6 @@
 
 .rdwAttachments .attachDisplay {
     width: 463px;
-    height: 120px;
     overflow: hidden;
 }
 
@@ -69,6 +68,7 @@
     display: inline-block;
     width: 463px;
     height: 100%;
+    vertical-align: top;
 }
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
@@ -82,5 +82,16 @@
 }
 
 .rdwAttachments .attachAction button[disabled] {
-    color: white;
+    color: #bbb;
+    background-image: none;
+    background-color: #f2f2f2;
+    border-color: #e6e6e6;
+}
+
+.rdwAttachments .attachAction button[disabled]:hover {
+    color: #bbb;
+    background-image: none;
+    background-color: #f2f2f2;
+    border-color: #e6e6e6;
+    border-right: 1px solid #e6e6e6;
 }
