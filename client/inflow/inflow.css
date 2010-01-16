@@ -126,7 +126,9 @@ button {
   border: none;
   font-size: 10px;
   text-decoration: none;
-  border: 1px solid #ccc;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #e6e6e6 #ccc #ccc;
 }
 
 .dj_gecko button {
@@ -135,7 +137,7 @@ button {
 
 button:hover {
   text-decoration: none;
-  border: 1px solid #888;
+  border: 1px solid #999;
 }
 
 button:active {

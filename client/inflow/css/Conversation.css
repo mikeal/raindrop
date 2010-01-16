@@ -200,6 +200,7 @@
   visibility: visible;
 }
 
+.rdwConversationFullMessage > .message > .actions button,
 .rdwConversation > .actions > .leftActions button,
 .rdwAttachments .attachAction button {
   display: inline;
@@ -208,6 +209,11 @@
   -webkit-border-radius: 0;
 }
 
+.rdwConversationFullMessage > .message > .actions button {
+  float: right;
+}
+
+.rdwConversationFullMessage > .message > .actions button:first-child,
 .rdwConversation > .actions > .leftActions button:first-child, 
 .rdwAttachments .attachAction button:first-child {
   -moz-border-radius-bottomleft: 4px;
@@ -216,6 +222,7 @@
   -webkit-border-top-left-radius: 4px;
 }
 
+.rdwConversationFullMessage > .message > .actions button:last-child,
 .rdwConversation > .actions > .leftActions button:last-child,
 .rdwAttachments .attachAction button:last-child {
   -moz-border-radius-bottomright: 4px;
