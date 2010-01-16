@@ -26,8 +26,8 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"], function (
-  run,   rd,   dojo,   Message) {
+["run", "rd", "dojo", "rd/schema", "rdw/Message"], function (
+  run,   rd,   dojo,   rdSchema,    Message) {
 
     rd.addStyle("rdw/ext/css/MessageFlickrLinkAttachments");
 
@@ -41,9 +41,9 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                     //NOTE: the "this" in this function is the instance of rdw/Message.
 
                     //See if link matches the schema on message.
-                    var schema = this.msg.schemas["rd.msg.body.flickr"],
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.flickr", "ref_link", link),
                         template, templateObj, handled = false;
-                    if (!schema || schema.ref_link !== link) {
+                    if (!schema) {
                         return false;
                     }
 

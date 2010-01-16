@@ -58,6 +58,7 @@ function (rd, dojo, api, identity) {
                 } else {
                     var messageResults = [],
                             bag = {},
+                            multiples = null,
                             fromMap = {},
                             fromIds = [],
                             i, row, doc, rdKey, schemaId, from, nextDoc, fromId,
@@ -72,16 +73,21 @@ function (rd, dojo, api, identity) {
                         //Prefer a blacklist vs. a whitelist, since user extensions may add
                         //other things, and do not want to have extensions register extra stuff? TODO.
                         if (schemaId.indexOf("/rfc822") === -1 && schemaId.indexOf("/raw") === -1) {
-                            // TODO: note that we may get many of the same schema, which implies
-                            // we need to aggregate them - tags is a good example.    For
-                            // now just make noise...
+                            // We may get many of the same schema, which implies
+                            // we need to aggregate them - tags is a good example.
+                            // Aggregate them under a _multiples areas.
                             if (bag[schemaId]) {
-                                console.warn("message", doc.rd_key, "has multiple", schemaId, "schemas");
+                                multiples = bag._multiples || (bag._multiples = {});
+                                if (!multiples[schemaId]) {
+                                    multiples[schemaId] = [];
+                                    multiples[schemaId].push(bag[schemaId]);
+                                }
+                                multiples[schemaId].push(row.doc);
                             }
                             // for now it gets clobbered if it exists...
                             bag[schemaId] = row.doc;
                         }
-    
+
                         //See if all schemas are loaded for a message bag by checking the next
                         //document in the json results to see if it has a different rd_key.
                         //If so, then tell any extensions about new message load.

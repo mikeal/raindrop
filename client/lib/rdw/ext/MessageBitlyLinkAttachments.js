@@ -26,8 +26,8 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"], function (
-  run,   rd,   dojo,   Message) {
+["run", "rd", "dojo", "rd/schema", "rdw/Message"], function (
+  run,   rd,   dojo,   rdSchema,    Message) {
     /*
     Applies a display extension to rdw/Message.
     Allows showing links included in the message as inline attachments
@@ -40,9 +40,9 @@ run.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
             linkHandlers: [
                 function (link) {
                     //NOTE: the "this" in this function is the instance of rdw/Message.
-                    var schema = this.msg.schemas["rd.msg.body.bit.ly"],
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.bit.ly", "ref_link", link),
                           linkNode, templateObj, template, titleTemplate;
-                    if (!schema || schema.ref_link !== link) {
+                    if (!schema) {
                         return false;
                     }
     

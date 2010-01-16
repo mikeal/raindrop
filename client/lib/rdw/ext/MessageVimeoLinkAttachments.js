@@ -26,8 +26,8 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"], function (
-  run,   rd,   dojo,   Message) {
+["run", "rd", "dojo", "rd/schema", "rdw/Message"], function (
+  run,   rd,   dojo,   rdSchema,    Message) {
 
     /*
     Applies a display extension to rdw/Message.
@@ -42,9 +42,9 @@ run.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
                     //NOTE: the "this" in this function is the instance of rdw/Message.
         
                     //See if link matches the schema on message.
-                    var schema = this.msg.schemas["rd.msg.body.quoted.hyperlinks.vimeo"],
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.quoted.hyperlinks.vimeo", "ref_link", link),
                         html;
-                    if (!schema || schema.ref_link !== link) {
+                    if (!schema) {
                         return false;
                     }
     

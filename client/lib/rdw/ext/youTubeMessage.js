@@ -26,8 +26,8 @@
 "use strict";
 
 run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
-["rd", "dojo", "rdw/Message", "dojo/fx"],
-function (rd, dojo, Message, fx) {
+["rd", "dojo", "rd/schema", "rdw/Message", "dojo/fx"], function (
+  rd,   dojo,   rdSchema,    Message,       fx) {
 
     rd.addStyle("rdw/ext/css/youTubeMessage");
 
@@ -48,11 +48,11 @@ function (rd, dojo, Message, fx) {
                     //NOTE: the "this" in this function is the instance of rdw/Message.
     
                     //Check for a YouTube video
-                    var yt = this.msg.schemas["rd.msg.body.youtubed"],
+                    var yt = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.youtubed", "ref_link", link),
                         thumbnail = "", thumb, url, youTubeImgTemplateString, img,
                         title, youTubeNode, youTubeInfoTemplateString, empty,
                         thumbs, thumb, i;
-                    if (!yt || yt.ref_link !== link) {
+                    if (!yt) {
                         return false;
                     }
     
