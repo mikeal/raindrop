@@ -56,19 +56,19 @@
 }
 
 .rdwMessage.reply .rdwAttachments .attachDisplay {
-    width: 398px;
+  width: 398px;
 }
 
 .rdwAttachments .attachScroll {
-    width: 10000px;
-    height: 100%;
+  width: 10000px;
+  height: 100%;
 }
 
 .rdwAttachments .attachScroll > div {
-    display: inline-block;
-    width: 463px;
-    height: 100%;
-    vertical-align: top;
+  display: inline-block;  
+  width: 463px;
+  height: 100%;
+  vertical-align: top;
 }
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
