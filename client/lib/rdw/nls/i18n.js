@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-run("i18n!rdw/nls/i18n",
+run.def("i18n!rdw/nls/i18n",
     {
         root: {
             add: "Add:",
@@ -48,12 +48,12 @@ run("i18n!rdw/nls/i18n",
             less: "less",
             loading: "loading...",
             mailingList: {
-              defaultName : "Mailing List",
-              summary : "Mailing List Summary",
-              status : "Status",
-              archives : "Online Archives",
-              help : { http : "Find help online", email : "Email List for Help" },
-              post : { http : "Post online", email : "Compose Email to List" }
+                defaultName : "Mailing List",
+                summary : "Mailing List Summary",
+                status : "Status",
+                archives : "Online Archives",
+                help : { http : "Find help online", email : "Email List for Help" },
+                post : { http : "Post online", email : "Compose Email to List" }
             },
             messageSingular: "message",
             messagePlural: "messages",

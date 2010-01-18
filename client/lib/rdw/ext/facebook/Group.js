@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/facebook/Group",
+run.def("rdw/ext/facebook/Group",
 ["rd", "dojo", "rdw/conversation/GenericGroup"],
 function (rd, dojo, GenericGroup) {
 

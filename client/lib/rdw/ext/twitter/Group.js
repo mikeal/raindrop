@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/twitter/Group",
+run.def("rdw/ext/twitter/Group",
 ["rd", "dojo", "rdw/Conversation", "rdw/fx/wiper"],
 function (rd, dojo, Conversation, wiper) {
 

@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/mailingList/GroupMessage",
+run.def("rdw/ext/mailingList/GroupMessage",
 ["rd", "dojo", "rdw/Message", "text!rdw/ext/mailingList/GroupMessage!html"],
 function (rd, dojo, Message, template) {
 

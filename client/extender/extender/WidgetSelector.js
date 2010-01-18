@@ -25,7 +25,7 @@
 /*global run: false, opener: false */
 "use strict";
 
-run("extender/WidgetSelector",
+run.def("extender/WidgetSelector",
 ["rd", "dojo", "rdw/_Base", "extender/Editor",
   "text!extender/templates/WidgetSelector!html", "text!extender/templates/sampleObjectExtension!js"],
 function (rd, dojo, Base, Editor, template, sampleTemplate) {

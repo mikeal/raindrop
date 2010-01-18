@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/Summary",
+run.def("rdw/Summary",
 ["rd", "dojo", "rdw/_Base", "rd/api", "rd/api/contact"],
 function (rd, dojo, Base, api, contact) {
 

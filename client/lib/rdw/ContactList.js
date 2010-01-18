@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ContactList",
+run.def("rdw/ContactList",
 ["run", "rd", "dojo", "dijit", "dojo.string", "dojo/dnd/Source", "rdw/_Base", "rd/contact"],
 function (run, rd, dojo, dijit, string, Source, Base, contact) {
 

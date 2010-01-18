@@ -25,7 +25,7 @@
 /*global run: false, clearTimeout: false, setTimeout: false */
 "use strict";
 
-run("rdw/QuickCompose",
+run.def("rdw/QuickCompose",
 ["run", "rd", "dojo", "rdw/_Base", "dijit/form/FilteringSelect", "rdw/DataSelector",
  "rd/api", "rd/api/me", "text!rdw/templates/QuickCompose!html"],
 function (run, rd, dojo, Base, FilteringSelect, DataSelector, api, me, template) {

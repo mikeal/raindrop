@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/Notify",
+run.def("rdw/Notify",
 ["rd", "dojo", "rdw/_Base", "dojo/string"],
 function (rd, dojo, Base, string) {
 

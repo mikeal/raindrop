@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ContactSelector",
+run.def("rdw/ContactSelector",
 ["run", "rd", "dojo", "rdw/_Base", "dojo/string", "rd/contact"],
 function (run, rd, dojo, Base, string, contact) {
 

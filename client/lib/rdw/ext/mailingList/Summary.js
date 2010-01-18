@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/mailingList/Summary",
+run.def("rdw/ext/mailingList/Summary",
 ["rd", "dojo", "rdw/_Base", "rdw/ext/mailingList/model", "text!rdw/ext/mailingList/Summary!html"],
 function (rd, dojo, Base, model, template) {
 

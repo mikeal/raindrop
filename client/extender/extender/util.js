@@ -25,7 +25,7 @@
 /*global run: false, window: false */
 "use strict";
 
-run("extender/util",
+run.def("extender/util",
 function () { 
     return {
         /** Tries to find the app that called this extender. */

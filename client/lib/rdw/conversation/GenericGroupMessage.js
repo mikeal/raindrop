@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/GenericGroupMessage",
+run.def("rdw/conversation/GenericGroupMessage",
 ["dojo", "rdw/Message", "text!rdw/conversation/templates/GenericGroupMessage!html"],
 function (dojo, Message, template) {
     return dojo.declare("rdw.conversation.GenericGroupMessage", [Message], {

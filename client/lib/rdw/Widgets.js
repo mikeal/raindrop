@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/Widgets",
+run.def("rdw/Widgets",
 ["rd", "dojo", "dojox", "rdw/_Base", "rd/onHashChange", "rd/api", "rd/api/message",
  "rdw/conversation/Broadcast", "rdw/SummaryGroup", "dojo/fx", "dojox/fx/scroll"],
 function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryGroup, fx, fxScroll) {

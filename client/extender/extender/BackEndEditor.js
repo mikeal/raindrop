@@ -26,7 +26,7 @@
 location: true */
 "use strict";
 
-run("extender/BackEndEditor",
+run.def("extender/BackEndEditor",
 ["run", "rd", "dojo", "dijit", "couch", "rdw/_Base", "dojox/encoding/base64",
   "text!extender/templates/BackEndEditor!html"],
 function (run, rd, dojo, dijit, couch, Base, base64, template) {

@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/schema",
+run.def("rd/schema",
 function () {
 
     return {

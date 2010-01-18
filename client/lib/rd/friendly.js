@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/friendly",
+run.def("rd/friendly",
 ["rd", "dojo", "dojox/date/posix"],
 function (rd, dojo, posix) {
     var friendly = {

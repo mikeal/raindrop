@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/ext/metrics",
+run.def("rdw/ext/metrics",
 ["run", "rd", "dojo", "dojo/NodeList-traverse", "rd/api", "rd/api/pref"],
 function (run, rd, dojo, traverse, api, pref) {
 

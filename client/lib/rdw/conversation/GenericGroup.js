@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/GenericGroup",
+run.def("rdw/conversation/GenericGroup",
 ["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper",
  "rdw/conversation/GenericGroupMessage",
  "text!rdw/conversation/templates/GenericGroup!html"],

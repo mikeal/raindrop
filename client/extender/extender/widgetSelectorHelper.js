@@ -25,7 +25,7 @@
 /*global run: false, document: false */
 "use strict";
 
-run("extender/widgetSelectorHelper",
+run.def("extender/widgetSelectorHelper",
 ["rd", "dojo", "dijit"],
 function (rd, dojo, dijit) {
 

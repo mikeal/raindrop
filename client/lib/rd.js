@@ -50,7 +50,7 @@
     }
 }());
 
-run("rd",
+run.def("rd",
 ["run", "dojo", "dijit", "dojox", "dojo/data/ItemFileReadStore", "dojo/string",
 "dojox/encoding/base64", "dojo/NodeList-traverse", "dojo/NodeList-manipulate"],
 function (run, dojo, dijit, dojox) {

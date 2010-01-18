@@ -24,9 +24,9 @@
 /*global run: false */
 "use strict";
 
-run("rd/api/pref",
-["rd", "dojo", "rd/api"],
-function (rd, dojo, api) {
+run.def("rd/api/pref",
+["rd", "dojo", "rd/api"], function (
+  rd,   dojo,   api) {
     /**
      * Gets preferences for a preference ID.
      *

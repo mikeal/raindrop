@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/FullMessage",
+run.def("rdw/conversation/FullMessage",
 ["dojo", "rdw/Message", "text!rdw/conversation/templates/FullMessage!html"],
 function (dojo, Message, template) {
     return dojo.declare("rdw.conversation.FullMessage", [Message], {

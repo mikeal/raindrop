@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/ReplyForward",
+run.def("rdw/ReplyForward",
 ["rd", "dojo", "rdw/QuickCompose", "dijit/form/Textarea"],
 function (rd, dojo, QuickCompose, Textarea) {
 

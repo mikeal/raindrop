@@ -25,9 +25,9 @@
 /*global run: false */
 "use strict";
 
-run("rdw/Account",
-["rd", "dojo", "rdw/_Base", "rd/api", "rd/api/me"],
-function (rd, dojo, Base, api, me) {
+run.def("rdw/Account",
+["rd", "dojo", "rdw/_Base", "rd/api", "rd/api/me"], function (
+  rd,   dojo,   Base,        api,      me) {
 
     return dojo.declare("rdw.Account", [Base], {
         templateString: '<div class="rdwAccount" dojoAttachEvent="onclick: onClick">' +

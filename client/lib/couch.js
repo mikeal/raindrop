@@ -23,7 +23,7 @@
 
 //Modified from couchdb's jquery.couch.js file.
 
-run("couch", ["dojo"], function (dojo) {
+run.def("couch", ["dojo"], function (dojo) {
   function _handle(response, ioArgs) {
     //Used as the callback for XHR calls. Figure out what options method to call.
     var options = ioArgs.args;

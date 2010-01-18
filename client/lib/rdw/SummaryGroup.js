@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/SummaryGroup",
+run.def("rdw/SummaryGroup",
 ["rd", "dojo", "rdw/_Base", "rd/onHashChange", "rdw/InflowSummaryGroup"],
 function (rd, dojo, Base, onHashChange, InflowSummaryGroup) {
 

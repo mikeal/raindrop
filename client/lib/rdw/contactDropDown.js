@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/contactDropDown",
+run.def("rdw/contactDropDown",
 ["dojo", "dijit", "rdw/ContactSelector"],
 function (dojo, dijit, ContactSelector) {
 

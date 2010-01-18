@@ -26,7 +26,7 @@
 setInterval: false, clearInterval: false */
 "use strict";
 
-run("rd/engine",
+run.def("rd/engine",
 ["rd", "dojo"],
 function (rd, dojo) {
     var engine = {

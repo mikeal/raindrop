@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/Broadcast",
+run.def("rdw/conversation/Broadcast",
 ["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper",
  "rdw/conversation/BroadcastMessage",
  "text!rdw/conversation/templates/Broadcast!html"],

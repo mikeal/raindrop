@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/hyperlink",
+run.def("rd/hyperlink",
 function () {
 
     return {

@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/_api",
+run.def("rd/_api",
 ["rd", "dojo"],
 function (rd, dojo) {
     //A "base class" for some data APIs. Most of these APIs dynamically

@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/conversation",
+run.def("rd/conversation",
 ["rd", "dojo", "rd/api"],
 function (rd, dojo, api) {
     var conversation = {

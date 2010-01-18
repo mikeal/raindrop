@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/Message",
+run.def("rdw/Message",
 ["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink",
  "rd/api", "rdw/Attachments", "text!rdw/templates/Message!html", "text!rdw/templates/MessagePhotoAttach!html"], function (
   run,   rd,   dojo,   Base,        friendly,      hyperlink,

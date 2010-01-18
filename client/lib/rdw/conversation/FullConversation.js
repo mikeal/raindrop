@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/FullConversation",
+run.def("rdw/conversation/FullConversation",
 ["dojo", "rdw/Conversation", "rdw/conversation/FullMessage",
  "text!rdw/conversation/templates/FullConversation!html"],
 function (dojo, Conversation, FullMessage, template) {

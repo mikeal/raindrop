@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/tag",
+run.def("rd/tag",
 ["rd", "dojo", "rd/api"],
 function (rd, dojo, api) {
     var tag = {

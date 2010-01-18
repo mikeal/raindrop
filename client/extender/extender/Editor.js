@@ -26,7 +26,7 @@
 confirm: false, location: true */
 "use strict";
 
-run("extender/Editor",
+run.def("extender/Editor",
 ["run", "rd", "dojo", "dijit", "rdw/_Base", "rd/api", "extender/util",
  "text!extender/templates/Editor!html"],
 function (run, rd, dojo, dijit, Base, api, util, template) {

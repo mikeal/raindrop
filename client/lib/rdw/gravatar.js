@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/gravatar",
+run.def("rdw/gravatar",
 ["rd", "dojox", "dojox.encoding.digests.MD5"],
 function (rd, dojox) {
     var digests = dojox.encoding.digests;

@@ -25,7 +25,7 @@
 /*global run: false, location: true */
 "use strict";
 
-run("rdw/Conversation",
+run.def("rdw/Conversation",
 ["run", "rd", "dojo", "dojo/string", "rd/api", "rd/api/identity", "rd/friendly", "rd/hyperlink", "rdw/_Base", "rdw/Message",
  "text!rdw/templates/Conversation!html", "text!rdw/templates/impersonal!html"],
 function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Message, template, impersonalTemplate) {

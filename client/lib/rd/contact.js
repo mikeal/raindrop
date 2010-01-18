@@ -25,7 +25,7 @@
 /*global run: false, console: false */
 "use strict";
 
-run("rd/contact",
+run.def("rd/contact",
 ["rd", "dojo", "dojo/DeferredList", "couch", "rd/_api", "rd/api", "rd/api/identity"],
 function (rd, dojo, DeferredList, couch, _api, api, identity) {
     //Derives from rd/_api

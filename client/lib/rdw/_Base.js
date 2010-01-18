@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/_Base",
+run.def("rdw/_Base",
 ["rd", "dojo", "dijit/_Widget", "dijit/_Templated", "i18n!rdw/nls/i18n"],
 function (rd, dojo, Widget, Templated, i18n) {
     /**

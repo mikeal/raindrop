@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/fx/wiper",
+run.def("rdw/fx/wiper",
 ["dojo", "dojo/fx"],
 function (dojo, fx) {
     /**

@@ -26,7 +26,7 @@
 alert: false, decodeURIComponent: false */
 "use strict";
 
-run("rdw/Conversations",
+run.def("rdw/Conversations",
 ["run", "rd", "dojo", "dijit", "dojox", "rdw/_Base", "rdw/Conversation", "rdw/conversation/FullConversation",
  "rdw/Summary", "rd/api", "rd/api/message", "rd/conversation", "dojo/fx", "dojox/fx/scroll"],
 function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Summary, api, message,

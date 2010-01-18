@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/twitter/Message",
+run.def("rdw/ext/twitter/Message",
 ["run", "rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
 function (run, rd, dojo, Message, contact, template) {
 

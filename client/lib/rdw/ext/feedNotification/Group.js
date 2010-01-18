@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/feedNotification/Group",
+run.def("rdw/ext/feedNotification/Group",
 ["rd", "dojo", "rdw/conversation/GenericGroup"],
 function (rd, dojo, GenericGroup) {
 

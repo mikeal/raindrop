@@ -25,7 +25,7 @@
 /*global run: false, console: false */
 "use strict";
 
-run("rd/MegaviewStore",
+run.def("rd/MegaviewStore",
 ["run", "rd", "dojo", "dojo/DeferredList", "rd/api"],
 function (run, rd, dojo, DeferredList, api) {
     //This implements the dojo.data Read and Identity interfaces so it can

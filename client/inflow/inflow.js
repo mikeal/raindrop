@@ -25,7 +25,7 @@
 /*global run: false, window: false, location: false */
 "use strict";
 
-run("inflow",
+run.def("inflow",
 [
     "run", "dojo", "dijit", "rd",
     "dojo/parser",

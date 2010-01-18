@@ -26,7 +26,7 @@
 "use strict";
 
 //Simple utility that watches for hash changes and then publishes changes.
-run("rd/onHashChange", ["rd", "dojo"], function (rd, dojo) {
+run.def("rd/onHashChange", ["rd", "dojo"], function (rd, dojo) {
     var value = location.href.split("#")[1] || "", interval,
         onHashChange = { value: value };
     interval = setInterval(function () {

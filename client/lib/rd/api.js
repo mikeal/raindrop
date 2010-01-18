@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rd/api",
+run.def("rd/api",
 ["rd", "dojo"],
 function (rd, dojo) {
     /**

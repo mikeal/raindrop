@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/ext/mailingList/Group",
+run.def("rdw/ext/mailingList/Group",
 ["rd", "dojo", "rdw/Conversation", "rdw/fx/wiper", "rdw/ext/mailingList/GroupMessage"],
 function (rd, dojo, Conversation, wiper) {
 

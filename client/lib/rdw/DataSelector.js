@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/DataSelector",
+run.def("rdw/DataSelector",
 ["run", "rd", "dojo", "dojo/DeferredList", "rdw/_Base", "rd/MegaviewStore"],
 function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
 

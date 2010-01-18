@@ -24,7 +24,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/conversation/BroadcastMessage",
+run.def("rdw/conversation/BroadcastMessage",
 ["dojo", "rdw/Message", "text!rdw/conversation/templates/BroadcastMessage!html"],
 function (dojo, Message, template) {
     return dojo.declare("rdw.conversation.BroadcastMessage", [Message], {

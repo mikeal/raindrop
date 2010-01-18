@@ -25,7 +25,7 @@
 /*global run: false */
 "use strict";
 
-run("rdw/InflowSummaryGroup",
+run.def("rdw/InflowSummaryGroup",
 ["rd", "dojo", "rdw/_Base", "rd/api"],
 function (rd, dojo, Base, api) {
     return dojo.declare("rdw.InflowSummaryGroup", [Base], {

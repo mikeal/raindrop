@@ -25,7 +25,7 @@
 /*global run: false, setTimeout: false */
 "use strict";
 
-run("rdw/ext/mailingList/model",
+run.def("rdw/ext/mailingList/model",
 ["rd", "dojo", "rd/api"],
 function (rd, dojo, api) {
 

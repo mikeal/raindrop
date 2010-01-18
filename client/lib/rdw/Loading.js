@@ -25,9 +25,9 @@
 /*global run: false */
 "use strict";
 
-run("rdw/Loading",
-["rd", "dojo", "rdw/_Base"],
-function (rd, dojo, Base) {
+run.def("rdw/Loading",
+["rd", "dojo", "rdw/_Base"], function (
+  rd,   dojo,   Base) {
 
     //Turn on io event publishing in dojo,
     //if no specific preference has already been set.
