@@ -11,7 +11,7 @@ except ImportError:
 
 from cStringIO import StringIO
 
-ct_images = set("""image/jpg image/jpeg image/png image/ppm
+ct_images = set("""image/jpg image/jpeg image/png image/ppm image/gif
                 """.split())
 
 # these shouldn't be hard-coded!

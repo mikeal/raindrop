@@ -34,6 +34,7 @@
 .rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail { 
   display: inline-block;
   background-image: url("../../../../inflow/i/new/rd_attachments_video.png");
+  background-repeat: no-repeat;
   width: 110px;
   height: 65px;
   position: relative;
