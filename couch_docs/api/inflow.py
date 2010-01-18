@@ -140,14 +140,18 @@ class ConversationAPI(API):
                 for attr in ('rd_schema_items', 'rd_megaview_expandable'):
                     if attr in doc:
                         del doc[attr]
-                # TODO: note that we may get many of the same schema, which implies
-                # we need to aggregate them - tags is a good example.  For
-                # now just make noise...
+
+                # We may get many of the same schema, which implies
+                # we need to aggregate them - tags is a good example.
+                # Aggregate them under a _multiples areas.
                 if schema_id in bag:
-                    # TODO: Hack to favor notification schemas over direct ones.
-                    # XXX - todo - add this!
-                    log("warning: message '%s' has multiple '%s' schemas",
-                        rd_key, schema_id)
+                    if not '_multiples' in bag:
+                        bag['_multiples'] = {}
+                    if not schema_id in bag['_multiples']:
+                        bag['_multiples'][schema_id] = []
+                        bag['_multiples'][schema_id].append(bag[schema_id])
+
+                    bag['_multiples'][schemaId].append(doc)
                 # for now it gets clobbered if it exists...
                 bag[schema_id] = doc
             try:
