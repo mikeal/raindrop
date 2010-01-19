@@ -246,7 +246,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
                                         this.updateStatus("Error: " + response);
                                     } else {
                                         //Trigger update in opener.
-                                        util.opener().rd._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
+                                        util.opener().run.get("rd")._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
     
                                         //Make sure to get latest manifest, since _rev can change.
                                         this.fetchManifest();
@@ -329,7 +329,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
             }
             //Update the runtime display
             for (var i = 0, target; (target = this.targetNames[i]); i++) {
-                util.opener().rd.extensionEnabled(this.moduleName, target, enabled);
+                util.opener().run.get("rd").extensionEnabled(this.moduleName, target, enabled);
             }
         },
 

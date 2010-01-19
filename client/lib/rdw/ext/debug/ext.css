@@ -1,0 +1,33 @@
+.rdwExtDebug {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 5px;
+    -moz-border-radius: 5px;
+    -webkit-border-radius: 5px;
+    background: black;
+    color: white;
+    opacity: 0.5;
+    display: none;
+}
+
+.rdwExtDebug ul {
+    list-style: none;
+}
+
+.rdwExtDebug a {
+    color: white;
+    text-decoration: none;
+}
+
+.rdwExtDebugSelector {
+    border: 2px solid blue !important;
+}
+
+.rdwExtDebugSelectorLabel {
+  color: white;
+  background-color: blue;
+  position: absolute;
+  z-index: 999999;
+}
+
