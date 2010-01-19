@@ -86,7 +86,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                         viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
                     });
     
-                    this.addAttachment('<div class="youTube">' + img + title + '</div>', "video");
+                    this.addAttachment('<div class="youTube video hbox">' + img + title + '</div>', "video");
     
                     //If user clicks on this link area, open up a fuller view.
                     dojo.connect(this.attachmentNode, "onclick", this, "onYouTubeClick");
