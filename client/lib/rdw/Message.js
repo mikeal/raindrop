@@ -136,9 +136,9 @@ run.def("rdw/Message",
                         url: 'inflow/message/attachments',
                         key: dojo.toJson(bodySchema.rd_key)
                     })
-                    .ok(this, function(json) {
-                       this.msg.fileAttachments = json;
-                       this.showAttachments(); 
+                    .ok(this, function (json) {
+                        this.msg.fileAttachments = json;
+                        this.showAttachments(); 
                     });
                 } else {
                     this.showAttachments(); 
@@ -157,13 +157,19 @@ run.def("rdw/Message",
                 if (bodySchema.to) {
                     for (i = 0; i < bodySchema.to.length; i++) {
                         email = bodySchema.to[i][1];
+                        name = bodySchema.to_display[i];
                         if (!myself.some(emailTest)) {
                             username = email.slice(0, email.indexOf("@"));
                             //XXX hacky first name grabber, will aslo grab titles like "Mr."
-                            name = bodySchema.to_display[i];
                             first_name = bodySchema.to_display[i].split(" ")[0];
                             display = first_name || username;
                             dojo.create("li", { "class" : "recipient to", "innerHTML" : display, "title" : name + " <" + email + ">" }, this.toRecipientsNode);
+                        } else {
+                            // more addresses than just me in the to or just me and others cc'd
+                            if (bodySchema.to.length > 1 || (bodySchema.cc && bodySchema.cc.length > 0)) {
+                                // XXX l10n that "me" string
+                                dojo.create("li", { "class" : "recipient to", "innerHTML" : "me", "title" : name + " <" + email + ">" }, this.toRecipientsNode);
+                            }
                         }
                     }
                 }
@@ -171,13 +177,19 @@ run.def("rdw/Message",
                 if (bodySchema.cc) {
                     for (i = 0; i < bodySchema.cc.length; i++) {
                         email = bodySchema.cc[i][1];
+                        name = bodySchema.cc_display[i];
                         if (!myself.some(emailTest)) {
                             username = email.slice(0, email.indexOf("@"));
                             //XXX hacky first name grabber, will aslo grab titles like "Mr."
-                            name = bodySchema.cc_display[i];
                             first_name = bodySchema.cc_display[i].split(" ")[0];
                             display = first_name || username;
-                            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : "cc: " + name + " <" + email + ">" }, this.ccRecipientsNode);
+                            dojo.create("li", { "class" : "recipient cc", "innerHTML" : display, "title" : name + " <" + email + ">" }, this.ccRecipientsNode);
+                        } else {
+                            // more than just me in the cc or other addresses in the to
+                            if (bodySchema.cc.length > 1 || (bodySchema.to && bodySchema.to.length > 0)) {
+                                // XXX l10n that "me" string
+                                dojo.create("li", { "class" : "recipient to", "innerHTML" : "me", "title" : name + " <" + email + ">" }, this.ccRecipientsNode);
+                            }
                         }
                     }
                 }
@@ -242,7 +254,7 @@ run.def("rdw/Message",
          * @param {Object} file json object for a file attachment,
          * from the inflow/message/attachments API
          */
-        defaultFileHandler: function(file) {
+        defaultFileHandler: function (file) {
             var schemas = file.schemas,
                 bodySchema = this.msg.schemas["rd.msg.body"],
                 thumb = schemas["rd.attach.thumbnail"],
@@ -261,8 +273,8 @@ run.def("rdw/Message",
                     description: details.content_type
                 });
             } else {
-                html = '<div class="file"><a target="_blank" href="'
-                       + details.url + '">' + (details.name || details.content_type) + '</a></div>';
+                html = '<div class="file"><a target="_blank" href="' +
+                        details.url + '">' + (details.name || details.content_type) + '</a></div>';
             }
 
             this.addAttachment(html, "file");

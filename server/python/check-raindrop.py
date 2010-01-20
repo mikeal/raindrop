@@ -80,8 +80,7 @@ deps = [
     ('paisley', '', True),
     ('feedparser', '>=4.1', False),
     ('Skype4Py', '', False),
-    # ack - no 0.6 actually exists and 0.5 is missing a key feature we need.
-    ('python-twitter', '>=0.6,==0.6-devel', False),
+    ('python-twitter', '>=0.6', False),
     ('PIL', '', False),
 ]
 

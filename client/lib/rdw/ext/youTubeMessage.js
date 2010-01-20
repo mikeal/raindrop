@@ -86,7 +86,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                         viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
                     });
     
-                    this.addAttachment('<div class="youTube" data-dclick="onYouTubeClick">' + img + title + '</div>', "video");
+                    this.addAttachment('<div class="youTube video hbox" data-dclick="onYouTubeClick">' + img + title + '</div>', "video");
 
                     return true;
                 }

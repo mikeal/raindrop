@@ -65,7 +65,6 @@
 }
 
 .rdwAttachments .attachScroll > div {
-  display: inline-block;  
   width: 463px;
   height: 100%;
   vertical-align: top;
