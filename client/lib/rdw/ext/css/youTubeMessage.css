@@ -22,12 +22,7 @@
  * */
 
 .rdwMessage > .message > .rdwAttachments .youTube {
-/*  min-width: 290px;
-  margin: 8px 0 0 0;
-  padding: 16px 0 0 0;
-  font-size: 10px;
-  background-image: url("../../../../inflow/i/new/rd_input_bg.png");
-  background-repeat: repeat-x; */
+  display: inline-block;
 }
 
 .rdwMessage > .message > .rdwAttachments .youTube > .thumbnail,
