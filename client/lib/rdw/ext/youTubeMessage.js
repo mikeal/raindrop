@@ -51,12 +51,12 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                     var yt = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.youtubed", "ref_link", link),
                         thumbnail = "", thumb, url, youTubeImgTemplateString, img,
                         title, youTubeNode, youTubeInfoTemplateString, empty,
-                        thumbs, thumb, i;
+                        thumbs, i;
                     if (!yt) {
                         return false;
                     }
     
-                    thumbs = yt.media$group.media$thumbnail
+                    thumbs = yt.media$group.media$thumbnail;
     
                     //ugh, would have been nicer if I stored the thumbnails better
                     for (i = 0; (thumb = thumbs[i]); i++) {
@@ -86,11 +86,8 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                         viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
                     });
     
-                    this.addAttachment('<div class="youTube">' + img + title + '</div>', "video");
-    
-                    //If user clicks on this link area, open up a fuller view.
-                    dojo.connect(this.attachmentNode, "onclick", this, "onYouTubeClick");
-    
+                    this.addAttachment('<div class="youTube" data-dclick="onYouTubeClick">' + img + title + '</div>', "video");
+
                     return true;
                 }
             ],
@@ -106,8 +103,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
 
                 videoId = yt.media$group.yt$videoid.$t;
                 //only grab this video inside this message, it's possible there are others
-                q = dojo.query("#" + videoId, this.domNode);
-                console.log(q);
+                q = dojo.query("#youtube-" + videoId, this.domNode);
                 if (q.length > 0) {
                     fx.wipeOut({
                         node: q[0],
@@ -136,12 +132,12 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                     //XXX The videoId is necessarily going to be unique in this page
                     player = dojo.create("div", {
                         "class": "player",
-                        "id" : videoId,
+                        "id" : "youtube-" + videoId,
                         "style" : "display: none;",
                         innerHTML: obj
                     });
-    
-                    dojo.query(".message > .attachments > .youTube", this.domNode).addContent(player);
+
+                    dojo.query(evt.target).parents(".youTube").addContent(player);
     
                     fx.wipeIn({
                         node: player,

@@ -191,8 +191,8 @@ function (run, dojo, dijit, dojox) {
          * a string. For any value, all line returns are stripped before encoding.
          */
         toBase64: function (obj) {
-            var key = typeof obj === "string" ? obj : dojo.toJson(obj);
-            var byteKey = this.stringToBytes(key.replace(/\n/g, ""));
+            var key = (typeof obj === "string" ? obj : dojo.toJson(obj)),
+                byteKey = this.stringToBytes(key.replace(/\n/g, ""));
             return dojox.encoding.base64.encode(byteKey);
         },
 
@@ -335,6 +335,43 @@ function (run, dojo, dijit, dojox) {
     
             //Stop the topic from continuing to notify other listeners
             return false;
+        },
+
+        /**
+         * Dispatches events on HTML to nearest widget. This allows widgets
+         * to implement event handlers without having to do explicit connects
+         * and disconnects. For it to work, there should be a data-dclick
+         * attribute on the node, with the value being the name of the
+         * function to call on the widget. The widget is found by searching
+         * up the node's parents finding the first one with a widgetid attribute.
+         * The DOM is walked up from the current click to find the first data-dclick
+         * attribute, and a node with a widgetid. The DOM will be walked up
+         * to find the first widget in the chain that has a method matching
+         * data-dclick
+         * @param {Event} evt
+         */
+        onDelegateClick: function (evt) {
+            var node = evt.target, click, widgetId, widget;
+            //Now find parent widget
+            while (node && node.nodeType === 1) {
+                if (!widgetId) {
+                    widgetId = node.getAttribute("widgetid");
+                }
+                if (!click) {
+                    click = node.getAttribute("data-dclick");
+                }
+                if (click && widgetId) {
+                    widget = dijit.byId(widgetId);
+                    if (widget && widget[click]) {
+                        widget[click](evt);
+                        break;
+                    } else {
+                        //Keep looking for widgets
+                        widgetId = null;
+                    }
+                }
+                node = node.parentNode;
+            }
         },
 
         /**
@@ -756,6 +793,10 @@ function (run, dojo, dijit, dojox) {
     run.ready(function () {
         //Register an onclick handler on the body to handle "#rd:" protocol URLs.
         rd.sub("rd/onHashChange", rd, "dispatchFragId");
+        
+        //Sets click handler on the document to handle dynamic delegated event
+        //dispatch based on widget IDs.
+        dojo.connect(dojo.doc.documentElement, "onclick", rd, "onDelegateClick");
     });
 
     return rd;
