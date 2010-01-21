@@ -24,34 +24,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link REL="SHORTCUT ICON" HREF="i/favicon.ico">
+    <link REL="SHORTCUT ICON" HREF="i/favicon.ico">
 
-  <title>Raindrop Inflow</title>
-  
-  <link type="text/css" rel="stylesheet" href="inflow.css">
+    <title>Raindrop Inflow</title>
+    
+    <link type="text/css" rel="stylesheet" href="inflow.css">
 
-  <script data-appname="inflow" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
-
-  <script type="text/javascript" charset="utf-8">
-    run(["inflow"]);
-  </script>  
+    <script data-appname="inflow" data-modules="inflow" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 </head>
 <body>
-  <div id="top">
-    <button name="rd:home" onclick="location='#rd:home'"><span style="text-decoration:underline;">I</span>nflow</button><div dojoType="rdw.Search"></div>
-    <div dojoType="rdw.Notify"></div>
-    <div id="logo"></div>
-    <div dojoType="rdw.Loading"></div>
-  </div>
+    <div id="top">
+        <button name="rd:home" onclick="location='#rd:home'"><span style="text-decoration:underline;">I</span>nflow</button><div dojoType="rdw.Search"></div>
+        <div dojoType="rdw.Notify"></div>
+        <div id="logo"></div>
+        <div dojoType="rdw.Loading"></div>
+    </div>
 
-  <div id="notices"></div>
+    <div id="notices"></div>
 
-  <div id="content" class="hbox">
-    <div id="conversations" dojoType="rdw.Conversations" class="start"></div>
-    <div id="widgets" dojoType="rdw.Widgets" class="start"></div>
-    <div id="openSocial" class="boxFlex"></div>
-  </div>
+    <div id="content" class="hbox">
+        <div id="conversations" dojoType="rdw.Conversations" class="start"></div>
+        <div id="widgets" dojoType="rdw.Widgets" class="start"></div>
+        <div id="openSocial" class="boxFlex"></div>
+    </div>
 
-  <div id="footer"><a style="color: #000;" target="_blank" href="/raindrop/extender/index.html">extend</a> | <a style="color: #000;" target="_blank" href="https://wiki.mozilla.org/Raindrop/MetricsInfo">metrics</a></div>
+    <div id="footer"><a style="color: #000;" target="_blank" href="/raindrop/extender/index.html">extend</a> | <a style="color: #000;" target="_blank" href="https://wiki.mozilla.org/Raindrop/MetricsInfo">metrics</a></div>
 </body>
 </html>

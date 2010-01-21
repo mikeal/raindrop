@@ -30,8 +30,8 @@ var djConfig, run;
 (function () {
     //Find raindrop location
     var scripts = document.getElementsByTagName("script"), prefix = "", i,
-        src, index, dbPath, appName, dojoPrefix, exts, extNew, empty, prop,
-        scp, extList, ext;
+        src, index, dbPath, appName, dojoPrefix, exts, extNew, empty = {}, prop,
+        scp, extList, ext, modules;
     for (i = scripts.length - 1; (i > -1) && (scp = scripts[i]); i--) {
         src = scripts[i].src;
         index = src && src.indexOf("/rdconfig.js");
@@ -50,6 +50,11 @@ var djConfig, run;
 
             //Check for app name, passed via rdconfig.js tag
             appName = scp.getAttribute("data-appname") || "";
+            
+            modules = scp.getAttribute("data-modules") || "";
+            if (modules) {
+                modules = modules.split(",");
+            }
         }
         i--;
     }
@@ -73,7 +78,9 @@ var djConfig, run;
             couchUrl: prefix.split("/", 3).join("/"),
             /*INSERT SUBS HERE*/
             /*INSERT EXTS HERE*/
-        }
+        },
+
+        deps: ["rd"]
     };
 
     run.paths[appName] = prefix + "../" + appName + "/" + appName;
@@ -82,7 +89,10 @@ var djConfig, run;
 
     run.rd.appName = appName;
 
-    document.write('<script src="' + dojoPrefix + 'dojo.js"></script>' +
-                   '<script src="' + prefix + 'jquery-1.3.2.js"></script>' +
-                   '<script>run(["rd"]);</script>');
+    if (modules) {
+        run.deps = ["rd"].concat(modules);
+    }
+
+    document.write('<script src="' + dojoPrefix + 'dojo.js" async="async"></script>' +
+                   '<script src="' + prefix + 'jquery-1.4.js" async="async"></script>');
 }());
