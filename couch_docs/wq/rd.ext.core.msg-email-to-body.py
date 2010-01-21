@@ -101,9 +101,6 @@ def handler(doc):
     if 'timestamp' in doc:
         ret['timestamp'] = doc['timestamp']
 
-    if 'list-id' in headers or 'list-unsubscribe' in headers:
-        ret['list'] = True
-
     # body handling
     if doc.get('multipart'):
         infos = doc['multipart_info']
