@@ -59,6 +59,10 @@
   width: 398px;
 }
 
+.rdwExtTwitterMessage .rdwAttachments .attachDisplay {
+  width: 440px;
+}
+
 .rdwAttachments .attachScroll {
   width: 10000px;
   height: 100%;
@@ -72,6 +76,10 @@
 
 .rdwMessage.reply .rdwAttachments .attachScroll > div {
     width: 398px;
+}
+
+.rdwExtTwitterMessage .rdwAttachments .attachScroll > div {
+  width: 440px;
 }
 
 .rdwAttachments .attachAction {
