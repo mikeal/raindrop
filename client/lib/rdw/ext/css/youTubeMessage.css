@@ -21,7 +21,8 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .rdwAttachments .youTube {
+.rdwMessage > .message > .rdwAttachments .youTube,
+.rdwMessage > .message > .rdwAttachments .vimeo {
   display: inline-block;
 }
 
@@ -65,12 +66,14 @@
 .rdwMessage > .message > .rdwAttachments .youTube > .thumbnail .play,
 .rdwMessage > .message > .rdwAttachments .vimeo > .thumbnail .play { 
   width: 22px;
-  height: 13px;
+  height: 22px;
   display: inline-block;
   position: absolute;
-  top: 22px;
+  top: 17px;
   left: 44px;
   background-image: url("../../../../inflow/i/new/rd_play_icon.png");
+  background-repeat: no-repeat;
+  background-position: center center;
   z-index: 1;
   cursor: pointer;
 } 
@@ -80,6 +83,7 @@
   display: inline-block;
   vertical-align: top;
   margin-left: 5px;
+  max-width: 279px;
 }
 
 .rdwMessage > .message > .rdwAttachments .youTube > .info > a.title,
