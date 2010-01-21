@@ -44,10 +44,15 @@
   outline: none;
 }
 
-.rdwMessage > .message > .rdwAttachments .flickr > .thumbnail > a > img,
-.rdwMessage > .message > .rdwAttachments .photo > .thumbnail > a > img {
+.rdwMessage > .message > .rdwAttachments .flickr > .thumbnail > a > img {
   position: absolute;
   top: -12px;
+  left: 0px;
+}
+
+.rdwMessage > .message > .rdwAttachments .photo > .thumbnail > a > img {
+  position: absolute;
+  top: 0px;
   left: 0px;
 }
 
@@ -56,6 +61,7 @@
   display: inline-block;
   vertical-align: top;
   padding: 0 7px;
+  max-width: 279px;
 }
 
 .rdwMessage > .message > .rdwAttachments .flickr .title {

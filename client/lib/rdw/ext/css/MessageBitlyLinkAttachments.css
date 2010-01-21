@@ -21,21 +21,21 @@
  * Contributor(s):
  * */
 
-.rdwMessage > .message > .attachments > .bitly .information {
+.rdwMessage > .message > .rdwAttachments .bitly .information {
   vertical-align: top;
   padding: 0 7px;
 }
 
-.rdwMessage > .message > .attachments > .bitly .title {
+.rdwMessage > .message > .rdwAttachments .bitly .title {
   display: block;
   font-weight: bold;
 }
 
-.rdwMessage > .message > .attachments > .bitly .owner {
+.rdwMessage > .message > .rdwAttachments .bitly .owner {
   color: #333;
   font-weight: bold;
 }
 
-.rdwMessage > .message > .attachments > .bitly .description {
+.rdwMessage > .message > .rdwAttachments .bitly .description {
   color: #666;
 }

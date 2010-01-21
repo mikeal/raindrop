@@ -210,7 +210,8 @@
 }
 
 .rdwConversationFullMessage > .message > .actions button {
-  float: right;
+  position: relative;
+  left: 522px;
 }
 
 .rdwConversationFullMessage > .message > .actions button:first-child,

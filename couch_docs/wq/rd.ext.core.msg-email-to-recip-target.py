@@ -31,7 +31,6 @@ def handler(src_doc):
 
     my_identities = get_my_identities()
     to = src_doc.get('to', [])
-    list = src_doc.get('list', False)
     val = None
     # First check if any of the identities is marked as being 'broadcast' or
     # 'group'
@@ -50,10 +49,6 @@ def handler(src_doc):
         val = id_schema['target']
     elif src_doc.get('from') in my_identities:
         val = 'from'
-    # if we have list headers this has to be broadcast even if the message
-    # looks like it's only sent to our identity.
-    elif list:
-        val = 'broadcast'
     # only us on the 'to' line?  That is 'direct'...
     elif len(to)==1 and to[0] in my_identities:
         val = 'direct'

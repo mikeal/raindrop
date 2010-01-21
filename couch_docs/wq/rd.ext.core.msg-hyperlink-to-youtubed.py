@@ -27,6 +27,7 @@ import urllib2, json
 # Grab the hash code from links
 # TODO: make this more robust to malicious use.
 youtube_regex = re.compile("youtube\.com\/watch\?v=([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
+youtube_short_regex = re.compile("youtu\.be\/([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
 
 # Creates 'rd.msg.body.youtubed' schemas for emails...
 def handler(doc):
@@ -34,13 +35,12 @@ def handler(doc):
     if not 'links' in doc:
         return
 
-
     youtubes = {}
     links = doc['links']
     for link in links:
-        # Check for normal flickr urls and only add to list if not
+        # Check for normal youtube urls and only add to list if not
         # already in the list.
-        match = youtube_regex.search(link)
+        match = youtube_regex.search(link) or youtube_short_regex.search(link)
         if match and match.group(1):
             if not link in youtubes:
                 youtubes[link] = match.group(1)

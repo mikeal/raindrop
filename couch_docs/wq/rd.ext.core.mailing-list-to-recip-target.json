@@ -1,0 +1,12 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.msg.email"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "category": "extender",
+        "confidence": 1,
+        "info": "Creates new 'rd.msg.recip-target' schemas with broadcast value for mailing list messages"
+    }
+  }
+}

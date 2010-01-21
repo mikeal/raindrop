@@ -47,14 +47,6 @@ run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                         return false;
                     }
 
-                    //If URL does not match the flickr url then kick it out.
-                    handled = dojo.some(schema.urls.url, function (url) {
-                        return link === url._content;
-                    });
-                    if (!handled) {
-                        return false;
-                    }
-    
                     // http://farm{farm-id}.static.flickr.com/{server-id}/{id}_{secret}_[mstb].jpg
                     imgUrl = "http://farm" + schema.farm + ".static.flickr.com/" +
                                         schema.server + "/" + schema.id + "_" +

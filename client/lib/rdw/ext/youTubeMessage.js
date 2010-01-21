@@ -44,20 +44,19 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                     //to have a "type" field to indicate what type of
                     //display rdw/Message would use for the message,
                     //or a different widget would be used for the display.
-    
+
                     //NOTE: the "this" in this function is the instance of rdw/Message.
-    
+
                     //Check for a YouTube video
                     var yt = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.youtubed", "ref_link", link),
                         thumbnail = "", thumb, url, youTubeImgTemplateString, img,
-                        title, youTubeNode, youTubeInfoTemplateString, empty,
-                        thumbs, i;
+                        title, youTubeInfoTemplateString, thumbs, i;
                     if (!yt) {
                         return false;
                     }
-    
+
                     thumbs = yt.media$group.media$thumbnail;
-    
+
                     //ugh, would have been nicer if I stored the thumbnails better
                     for (i = 0; (thumb = thumbs[i]); i++) {
                         url = thumb.url;
@@ -76,7 +75,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                         url: yt.media$group.media$player.url,
                         thumb: thumbnail
                     });
-    
+
                     youTubeInfoTemplateString = '<div class="info"><a href="${url}" class="title">${body}</a>' +
                                                 '<div class="views">${viewCount} views</div></div>';
     
@@ -85,7 +84,7 @@ run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                         body: yt.media$group.media$title.$t,
                         viewCount: Number(yt.yt$statistics.viewCount).toLocaleString()
                     });
-    
+
                     this.addAttachment('<div class="youTube video hbox" data-dclick="onYouTubeClick">' + img + title + '</div>', "video");
 
                     return true;
