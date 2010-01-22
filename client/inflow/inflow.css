@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-@import url("/raindrop/dojo/dijit/themes/dijit.css");
+@import url("../bespin/dijit/themes/dijit.css");
 @import url("css/Loading.css");
 @import url("css/Notify.css");
 @import url("css/QuickCompose.css");

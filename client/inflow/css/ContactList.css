@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-@import url("/raindrop/dojo/dojo/resources/dnd.css");
+@import url("../../bespin/dojo/resources/dnd.css");
 
 .ContactList,
 .ContactList ul {
