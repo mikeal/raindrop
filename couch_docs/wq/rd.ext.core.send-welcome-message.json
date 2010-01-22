@@ -1,0 +1,10 @@
+{
+  "schemas" : {
+    "rd.ext.workqueue" : {
+        "source_schemas" : ["rd.core.sync-status"],
+        "code" : "RDFILE: *.py",
+        "content_type" : "application/x-python",
+        "info": "Sends a 'welcome' email after the first sync completes"
+    }
+  }
+}

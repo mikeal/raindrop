@@ -22,6 +22,7 @@
 #
 
 import logging
+import time
 
 from twisted.internet import reactor, defer
 from twisted.python.failure import Failure
@@ -73,6 +74,7 @@ class SyncConductor(object):
     self.all_accounts = None
     self.calllaters_waiting = {} # keyed by ID, value is a IDelayedCall
     self.deferred = None
+    self.num_new_items = None
 
   def _ohNoes(self, failure, *args, **kwargs):
     logger.error('OH NOES! failure! %s', failure)
@@ -233,14 +235,44 @@ class SyncConductor(object):
     return defer.DeferredList(dl)
 
   @defer.inlineCallbacks
+  def provide_schema_items(self, items):
+    _ = yield self.pipeline.provide_schema_items(items)
+    self.num_new_items += len(items)
+
+  @defer.inlineCallbacks
   def sync_outgoing(self, options):
       # start looking for outgoing schemas to sync...
       dl = (yield self._do_sync_outgoing())
       _ = yield defer.DeferredList(dl)
 
+  @defer.inlineCallbacks
+  def _record_sync_status(self, result):
+    rd_key = ["raindrop", "sync-status"]
+    schema_id = 'rd.core.sync-status'
+    # see if an existing schema exists to get the existing number.
+    si = (yield self.doc_model.open_schemas([(rd_key, schema_id)]))[0]
+    num_syncs = 0 if si is None else si['num_syncs']
+
+    # a timestamp in UTC
+    items = {'timestamp': time.mktime(time.gmtime()),
+             'new_items': self.num_new_items,
+             'num_syncs': num_syncs + 1,
+    }
+    si = {'rd_key': rd_key,
+          'rd_schema_id': schema_id,
+          'rd_source': None,
+          'rd_ext_id': 'rd.core',
+          'items': items,
+    }
+    _ = yield self.pipeline.provide_schema_items([si])
+    self.num_new_items = None
+
   def sync_incoming(self, options):
+    assert self.num_new_items is None # eek - we didn't reset correctly...
+    self.num_new_items = 0
     if self.deferred is None:
       self.deferred = defer.Deferred()
+      self.deferred.addCallback(self._record_sync_status)
     # start synching all 'incoming' accounts.
     accts = self._get_specified_accounts(options)
     for account in accts:

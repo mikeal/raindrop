@@ -188,7 +188,7 @@ class TwitterProcessor(object):
                           'items': items})
 
         if infos:
-            _ = yield self.conductor.pipeline.provide_schema_items(infos)
+            _ = yield self.conductor.provide_schema_items(infos)
 
 
 class TwitterAccount(base.AccountBase):

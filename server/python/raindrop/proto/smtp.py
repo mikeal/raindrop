@@ -103,6 +103,7 @@ class SMTPPostingClient(SMTPPostingClient_Base): #smtp.ESMTPClient):
                 logger.error("Failed to talk to couch\n%s",
                              Failure().getTraceback())
                 self._disconnectFromServer()
+                raise
 
         def do_base(result):
             if isinstance(result, Failure):

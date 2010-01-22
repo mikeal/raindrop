@@ -81,7 +81,7 @@ def maybe_update_doc(conductor, doc_model, doc, options):
     si['items'] = items
     si['attachments'] = a
     si['_rev'] = doc['_rev']
-    _ = yield conductor.pipeline.provide_schema_items([si])
+    _ = yield conductor.provide_schema_items([si])
     logger.info('updated feed %r', uri)
 
 

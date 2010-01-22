@@ -242,7 +242,7 @@ class TwistySkype(object):
                         ).addCallback(self._cb_got_msg_props, chat_props, msg, tow)
 
         if tow:
-            yield self.conductor.pipeline.provide_schema_items(tow)
+            yield self.conductor.provide_schema_items(tow)
 
         logger.debug("finished processing chat %(skype_chatname)r", chat_props)
 
@@ -283,7 +283,7 @@ class TwistySkype(object):
                             'rd_schema_id' : 'rd.identity.exists',
                             'items' : None,
                             'rd_ext_id': self.rd_extension_id})
-        return self.conductor.pipeline.provide_schema_items(schemas)
+        return self.conductor.provide_schema_items(schemas)
 
 
 class SkypeAccount(base.AccountBase):

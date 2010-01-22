@@ -70,8 +70,8 @@ class TestMessageProvider(object):
         for i in xrange(num_docs):
             yield self.check_test_message(i)
         if self.bulk_docs:
-            pipeline = self.conductor.pipeline
-            yield pipeline.provide_schema_items(self.bulk_docs
+            conductor = self.conductor
+            yield conductor.provide_schema_items(self.bulk_docs
                     ).addCallback(self.saved_bulk_messages, len(self.bulk_docs),
                     )
 

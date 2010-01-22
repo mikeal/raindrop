@@ -205,7 +205,7 @@ class ImapProvider(object):
   def write_items(self, items):
     try:
       if items:
-        _ = yield self.conductor.pipeline.provide_schema_items(items)
+        _ = yield self.conductor.provide_schema_items(items)
     except DocumentSaveError, exc:
       # So - conflicts are a fact of life in this 'queue' model: we check
       # if a record exists and it doesn't, so we queue the write.  By the
