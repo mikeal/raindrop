@@ -41,11 +41,8 @@ var djConfig, run;
             dbPath = scp.getAttribute("data-dbpath");
             if (!dbPath) {
                 //Figure a default DB based on url for rdconfig.
-                dbPath = src.split("/").slice(0, 4).join("/");
-            }
-            //Make sure dbPath ends in an end slash.
-            if (dbPath.charAt(dbPath.length - 1) !== "/") {
-                dbPath += "/";
+                index = src.indexOf("/lib/rdconfig.js");
+                dbPath = src.substring(0, index + 1);
             }
 
             //Check for app name, passed via rdconfig.js tag
