@@ -22,6 +22,8 @@
 #
 
 from email.message import Message
+from email.utils import formatdate
+import time
 
 from raindrop.proto import test as test_proto
 
@@ -52,6 +54,7 @@ def handler(src):
     headers = {'from': 'From: from%(storage_key)d@test.com',
                'subject' : 'This is test document %(storage_key)d',
                'message-id' : 'TestMessage%(storage_key)d',
+               'date' : formatdate(time.mktime(time.gmtime())),
     }
     for h in headers:
         msg[h] = headers[h] % src
