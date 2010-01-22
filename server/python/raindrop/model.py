@@ -246,6 +246,13 @@ class DocumentModel(object):
         bits = ['rc', key_part, sch_id]
         return "!".join(bits)
 
+    @classmethod
+    def split_doc_id(cls, doc_id):
+        if not doc_id.startswith('rc!'):
+            raise ValueError("Not a raindrop content docid")
+        rt, rdkey, schema = doc_id.split("!", 3)
+        return rt, rdkey, schema
+
     @defer.inlineCallbacks
     def delete_documents(self, docs):
         for doc in docs:

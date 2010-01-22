@@ -45,11 +45,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-def split_rc_docid(doc_id):
-    if not doc_id.startswith('rc!'):
-        raise ValueError("Not a raindrop content docid")
-    rt, rdkey, schema = doc_id.split("!", 3)
-    return rt, rdkey, schema
 
 def decode_rdkey(encoded_key):
     prefix, b64part = encoded_key.split(".", 1)
@@ -432,7 +427,7 @@ class DocsBySeqIteratorFactory(object):
             for row in self.rows:
                 src_id = row['id']
                 all_ids.add(src_id)
-                _, enc_rd_key, schema_id = split_rc_docid(src_id)
+                _, enc_rd_key, schema_id = doc_model.split_doc_id(src_id)
                 rd_key = decode_rdkey(enc_rd_key)
                 keys.append(["rd.core.content", "dep", [rd_key, schema_id]])
             results = yield doc_model.open_view(keys=keys, reduce=False)
@@ -823,7 +818,7 @@ class ProcessingQueueRunner(object):
             self.current_seq = seq
             if schema_id is None:
                 try:
-                    _, _, schema_id = split_rc_docid(src_id)
+                    _, _, schema_id = doc_model.split_doc_id(src_id)
                 except ValueError, why:
                     logger.log(1, 'skipping document %r: %s', src_id, why)
                     continue
