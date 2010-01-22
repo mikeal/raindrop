@@ -132,7 +132,6 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
         /** Dijit lifecycle method after template insertion in the DOM. */
         postCreate: function () {
             //Register for the interesting topics
-            console.log("IN RDW.CONVERSATIONS.postCreate");
             var empty = {}, prop;
             for (prop in this.topics) {
                 if (!(prop in empty)) {
@@ -182,7 +181,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 }
             } while ((target = target.parentNode));
         },
-  
+
         /**
          * Handles key presses for navigation. If the key press is
          * for something that should show a full conversation view then trigger
@@ -310,30 +309,8 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 this.activeParentNode = null;
                 dojo.addClass(this.activeNode, "active");
             }
-    
-            if (skipAnimation) {
-                this.activeNode.focus();
-            } else {
-                //Favor active parent node if available.
-                var animNode = this.activeParentNode || this.activeNode,
-                    pos = dojo.position(animNode, true);
-    
-                //Create the args for the scroll over effect.
-                this.activeNodeAnim = fxScroll({
-                    win: dojo.global,
-                    target: { x: 0, y: Math.min(Math.abs(pos.y - 8), pos.y)},
-                    easing: this.animEasing,
-                    duration: 400,
-                    onEnd: dojo.hitch(this, function () {
-                        this.activeNode.focus();
-                    })
-                });
-                this.activeNodeAnim.play();
-    
-                //dijit.scrollIntoView(this.activeNode);
-            }
         },
-    
+
         _nextFocusNode: function (/*DOMNode*/domNode, /*String*/method) {
             //Finds the next focusable widget in the conversations hierarchy of nodes.
             var test, convoWidget, tabbys;
@@ -490,8 +467,6 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
          * @param {String} viewType
          */
         transition: function (viewType) {
-            console.log("transition: start");
-    
             //If showing another summary type, then clear out the saved summary
             if (!this.viewType || viewType === this.viewType && viewType === "summary") {
                 this.summaryScrollHeight = 0;
@@ -511,7 +486,6 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 //Set the view type so next calls know the type.
                 this.viewType = viewType;
                 this._postRender = true;
-                console.log("transition: end, no animation.");
                 this.checkTransitionEnd();
                 return;
             }
@@ -671,8 +645,6 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
   
         /** Called at the end of a summary transition. */
         onTransitionEnd: function () {
-            console.log("onTransitionEnd");
-    
             //Hide the swipe indicator
             this.switchNode.className = "rdwConversationsSwipe";
     
