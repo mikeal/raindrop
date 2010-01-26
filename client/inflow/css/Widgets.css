@@ -31,7 +31,7 @@
 .rdwWidgets.start .rdwConversation {
   width: 310px;
   margin: 10px 0;
-  padding: 5px 1px 5px 6px;
+  padding: 5px 2px 5px 6px;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
@@ -142,11 +142,11 @@
 /* ### SUMMARY ### */
 
 .rdwSummaryGroup {
-  padding: 23px 0 0 1px;
+  padding: 23px 0 0 2px;
   margin: 0 0 10px 0;
-  -moz-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
-  -webkit-border-image: url("../i/new/rd_summary_border.png") 2 12 17 9;
-  border-width: 1px 12px 17px 9px;  
+  -moz-border-image: url("../i/new/rd_summary_border_thin.png") 2 10 17 8;
+  -webkit-border-image: url("../i/new/rd_summary_border_thin.png") 2 10 17 8;
+  border-width: 2px 10px 17px 8px;  
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   background-image: none;
@@ -155,9 +155,9 @@
 /* ### ACCOUNT GROUPS ### */
 
 .rdwExtAccountGroup {
-  -moz-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 4;
-  -webkit-border-image: url("../i/new/rd_widget_border_blue.png") 1 9 12 4;
-  border-width: 1px 9px 12px 4px; 
+  -moz-border-image: url("../i/new/rd_widget_border_blue_thin.png") 1 8 12 4;
+  -webkit-border-image: url("../i/new/rd_widget_border_blue_thin.png") 1 8 12 4;
+  border-width: 1px 8px 12px 4px; 
 }
 
 .rdwExtAccountGroup .rdwMessage > .message > .content a {
@@ -190,9 +190,9 @@
 /* ### MAILING LIST ### */
 
 .rdwConversationMailingList {
-  -moz-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 4;
-  -webkit-border-image: url("../i/new/rd_widget_border_pink.png") 1 9 12 4;
-  border-width: 1px 9px 12px 4px; 
+  -moz-border-image: url("../i/new/rd_widget_border_pink_thin.png") 1 8 12 4;
+  -webkit-border-image: url("../i/new/rd_widget_border_pink_thin.png") 1 8 12 4;
+  border-width: 1px 8px 12px 4px; 
 }
 
 .rdwConversationMailingList > .WidgetHeader > .title {
@@ -205,9 +205,9 @@
 /* ### BROADCAST ### */
 
 .rdwConversationBroadcast {
-  -moz-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 4;
-  -webkit-border-image: url("../i/new/rd_widget_border_green.png") 1 9 12 4;
-  border-width: 1px 9px 12px 4px; 
+  -moz-border-image: url("../i/new/rd_widget_border_green_thin.png") 1 8 12 4;
+  -webkit-border-image: url("../i/new/rd_widget_border_green_thin.png") 1 8 12 4;
+  border-width: 1px 8px 12px 4px; 
 }
 
 .rdwConversationBroadcast > .WidgetHeader > .title {
@@ -220,9 +220,9 @@
 /* ### GENERIC GROUP ### */
 
 .rdwConversationGenericGroup {
-  -moz-border-image: url("../i/new/rd_widget_border_orange.png") 1 9 12 4;
-  -webkit-border-image: url("../i/new/rd_widget_border_orange.png") 1 9 12 4;
-  border-width: 1px 9px 12px 4px; 
+  -moz-border-image: url("../i/new/rd_widget_border_orange_thin.png") 1 8 12 4;
+  -webkit-border-image: url("../i/new/rd_widget_border_orange_thin.png") 1 8 12 4;
+  border-width: 1px 8px 12px 4px; 
 } 
 
 .rdwConversationGenericGroup > .WidgetHeader > .title {
@@ -280,6 +280,7 @@
 
 .rdwWidgets.start .rdwMessage > .message > .content {
   padding: 0;
+}
 
 .rdwWidgets.start .rdwMessage > .message > .unreadCount {
   font-weight: bold;
