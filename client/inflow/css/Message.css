@@ -96,7 +96,7 @@
 
 /*Any links that appear appear in the message body */
 .rdwMessage > .message > .content a {
-  color: #ff5959;
+  color: #888888;
   text-decoration: none;
 }
 

@@ -31,7 +31,7 @@
 .rdwWidgets.start .rdwConversation {
   width: 310px;
   margin: 10px 0;
-  padding: 5px 2px 5px 6px;
+  padding: 5px 2px 0 6px;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;
