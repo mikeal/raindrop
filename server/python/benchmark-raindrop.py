@@ -25,6 +25,8 @@
 # The intent is that this script can help you determine the relative
 # performance cost or benefit of particular strategies.
 
+from __future__ import division
+
 import os
 import time
 import optparse
@@ -33,6 +35,15 @@ from twisted.internet import reactor, defer
 from twisted.python import log
 
 from raindrop.tests import TestCaseWithCorpus, FakeOptions
+
+def format_num_bytes(nbytes):
+    KB = 1000
+    MB = KB * 1000
+    GB = MB * 1000
+    for (what, desc) in ((GB, 'GB'), (MB, 'MB'), (KB, 'KB')):
+        if nbytes > what:
+            return "%.3g%s" % ((nbytes/what), desc)
+    return "%sB" % nbytes
 
 class CorpusHelper(TestCaseWithCorpus):
     def __init__(self, opts):
@@ -89,9 +100,21 @@ def timeit(func, *args):
     defer.returnValue((ret, took))
 
 @defer.inlineCallbacks
-def report_db_state(db):
+def report_db_state(db, opts):
     info = yield db.infoDB()
     print "DB has %(doc_count)d docs at seq %(update_seq)d in %(disk_size)d bytes" % info
+    if opts.couch_dir:
+        # report what we find on disk about couch.
+        dbname = 'raindrop_test_suite' # hardcoded by test-suite helpers we abuse.
+        dbsize = os.path.getsize(os.path.join(opts.couch_dir, dbname + ".couch"))
+        # and walk looking for view files.
+        vsize = 0
+        for root, dirs, files in os.walk(os.path.join(opts.couch_dir, ".%s_design" % dbname)):
+            vsize += sum(os.path.getsize(os.path.join(root, name)) for name in files)
+        ratio = vsize / dbsize
+        nb = format_num_bytes
+        print "DB on disk is %s, views are %s (%s total, ratio 1:%0.2g)" % \
+             (nb(dbsize), nb(vsize), nb(dbsize+vsize), ratio)
 
 @defer.inlineCallbacks
 def run_timings_async(_, opts):
@@ -117,13 +140,13 @@ def run_timings_async(_, opts):
     tc.pipeline.options.exts = None
     _, avg = yield timeit(tc.pipeline.start_backlog)
     print "Ran remaining extensions in %.3f" % (avg,)
-    _ = yield report_db_state(tc.pipeline.doc_model.db)
+    _ = yield report_db_state(tc.pipeline.doc_model.db, opts)
     # try unprocess then process_backlog
     _, avg = yield timeit(tc.pipeline.unprocess)
     print "Unprocessed in %.3f" % (avg,)
     _, avg = yield timeit(tc.pipeline.start_backlog)
     print "re-processed in %.3f" % (avg,)
-    _ = yield report_db_state(tc.pipeline.doc_model.db)
+    _ = yield report_db_state(tc.pipeline.doc_model.db, opts)
 
 
 @defer.inlineCallbacks
@@ -133,7 +156,7 @@ def run_timings_sync(_, opts):
     _ = yield tc.setUp()
     ndocs, avg = yield timeit(load_and_sync, tc, opts)
     print "Loaded and processed %d documents in %.3f" % (ndocs, avg)
-    _ = yield report_db_state(tc.pipeline.doc_model.db)
+    _ = yield report_db_state(tc.pipeline.doc_model.db, opts)
    
 
 def main():
@@ -144,6 +167,10 @@ def main():
 not want to specify the root of the enron corpus - specify one of the
 child (leaf) directories.  For example {root}/beck-s/eurpoe holds 166
 documents.""")
+    parser.add_option("", "--couch-dir",
+                      help=
+"""Directory where the couchdb database files are stored.  If specified
+the size on disk of the DB and views will be reported.""")
     opts, args = parser.parse_args()
 
     d = defer.Deferred()
