@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ContactSelector",
-["run", "rd", "dojo", "rdw/_Base", "dojo/string", "rd/contact"],
-function (run, rd, dojo, Base, string, contact) {
+require.def("rdw/ContactSelector",
+["require", "rd", "dojo", "rdw/_Base", "dojo/string", "rd/contact"],
+function (require, rd, dojo, Base, string, contact) {
 
     return dojo.declare("rdw.ContactSelector", [Base], {
         templateString: '<div class="rdwContactSelector" dojoAttachEvent="onclick: onClick">' +
@@ -48,7 +48,7 @@ function (run, rd, dojo, Base, string, contact) {
         //Array of preferred contacts to show.
         preferred: null,
     
-        blankImgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
+        blankImgUrl: require.nameToUrl("rdw/resources/blank", ".png"),
     
         /** dijit lifecycle method, called after template is inserted in DOM. */
         postCreate: function () {

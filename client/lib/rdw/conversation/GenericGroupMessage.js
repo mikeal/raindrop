@@ -21,10 +21,10 @@
  * Contributor(s):
  * */
 
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/conversation/GenericGroupMessage",
+require.def("rdw/conversation/GenericGroupMessage",
 ["dojo", "rdw/Message", "text!rdw/conversation/templates/GenericGroupMessage!html"],
 function (dojo, Message, template) {
     return dojo.declare("rdw.conversation.GenericGroupMessage", [Message], {

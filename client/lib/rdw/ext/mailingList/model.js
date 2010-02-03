@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/ext/mailingList/model",
+require.def("rdw/ext/mailingList/model",
 ["rd", "dojo", "rd/api"],
 function (rd, dojo, api) {
 
@@ -123,7 +123,7 @@ function (rd, dojo, api) {
                         // Hopefully the mailto: URL has provided us with the necessary subject
                         // and body.  If not, we guess "subscribe" for both subject and body.
                         // TODO: make better guesses based on knowledge of the mailing list
-                        // software being used to run the mailing list.
+                        // software being used by the mailing list.
                         subject: params.subject ? params.subject : "unsubscribe",
                         body: params.body ? params.body : "unsubscribe",
                         outgoing_state: "outgoing"

@@ -33,8 +33,8 @@
 <link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    run(["run", "dojo", "extender/Editor"], function (run, dojo, Editor) {
-        run.ready(function () {
+    require(["require", "dojo", "extender/Editor"], function (require, dojo, Editor) {
+        require.ready(function () {
             //Parse all .bespin nodes and create bespin editors for the code.
             dojo.query(".bespin").forEach(function (node) {
                 //Fetch the code.

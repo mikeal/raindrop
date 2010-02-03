@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rd/_api",
+require.def("rd/_api",
 ["rd", "dojo"],
 function (rd, dojo) {
     //A "base class" for some data APIs. Most of these APIs dynamically

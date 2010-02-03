@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/DataSelector",
-["run", "rd", "dojo", "dojo/DeferredList", "rdw/_Base", "rd/MegaviewStore"],
-function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
+require.def("rdw/DataSelector",
+["require", "rd", "dojo", "dojo/DeferredList", "rdw/_Base", "rd/MegaviewStore"],
+function (require, rd, dojo, DeferredList, Base, MegaviewStore) {
 
     return dojo.declare("rdw.DataSelector", [Base], {
         templateString: '<div class="rdwDataSelector dijitReset dijitInlineTable dijitLeft"><div dojoAttachPoint="selectorNode"></div></div>',
@@ -56,12 +56,12 @@ function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
         //the person docs from the couch have loaded.
         initialValue: "",
 
-        /** Dijit lifecycle method run before template evaluated */
+        /** Dijit lifecycle method executed before template evaluated */
         postMixInProperties: function () {
             this.inherited("postMixInProperties", arguments);
         },
 
-        /** Dijit lifecycle method run after template HTML is in DOM */
+        /** Dijit lifecycle method executed after template HTML is in DOM */
         postCreate: function () {
             //Declare array to use for items found from data sources.
             this.items = [];
@@ -86,7 +86,7 @@ function (run, rd, dojo, DeferredList, Base, MegaviewStore) {
             });
     
             //Load the code for the widget then create and initialize it.
-            run([this.comboWidget], dojo.hitch(this, function (Ctor) {
+            require([this.comboWidget], dojo.hitch(this, function (Ctor) {
                 //Create the selector widget.
                 this.selectorInstance = new Ctor({
                     store: new MegaviewStore({

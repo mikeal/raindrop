@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, window: false */
+/*global require: false, window: false */
 "use strict";
 
-run.def("extender/util",
+require.def("extender/util",
 function () { 
     return {
         /** Tries to find the app that called this extender. */

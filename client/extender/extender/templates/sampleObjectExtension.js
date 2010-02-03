@@ -11,7 +11,7 @@ rd.applyExtension("ext.${extName}", "${targetModule}", {
   //before, around, replace and add.
   after: {
     postCreate: function() {
-      //summary: This extension is adding a method to run after the
+      //summary: This extension is adding a method to execute after the
       //widget's postCreate() call. postCreate() means that the widget's HTML
       //has been injected in the DOM, so we can add other things to it.
 

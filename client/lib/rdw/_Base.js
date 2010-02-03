@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/_Base",
+require.def("rdw/_Base",
 ["rd", "dojo", "dijit/_Widget", "dijit/_Templated", "i18n!rdw/nls/i18n"],
 function (rd, dojo, Widget, Templated, i18n) {
     /**

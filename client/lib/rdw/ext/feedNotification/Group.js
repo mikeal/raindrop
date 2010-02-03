@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ext/feedNotification/Group",
+require.def("rdw/ext/feedNotification/Group",
 ["rd", "dojo", "rdw/conversation/GenericGroup"],
 function (rd, dojo, GenericGroup) {
 

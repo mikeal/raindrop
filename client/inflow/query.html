@@ -82,9 +82,9 @@
   <script src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 
   <script type="text/javascript" charset="utf-8">
-    run(["run", "rd", "dojo", "dijit", "dojo/cookie", "dojo/parser", "dijit/form/Textarea", "dojo/NodeList-manipulate", "dojo/NodeList-traverse"], function(
-          run,   rd,   dojo,   dijit,   cookie,        parser) {
-        run.ready(function(){
+    require(["require", "rd", "dojo", "dijit", "dojo/cookie", "dojo/parser", "dijit/form/Textarea", "dojo/NodeList-manipulate", "dojo/NodeList-traverse"], function(
+          require,   rd,   dojo,   dijit,   cookie,        parser) {
+        require.ready(function(){
           parser.parse();
 
           //Get the list of views available for querying.

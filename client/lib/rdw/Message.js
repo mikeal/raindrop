@@ -22,13 +22,13 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/Message",
-["run", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink",
+require.def("rdw/Message",
+["require", "rd", "dojo", "rdw/_Base", "rd/friendly", "rd/hyperlink",
  "rd/api", "rdw/Attachments", "text!rdw/templates/Message!html", "text!rdw/templates/MessagePhotoAttach!html"], function (
-  run,   rd,   dojo,   Base,        friendly,      hyperlink,
+  require,   rd,   dojo,   Base,        friendly,      hyperlink,
   api,      Attachments,       template,                          photoAttachTemplate) {
 
     return dojo.declare("rdw.Message", [Base], {
@@ -205,7 +205,7 @@ run.def("rdw/Message",
             //Only create an attachment widget if attachments will be shown.
             if (this.attachmentNode) {
                 if (!this.attachments) {
-                    this.attachments = new (run.get(this.attachmentWidget))({
+                    this.attachments = new (require(this.attachmentWidget))({
                     }, this.attachmentNode);
                 }
                 this.attachments.add(html, type);

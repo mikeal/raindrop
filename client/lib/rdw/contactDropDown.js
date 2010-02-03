@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/contactDropDown",
+require.def("rdw/contactDropDown",
 ["dojo", "dijit", "rdw/ContactSelector"],
 function (dojo, dijit, ContactSelector) {
 

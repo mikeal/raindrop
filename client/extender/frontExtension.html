@@ -38,9 +38,9 @@
 
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    run(["run", "rd", "dojo", "extender/Editor", "text!extender/templates/sampleObjectExtensions!js"],
-        function (run, rd, dojo, Editor, template) {
-            run.ready(function () {
+    require(["require", "rd", "dojo", "extender/Editor", "text!extender/templates/sampleObjectExtensions!js"],
+        function (require, rd, dojo, Editor, template) {
+            require.ready(function () {
                 var parts = location.href.split("#")[1].split(":"),
                     moduleName = parts[0],
                     targetNames = parts[1].split(","),
@@ -62,7 +62,7 @@
             
                     //Some hackery to get .js path from Dojo code.
                     origModuleName = parts[3];
-                    path = run.nameToUrl(origModuleName, ".js?nocache=" + (new Date()).getTime());
+                    path = require.nameToUrl(origModuleName, ".js?nocache=" + (new Date()).getTime());
                     content = dojo._getText(path);
     
                     //Replace the names.

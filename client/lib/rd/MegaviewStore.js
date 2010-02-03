@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, console: false */
+/*global require: false, console: false */
 "use strict";
 
-run.def("rd/MegaviewStore",
-["run", "rd", "dojo", "dojo/DeferredList", "rd/api"],
-function (run, rd, dojo, DeferredList, api) {
+require.def("rd/MegaviewStore",
+["require", "rd", "dojo", "dojo/DeferredList", "rd/api"],
+function (require, rd, dojo, DeferredList, api) {
     //This implements the dojo.data Read and Identity interfaces so it can
     //be used in widgets that consume dojo.data stores. The items in this
     //store have properties: "type", "id", and "name".
@@ -267,10 +267,10 @@ function (run, rd, dojo, DeferredList, api) {
     
         identityContactQuery: function (/*String*/query, /*Number*/ count) {
             //does an rd.identity.contacts query for the "identityContact" schemaQueryType.
-            //console.log("identityContactQuery", query, count);
+            console.log("identityContactQuery", query, count);
             var dfd = new dojo.Deferred();
     
-            run(["rd/contact"], function (contact) {
+            require(["rd/contact"], function (contact) {
                 var args = {
                     key: ["rd.core.content", "schema_id", "rd.identity.contacts"],
                     reduce: false,
@@ -283,7 +283,7 @@ function (run, rd, dojo, DeferredList, api) {
                 if (count && count !== Infinity) {
                     args.limit = count;
                 }
-        
+
                 args.listName = "rdidentity";
                 api().megaviewList(args)
                 .ok(this, function (json) {

@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/ext/metrics",
-["run", "rd", "dojo", "dojo/NodeList-traverse", "rd/api", "rd/api/pref"],
-function (run, rd, dojo, traverse, api, pref) {
+require.def("rdw/ext/metrics",
+["require", "rd", "dojo", "dojo/NodeList-traverse", "rd/api", "rd/api/pref"],
+function (require, rd, dojo, traverse, api, pref) {
 
     var metrics = {
         //TODO: there is a chance we can miss some metrics if the metric trigger
@@ -112,7 +112,7 @@ function (run, rd, dojo, traverse, api, pref) {
 
     //Only hook in to rd.api for the inflow app, do not burden other apps
     //with these metrics.
-    run.modify("inflow", "rdw/ext/metrics-inflow", ["inflow"], function (inflow) {
+    require.modify("inflow", "rdw/ext/metrics-inflow", ["inflow"], function (inflow) {
         //Register extension for API calls.
         rd.applyExtension("rdw/ext/metrics", "rd/api", {
             after: {
@@ -190,7 +190,7 @@ function (run, rd, dojo, traverse, api, pref) {
                 metrics.createDb();
 
                 //No pref doc, so show the user the dialog.
-                run.ready(function () {
+                require.ready(function () {
                     var html =  '<div class="notice rdwExtMetrics">' +
                                 '    <div class="header">' +
                                 '        <div class="row">' +

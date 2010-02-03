@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/gravatar",
+require.def("rdw/gravatar",
 ["rd", "dojox", "dojox.encoding.digests.MD5"],
 function (rd, dojox) {
     var digests = dojox.encoding.digests;

@@ -21,10 +21,10 @@
  * Contributor(s):
  * */
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rd/api",
+require.def("rd/api",
 ["rd", "dojo"],
 function (rd, dojo) {
     /**

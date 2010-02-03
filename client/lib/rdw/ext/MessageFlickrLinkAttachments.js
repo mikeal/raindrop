@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
-["run", "rd", "dojo", "rd/schema", "rdw/Message"], function (
-  run,   rd,   dojo,   rdSchema,    Message) {
+require.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
+["require", "rd", "dojo", "rd/schema", "rdw/Message"], function (
+  require,   rd,   dojo,   rdSchema,    Message) {
 
     rd.addStyle("rdw/ext/css/MessageFlickrLinkAttachments");
 

@@ -22,11 +22,11 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, setTimeout: false, clearTimeout: false, console: false,
+/*global require: false, setTimeout: false, clearTimeout: false, console: false,
 setInterval: false, clearInterval: false */
 "use strict";
 
-run.def("rd/engine",
+require.def("rd/engine",
 ["rd", "dojo"],
 function (rd, dojo) {
     var engine = {
@@ -96,7 +96,7 @@ function (rd, dojo) {
                     rd.pub("rd-engine-sync-done");
                 }),
     
-                //type, we want all syncs to run, so pass null.
+                //type, we want all syncs to be executed, so pass null.
                 null,
     
                 //Error callback.
@@ -177,7 +177,7 @@ function (rd, dojo) {
 
         /**
          * Checks with the server and then calls the callback.
-         * Calls the callback with a boolean value. false means nothing is running,
+         * Calls the callback with a boolean value. false means nothing is syncing,
          * true means something is still in queue.
          * @param {Function} callback
          * @param {Functions} [errback]

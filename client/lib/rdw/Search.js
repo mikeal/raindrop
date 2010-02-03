@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, console: false */
+/*global require: false, console: false */
 "use strict";
 
-run.def("rdw/Search",
+require.def("rdw/Search",
 ["rd", "dojo", "rdw/_Base", "rdw/DataSelector", "rd/api", "rd/api/pref",
  "text!rdw/templates/Search!html"],
 function (rd, dojo, Base, DataSelector, api, pref, template) {

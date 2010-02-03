@@ -21,10 +21,10 @@
  * Contributor(s):
  * */
 
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/conversation/Broadcast",
+require.def("rdw/conversation/Broadcast",
 ["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper",
  "rdw/conversation/BroadcastMessage",
  "text!rdw/conversation/templates/Broadcast!html"],

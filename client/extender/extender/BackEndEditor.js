@@ -22,14 +22,14 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, window: false, setTimeout: false, confirm: false,
+/*global require: false, window: false, setTimeout: false, confirm: false,
 location: true */
 "use strict";
 
-run.def("extender/BackEndEditor",
-["run", "rd", "dojo", "dijit", "couch", "rdw/_Base", "dojox/encoding/base64",
+require.def("extender/BackEndEditor",
+["require", "rd", "dojo", "dijit", "couch", "rdw/_Base", "dojox/encoding/base64",
   "text!extender/templates/BackEndEditor!html"],
-function (run, rd, dojo, dijit, couch, Base, base64, template) {
+function (require, rd, dojo, dijit, couch, Base, base64, template) {
 
     //Uses script-added styles to allow loading on demand at the cost of a
     //custom build that would load all styles at the beginning.
@@ -40,7 +40,7 @@ function (run, rd, dojo, dijit, couch, Base, base64, template) {
         doc: null,
 
         //Bespin url for the iframe.
-        iframeUrl: run.nameToUrl("extender/../bespin", ".html"),
+        iframeUrl: require.nameToUrl("extender/../bespin", ".html"),
 
         templateString: template,
 

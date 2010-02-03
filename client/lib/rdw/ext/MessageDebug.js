@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.modify("rdw/Message", "rdw/ext/MessageDebug-rdw/Message",
+require.modify("rdw/Message", "rdw/ext/MessageDebug-rdw/Message",
 ["rd", "dojo", "rdw/Message"],
 function (rd, dojo, Message) {
 

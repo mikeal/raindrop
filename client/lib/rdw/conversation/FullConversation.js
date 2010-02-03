@@ -21,10 +21,10 @@
  * Contributor(s):
  * */
 
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/conversation/FullConversation",
+require.def("rdw/conversation/FullConversation",
 ["dojo", "rdw/Conversation", "rdw/conversation/FullMessage",
  "text!rdw/conversation/templates/FullConversation!html"],
 function (dojo, Conversation, FullMessage, template) {

@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/Notify",
+require.def("rdw/Notify",
 ["rd", "dojo", "rdw/_Base", "dojo/string"],
 function (rd, dojo, Base, string) {
 

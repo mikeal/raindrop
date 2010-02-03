@@ -26,7 +26,7 @@
 /*global document: false */
 "use strict";
 
-var djConfig, run;
+var djConfig, require;
 (function () {
     //Find raindrop location
     var scripts = document.getElementsByTagName("script"), prefix = "", i,
@@ -62,7 +62,7 @@ var djConfig, run;
         parseOnLoad: false
     };
 
-    run = {
+    require = {
         baseUrl: prefix,
         paths: {
             "dojo": dojoPrefix + "dojo",
@@ -80,14 +80,14 @@ var djConfig, run;
         deps: ["rd"]
     };
 
-    run.paths[appName] = prefix + "../" + appName + "/" + appName;
+    require.paths[appName] = prefix + "../" + appName + "/" + appName;
 
-    run.rd.dbPath = dbPath;
+    require.rd.dbPath = dbPath;
 
-    run.rd.appName = appName;
+    require.rd.appName = appName;
 
     if (modules) {
-        run.deps = ["rd"].concat(modules);
+        require.deps = ["rd"].concat(modules);
     }
 
     document.write('<script src="' + dojoPrefix + 'dojo.js" async="async"></script>' +

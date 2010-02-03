@@ -22,15 +22,15 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, setTimeout: false, location: false, console: false */
+/*global require: false, setTimeout: false, location: false, console: false */
 "use strict";
 
-//This block needs to be outside the run() call so that modifiers are set up
+//This block needs to be outside the require() call so that modifiers are set up
 //before any dependency resolution is attempted.
 (function () {
-    //Call run.modify to set up all extensions that might alter some other code.
-    //THIS CODE ASSUMES IT IS TIED TO THE DEFAULT run CONTEXT.
-    var reqExts = run.s.contexts._.config.rd.exts, i, reqExt, prop, modifier, empty = {};
+    //Call require.modify to set up all extensions that might alter some other code.
+    //THIS CODE ASSUMES IT IS TIED TO THE DEFAULT require CONTEXT.
+    var reqExts = require.s.contexts._.config.rd.exts, i, reqExt, prop, modifier, empty = {};
 
     if (reqExts) {
         for (i = 0; (reqExt = reqExts[i]); i++) {
@@ -43,19 +43,19 @@
                 if (!(prop in empty) && reqExt[prop].indexOf(".") === -1) {
                     modifier = {};
                     modifier[prop] = reqExt[prop];
-                    run.modify(modifier);
+                    require.modify(modifier);
                 }
             }
         }
     }
 }());
 
-run.def("rd",
-["run", "dojo", "dijit", "dojox", "dojo/data/ItemFileReadStore", "dojo/string",
+require.def("rd",
+["require", "dojo", "dijit", "dojox", "dojo/data/ItemFileReadStore", "dojo/string",
 "dojox/encoding/base64", "dojo/NodeList-traverse", "dojo/NodeList-manipulate"],
-function (run, dojo, dijit, dojox) {
+function (require, dojo, dijit, dojox) {
     /*
-    This file provides some basic environment services running in raindrop.
+    This file provides some basic environment services for raindrop.
     */
 
     //Delegate to native JSON parsing where available.
@@ -103,7 +103,7 @@ function (run, dojo, dijit, dojox) {
         };
     };        
 
-    var rd = {}, i, subs = run.config.rd.subs,
+    var rd = {}, i, subs = require.config.rd.subs,
         extSubs = {}, subObj,
         extSubHandles = {},
         empty = {},
@@ -111,10 +111,10 @@ function (run, dojo, dijit, dojox) {
 
     dojo.mixin(rd, {
         //Set path to the raindrop database
-        dbPath: run.config.rd.dbPath,
+        dbPath: require.config.rd.dbPath,
 
         //Set app name for sure in configuration/preferences
-        appName: run.config.rd.appName,
+        appName: require.config.rd.appName,
 
         uiExtId: "rd.ui.rd",
 
@@ -282,7 +282,7 @@ function (run, dojo, dijit, dojox) {
          */
         addStyle: function (modulePath) {
             //summary: 
-            var url = run.nameToUrl(modulePath, ".css"), link;
+            var url = require.nameToUrl(modulePath, ".css"), link;
             //Adjust URL a bit so we get dojo.require-like behavior
             link = dojo.create("link", {
                 type: "text/css",
@@ -321,14 +321,14 @@ function (run, dojo, dijit, dojox) {
             //for this topic
             dojo.unsub(extSubHandles[topic]);
 
-            //Run the code to load the extension in a timeout so we can
+            //Execute the code to load the extension in a timeout so we can
             //return false from this listener to stop propagating the topic
             //publishing to other listeners. This will help ensure that the loaded
             //code does not get a topic publish twice.
             setTimeout(function () {
                 //Load the code
                 var modules = extSubs[topic]; //an array
-                run(modules, function () {
+                require(modules, function () {
                     dojo.publish(topic, args);
                 });
             }, 20);
@@ -450,11 +450,11 @@ function (run, dojo, dijit, dojox) {
                 }
             }
 
-            //Force the module reload by tweaking run interals.
-            delete run.context.specified[extName];
-            delete run.context.defined[extName];
+            //Force the module reload by tweaking require interals.
+            delete require.context.specified[extName];
+            delete require.context.defined[extName];
 
-            run([extName], function () {
+            require([extName], function () {
                 //Update instances of targets as appropriate.
                 for (var i = 0, target; (target = targets[i]); i++) {
                     rd._updateInstances(target);
@@ -482,7 +482,7 @@ function (run, dojo, dijit, dojox) {
             if (dijit && dijit.registry &&
                 (instances = dijit.registry.byClass(moduleName.replace(/\//g, "."))) &&
                 instances.length) {
-                module = run.get(moduleName);
+                module = require(moduleName);
 
                 instances.forEach(dojo.hitch(this, function (instance) {
                     this._updateInstance(instance, module);
@@ -547,7 +547,7 @@ function (run, dojo, dijit, dojox) {
                 }
 
                 //If the extension is not in the active list update it.
-                reqExts = run.config.rd.exts;
+                reqExts = require.config.rd.exts;
                 exts = reqExts[moduleName];
                 if (!exts) {
                     reqExts[moduleName] = [extName];
@@ -562,7 +562,7 @@ function (run, dojo, dijit, dojox) {
                 //rd.checkLoadExtension could load code asynchronously,
                 //so do the following work after waiting for any modules
                 //to load.
-                run(dojo.hitch(this, function () {
+                require(dojo.hitch(this, function () {
                     //Update instances of the module.
                     rd._updateInstances(moduleName);
                 }));
@@ -582,20 +582,20 @@ function (run, dojo, dijit, dojox) {
          */
         checkLoadExtension: function (extName, moduleName) {
             if (dojo._loadedModules[moduleName] && !dojo._loadedModules[extName]) {
-                run([extName]);
+                require([extName]);
             }
         },
 
         /**
          * Modifies the module object by attaching an extension to it.
          * ASSUMES the module has already been loaded. Each extension should
-         * run() load the module it will be extending.
+         * require() load the module it will be extending.
          * @param {String} extName
          * @param {String} moduleName
          * @param {Object} extension
          */
         applyExtension: function (extName, moduleName, extension) {
-            var module = run.get(moduleName),
+            var module = require(moduleName),
                 extKey = extName + ":" + moduleName,
                 existing = rd._exts[extKey] || {},
                 empty = {},
@@ -773,7 +773,7 @@ function (run, dojo, dijit, dojox) {
     });
 
     //Register for the extenstion subscriptions as appropriate
-    //These were set in djConfig.rd.subs, but we use run.config
+    //These were set in djConfig.rd.subs, but we use require.config
     //here in case there is another dojo in the page that overwrites our djConfig.
     if (subs) {
         for (i = 0; (subObj = subs[i]); i++) {
@@ -790,7 +790,7 @@ function (run, dojo, dijit, dojox) {
         }
     }
 
-    run.ready(function () {
+    require.ready(function () {
         //Register an onclick handler on the body to handle "#rd:" protocol URLs.
         rd.sub("rd/onHashChange", rd, "dispatchFragId");
         

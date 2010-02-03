@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/Attachments",
+require.def("rdw/Attachments",
 ["rd", "dojo", "dojox", "rdw/_Base", "text!rdw/templates/Attachments!html", "dojox/fx/scroll"], function (
   rd,   dojo,   dojox,   Base,        template,                              fxScroll) {
 

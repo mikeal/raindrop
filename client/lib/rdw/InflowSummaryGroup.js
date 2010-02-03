@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/InflowSummaryGroup",
+require.def("rdw/InflowSummaryGroup",
 ["rd", "dojo", "rdw/_Base", "rd/api"],
 function (rd, dojo, Base, api) {
     return dojo.declare("rdw.InflowSummaryGroup", [Base], {

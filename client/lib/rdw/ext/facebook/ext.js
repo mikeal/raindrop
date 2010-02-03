@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.modify("rdw/Widgets", "rdw/ext/facebook/ext-rdw/Widgets",
+require.modify("rdw/Widgets", "rdw/ext/facebook/ext-rdw/Widgets",
 ["rd", "rdw/Widgets", "rdw/ext/facebook/Group"],
 function (rd, Widgets, Group) {
 

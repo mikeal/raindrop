@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, document: false */
+/*global require: false, document: false */
 "use strict";
 
-run.def("extender/widgetSelectorHelper",
+require.def("extender/widgetSelectorHelper",
 ["rd", "dojo", "dijit"],
 function (rd, dojo, dijit) {
 

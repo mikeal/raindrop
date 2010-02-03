@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/conversation/GenericGroup",
+require.def("rdw/conversation/GenericGroup",
 ["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper",
  "rdw/conversation/GenericGroupMessage",
  "text!rdw/conversation/templates/GenericGroup!html"],

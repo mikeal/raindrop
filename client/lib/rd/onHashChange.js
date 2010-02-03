@@ -22,11 +22,11 @@
  * */
 
 /*jslint plusplus: false */
-/*global run: false, location: false, setInterval: false, setTimeout: false */
+/*global require: false, location: false, setInterval: false, setTimeout: false */
 "use strict";
 
 //Simple utility that watches for hash changes and then publishes changes.
-run.def("rd/onHashChange", ["rd", "dojo"], function (rd, dojo) {
+require.def("rd/onHashChange", ["rd", "dojo"], function (rd, dojo) {
     var value = location.href.split("#")[1] || "", interval,
         onHashChange = { value: value };
     interval = setInterval(function () {

@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, location: false */
+/*global require: false, location: false */
 "use strict";
 
-run.def("rdw/Organizer",
+require.def("rdw/Organizer",
 ["rd", "dojo", "rdw/_Base", "rd/conversation", "rd/tag", "dojo/string",
  "dijit/TitlePane", "text!rdw/templates/Organizer!html"],
 function (rd, dojo, Base, conversation, tag, string, TitlePane, template) {

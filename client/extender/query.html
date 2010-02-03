@@ -32,8 +32,8 @@
 <link rel="stylesheet" type="text/css" href="extender.css" />
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    run(["run", "dojo", "rd", "rd/api"], function(run, dojo, rd, api) {
-        run.ready(function () {
+    require(["require", "dojo", "rd", "rd/api"], function(require, dojo, rd, api) {
+        require.ready(function () {
             //Fetch the schema names.
             api().megaview({
                 startkey: ["rd.core.content", "schema_id"],

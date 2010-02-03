@@ -22,14 +22,14 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, window: false, setTimeout: false, prompt: false,
+/*global require: false, window: false, setTimeout: false, prompt: false,
 confirm: false, location: true */
 "use strict";
 
-run.def("extender/Editor",
-["run", "rd", "dojo", "dijit", "rdw/_Base", "rd/api", "extender/util",
+require.def("extender/Editor",
+["require", "rd", "dojo", "dijit", "rdw/_Base", "rd/api", "extender/util",
  "text!extender/templates/Editor!html"],
-function (run, rd, dojo, dijit, Base, api, util, template) {
+function (require, rd, dojo, dijit, Base, api, util, template) {
 
     //Uses script-added styles to allow loading on demand at the cost of a
     //custom build that would load all styles at the beginning.
@@ -66,7 +66,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
         onEditorLoad: null,
     
         //Bespin url for the iframe.
-        iframeUrl: run.nameToUrl("extender/../bespin", ".html"),
+        iframeUrl: require.nameToUrl("extender/../bespin", ".html"),
     
         templateString: template,
     
@@ -113,7 +113,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
 
             //Get .js path.
             parts = this.moduleName.split(".");
-            this.path = run.nameToUrl(this.moduleName, ".js");
+            this.path = require.nameToUrl(this.moduleName, ".js");
     
             text = this.content;
             if (!text) {
@@ -132,7 +132,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
             //disable for all moduleName+targetName combinations.
             //This is just an initial guess based on the loaded app.
             //The definitive answer comes when the manifest is loaded via fetchManifest.
-            this.enabledNode.checked = util.opener().run.get("rd").extensionEnabled(this.moduleName, this.targetNames[0]);
+            this.enabledNode.checked = util.opener().require("rd").extensionEnabled(this.moduleName, this.targetNames[0]);
     
             //Bind to resize and make sure size is initially correct.
             if (this.useViewportResize) {
@@ -246,7 +246,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
                                         this.updateStatus("Error: " + response);
                                     } else {
                                         //Trigger update in opener.
-                                        util.opener().run.get("rd")._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
+                                        util.opener().require("rd")._updateExtModule(this.moduleName, dojo.toJson(this.targetNames));
     
                                         //Make sure to get latest manifest, since _rev can change.
                                         this.fetchManifest();
@@ -329,7 +329,7 @@ function (run, rd, dojo, dijit, Base, api, util, template) {
             }
             //Update the runtime display
             for (var i = 0, target; (target = this.targetNames[i]); i++) {
-                util.opener().run.get("rd").extensionEnabled(this.moduleName, target, enabled);
+                util.opener().require("rd").extensionEnabled(this.moduleName, target, enabled);
             }
         },
 

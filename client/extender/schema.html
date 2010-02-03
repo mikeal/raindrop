@@ -50,7 +50,7 @@
 </style>
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    run(["run", "dojo", "rd", "rd/api"], function(run, dojo, rd, api) {
+    require(["require", "dojo", "rd", "rd/api"], function(require, dojo, rd, api) {
         var viewer = {
             init: function() {
                 this.schemaId = location.href.split("#")[1];
@@ -155,7 +155,7 @@
             }
         }
 
-        run.ready(dojo.hitch(viewer, "init"));
+        require.ready(dojo.hitch(viewer, "init"));
 });
 
 </script>

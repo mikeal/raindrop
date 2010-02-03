@@ -21,7 +21,7 @@
  * Contributor(s):
  * */
 
-run.def("i18n!rdw/nls/i18n",
+require.def("i18n!rdw/nls/i18n",
     {
         root: {
             add: "Add:",

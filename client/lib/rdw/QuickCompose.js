@@ -22,13 +22,13 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, clearTimeout: false, setTimeout: false */
+/*global require: false, clearTimeout: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/QuickCompose",
-["run", "rd", "dojo", "rdw/_Base", "dijit/form/FilteringSelect", "rdw/DataSelector",
+require.def("rdw/QuickCompose",
+["require", "rd", "dojo", "rdw/_Base", "dijit/form/FilteringSelect", "rdw/DataSelector",
  "rd/api", "rd/api/me", "text!rdw/templates/QuickCompose!html"],
-function (run, rd, dojo, Base, FilteringSelect, DataSelector, api, me, template) {
+function (require, rd, dojo, Base, FilteringSelect, DataSelector, api, me, template) {
 
     return dojo.declare("rdw.QuickCompose", [Base], {
         templatePath: template,
@@ -160,7 +160,7 @@ function (run, rd, dojo, Base, FilteringSelect, DataSelector, api, me, template)
                         this.sender = this.parseSender(senderDisplay);
 
                         //Put the list of sender identities in a combo box
-                        Ctor = run.get(this.fromSelector);
+                        Ctor = require(this.fromSelector);
 
                         this.fromSelectorWidget = new Ctor({
                             store: rd.toIfrs(sendList, "name", "name"),
@@ -337,7 +337,7 @@ function (run, rd, dojo, Base, FilteringSelect, DataSelector, api, me, template)
                 }, parentNode);
             }
     
-            this.toSelectorWidget = new (run.get(this.toSelector))({
+            this.toSelectorWidget = new (require(this.toSelector))({
                 type: "identityContact",
                 subType: (this.sender.service)
             }, this.toInputNode);

@@ -22,14 +22,14 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, window: false, console: false, setTimeout: false
+/*global require: false, window: false, console: false, setTimeout: false
 alert: false, decodeURIComponent: false */
 "use strict";
 
-run.def("rdw/Conversations",
-["run", "rd", "dojo", "dijit", "dojox", "rdw/_Base", "rdw/Conversation", "rdw/conversation/FullConversation",
+require.def("rdw/Conversations",
+["require", "rd", "dojo", "dijit", "dojox", "rdw/_Base", "rdw/Conversation", "rdw/conversation/FullConversation",
  "rdw/Summary", "rd/api", "rd/api/message", "rd/conversation", "dojo/fx", "dojox/fx/scroll"],
-function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Summary, api, message,
+function (require, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Summary, api, message,
           conversation, fx, fxScroll) {
 
     //Reassign fxScroll to be the real function, that module does something non-standard.
@@ -406,7 +406,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 if (!this.fullConvoWidgets) {
                     this.fullConvoWidgets = [];
                     for (i = 0; (module = this.fullConvoModules[i]); i++) {
-                        mod = run.get(module);
+                        mod = require(module);
                         this.fullConvoWidgets.push(mod);
                     }
                 }
@@ -419,7 +419,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
     
                 //Make new convoWidget.
                 Ctor = this._getConvoWidget(this.oneConversation, this.fullConvoWidgets) ||
-                                     run.get(this.fullConversationCtorName);
+                                     require(this.fullConversationCtorName);
                 this.convoWidget = new Ctor({
                     conversation: this.oneConversation
                 }, dojo.create("div", null, this.convoNode));
@@ -428,7 +428,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 if (!this.convoWidgets) {
                     this.convoWidgets = [];
                     for (i = 0; (module = this.convoModules[i]); i++) {
-                        mod = run.get(module);
+                        mod = require(module);
                         this.convoWidgets.push(mod);
                     }
                 }
@@ -444,7 +444,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                 frag = dojo.doc.createDocumentFragment();
                 for (i = 0; (conv = this.conversations[i]); i++) {
                     Ctor = this._getConvoWidget(conv, this.convoWidgets) ||
-                                         run.get(this.topicConversationCtorNames[this.currentTopic] ||
+                                         require(this.topicConversationCtorNames[this.currentTopic] ||
                                          this.conversationCtorName);
                     this.addSupporting(new Ctor({
                         conversation: conv
@@ -667,7 +667,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
             this.checkTransitionEnd();
         },
   
-        /** Checks for an action to run after the end of the transition. */
+        /** Checks for an action to execute after the end of the transition. */
         checkTransitionEnd: function () {
             if (this.onTransitionEndCallback) {
                 setTimeout(dojo.hitch(this, function () {
@@ -923,7 +923,7 @@ function (run, rd, dojo, dijit, dojox, Base, Conversation, FullConversation, Sum
                         if (this.conversations._rdwConversationsType === "home") {
                             this.removeConversation(summaryConvoWidget);
                         } else {
-                            rd._updateInstance(summaryConvoWidget, run.get(summaryConvoWidget.declaredClass.replace(/\./g, "/")));
+                            rd._updateInstance(summaryConvoWidget, require(summaryConvoWidget.declaredClass.replace(/\./g, "/")));
                         }
                     });
                     this.onNavSummary();

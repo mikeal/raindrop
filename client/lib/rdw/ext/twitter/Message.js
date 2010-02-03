@@ -22,17 +22,17 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ext/twitter/Message",
-["run", "rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
-function (run, rd, dojo, Message, contact, template) {
+require.def("rdw/ext/twitter/Message",
+["require", "rd", "dojo", "rdw/Message", "rd/contact", "text!rdw/ext/twitter/Message!html"],
+function (require, rd, dojo, Message, contact, template) {
 
     return dojo.declare("rdw.ext.twitter.Message", [Message], {
         templateString: template,
 
-        imgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
+        imgUrl: require.nameToUrl("rdw/resources/blank", ".png"),
 
         postCreate: function () {
             this.inherited("postCreate", arguments);

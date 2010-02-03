@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ext/mailingList/GroupMessage",
+require.def("rdw/ext/mailingList/GroupMessage",
 ["rd", "dojo", "rdw/Message", "text!rdw/ext/mailingList/GroupMessage!html"],
 function (rd, dojo, Message, template) {
 

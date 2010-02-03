@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.modify("rdw/Message", "ext/linkIndex",
+require.modify("rdw/Message", "ext/linkIndex",
 ["rd", "dojo", "rdw/Message"],
 function (rd, dojo, Message) {
 

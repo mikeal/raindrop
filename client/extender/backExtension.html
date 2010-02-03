@@ -38,9 +38,9 @@
 
 <script data-appname="extender" src="/raindrop/lib/rdconfig.js" charset="utf-8"></script>
 <script type="text/javascript">
-    run(["run", "rd", "dojo", "rd/api", "extender/BackEndEditor"],
-        function (run, rd, dojo, api, BackEndEditor) {
-            run.ready(function () {
+    require(["require", "rd", "dojo", "rd/api", "extender/BackEndEditor"],
+        function (require, rd, dojo, api, BackEndEditor) {
+            require.ready(function () {
                 var id = location.href.split("#")[1];
                 
                 api().doc({

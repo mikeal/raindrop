@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, console: false */
+/*global require: false, console: false */
 "use strict";
 
-run.def("rd/api/contact",
+require.def("rd/api/contact",
 ["rd", "dojo", "rd/api", "rd/api/identity"],
 function (rd, dojo, api, identity) {
     var contact = {

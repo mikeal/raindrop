@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/ReplyForward",
+require.def("rdw/ReplyForward",
 ["rd", "dojo", "rdw/QuickCompose", "dijit/form/Textarea"],
 function (rd, dojo, QuickCompose, Textarea) {
 

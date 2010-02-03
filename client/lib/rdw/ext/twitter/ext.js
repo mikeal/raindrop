@@ -22,11 +22,11 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-//Just a collection of run.modify calls.
-run.modify("rdw/Summary", "rdw/ext/twitter/ext-rdw/Summary",
+//Just a collection of require.modify calls.
+require.modify("rdw/Summary", "rdw/ext/twitter/ext-rdw/Summary",
     ["rd", "rdw/Summary"],
     function (rd) {
         rd.applyExtension("rdw/ext/twitter/ext", "rdw/Summary", {
@@ -39,7 +39,7 @@ run.modify("rdw/Summary", "rdw/ext/twitter/ext-rdw/Summary",
     }
 );
 
-run.modify("rdw/SummaryGroup", "rdw/ext/twitter/ext-rdw/SummaryGroup",
+require.modify("rdw/SummaryGroup", "rdw/ext/twitter/ext-rdw/SummaryGroup",
     ["rd", "rdw/SummaryGroup"],
     function (rd) {
         rd.applyExtension("rdw/ext/twitter/ext", "rdw/SummaryGroup", {
@@ -56,7 +56,7 @@ run.modify("rdw/SummaryGroup", "rdw/ext/twitter/ext-rdw/SummaryGroup",
     }
 );
 
-run.modify("rdw/InflowSummaryGroup", "rdw/ext/twitter/ext-rdw/InflowSummaryGroup",
+require.modify("rdw/InflowSummaryGroup", "rdw/ext/twitter/ext-rdw/InflowSummaryGroup",
     ["rd", "dojo", "rdw/InflowSummaryGroup"],
     function (rd, dojo) {
         rd.applyExtension("rdw/ext/twitter/ext", "rdw/InflowSummaryGroup", {
@@ -91,7 +91,7 @@ run.modify("rdw/InflowSummaryGroup", "rdw/ext/twitter/ext-rdw/InflowSummaryGroup
     }
 );
 
-run.modify("rdw/Conversations", "rdw/ext/twitter/ext-rdw/Conversations",
+require.modify("rdw/Conversations", "rdw/ext/twitter/ext-rdw/Conversations",
     ["rd", "dojo", "rd/api", "rdw/Conversations", "rdw/ext/twitter/Conversation"],
     function (rd, dojo, api) {
         rd.applyExtension("rdw/ext/twitter/ext", "rdw/Conversations", {
@@ -131,7 +131,7 @@ run.modify("rdw/Conversations", "rdw/ext/twitter/ext-rdw/Conversations",
     }
 );
 
-run.modify("rdw/Widgets", "rdw/ext/twitter/ext-rdw/Widgets",
+require.modify("rdw/Widgets", "rdw/ext/twitter/ext-rdw/Widgets",
     ["rd", "dijit", "rdw/Widgets", "rdw/ext/twitter/Group"],
     function (rd, dijit) {
         rd.applyExtension("rdw/ext/twitter/ext", "rdw/Widgets", {

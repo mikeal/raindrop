@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.modify("rdw/Message", "rdw/ext/MessageLinkAttachments",
-["run", "rd", "dojo", "rdw/Message"], function(
-  run,   rd,   dojo,   Message) {
+require.modify("rdw/Message", "rdw/ext/MessageLinkAttachments",
+["require", "rd", "dojo", "rdw/Message"], function(
+  require,   rd,   dojo,   Message) {
     /*
     Applies a display extension to rdw/Message.
     Allows showing links included in the message as inline attachments

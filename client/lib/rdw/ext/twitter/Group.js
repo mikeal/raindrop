@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ext/twitter/Group",
+require.def("rdw/ext/twitter/Group",
 ["rd", "dojo", "rdw/Conversation", "rdw/fx/wiper"],
 function (rd, dojo, Conversation, wiper) {
 

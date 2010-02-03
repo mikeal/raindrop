@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rd/friendly",
+require.def("rd/friendly",
 ["rd", "dojo", "dojox/date/posix"],
 function (rd, dojo, posix) {
     var friendly = {

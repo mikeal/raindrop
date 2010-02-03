@@ -22,10 +22,10 @@
  * */
 
 /*jslint nomen: false, plusplus: false */
-/*global run: false, setTimeout: false */
+/*global require: false, setTimeout: false */
 "use strict";
 
-run.def("rdw/Widgets",
+require.def("rdw/Widgets",
 ["rd", "dojo", "dojox", "rdw/_Base", "rd/onHashChange", "rd/api", "rd/api/message",
  "rdw/conversation/Broadcast", "rdw/SummaryGroup", "dojo/fx", "dojox/fx/scroll"],
 function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryGroup, fx, fxScroll) {
@@ -142,7 +142,7 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
 
             //Create summary group widget and add it first to the fragment.
             if (!this.summaryWidget) {
-              SummaryWidgetCtor = run.get(this.summaryGroupCtorName);
+              SummaryWidgetCtor = require(this.summaryGroupCtorName);
               this.summaryWidget = new SummaryWidgetCtor();
               //Want summary widget to be the highest, add + 1 since group work
               //below uses i starting at 0.
@@ -171,11 +171,11 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
             this._groups = [];
     
             if (!this.convoWidgets) {
-                run(this.convoModules, (dojo.hitch(this, function () {
+                require(this.convoModules, (dojo.hitch(this, function () {
                     this.convoWidgets = [];
                     var i, module, mod;
                     for (i = 0; (module = this.convoModules[i]); i++) {
-                        mod = run.get(module);
+                        mod = require(module);
                         this.convoWidgets.push(mod);
                     }
                     this.destroyAllSupporting();
@@ -217,7 +217,7 @@ function (rd, dojo, dojox, Base, onHashChange, api, message, Broadcast, SummaryG
          * @returns {rdw/Conversation} an rdw/Conversation or a subclass of it.
          */ 
         createHomeConversation: function (conversation) {
-            return new (run.get(this.conversationCtorName))({
+            return new (require(this.conversationCtorName))({
                 conversation: conversation,
                 unreadReplyLimit: 1,
                 displayOnCreate: false,

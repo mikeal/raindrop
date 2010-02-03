@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/fx/wiper",
+require.def("rdw/fx/wiper",
 ["dojo", "dojo/fx"],
 function (dojo, fx) {
     /**

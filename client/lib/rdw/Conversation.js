@@ -22,13 +22,13 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, location: true */
+/*global require: false, location: true */
 "use strict";
 
-run.def("rdw/Conversation",
-["run", "rd", "dojo", "dojo/string", "rd/api", "rd/api/identity", "rd/friendly", "rd/hyperlink", "rdw/_Base", "rdw/Message",
+require.def("rdw/Conversation",
+["require", "rd", "dojo", "dojo/string", "rd/api", "rd/api/identity", "rd/friendly", "rd/hyperlink", "rdw/_Base", "rdw/Message",
  "text!rdw/templates/Conversation!html", "text!rdw/templates/impersonal!html"],
-function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Message, template, impersonalTemplate) {
+function (require, rd, dojo, string, api, identity, friendly, hyperlink, Base, Message, template, impersonalTemplate) {
 
     return dojo.declare("rdw.Conversation", [Base], {
         //Holds the conversatino object fetched from the API.
@@ -114,7 +114,7 @@ function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Messa
                     //Dynamically load the module that will handle
                     //the Reply/Forward action.
                     module = this[href + "Widget"];
-                    run([module], dojo.hitch(this, function (Ctor) {
+                    require([module], dojo.hitch(this, function (Ctor) {
                         //If we have an existing response widget, despose of it properly.
                         if (this.responseWidget) {
                             this.removeSupporting(this.responseWidget);
@@ -202,7 +202,7 @@ function (run, rd, dojo, string, api, identity, friendly, hyperlink, Base, Messa
                 msgLimit = showUnreadReplies ? this.unreadReplyLimit + 1 : limit,
                 toShow = [0], i, msg, seen, len, refIndex, index,
                 notShownCount, lastWidget, html,
-                Ctor = run.get(this.messageCtorName);
+                Ctor = require(this.messageCtorName);
 
             //Set the state as displayed, in case widgets are refreshed for extensions.
             this.displayOnCreate = true;

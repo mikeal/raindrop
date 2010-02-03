@@ -23,7 +23,7 @@
 
 //Modified from couchdb's jquery.couch.js file.
 
-run.def("couch", ["dojo"], function (dojo) {
+require.def("couch", ["dojo"], function (dojo) {
   function _handle(response, ioArgs) {
     //Used as the callback for XHR calls. Figure out what options method to call.
     var options = ioArgs.args;
@@ -98,11 +98,11 @@ run.def("couch", ["dojo"], function (dojo) {
   function applyExtensions(extensions, rows) {
     //Function that will apply extensions to a set of rows.
     //These are "perspective" extensions that are applied after
-    //a couchdb view is run.
+    //a couchdb view is called.
 
     //First, convert extension string names to actual functions.    
     extensions = dojo.map(extensions, function (extension) {
-      return run.get(extension);
+      return require(extension);
     });
 
     //All extensions must return true for the row to be returned.

@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ext/twitter/Conversation",
+require.def("rdw/ext/twitter/Conversation",
 ["rd", "dojo", "rdw/Conversation", "rdw/ext/twitter/Message",
  "text!rdw/ext/twitter/Conversation!html"],
 function (rd, dojo, Conversation, Message, template) {

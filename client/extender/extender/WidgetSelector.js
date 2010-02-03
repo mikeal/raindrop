@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, opener: false */
+/*global require: false, opener: false */
 "use strict";
 
-run.def("extender/WidgetSelector",
+require.def("extender/WidgetSelector",
 ["rd", "dojo", "rdw/_Base", "extender/Editor",
   "text!extender/templates/WidgetSelector!html", "text!extender/templates/sampleObjectExtension!js"],
 function (rd, dojo, Base, Editor, template, sampleTemplate) {
@@ -43,7 +43,7 @@ function (rd, dojo, Base, Editor, template, sampleTemplate) {
         postCreate: function () {
             //Tell parent to load helper selector.
             var _self = this;
-            opener.run(["extender/widgetSelectorHelper"], function (helper) {
+            opener.require(["extender/widgetSelectorHelper"], function (helper) {
                 helper.start(_self);  
             });
         },

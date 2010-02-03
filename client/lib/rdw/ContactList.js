@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
-run.def("rdw/ContactList",
-["run", "rd", "dojo", "dijit", "dojo.string", "dojo/dnd/Source", "rdw/_Base", "rd/contact"],
-function (run, rd, dojo, dijit, string, Source, Base, contact) {
+require.def("rdw/ContactList",
+["require", "rd", "dojo", "dijit", "dojo.string", "dojo/dnd/Source", "rdw/_Base", "rd/contact"],
+function (require, rd, dojo, dijit, string, Source, Base, contact) {
 
     return dojo.declare("rdw.ContactList", [Base], {
         //Array of contacts to show.
@@ -50,7 +50,7 @@ function (run, rd, dojo, dijit, string, Source, Base, contact) {
                           '    </ul>' +
                           '</li>',
     
-        blankImgUrl: run.nameToUrl("rdw/resources/blank", ".png"),
+        blankImgUrl: require.nameToUrl("rdw/resources/blank", ".png"),
 
         /** dijit lifecycle method, after template inserted in DOM */
         postCreate: function () {

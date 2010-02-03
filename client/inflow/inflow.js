@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false */
-/*global run: false, window: false, location: false */
+/*global require: false, window: false, location: false */
 "use strict";
 
-run.def("inflow",
+require.def("inflow",
 [
-    "run", "dojo", "dijit", "rd",
+    "require", "dojo", "dijit", "rd",
     "dojo/parser",
     "dijit/Dialog",
     "rd/onHashChange",
@@ -42,7 +42,7 @@ run.def("inflow",
     "rd/engine",
     "rd/conversation"
 ],
-function (run, dojo, dijit, rd, parser) {
+function (require, dojo, dijit, rd, parser) {
     var inflow = {};
 
     dojo.mixin(inflow, {
@@ -50,7 +50,7 @@ function (run, dojo, dijit, rd, parser) {
 
         showAccounts: function () {
             //summary: shows the account setup in an iframe.
-            run(["dijit/Dialog"], dojo.hitch(this, function (Dialog) {
+            require(["dijit/Dialog"], dojo.hitch(this, function (Dialog) {
                 this.accountsDialog = new Dialog({
                     "class": "inflowAddAccountFrame"    
                 }, dojo.create("div", null, dojo.body()));
@@ -117,15 +117,15 @@ function (run, dojo, dijit, rd, parser) {
     rd.sub("rd.api.me.noAccounts", inflow, "showAccounts");
     rd.sub("rd-protocol-account-settings", inflow, "showAccounts");
 
-console.log("NOW CALLING run.ready in inflow.js");
+console.log("NOW CALLING require.ready in inflow.js");
     //Do onload work that shows the initial display.
-    run.ready(function () {
+    require.ready(function () {
         //Start page parsing of widgets.
         parser.parse();
 
         //In case parsing triggered loading of other widgets, wait for other widgets
         //to be defined before triggering the rest of this work.
-        run(function () {
+        require(function () {
             //inflow.hideQuickCompose();
 
             //Trigger the first list of items to show. Favor a fragment ID on the URL.

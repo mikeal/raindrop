@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, console: false */
+/*global require: false, console: false */
 "use strict";
 
-run.def("rd/contact",
+require.def("rd/contact",
 ["rd", "dojo", "dojo/DeferredList", "couch", "rd/_api", "rd/api", "rd/api/identity"],
 function (rd, dojo, DeferredList, couch, _api, api, identity) {
     //Derives from rd/_api
@@ -60,7 +60,7 @@ function (rd, dojo, DeferredList, couch, _api, api, identity) {
     
                 //Cycle through the names to try and find a match.
                 //TODO: This is a bit expensive. Ideally this could become a back-end extension,
-                //although there are "fresher" results if this is run at display-time.
+                //although there are "fresher" results if this is executed at display-time.
                 //May not be worth the cost though, back-end extension might be better.
                 for (k = 0; (from = sourceNames[k]); k++) {
                     for (i = 0; (contact = contacts[i]); i++) {
@@ -166,7 +166,7 @@ function (rd, dojo, DeferredList, couch, _api, api, identity) {
             } else if (contact.name) {
                 //Create the contact record first. Dynamically load the uuid stuff we need
                 //for the contacts.
-                run(["dojox", "dojox.uuid.generateRandomUuid", "dojox.uuid.Uuid"],
+                require(["dojox", "dojox.uuid.generateRandomUuid", "dojox.uuid.Uuid"],
                     dojo.hitch(this, function (dojox) {
                     var uuid = dojox.uuid, uid, apiInst, contactSI;
                     uuid.Uuid.setGenerator(uuid.generateRandomUuid);

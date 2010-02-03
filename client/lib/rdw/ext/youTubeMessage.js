@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, console:false */
+/*global require: false, console:false */
 "use strict";
 
-run.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
+require.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
 ["rd", "dojo", "rd/schema", "rdw/Message", "dojo/fx"], function (
   rd,   dojo,   rdSchema,    Message,       fx) {
 

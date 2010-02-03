@@ -22,11 +22,11 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false */
+/*global require: false */
 "use strict";
 
 
-run.modify("rd/conversation", "rdw/ext/mailingList/ext-rd/conversation",
+require.modify("rd/conversation", "rdw/ext/mailingList/ext-rd/conversation",
     ["rd", "rd/api", "rd/conversation"],
     function (rd, api) {
         //Allow a "mailingList" method on the rd.conversation data API.
@@ -62,7 +62,7 @@ run.modify("rd/conversation", "rdw/ext/mailingList/ext-rd/conversation",
     }
 );
 
-run.modify("rd/MegaviewStore", "rdw/ext/mailingList/ext-rd/MegaviewStore",
+require.modify("rd/MegaviewStore", "rdw/ext/mailingList/ext-rd/MegaviewStore",
     ["rd", "dojo", "rd/api", "rd/MegaviewStore"],
     function (rd, dojo, api) {
         //Allow mailingList queries via the rd.MegaviewStore dojo.data store.
@@ -116,7 +116,7 @@ run.modify("rd/MegaviewStore", "rdw/ext/mailingList/ext-rd/MegaviewStore",
 );
 
 
-run.modify("rdw/DataSelector", "rdw/ext/mailingList/ext-rdw/DataSelector",
+require.modify("rdw/DataSelector", "rdw/ext/mailingList/ext-rdw/DataSelector",
     ["rd", "rdw/DataSelector"],
     function (rd) {
         //Allow DataSelector to use mailingList in the all selector, and to
@@ -139,7 +139,7 @@ run.modify("rdw/DataSelector", "rdw/ext/mailingList/ext-rdw/DataSelector",
     }
 );
 
-run.modify("rdw/Organizer", "rdw/ext/mailingList/ext-rdw/Organizer",
+require.modify("rdw/Organizer", "rdw/ext/mailingList/ext-rdw/Organizer",
     ["rd", "dojo", "rd/tag", "rdw/Organizer"],
     function (rd, dojo, tag) {
         //Apply a modification to the Organizer to show mailing lists.
@@ -174,7 +174,7 @@ run.modify("rdw/Organizer", "rdw/ext/mailingList/ext-rdw/Organizer",
     }
 );
 
-run.modify("rdw/Summary", "rdw/ext/mailingList/ext-rdw/Summary",
+require.modify("rdw/Summary", "rdw/ext/mailingList/ext-rdw/Summary",
     ["rd", "dojo", "rdw/Summary", "rdw/ext/mailingList/Summary"],
     function (rd, dojo, Summary, MlSummary) {
         //Modify rdw.Summary to allow showing a summary
@@ -195,7 +195,7 @@ run.modify("rdw/Summary", "rdw/ext/mailingList/ext-rdw/Summary",
     }
 );
 
-run.modify("rdw/SummaryGroup", "rdw/ext/mailingList/ext-rdw/SummaryGroup",
+require.modify("rdw/SummaryGroup", "rdw/ext/mailingList/ext-rdw/SummaryGroup",
     ["rd", "dojo", "rdw/SummaryGroup", "rdw/ext/mailingList/SummaryGroup"],
     function (rd, dojo, SummaryGroup, MlSummaryGroup) {
         //Modify rdw.SummaryGroup to allow showing a summary
@@ -220,7 +220,7 @@ run.modify("rdw/SummaryGroup", "rdw/ext/mailingList/ext-rdw/SummaryGroup",
     }
 );
 
-run.modify("rdw/Conversations", "rdw/ext/mailingList/ext-rdw/Conversations",
+require.modify("rdw/Conversations", "rdw/ext/mailingList/ext-rdw/Conversations",
     ["rd", "dojo", "rd/conversation", "rdw/Conversations"],
     function (rd, dojo, conversation) {
         //Modify rdw.Conversations to allow loading mailing lists.
@@ -247,7 +247,7 @@ run.modify("rdw/Conversations", "rdw/ext/mailingList/ext-rdw/Conversations",
     }
 );
 
-run.modify("rdw/Widgets", "rdw/ext/mailingList/ext-rdw/Widgets",
+require.modify("rdw/Widgets", "rdw/ext/mailingList/ext-rdw/Widgets",
     ["rd", "dijit", "rdw/Widgets", "rdw/ext/mailingList/Group"],
     function (rd, dijit) {
         //Modify rdw.Widgets to allow showing mailing lists.

@@ -22,12 +22,12 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, document: false */
+/*global require: false, document: false */
 "use strict";
 
-run.def("rdw/ext/debug/ext",
-["run", "rd", "dojo", "dijit", "text!rdw/ext/debug/template!html"], function (
-  run,   rd,   dojo, dijit, template) {
+require.def("rdw/ext/debug/ext",
+["require", "rd", "dojo", "dijit", "text!rdw/ext/debug/template!html"], function (
+  require,   rd,   dojo, dijit, template) {
 
     rd.addStyle("rdw/ext/debug/ext");
 
@@ -195,7 +195,7 @@ run.def("rdw/ext/debug/ext",
         }
     };
 
-    run.ready(function () {
+    require.ready(function () {
         //Set up keyboard shortcut to enable the debug display.
         var keypressId = dojo.connect(dojo.doc, "onkeypress", debug, "onKeyPress");
         

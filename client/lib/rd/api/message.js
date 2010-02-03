@@ -22,10 +22,10 @@
  * */
 
 /*jslint plusplus: false, nomen: false */
-/*global run: false, console: false */
+/*global require: false, console: false */
 "use strict";
 
-run.def("rd/api/message",
+require.def("rd/api/message",
 ["rd", "dojo", "rd/api", "rd/api/identity"],
 function (rd, dojo, api, identity) {
     var message = {
@@ -266,7 +266,7 @@ function (rd, dojo, api, identity) {
          *
          * @param {String} propName The property to set to true, like "seen".
          *
-         * @param {Function} onEnd function to run when finished. Function will be passed
+         * @param {Function} onEnd function to execute when finished. Function will be passed
          * dfd, args, ids. onEnd function must call the deferred callbacks to finish the
          * operation.
          *
