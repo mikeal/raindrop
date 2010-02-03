@@ -305,7 +305,7 @@ def main():
 
     opts.setup_logging(options)
 
-    init_config()
+    init_config(options.config)
     proto.init_protocols()
 
     # patch up keys.

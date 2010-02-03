@@ -72,6 +72,8 @@ def get_program_options():
     yield Option("", "--debug", action="store_true", dest="debug",
                  default=False,
                  help="Enable debug mode; breaking on exceptions.")
+    yield Option("", "--config", action="store",
+                 help="Specify an alternate config file (default: ~./raindrop)")
 
 
 def get_request_options():
