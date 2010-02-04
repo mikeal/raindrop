@@ -102,7 +102,6 @@
 .rdwMessage > .message > .rdwAttachments .youTube > .player {
   margin: 8px auto;
   padding-top: 8px;
-  border-top: 1px solid #e6e6e6;
   text-align:left;
   overflow: hidden;
 }

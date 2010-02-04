@@ -38,10 +38,10 @@
 }
 
 .rdwConversation.unread {
-  background-color: #ffffd9;
 }
 
 .rdwConversation.rdwExtTwitterConversation.unread {
+  /* background-color: #F2FCFF; */
   background-color: #fff;
 }
 
@@ -83,6 +83,10 @@
   background-image: url("../i/new/rd_new_icon.png");
   background-repeat: no-repeat;
   background-position: left;
+}
+
+.rdwConversation.read > .header > .subject {
+  opacity: 0.5;
 }
 
 .rdwConversation.read {
