@@ -290,13 +290,13 @@ input[type="file"] > input[type="button"]::-moz-focus-inner {
   position: relative;
   z-index: 1;
   width: 300px;
-  background-image: url("i/new/rd_widget_bg.png");
-  background-repeat: repeat-y;
 }
 
 #footer {
-  padding: 12px;
+  padding: 24px 12px 12px;
   font-size: 10px;
+  background-image: url("i/new/rd_footer_bg.png");
+  background-repeat: no-repeat;
 }
 
 #footer a {
