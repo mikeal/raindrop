@@ -73,7 +73,7 @@ function (rd, dojo, string, Conversation, wiper, GenericGroupMessage, template) 
          */
         postCreate: function () {
             this.inherited("postCreate", arguments);
-            this.wiperInit("open");
+            this.wiperInit("closed");
         },
     
         /**

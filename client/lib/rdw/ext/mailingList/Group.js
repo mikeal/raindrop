@@ -85,7 +85,7 @@ function (rd, dojo, Conversation, wiper) {
          */
         postCreate: function () {
             this.inherited("postCreate", arguments);
-            this.wiperInit("open");
+            this.wiperInit("closed");
         },
     
         /**

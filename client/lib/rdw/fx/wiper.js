@@ -74,7 +74,7 @@ function (dojo, fx) {
                             })
             });
     
-            state == "open" ? this.wipeIn(true) : this.wipeIn(true);
+            state == "open" ? this.wipeIn(true) : this.wipeOut(true);
         },
     
         isWiperOpen: function() {
