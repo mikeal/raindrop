@@ -26,17 +26,9 @@
 "use strict";
 
 require.def("rd/api/me",
-["rd", "dojo", "rd/api", "rd/api/identity"],
-function (rd, dojo, api, identity) {
+["rd", "dojo", "rd/api", "rd/accountIds", "rd/api/identity"],
+function (rd, dojo, api, accountIds, identity) {
     var me = {
-        /**
-         * The imap account actually should match to an "email" identity.
-         * This is a bit weird.
-         */
-        accountToIdentityTransform: {
-            "imap": "email"
-        },
-    
         /**
          * @private
          * loads the account info just one time.
@@ -47,29 +39,10 @@ function (rd, dojo, api, identity) {
             //If the request has not been triggered, do it now.
             if (!this._dfd) {
                 this._dfd = new dojo.Deferred();
-                api().megaview({
-                    key: ["rd.core.content", "schema_id", "rd.account"],
-                    reduce: false,
-                    include_docs: true
+
+                api().identity({
+                    ids: accountIds
                 })
-                .ok(this, function (json) {
-                    //Transform the response to be identity IDs
-                    //so it can be consumed by identity()
-                    if (!json.rows.length || (json.rows.length === 1 && json.rows[0].value.rd_key[1] === "account!rss")) {
-                        rd.pub("rd.api.me.noAccounts");
-                        return [];
-                    } else {
-                        var ids = [], i, row, proto;
-                        for (i = 0; (row = json.rows[i]); i++) {
-                            proto = row.doc.proto;
-                            proto = this.accountToIdentityTransform[proto] || proto;
-                            ids.push([proto, row.doc.username]);
-                        }
-                        return ids;
-                    }
-                })
-                .error(this._dfd)
-                .identity()
                 .ok(this, function (identities) {
                     this._dfd.callback(identities);
                 })

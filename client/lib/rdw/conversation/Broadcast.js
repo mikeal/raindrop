@@ -20,19 +20,30 @@
  *
  * Contributor(s):
  * */
-
+/*jslint plusplus: false */
 /*global require: false */
 "use strict";
 
 require.def("rdw/conversation/Broadcast",
-["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper",
+["rd", "dojo", "dojo/string", "rdw/Conversation", "rdw/fx/wiper", "rd/accountIds",
  "rdw/conversation/BroadcastMessage",
  "text!rdw/conversation/templates/Broadcast!html"],
-function (rd, dojo, string, Conversation, wiper, BroadcastMessage, template) {
+function (rd, dojo, string, Conversation, wiper, accountIds, BroadcastMessage, template) {
+    var Broadcast, idMap = {}, i, id;
+
+    //Map account IDs to a lookup list.
+    if (accountIds) {
+        for (i = 0; (id = accountIds[i]); i++) {
+            if (id[1]) {
+                idMap[id.join(",")] = true;
+            }
+        }
+    }
+
     /**
      * Groups twitter broadcast messages into one "conversation"
      */
-    var Broadcast = dojo.declare("rdw.conversation.Broadcast", [Conversation, wiper], {
+    Broadcast = dojo.declare("rdw.conversation.Broadcast", [Conversation, wiper], {
         templateString: template,
 
         /**
@@ -95,17 +106,28 @@ function (rd, dojo, string, Conversation, wiper, BroadcastMessage, template) {
          */
         canHandle: function (conversation) {
             var msg = conversation.messages[0],
-                target = msg.schemas["rd.msg.recip-target"], from;
+                target = msg.schemas["rd.msg.recip-target"],
+                body = msg.schemas["rd.msg.body"], from, to;
             target = target && target.target;
     
-            from = msg.schemas["rd.msg.body"];
-            from = from.from || (from.rd_key[0] === "rss-entry" && from.rd_key[1]);
+            from = body.from;
+            from = body.from || (body.rd_key[0] === "rss-entry" && body.rd_key[1]);
+
+            //Use the "to" unless it matches an account ID, so it can match things
+            //like email distribution lists (sender may be different in each message,
+            //but all to the same list)
+            if (body.to && body.to.length === 1) {
+                to = body.to[0];
+                if (!idMap[to.join(",")]) {
+                    from = to;
+                }
+            }
     
             //If target is broadcast or notification and not associated (probably)
             //a direct prototype check, not on an instance), or if an instance that
             //already has a from that matches the conversation's from
-            return (target === "broadcast" || target === "notification")
-                   && (!this.from || (this.from[0] === from[0] && this.from[1] === from[1]));
+            return (target === "broadcast" || target === "notification") &&
+                   (!this.from || (this.from[0] === from[0] && this.from[1] === from[1]));
         },
     
         /**

@@ -25,8 +25,8 @@
 "use strict";
 
 require.def("rd/api",
-["rd", "dojo"],
-function (rd, dojo) {
+["rd", "dojo", "require/rdCouch"],
+function (rd, dojo, rdCouch) {
     /**
      * Creates a new API object that can be used for chainable API operations.
      * @constructor
@@ -42,7 +42,7 @@ function (rd, dojo) {
         //Make sure it was called with "new" by testing for a method on this
         //prototype. Could also check that this === dojo.global, but seems more fragile
         //to breaking depending on calling scope.
-        if (!this._couchDbSafeProps) {
+        if (!this.dbPath) {
             return new Api(args, parent);
         }
     
@@ -190,30 +190,6 @@ function (rd, dojo) {
     });
     
     api.prototype = {
-        /**
-         * @private
-         * list of properties that couchdb will accept as HTTP parameters.
-         */
-        _couchDbSafeProps: {
-            "id": 1, //technically not view compatible, but desirable for our server API
-            "message_limit": 1, // also not part of views, but part of our API.
-            "key": 1,
-            "keys": 1,
-            "startkey": 1,
-            "startkey_docid": 1,
-            "endkey": 1,
-            "endkey_docid": 1,
-            "limit": 1,
-            "stale": 1,
-            "descending": 1,
-            "skip": 1,
-            "group": 1,
-            "group_level": 1,
-            "reduce": 1,
-            "include_docs": 1,
-            "docs": 1
-        },
-    
         dbPath: function (args) {
             return args.dbPath || this.args.dbPath || rd.dbPath || "/raindrop/";
         },
@@ -227,58 +203,11 @@ function (rd, dojo) {
          * as part of args.
          */
         xhr: function (args) {
-            //Make a delegate so we do not have to modify incoming args.
-            var xhrArgs = dojo.delegate(args),
-                //Pull out CouchDB-safe parameters.
-                content = args.content || {}, empty = {}, prop, method, dfd, value;
-            for (prop in args) {
-                if (!(prop in empty) && prop in this._couchDbSafeProps) {
-                    value = args[prop];
-                    //Couch likes array and object values as json data
-                    if (dojo.isArray(value) || dojo.isObject(value)) {
-                        value = dojo.toJson(value);
-                    }
-                    content[prop] = value;
-                }
-            }
-            xhrArgs.content = content;
-    
-            //Figure out the kind of DB method.
-            method = args.method;
-            if (!method) {
-                method = "GET";
-                if (content.keys) {
-                    method = "POST";
-                    xhrArgs.postData = '{ "keys": ' + content.keys + '}';
-                    delete content.keys;
-    
-                    //Couch seems to want the other params on the querystring. Seems like
-                    //it should be OK to send them all in the body, but no.
-                    xhrArgs.url = xhrArgs.url +
-                                  (xhrArgs.url.indexOf("?") === -1 ? "?" : "&") +
-                                  dojo.objectToQuery(content);
-                    xhrArgs.content = null;
-                } else if (content.docs) {
-                    //Probably a bulk doc operation.
-                    method = "POST";
-                    xhrArgs.postData = '{ "docs": ' + content.docs + '}';
-                    delete content.docs;
-                }
-            }
-    
-            //Allow "ok" as as substitute for "load"
-            if (typeof args.ok === "function" && !args.load) {
-                xhrArgs.load = args.ok;
-            }
+            var dfd = new dojo.Deferred();
+            rdCouch.xhr(args, function(obj) {
+                dfd.callback(obj)
+            });
 
-            //Default to JSON handling of the response
-            if (!args.handleAs) {
-                xhrArgs.handleAs = "json";
-            }
-    
-            //You make the call!
-            dfd = dojo.xhr(method, xhrArgs);
-        
             //Bind result to triggering current Deferred.
             dfd.addCallback(this._deferred, "callback");
             dfd.addErrback(this._deferred, "errback");
@@ -493,7 +422,7 @@ function (rd, dojo) {
             xhrArgs = dojo.delegate(args);
             xhrArgs.url = docUrl;
             xhrArgs.method = "PUT";
-            xhrArgs.putData = dojo.toJson(doc);
+            xhrArgs.bodyData = dojo.toJson(doc);
     
             this.xhr(xhrArgs).ok(function (response) {
                 //Update the rev number on the doc.
@@ -552,7 +481,7 @@ function (rd, dojo) {
             var xhrArgs = dojo.delegate(args);
             xhrArgs.url = docUrl;
             xhrArgs.method = "PUT";
-            xhrArgs.putData = dojo.toJson(doc);
+            xhrArgs.bodyData = dojo.toJson(doc);
     
             this.xhr(xhrArgs).ok(function(response){
                 //Update the rev number on the doc.
