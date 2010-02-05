@@ -32,8 +32,6 @@ require.modify("rdw/Message", "rdw/ext/MessageLinkAttachments",
     Applies a display extension to rdw/Message.
     Allows showing links included in the message as inline attachments
     */
-    rd.addStyle("rdw/ext/css/MessageLinkAttachments");
-
     rd.applyExtension("rdw/ext/MessageLinkAttachments", "rdw/Message", {
         replace: {
             defaultLinkHandler: function (link) {
