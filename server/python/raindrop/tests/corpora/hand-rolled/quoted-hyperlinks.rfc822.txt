@@ -51,4 +51,6 @@ http://en.wikipedia.org/wiki/Sport_(disambiguation) Then something within parent
 
 > this URL should not be picked up: http://example.com/quoted ok?
 
+<http://www.brackets.com/should-be-stripped>
+
 http://mozilla.com, These URLs should be picked up. Something with a comma in it, http://example.com/something/0,123,133.html, but do not get the last comma. And something on the end. http://bit.ly/HQFyP

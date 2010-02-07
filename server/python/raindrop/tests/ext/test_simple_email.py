@@ -119,6 +119,7 @@ class TestSimpleCorpus(TestCaseWithCorpus):
                                      'http://en.wikipedia.org/wiki/Sport_(disambiguation)',
                                      'http://en.wikipedia.org/wiki/Sport_(magazine))',
                                      'http://python.org/about/index.html',
+                                     'http://www.brackets.com/should-be-stripped',
                                      'http://mozilla.com',
                                      'http://example.com/something/0,123,133.html']))
 

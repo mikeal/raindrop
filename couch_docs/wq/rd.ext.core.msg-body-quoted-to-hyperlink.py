@@ -28,7 +28,7 @@ import re
 #how this regexp is constructed.
 url_regexp = re.compile('https?:\S+')
 
-remove_regexp = re.compile('[\.,]$')
+remove_regexp = re.compile('[\.,>]$')
 start_paren_regexp = re.compile('\(')
 end_paren_regexp = re.compile('\)')
 
@@ -60,7 +60,7 @@ def handler(doc):
         # Still not bulletproof, but should catch lots of wikipedia URLs.
         if match.endswith(")"):
             if len(start_paren_regexp.findall(match)) != len(start_paren_regexp.findall(match)):
-                match = match[0:len(match) - 1]
+                match = match[:-1]
 
         # Make sure it is unique
         if not match in found:
