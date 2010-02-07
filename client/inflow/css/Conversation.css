@@ -33,16 +33,9 @@
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   border: 1px solid #e6e6e6;
+  background-color: #fff;
   background-image: url("../i/new/rd_message_bg.png");
   background-repeat: repeat-x;
-}
-
-.rdwConversation.unread {
-}
-
-.rdwConversation.rdwExtTwitterConversation.unread {
-  /* background-color: #F2FCFF; */
-  background-color: #fff;
 }
 
 .rdwConversation.active {
@@ -78,19 +71,29 @@
 
 /*### END IMPERSONAL ###*/
 
-.rdwConversation.unread > .header > .subject {
-  padding-left: 22px;
-  background-image: url("../i/new/rd_new_icon.png");
-  background-repeat: no-repeat;
-  background-position: left;
+.rdwConversation.read {
+  background-image: none;
+  background-color: #fefefe;
+  opacity: 0.95;
 }
 
 .rdwConversation.read > .header > .subject {
   opacity: 0.5;
 }
 
-.rdwConversation.read {
-  background-color: #fff;
+.rdwConversation.read > .messages .message > .header > .author {
+  opacity: 0.5;
+}
+
+.rdwConversation.read > .messages .message > .header > .allRecipients {
+  display: none;
+}
+
+.rdwConversation.read > .messages .message > .content {
+  opacity: 0.7;
+  margin-right: 10px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .rdwConversation > .header {
