@@ -21,13 +21,6 @@
 # Contributor(s):
 #
 
-# This extension extracts information about a mailing list through which
-# a message has been sent.  It creates rd.mailing-list docs for the mailing
-# lists, one per list, and rd.msg.email.mailing-list docs for the emails,
-# one per email sent through a list.  All the information about a list
-# is stored in its rd.mailing-list doc; a rd.msg.email.mailing-list doc
-# just links an email to its corresponding list.
-
 import re
 import urllib2, json
 
