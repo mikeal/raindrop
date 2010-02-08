@@ -46,10 +46,10 @@ def handler(doc):
     for link in links:
         # Check for normal flickr urls and only add to list if not
         # already in the list.
-        match = vimeo_video_regex.search(link)
+        match = vimeo_video_regex.search(link['url'])
         if match and match.group(1):
-            if not link in vimeos:
-                vimeos[link] = match.group(1)
+            if not link['url'] in vimeos:
+                vimeos[link['url']] = match.group(1)
 
     if len(vimeos) == 0:
         return

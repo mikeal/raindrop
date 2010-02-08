@@ -40,9 +40,9 @@ def handler(doc):
     for link in links:
         # Check for normal youtube urls and only add to list if not
         # already in the list.
-        match = youtube_regex.search(link) or youtube_short_regex.search(link)
+        match = youtube_regex.search(link['url']) or youtube_short_regex.search(link['url'])
         if match and match.group(1):
-            if not link in youtubes:
+            if not link['url'] in youtubes:
                 youtubes[link] = match.group(1)
 
     if len(youtubes) == 0:

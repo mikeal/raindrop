@@ -48,7 +48,7 @@ require.modify("rdw/Message", "rdw/ext/youTubeMessage-rdw/Message",
                     //NOTE: the "this" in this function is the instance of rdw/Message.
 
                     //Check for a YouTube video
-                    var yt = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.youtubed", "ref_link", link),
+                    var yt = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.youtubed", "ref_link", link.url),
                         thumbnail = "", thumb, url, youTubeImgTemplateString, img,
                         title, youTubeInfoTemplateString, thumbs, i;
                     if (!yt) {

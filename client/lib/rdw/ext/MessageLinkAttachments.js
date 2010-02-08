@@ -37,7 +37,7 @@ require.modify("rdw/Message", "rdw/ext/MessageLinkAttachments",
             defaultLinkHandler: function (link) {
                 //NOTE: the "this" in this function is the instance of rdw/Message.
                 var html = '<div class="link hbox"><a target="_blank" href="'
-                           + link + '">' + link + '</a></div>';
+                           + link.url + '">' + link.url + '</a></div>';
                 this.addAttachment(html, "link");
             }
         }

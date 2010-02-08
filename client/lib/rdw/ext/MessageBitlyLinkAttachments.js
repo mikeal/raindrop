@@ -40,7 +40,7 @@ require.modify("rdw/Message", "rdw/ext/MessageBitlyLinkAttachments",
             linkHandlers: [
                 function (link) {
                     //NOTE: the "this" in this function is the instance of rdw/Message.
-                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.bit.ly", "ref_link", link),
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.bit.ly", "ref_link", link.url),
                           linkNode, templateObj, template, titleTemplate;
                     if (!schema) {
                         return false;

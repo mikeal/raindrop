@@ -41,7 +41,7 @@ require.modify("rdw/Message", "rdw/ext/MessageFlickrLinkAttachments",
                     //NOTE: the "this" in this function is the instance of rdw/Message.
 
                     //See if link matches the schema on message.
-                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.flickr", "ref_link", link),
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.flickr", "ref_link", link.url),
                         template, templateObj, handled = false;
                     if (!schema) {
                         return false;

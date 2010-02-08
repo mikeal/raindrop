@@ -46,10 +46,10 @@ def handler(doc):
     for link in links:
         # Check for normal flickr urls and only add to list if not
         # already in the list.
-        match = bitly_regex.search(link)
+        match = bitly_regex.search(link['url'])
         if match and match.group(1):
-            if not link in bitlys:
-                bitlys[link] = match.group(1)
+            if not link['url'] in bitlys:
+                bitlys[link['url']] = match.group(1)
 
     if len(bitlys) == 0:
         return

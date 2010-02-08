@@ -50,16 +50,16 @@ def handler(doc):
     for link in links:
         # Check for normal flickr urls and only add to list if not
         # already in the list.
-        match = flickr_photo_regex.search(link)
+        match = flickr_photo_regex.search(link['url'])
         if match and match.group(1):
-            if not link in flickrs:
-                flickrs[link] = match.group(1)
+            if not link['url'] in flickrs:
+                flickrs[link['url']] = match.group(1)
         else:
             # Try the shortened flickr URL service.
-            match = flickr_canonical_photo_regex.search(link)
+            match = flickr_canonical_photo_regex.search(link['url'])
             if match and match.group(1):
-                if not link in flickrs:
-                    flickrs[link] = base58decode(match.group(1))
+                if not link['url'] in flickrs:
+                    flickrs[link['url']] = base58decode(match.group(1))
 
     if len(flickrs) == 0:
         return

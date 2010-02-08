@@ -42,7 +42,7 @@ require.modify("rdw/Message", "rdw/ext/MessageVimeoLinkAttachments",
                     //NOTE: the "this" in this function is the instance of rdw/Message.
         
                     //See if link matches the schema on message.
-                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.quoted.hyperlinks.vimeo", "ref_link", link),
+                    var schema = rdSchema.getMsgMultipleMatch(this.msg, "rd.msg.body.quoted.hyperlinks.vimeo", "ref_link", link.url),
                         html;
                     if (!schema) {
                         return false;

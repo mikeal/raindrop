@@ -22,6 +22,7 @@
 #
 
 import re
+from urllib2 import urlparse
 
 #This regexp could be made smarter, but it is a very diffcult to do
 #all the matching with just a regexp. See loop below, it depends on
@@ -37,7 +38,8 @@ def handler(doc):
     parts = doc['parts']
     ret = []
     matches = []
-    found = {}    
+    found = {}
+    ret = []
 
     # Do the raw regexp work to find candidates in all
     # non-quoted parts.
@@ -62,10 +64,31 @@ def handler(doc):
             if len(start_paren_regexp.findall(match)) != len(start_paren_regexp.findall(match)):
                 match = match[:-1]
 
-        # Make sure it is unique
-        if not match in found:
-            ret.append(match)
-            found[match] = 1
+        # process only the unique urls
+        if match in found:
+            continue
+        found[match] = True
+
+        parse = urlparse.urlparse(match)
+        if parse.hostname:
+            try: # get the domain name without sub-host names
+                domain = parse.hostname[parse.hostname.rindex(".", 0, parse.hostname.rindex(".")) + 1:]
+            except:
+                domain = parse.hostname
+
+            ret.append({
+                        'url' : match,
+                        'domain' : domain,
+                        'scheme' : parse.scheme,
+                        'username' : parse.username or '',
+                        'password' : parse.password or '',
+                        'hostname' : parse.hostname,
+                        'port' : parse.port or '',
+                        'path' : parse.path,
+                        'params' : parse.params,
+                        'query' : parse.query,
+                        'fragment' : parse.fragment
+                        })
 
     if len(ret) > 0:
         emit_schema('rd.msg.body.quoted.hyperlinks', {
