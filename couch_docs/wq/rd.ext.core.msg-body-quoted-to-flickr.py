@@ -34,11 +34,14 @@ import urllib2, json
 # http://www.flickr.com/services/api/misc.urls.html
 BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 
+# http://farm{farm-id}.static.flickr.com/{server-id}/{id}_{secret}_[mstb].jpg
+FLICKR_PHOTO_URL = "http://farm%s.static.flickr.com/%s/%s_%s%s.jpg"
 # Grab the hash code from links
 # TODO: make these regexps better: they could match parts of a malicious
 # link.
 flickr_photo_regex = re.compile('^/photos/[\w@]+/(\d+)/.*')
 flickr_canonical_photo_regex = re.compile('^/p/(['+BASE58_ALPHABET+']+)')
+
 
 def handler(doc):
 
@@ -53,7 +56,6 @@ def handler(doc):
             if match and match.group(1):
                 flickrs.append( (link['url'], match.group(1)) )
         elif link['domain'] == "flic.kr":
-            # Try the shortened flickr URL service.
             match = flickr_canonical_photo_regex.search(link['path'])
             if match and match.group(1):
                 flickrs.append( (link['url'], base58decode(match.group(1))) )
@@ -77,10 +79,27 @@ def handler(doc):
         obj = json.load(opener.open(info_api))
 
         if obj.get('stat') == "ok":
-            schema = obj.get('photo')
-            schema['is_attachment'] = True
-            schema['ref_link'] = link
-            emit_schema('rd.msg.body.flickr', schema)
+            photo = obj.get('photo')
+
+            thumb = FLICKR_PHOTO_URL % (photo.get('farm'), photo.get('server'),
+                                        photo.get('id'), photo.get('secret'),
+                                        "_s")
+            img = FLICKR_PHOTO_URL % (photo.get('farm'), photo.get('server'),
+                                      photo.get('id'), photo.get('secret'), "")
+
+            schema = {"thumb"       : thumb,
+                      "img"         : img,
+                      "title"       : photo.get('title').get('_content'),
+                      "href"        : "http://www.flickr.com/%s/%s/" % (photo.get('owner').get('nsid'),
+                                                                        photo.get('id')),
+                      "userName"    : photo.get('owner').get('username'),
+                      "realName"    : photo.get('owner').get('realname'),
+                      "description" : photo.get('description').get('_content'),
+                      "ref_link"    : link
+                      }
+            schema['location'] = photo.get('location')
+            schema['flickr'] = photo
+            emit_schema('rd.msg.body.attachment.link.img', schema)
 
 # This function decodes the special base58 (62 - 4) flic.kr canonical urls
 def base58decode(s):
