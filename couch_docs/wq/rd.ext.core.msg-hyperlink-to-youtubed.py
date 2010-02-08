@@ -24,31 +24,34 @@
 import re
 import urllib2, json
 
-# Grab the hash code from links
-# TODO: make this more robust to malicious use.
-youtube_regex = re.compile("youtube\.com\/watch\?v=([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
-youtube_short_regex = re.compile("youtu\.be\/([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
+# http://www.youtube.com/watch?v=YOUTUBE_ID
+youtube_query_regex = re.compile("v=([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
+# http://www.youtube.com/v/YOUTUBE_ID
+youtube_path_regex = re.compile("^/v/([A-Za-z0-9._%-]*)")
+# http://youtu.be/YOUTUBE_ID
+youtube_short_path_regex = re.compile("^/([A-Za-z0-9._%-]*)[&\w;=\+_\-]*")
 
 # Creates 'rd.msg.body.youtubed' schemas for emails...
 def handler(doc):
-    #Skip docs that do not have a links property.
     if not 'links' in doc:
         return
 
-    youtubes = {}
+    youtubes = []
     links = doc['links']
     for link in links:
-        # Check for normal youtube urls and only add to list if not
-        # already in the list.
-        match = youtube_regex.search(link['url']) or youtube_short_regex.search(link['url'])
-        if match and match.group(1):
-            if not link['url'] in youtubes:
-                youtubes[link['url']] = match.group(1)
+        if link['domain'] == "youtube.com":
+            match = youtube_query_regex.search(link['query']) or youtube_path_regex.search(link['path'])
+            if match and match.group(1):
+                youtubes.append( (link['url'], match.group(1)) )
+        elif link['domain'] == "youtu.be":
+            match = youtube_short_path_regex.search(link['path'])
+            if match and match.group(1):
+                youtubes.append( (link['url'], match.group(1)) )
 
     if len(youtubes) == 0:
         return
 
-    for link, hash in youtubes.items():
+    for link, hash in youtubes:
         logger.debug("working on youtube video http://www.youtube.com/watch?v=%s ", hash)
         gdata_api = "http://gdata.youtube.com/feeds/api/videos/%s?v=2&alt=json" % hash
         try:

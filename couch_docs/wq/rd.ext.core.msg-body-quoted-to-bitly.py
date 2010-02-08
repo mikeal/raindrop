@@ -32,29 +32,25 @@ import re
 import urllib2, json
 
 # Grab the hash code from links
-# TODO: make this more resilient to malicious URL use.
-bitly_regex = re.compile('bit.ly/(\w+)')
+bitly_path_regex = re.compile('^/(\w+)')
 
 # Creates 'rd.msg.attachment' for bit.ly urls from 'rd.msg.body.quoted.hyperlinks'
 def handler(doc):
-
     if not 'links' in doc:
         return
 
-    bitlys = {}
+    bitlys = []
     links = doc['links']
     for link in links:
-        # Check for normal flickr urls and only add to list if not
-        # already in the list.
-        match = bitly_regex.search(link['url'])
-        if match and match.group(1):
-            if not link['url'] in bitlys:
-                bitlys[link['url']] = match.group(1)
+        if link['domain'] == "bit.ly":
+            match = bitly_path_regex.search(link['path'])
+            if match and match.group(1):
+                bitlys.append( (link['url'], match.group(1)) )
 
     if len(bitlys) == 0:
         return
 
-    for link, hash in bitlys.items():
+    for link, hash in bitlys:
         options = {
             'version' : '2.0.1',
             'login'   : 'bitlyapidemo', # demo API user

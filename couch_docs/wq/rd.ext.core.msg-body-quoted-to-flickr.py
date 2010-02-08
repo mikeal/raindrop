@@ -37,34 +37,31 @@ BASE58_ALPHABET = "123456789abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 # Grab the hash code from links
 # TODO: make these regexps better: they could match parts of a malicious
 # link.
-flickr_photo_regex = re.compile('flickr.com/photos/[\w@]+/(\d+)/.*')
-flickr_canonical_photo_regex = re.compile('flic.kr/p/(['+BASE58_ALPHABET+']+)')
+flickr_photo_regex = re.compile('^/photos/[\w@]+/(\d+)/.*')
+flickr_canonical_photo_regex = re.compile('^/p/(['+BASE58_ALPHABET+']+)')
 
 def handler(doc):
 
     if not 'links' in doc:
         return
 
-    flickrs = {}
+    flickrs = []
     links = doc['links']
     for link in links:
-        # Check for normal flickr urls and only add to list if not
-        # already in the list.
-        match = flickr_photo_regex.search(link['url'])
-        if match and match.group(1):
-            if not link['url'] in flickrs:
-                flickrs[link['url']] = match.group(1)
-        else:
-            # Try the shortened flickr URL service.
-            match = flickr_canonical_photo_regex.search(link['url'])
+        if link['domain'] == "flickr.com":
+            match = flickr_photo_regex.search(link['path'])
             if match and match.group(1):
-                if not link['url'] in flickrs:
-                    flickrs[link['url']] = base58decode(match.group(1))
+                flickrs.append( (link['url'], match.group(1)) )
+        elif link['domain'] == "flic.kr":
+            # Try the shortened flickr URL service.
+            match = flickr_canonical_photo_regex.search(link['path'])
+            if match and match.group(1):
+                flickrs.append( (link['url'], base58decode(match.group(1))) )
 
     if len(flickrs) == 0:
         return
 
-    for link, photo_id in flickrs.items():
+    for link, photo_id in flickrs:
         # http://www.flickr.com/services/api/response.json.html
         options = {
             "method"       : "flickr.photos.getInfo",
