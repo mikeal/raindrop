@@ -57,6 +57,10 @@
   -webkit-box-sizing: border-box;
 }
 
+.rdwExtTwitterMessage .rdwAttachments .attachContents {
+  margin-left: 0;
+}
+
 .rdwAttachments .attachDisplay {
     width: 463px;
     overflow: hidden;
