@@ -43,7 +43,7 @@ def handler(doc):
         match = youtube_regex.search(link['url']) or youtube_short_regex.search(link['url'])
         if match and match.group(1):
             if not link['url'] in youtubes:
-                youtubes[link] = match.group(1)
+                youtubes[link['url']] = match.group(1)
 
     if len(youtubes) == 0:
         return
