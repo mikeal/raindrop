@@ -38,14 +38,13 @@ class TestPipelineBase(TestCaseWithTestDB):
 
     def get_last_by_seq(self, n=1):
         def extract_rows(result):
+            ignore_schemas = ['rd.core.workqueue-state', 'rd.core.sync-status']
             rows = result['rows']
             ret = []
             for row in rows:
                 if 'doc' in row and 'rd_schema_id' in row['doc']:
-                    # If we are using a 'chasing' pipeline, then we can
-                    # expect some 'state' docs to get in the way...
-                    if self.use_backlog_processor and \
-                       row['doc']['rd_schema_id']=='rd.core.workqueue-state':
+                    # Ignore certain other schemas which may get in the way
+                    if row['doc']['rd_schema_id'] in ignore_schemas:
                         continue
                     ret.append(row)
                     if len(ret)>=n:
