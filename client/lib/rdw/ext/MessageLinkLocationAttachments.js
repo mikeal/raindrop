@@ -48,11 +48,6 @@ require.modify("rdw/Message", "rdw/ext/MessageLinkLocationAttachments",
                     }
                     template = '<div class="location link hbox">' +
                                '  <div class="thumbnail boxFlex0">' +
-                               '    <a target="_blank" href="http://maps.google.com/?q=${q}&ll=${geolat},${geolong}">' +
-                               '    <img src="http://maps.google.com/maps/api/staticmap?' +
-                                      'maptype=roadmap&zoom=12&sensor=false&' +
-                                      'size=110x70&markers=||${geolat},${geolong}&key=${key}"/>' +
-                               '    </a>' +
                                '  </div>' +
                                '  <div class="information boxFlex1">' +
                                '    <div class="name">${name}</div>' +

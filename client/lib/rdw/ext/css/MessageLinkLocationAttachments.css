@@ -25,6 +25,8 @@
   display: inline-block;
   width: 110px;
   height: 70px;
+  background-image: url("../../../../inflow/i/new/rd_map_icon.png");
+  background-repeat: no-repeat;
 }
 
 .rdwMessage > .message > .rdwAttachments .location > .information {
