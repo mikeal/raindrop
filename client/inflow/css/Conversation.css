@@ -77,16 +77,34 @@
   opacity: 0.95;
 }
 
+.rdwConversationFullConversation.read {
+  background-image: url("../i/new/rd_message_bg.png");
+  background-repeat: repeat-x;
+  opacity: 1;
+}
+
 .rdwConversation.read > .header > .subject {
   opacity: 0.5;
+}
+
+.rdwConversationFullConversation.read > .header > .subject {
+  opacity: 1;
 }
 
 .rdwConversation.read > .messages .message > .header > .author {
   opacity: 0.5;
 }
 
+.rdwConversationFullConversation.read > .messages .message > .header > .author {
+  opacity: 1;
+}
+
 .rdwConversation.read > .messages .message > .header > .allRecipients {
   display: none;
+}
+
+.rdwConversationFullConversation.read > .messages .message > .header > .allRecipients {
+  display: block;
 }
 
 .rdwConversation.read > .messages .message > .content {
@@ -94,6 +112,18 @@
   margin-right: 10px;
   white-space: nowrap;
   overflow: hidden;
+}
+
+.rdwConversationFullConversation.read > .messages .message > .content {
+  opacity: 1;
+  margin-right: 0px;
+  white-space: normal;
+  overflow: visible;
+}
+
+.rdwExtTwitterConversation.read > .messages .message > .content {
+  white-space: normal;
+  overflow: auto;
 }
 
 .rdwConversation > .header {
